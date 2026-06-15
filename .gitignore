@@ -1,0 +1,80 @@
+# Godot-specific files
+.import/
+export_presets.cfg
+.godot/
+mono/
+!addons/
+!addons/**
+addons/~*
+addons/**/~*
+
+# Mono and C# build files
+*.userprefs
+*.suo
+*.pdb
+*.dll
+*.exe
+*.mdb
+*.cache
+*.log
+*.vs/
+bin
+obj
+packages
+
+# Godot temporary and cache files
+*.tmp
+*.backup
+*.imported
+*.converted
+
+# Godot mono build artifacts
+.godot/mono/
+.godot/mono/temp/
+.godot/mono/solutions/
+
+# JetBrains Rider specific
+.idea/
+.idea/*
+*.sln.iml
+.idea_modules/
+.Rider/
+/resharper-host/
+/DecompilerCache/
+
+# User-specific files
+*.rsuser
+*.user
+*.userosscache
+*.sln.docstates
+*.sln.DotSettings.*
+*.csproj.DotSettings
+
+# Logs and debugging artifacts
+*.trace
+.vscode/launch.json
+.vscode/settings.json
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Additional ignore patterns
+*.bak
+*.swp
+*.swn
+~$*
+
+# Ensure version control of large assets managed by Git LFS
+# (Git LFS tracks these; avoid ignoring them entirely)
+!*.png
+!*.jpg
+!*.jpeg
+!*.wav
+!*.mp3
+!*.ogg
+!*.tres
+!*.res
+!*.scn
+!*.glb
