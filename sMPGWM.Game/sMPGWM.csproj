@@ -4,4 +4,18 @@
     <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="assets\ui\backgrounds\" />
+    <Folder Include="assets\ui\fonts\" />
+    <Folder Include="assets\ui\icons\" />
+    <Folder Include="scenes\ui\controls\" />
+    <Folder Include="scenes\ui\screens\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="credits" />
+  </ItemGroup>
 </Project>

@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://6ov4wdhkeic1"]
+
+[ext_resource type="Script" uid="uid://bn3f7fn5s8i4b" path="res://scripts/ui/MainGameScreen.cs" id="1_xkjvp"]
+[ext_resource type="Texture2D" uid="uid://bchm6ax577ln0" path="res://assets/ui/backgrounds/main_menu_background.png" id="2_rqg7j"]
+
+[node name="MainGameScreen" type="Control" unique_id=1947288930]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xkjvp")
+
+[node name="Background" type="TextureRect" parent="." unique_id=765117260]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = ExtResource("2_rqg7j")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=617157901]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MenuPanel" type="PanelContainer" parent="CenterContainer" unique_id=1421526066]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/MenuPanel" unique_id=256467250]
+layout_mode = 2
+
+[node name="ButtonList" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer" unique_id=1912525676]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="JoinButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/ButtonList" unique_id=94236353]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Join"
+
+[node name="HostButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/ButtonList" unique_id=872807463]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Host"
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/ButtonList" unique_id=1572475644]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Settings"
+
+[node name="QuitButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/ButtonList" unique_id=1487142385]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Quit"
