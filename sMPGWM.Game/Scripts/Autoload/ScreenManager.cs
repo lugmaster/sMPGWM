@@ -1,30 +1,32 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Godot;
+using sMPGWM.Scripts.Autoload.Base;
 
-namespace sMPGWM.Autoload;
+namespace sMPGWM.Scripts.Autoload;
 
-public partial class UiManager : AbstractAutoload<UiManager>
+public partial class ScreenManager : AbstractAutoload<ScreenManager>
 {
     private readonly Stack<Control> _screenHistory = new();
 
     private Control _currentScreen = null!;
 
-    public void RegisterCurrentScreen(Control screen)
+    public void RegisterInitialScreen(Control screen)
     {
         ArgumentNullException.ThrowIfNull(screen);
 
         if (_currentScreen != null)
-            throw new InvalidOperationException("Current screen is already registered.");
+            throw new InvalidOperationException("Initial screen is already registered.");
 
         _currentScreen = screen;
+        _currentScreen.Visible = true;
 
-        GameLogger.Info($"Registered current UI screen: {screen.Name}");
+        GameLogger.Info($"Registered initial screen: {screen.Name}");
     }
 
-    public void NavigateTo(PackedScene screenScene)
+    public void NavigateTo(Control nextScreen)
     {
-        ArgumentNullException.ThrowIfNull(screenScene);
+        ArgumentNullException.ThrowIfNull(nextScreen);
 
         if (_currentScreen == null)
             throw new InvalidOperationException("No current screen registered.");
@@ -32,14 +34,15 @@ public partial class UiManager : AbstractAutoload<UiManager>
         var parent = _currentScreen.GetParent();
 
         if (parent == null)
-            throw new InvalidOperationException($"Current screen '{_currentScreen.Name}' has no parent.");
-
-        var nextScreen = screenScene.Instantiate<Control>();
+            throw new InvalidOperationException(
+                $"Current screen '{_currentScreen.Name}' has no parent.");
 
         _currentScreen.Visible = false;
         _screenHistory.Push(_currentScreen);
 
         parent.AddChild(nextScreen);
+
+        nextScreen.Visible = true;
         _currentScreen = nextScreen;
 
         GameLogger.Info($"Navigated to screen: {nextScreen.Name}");
@@ -70,26 +73,5 @@ public partial class UiManager : AbstractAutoload<UiManager>
     public bool CanGoBack()
     {
         return _screenHistory.Count > 0;
-    }
-
-    public void ShowJoinScreen()
-    {
-        GameLogger.Info("ShowJoinScreen requested.");
-    }
-
-    public void ShowHostScreen()
-    {
-        GameLogger.Info("ShowHostScreen requested.");
-    }
-
-    public void ShowSettingsScreen()
-    {
-        GameLogger.Info("ShowSettingsScreen requested.");
-    }
-
-    public void QuitGame()
-    {
-        GameLogger.Info("Quit game requested.");
-        GetTree().Quit();
     }
 }

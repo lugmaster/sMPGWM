@@ -1,4 +1,4 @@
-namespace sMPGWM.Autoload;
+namespace sMPGWM.Scripts.Autoload.Base;
 
 public interface IAutoloaded
 {

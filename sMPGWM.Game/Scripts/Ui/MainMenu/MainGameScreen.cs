@@ -1,18 +1,22 @@
 ﻿using Godot;
-using sMPGWM.Autoload;
+using sMPGWM.Scripts.Autoload;
+using sMPGWM.Scripts.Ui.MainMenu.Base;
+using GameLogger = sMPGWM.Scripts.Autoload.GameLogger;
+using UiManager = sMPGWM.Scripts.Autoload.UiManager;
 
-namespace sMPGWM.Scripts.Ui;
+namespace sMPGWM.Scripts.Ui.MainMenu;
 
-public partial class MainGameScreen : Control
+public partial class MainGameScreen : MainMenuSubMenuScreen
 {
+    protected override string ScreenTitle => "Settings";
     private Button _joinButton = null!;
     private Button _hostButton = null!;
     private Button _settingsButton = null!;
     private Button _quitButton = null!;
 
-    public override void _Ready()
+    protected override void OnReady()
     {
-        UiManager.Instance.RegisterCurrentScreen(this);
+        ScreenManager.Instance.RegisterInitialScreen(this);
 
         _joinButton = GetNode<Button>("%JoinButton");
         _hostButton = GetNode<Button>("%HostButton");

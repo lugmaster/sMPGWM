@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://6ov4wdhkeic1"]
+
+[ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/screens/main_menu/menu_screen.tscn" id="1_menu"]
+[ext_resource type="Script" uid="uid://bn3f7fn5s8i4b" path="res://Scripts/Ui/MainMenu/MainGameScreen.cs" id="2_script"]
+
+[node name="MainGameScreen" unique_id=1431156458 instance=ExtResource("1_menu")]
+script = ExtResource("2_script")
+
+[node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
+text = "Main Menu"
+
+[node name="ButtonList" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(628885784) index="0" unique_id=562738714]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="JoinButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="0" unique_id=2145404186]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Join"
+
+[node name="HostButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="1" unique_id=1319983732]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Host"
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="2" unique_id=828762936]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Settings"
+
+[node name="QuitButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="3" unique_id=972932230]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Quit"
+
+[node name="BackButton" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/FooterContainer" parent_id_path=PackedInt32Array(201438315) index="0" unique_id=185136465]
+visible = false
