@@ -4,19 +4,19 @@ using sMPGWM.scripts.logging;
 
 namespace sMPGWM.autoload;
 
-public static class GameLogger
+public partial class GameLogger : AbstractAutoload<GameLogger>
 {
-    public static LogLevel MinimumLevel { get; set; } = LogLevel.Info;
-    public static bool WriteToFile { get; set; } = false;
-    public static string LogFilePath { get; set; } = "user://game.log";
+    [Export] public LogLevel MinimumLevel { get; set; } = LogLevel.Info;
+    [Export] public bool WriteToFile { get; set; }
+    [Export] public string LogFilePath { get; set; } = "user://game.log";
 
-    public static void Trace(string message) => Log(LogLevel.Trace, message);
-    public static void Debug(string message) => Log(LogLevel.Debug, message);
-    public static void Info(string message) => Log(LogLevel.Info, message);
-    public static void Warning(string message) => Log(LogLevel.Warning, message);
-    public static void Error(string message) => Log(LogLevel.Error, message);
+    public static void Trace(string message) => Instance.Log(LogLevel.Trace, message);
+    public static void Debug(string message) => Instance.Log(LogLevel.Debug, message);
+    public static void Info(string message) => Instance.Log(LogLevel.Info, message);
+    public static void Warning(string message) => Instance.Log(LogLevel.Warning, message);
+    public static void Error(string message) => Instance.Log(LogLevel.Error, message);
 
-    private static void Log(LogLevel level, string message)
+    private void Log(LogLevel level, string message)
     {
         if (level < MinimumLevel)
             return;
@@ -26,6 +26,7 @@ public static class GameLogger
         if (WriteToFile)
         {
             using var file = FileAccess.Open(LogFilePath, FileAccess.ModeFlags.WriteRead);
+
             if (file == null)
                 throw new InvalidOperationException($"Could not open log file: {LogFilePath}");
 
@@ -42,6 +43,9 @@ public static class GameLogger
             case LogLevel.Error:
                 GD.PushError(line);
                 break;
+            case LogLevel.Trace:
+            case LogLevel.Debug:
+            case LogLevel.Info:
             default:
                 GD.Print(line);
                 break;
