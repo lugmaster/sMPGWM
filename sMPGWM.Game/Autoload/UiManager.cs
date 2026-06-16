@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Godot;
 
-namespace sMPGWM.autoload;
+namespace sMPGWM.Autoload;
 
 public partial class UiManager : AbstractAutoload<UiManager>
 {

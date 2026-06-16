@@ -1,4 +1,4 @@
-namespace sMPGWM.autoload;
+namespace sMPGWM.Autoload;
 
 public interface IAutoloaded
 {

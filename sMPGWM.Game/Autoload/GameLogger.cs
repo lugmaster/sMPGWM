@@ -1,8 +1,8 @@
 ﻿using System;
 using Godot;
-using sMPGWM.scripts.logging;
+using sMPGWM.Scripts.Logging;
 
-namespace sMPGWM.autoload;
+namespace sMPGWM.Autoload;
 
 public partial class GameLogger : AbstractAutoload<GameLogger>
 {

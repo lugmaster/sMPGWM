@@ -1,4 +1,4 @@
-﻿namespace sMPGWM.scripts.logging;
+namespace sMPGWM.Scripts.Logging;
 
 public enum LogLevel
 {

@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace sMPGWM.autoload;
+namespace sMPGWM.Autoload;
 
 public abstract partial class AbstractAutoload<TSelf> : Node, IAutoloaded
     where TSelf : AbstractAutoload<TSelf>

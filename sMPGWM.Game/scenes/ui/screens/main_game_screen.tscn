@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://6ov4wdhkeic1"]
 
-[ext_resource type="Script" uid="uid://bn3f7fn5s8i4b" path="res://scripts/ui/MainGameScreen.cs" id="1_xkjvp"]
+[ext_resource type="Script" uid="uid://bn3f7fn5s8i4b" path="res://Scripts/Ui/MainGameScreen.cs" id="1_xkjvp"]
 [ext_resource type="Texture2D" uid="uid://bchm6ax577ln0" path="res://assets/ui/backgrounds/main_menu_background.png" id="2_rqg7j"]
 
 [node name="MainGameScreen" type="Control" unique_id=1947288930]

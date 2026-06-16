@@ -1,7 +1,7 @@
 ﻿using Godot;
-using sMPGWM.autoload;
+using sMPGWM.Autoload;
 
-namespace sMPGWM.scripts.ui;
+namespace sMPGWM.Scripts.Ui;
 
 public partial class MainGameScreen : Control
 {
