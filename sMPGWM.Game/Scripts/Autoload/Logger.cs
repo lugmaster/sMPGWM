@@ -5,7 +5,7 @@ using sMPGWM.Scripts.Enums;
 
 namespace sMPGWM.Scripts.Autoload;
 
-public partial class GameLogger : AbstractAutoload<GameLogger>
+public partial class Logger : AbstractAutoload<Logger>
 {
     [Export] public LogLevel MinimumLevel { get; set; } = LogLevel.Info;
     [Export] public bool WriteToFile { get; set; }

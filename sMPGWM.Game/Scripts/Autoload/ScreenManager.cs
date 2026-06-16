@@ -21,7 +21,7 @@ public partial class ScreenManager : AbstractAutoload<ScreenManager>
         _currentScreen = screen;
         _currentScreen.Visible = true;
 
-        GameLogger.Info($"Registered initial screen: {screen.Name}");
+        Logger.Info($"Registered initial screen: {screen.Name}");
     }
 
     public void NavigateTo(Control nextScreen)
@@ -45,7 +45,7 @@ public partial class ScreenManager : AbstractAutoload<ScreenManager>
         nextScreen.Visible = true;
         _currentScreen = nextScreen;
 
-        GameLogger.Info($"Navigated to screen: {nextScreen.Name}");
+        Logger.Info($"Navigated to screen: {nextScreen.Name}");
     }
 
     public void GoBack()
@@ -55,7 +55,7 @@ public partial class ScreenManager : AbstractAutoload<ScreenManager>
 
         if (_screenHistory.Count == 0)
         {
-            GameLogger.Warning("Cannot go back. Screen history is empty.");
+            Logger.Warning("Cannot go back. Screen history is empty.");
             return;
         }
 
@@ -67,7 +67,7 @@ public partial class ScreenManager : AbstractAutoload<ScreenManager>
 
         oldScreen.QueueFree();
 
-        GameLogger.Info($"Returned to screen: {_currentScreen.Name}");
+        Logger.Info($"Returned to screen: {_currentScreen.Name}");
     }
 
     public bool CanGoBack()

@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 [autoload]
 
 GameLogger="*uid://csb4p2s82jo0f"
+SteamworksHelper="*res://Scripts/Autoload/SteamworksHelper.cs"
 ScreenManager="*uid://bq7viwqfm6306"
 UiManager="*uid://cktdqbevfghsf"
 

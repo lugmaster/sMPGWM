@@ -1,5 +1,6 @@
 ﻿using Godot;
 using sMPGWM.Scripts.Autoload;
+using Logger = sMPGWM.Scripts.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Ui.MainMenu.Base;
 
@@ -20,7 +21,7 @@ public abstract partial class MainMenuSubMenuScreen : Control
 
         OnReady();
 
-        GameLogger.Info($"{GetType().Name} loaded.");
+        Logger.Info($"{GetType().Name} loaded.");
     }
 
     protected virtual void OnReady()

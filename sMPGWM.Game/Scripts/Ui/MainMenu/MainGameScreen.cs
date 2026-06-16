@@ -1,7 +1,7 @@
 ﻿using Godot;
 using sMPGWM.Scripts.Autoload;
 using sMPGWM.Scripts.Ui.MainMenu.Base;
-using GameLogger = sMPGWM.Scripts.Autoload.GameLogger;
+using Logger = sMPGWM.Scripts.Autoload.Logger;
 using UiManager = sMPGWM.Scripts.Autoload.UiManager;
 
 namespace sMPGWM.Scripts.Ui.MainMenu;
@@ -28,6 +28,6 @@ public partial class MainGameScreen : MainMenuSubMenuScreen
         _settingsButton.Pressed += UiManager.Instance.ShowSettingsScreen;
         _quitButton.Pressed += UiManager.Instance.QuitGame;
 
-        GameLogger.Info("MainGameScreen loaded.");
+        Logger.Info("MainGameScreen loaded.");
     }
 }
