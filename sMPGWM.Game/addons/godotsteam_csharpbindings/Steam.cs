@@ -10,19 +10,15 @@ public static partial class Steam
 
     public static GodotObject GetInstance()
     {
-        if (Instance != null) return Instance;
-        
-        if (!ClassDB.ClassExists("Steam"))
-        {
-            throw new Exception("GodotSteam is not installed.");
-        }
+        if (Instance != null && GodotObject.IsInstanceValid(Instance))
+            return Instance;
 
-        if (!ClassDB.CanInstantiate("Steam"))
-        {
-            throw new Exception("GodotSteam cannot be instantiated.");
-        }
+        var singleton = Engine.GetSingleton("Steam");
 
-        Instance = ClassDB.Instantiate("Steam").AsGodotObject();
+        if (singleton == null)
+            throw new Exception("GodotSteam singleton is not available.");
+
+        Instance = singleton;
         return Instance;
     }
 

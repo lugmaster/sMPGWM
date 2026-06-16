@@ -27,6 +27,13 @@ public partial class UiManager : AbstractAutoload<UiManager>
     public void QuitGame()
     {
         Logger.Info("Quit game requested.");
+        SteamworksHelper.Instance.ShutdownSteam();
+        Logger.Info("After Steam Shutdown");
+        CallDeferred(nameof(QuitGameInternal));
+    }
+    
+    private void QuitGameInternal()
+    {
         GetTree().Quit();
     }
 }
