@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Autoload.Base;
+using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
@@ -46,6 +47,14 @@ public partial class ScreenManager : AbstractAutoload<ScreenManager>
         _currentScreen = nextScreen;
 
         Logger.Info($"Navigated to screen: {nextScreen.Name}");
+    }
+
+    public void LaunchMainGame()
+    {
+        Logger.Info("Launching main game screen.");
+        GetTree().ChangeSceneToPacked(SceneProvider.GetMainGameScene());
+        _currentScreen.QueueFree();
+        _screenHistory.Clear();
     }
 
     public void GoBack()

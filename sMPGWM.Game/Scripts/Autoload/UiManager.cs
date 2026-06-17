@@ -1,11 +1,15 @@
-﻿using Godot;
-using sMPGWM.Scripts.Autoload.Base;
+﻿using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
 public partial class UiManager : AbstractAutoload<UiManager>
 {
+    public void StartJoinedGame()
+    {
+        Logger.Info("Starting joined game.");
+        ScreenManager.Instance.LaunchMainGame();
+    }
     public void ShowJoinScreen()
     {
         Logger.Info("ShowJoinScreen requested.");

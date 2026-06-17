@@ -7,21 +7,24 @@ public static class SceneProvider
 {
     private const string MainMenuFolder = "res://scenes/ui/screens/main_menu/";
 
-    private static readonly PackedScene MainGameScreenScene =
-        LoadScene(MainMenuFolder + "main_game_screen.tscn");
+    private static readonly PackedScene MainMenuScreenScene =
+        LoadScene(MainMenuFolder + "main_menu_screen.tscn");
 
     private static readonly PackedScene SettingsScreenScene =
         LoadScene(MainMenuFolder + "settings_screen.tscn");
 
     private static readonly PackedScene JoinScreenScene =
         LoadScene(MainMenuFolder + "join_screen.tscn");
-    
+
     private static readonly PackedScene HostScreenScene =
         LoadScene(MainMenuFolder + "host_screen.tscn");
 
-    public static Control CreateMainGameScreen()
+    private static readonly PackedScene MainGameScene =
+        LoadScene("res://scenes/game/main_game.tscn");
+
+    public static Control CreateMainMenuScreen()
     {
-        return Instantiate<Control>(MainGameScreenScene);
+        return Instantiate<Control>(MainMenuScreenScene);
     }
 
     public static Control CreateSettingsScreen()
@@ -33,11 +36,13 @@ public static class SceneProvider
     {
         return Instantiate<Control>(JoinScreenScene);
     }
-    
+
     public static Control CreateHostScreen()
     {
         return Instantiate<Control>(HostScreenScene);
     }
+
+    public static PackedScene GetMainGameScene() => MainGameScene;
 
     private static TNode Instantiate<TNode>(PackedScene scene)
         where TNode : Node

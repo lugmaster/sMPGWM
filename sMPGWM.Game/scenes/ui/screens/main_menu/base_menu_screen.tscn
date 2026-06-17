@@ -56,9 +56,8 @@ theme_override_font_sizes/font_size = 42
 text = "<Titel>"
 horizontal_alignment = 1
 
-[node name="ContentContainer" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent" unique_id=628885784]
+[node name="ContentContainer" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent" unique_id=2135748070]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 220)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
