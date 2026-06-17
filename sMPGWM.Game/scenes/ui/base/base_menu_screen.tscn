@@ -1,26 +1,12 @@
 [gd_scene format=3 uid="uid://8lamqivv07af"]
 
-[ext_resource type="Texture2D" uid="uid://bchm6ax577ln0" path="res://assets/ui/backgrounds/main_menu_background.png" id="2_8m7of"]
-
-[node name="MenuScreen" type="Control" unique_id=1431156458]
+[node name="BaseMenuScreen" type="Control" unique_id=1431156458]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="Background" type="TextureRect" parent="." unique_id=56862099]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("2_8m7of")
-expand_mode = 1
-stretch_mode = 6
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=446755785]
 layout_mode = 1
@@ -65,9 +51,3 @@ size_flags_vertical = 3
 [node name="FooterContainer" type="HBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent" unique_id=201438315]
 layout_mode = 2
 alignment = 1
-
-[node name="BackButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/FooterContainer" unique_id=185136465]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(320, 64)
-layout_mode = 2
-text = "Back"

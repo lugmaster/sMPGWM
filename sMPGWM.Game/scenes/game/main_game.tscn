@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cthi5krpfsovj"]
 
 [ext_resource type="PackedScene" uid="uid://cg8f4fn37ikfw" path="res://scenes/game/world_scene.tscn" id="1_p17hc"]
+[ext_resource type="PackedScene" uid="uid://bobi0ji036bw4" path="res://scenes/game/in_game_overlay.tscn" id="2_qgbr3"]
 
 [node name="MainGame" type="Control" unique_id=464829365]
 layout_mode = 3
@@ -18,4 +19,4 @@ render_target_update_mode = 4
 
 [node name="WorldScene" parent="WorldViewPortContainer/WorldViewport" unique_id=721027220 instance=ExtResource("1_p17hc")]
 
-[node name="GameOverlay" type="CanvasLayer" parent="." unique_id=639827300]
+[node name="InGameOverlay" parent="." unique_id=766120166 instance=ExtResource("2_qgbr3")]

@@ -4,7 +4,7 @@ using sMPGWM.Scripts.Ui.MainMenu.Base;
 
 namespace sMPGWM.Scripts.Ui.MainMenu;
 
-public partial class JoinScreen : MainMenuSubMenuScreen
+public partial class JoinScreen : StartMenuScreen
 {
     private Button _startGameButton = null!;
     protected override string ScreenTitle => "Join Game";

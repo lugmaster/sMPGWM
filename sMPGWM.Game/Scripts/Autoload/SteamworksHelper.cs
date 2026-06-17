@@ -5,7 +5,7 @@ using sMPGWM.Scripts.Autoload.Base;
 
 namespace sMPGWM.Scripts.Autoload;
 
-public partial class SteamworksHelper : AbstractAutoload<SteamworksHelper>
+public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 {
     private const uint SteamAppId = 480;
     private bool _runSteamEx = true;

@@ -4,7 +4,7 @@ using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
-public partial class GameHandler : AbstractAutoload<GameHandler>
+public partial class GameHandler : AbstractSingleton<GameHandler>
 {
     
     public static void QuitToMainMenu(string reason = null, int delayMs = 35)
@@ -24,7 +24,7 @@ public partial class GameHandler : AbstractAutoload<GameHandler>
         var combinedReason = showAsError
             ? $"Error: {reason}\nClick to return to Main Menu."
             : $"Success: {reason}\nClick to return to Main Menu.";
-        // StartMenuManager.Instance.ShowNotificationBlocking(
+        // StartingScreenManager.Instance.ShowNotificationBlocking(
         //     combinedReason,
         //     () => Instance.CallDeferred(nameof(QuitToMainMenuInternal))
         // );
@@ -62,12 +62,12 @@ public partial class GameHandler : AbstractAutoload<GameHandler>
     private static void QuitToMainMenuInternal()
     {
         Logger.Info("Quitting game, returning to main menu.");
-        ScreenManager.Instance.TransitToNewScene(SceneProvider.GetStartingScreen());
+        StartingScreenManager.Instance.LoadStartingScreen();
     }
 
     public static void StartGame()
     {
         Logger.Info("Starting up game.");
-        ScreenManager.Instance.TransitToNewScene(SceneProvider.GetMainGameScene());
+        StartingScreenManager.Instance.InitializeGame();
     }
 }

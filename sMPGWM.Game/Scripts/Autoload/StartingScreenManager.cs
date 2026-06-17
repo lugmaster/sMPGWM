@@ -1,12 +1,41 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Autoload.Base;
+using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
-public partial class ScreenManager : AbstractAutoload<ScreenManager>
+public partial class StartingScreenManager : AbstractSingleton<StartingScreenManager>
 {
+    public void ShowJoinScreen()
+    {
+        Logger.Info("ShowJoinScreen requested.");
+        NavigateTo(StartingScreenSceneProvider.CreateJoinScreen());
+    }
+    
+    public void ShowHostScreen()
+    {
+        Logger.Info("ShowHostScreen requested.");
+        NavigateTo(StartingScreenSceneProvider.CreateHostScreen());
+    }
+
+    public void ShowSettingsScreen()
+    {
+        Logger.Info("ShowSettingsScreen requested.");
+        NavigateTo(StartingScreenSceneProvider.CreateSettingsScreen());
+    }
+
+    public void InitializeGame()
+    {
+        TransitToNewScene(BaseSceneProvider.GetMainGameScene());
+    }
+
+    public void LoadStartingScreen()
+    {
+        TransitToNewScene(BaseSceneProvider.GetStartingScreen());
+    }
+    
     private readonly Stack<Control> _screenHistory = new();
 
     private Control _currentScreen = null!;
@@ -48,7 +77,8 @@ public partial class ScreenManager : AbstractAutoload<ScreenManager>
         Logger.Info($"Navigated to screen: {nextScreen.Name}");
     }
 
-    public void TransitToNewScene(PackedScene newScreen)
+    //Loads entirely new Scene and cleans up old history. Used for starting game and coming back to main menu
+    private void TransitToNewScene(PackedScene newScreen)
     {
         if (newScreen == null)
         {

@@ -1,12 +1,10 @@
-﻿using Godot;
-using sMPGWM.Scripts.Autoload;
+using Godot;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Ui.MainMenu.Base;
 
-public abstract partial class MainMenuSubMenuScreen : Control
+public abstract partial class BaseMenuScreen : Control
 {
-    private Button _backButton = null!;
     private Label _titleLabel = null!;
 
     protected abstract string ScreenTitle { get; }
@@ -14,10 +12,8 @@ public abstract partial class MainMenuSubMenuScreen : Control
     public sealed override void _Ready()
     {
         _titleLabel = GetNode<Label>("%TitleLabel");
-        _backButton = GetNode<Button>("%BackButton");
 
         _titleLabel.Text = ScreenTitle;
-        _backButton.Pressed += ScreenManager.Instance.GoBack;
 
         OnReady();
 
@@ -26,5 +22,6 @@ public abstract partial class MainMenuSubMenuScreen : Control
 
     protected virtual void OnReady()
     {
+        
     }
 }

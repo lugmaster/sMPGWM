@@ -3,8 +3,8 @@ using Godot;
 
 namespace sMPGWM.Scripts.Autoload.Base;
 
-public abstract partial class AbstractAutoload<TSelf> : Node, IAutoloaded
-    where TSelf : AbstractAutoload<TSelf>
+public abstract partial class AbstractSingleton<TSelf> : Node
+    where TSelf : AbstractSingleton<TSelf>
 {
     public static TSelf Instance { get; private set; } = null!;
 

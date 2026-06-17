@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://h3684mqvtvyl"]
+
+[ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/base_in_game_menu.tscn" id="1_bhm63"]
+[ext_resource type="Script" uid="uid://cairqx8tgn3rn" path="res://Scripts/Ui/InGame/MapScreen.cs" id="2_1ch3m"]
+
+[node name="map_menu" unique_id=1431156458 instance=ExtResource("1_bhm63")]
+
+[node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
+text = "Navigation Map"
+script = ExtResource("2_1ch3m")
