@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cg8f4fn37ikfw"]
+
+[ext_resource type="Texture2D" uid="uid://6wgwqyl11a1h" path="res://assets/ui/mocks/ship_fighter_reference.png" id="1_cgyt3"]
+
+[node name="WorldScene" type="Node2D" unique_id=721027220]
+
+[node name="Origin" type="Node2D" parent="." unique_id=987606465]
+position = Vector2(600, 300)
+
+[node name="Sprite2D" type="Sprite2D" parent="Origin" unique_id=1726504235]
+texture = ExtResource("1_cgyt3")

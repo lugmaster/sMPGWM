@@ -19,6 +19,6 @@ public partial class JoinScreen : MainMenuSubMenuScreen
 
     private void OnJoinButtonPressed()
     {
-        UiManager.Instance.StartJoinedGame();
+        GameHandler.StartGame();
     }
 }

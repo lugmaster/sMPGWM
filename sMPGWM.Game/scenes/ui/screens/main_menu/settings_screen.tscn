@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dnb65q73xlohl"]
 
-[ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/screens/main_menu/base_menu_screen.tscn" id="1_y6ctu"]
+[ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/base/base_menu_screen.tscn" id="1_y6ctu"]
 [ext_resource type="Script" uid="uid://bkp7ciwlk35m7" path="res://Scripts/Ui/MainMenu/SettingsScreen.cs" id="2_y6ctu"]
 
 [node name="SettingsScreen" unique_id=1431156458 instance=ExtResource("1_y6ctu")]

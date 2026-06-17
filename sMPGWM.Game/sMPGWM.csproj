@@ -16,6 +16,8 @@
     <Folder Include="scenes\ui\screens\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="assets\ui\mocks\ship_fighter_reference.png" />
+    <Content Include="assets\ui\mocks\ship_fighter_reference.png.import" />
     <Content Include="credits" />
   </ItemGroup>
 </Project>

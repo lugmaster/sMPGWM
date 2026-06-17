@@ -3,13 +3,8 @@ using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
-public partial class UiManager : AbstractAutoload<UiManager>
+public partial class StartMenuManager : AbstractAutoload<StartMenuManager>
 {
-    public void StartJoinedGame()
-    {
-        Logger.Info("Starting joined game.");
-        ScreenManager.Instance.LaunchMainGame();
-    }
     public void ShowJoinScreen()
     {
         Logger.Info("ShowJoinScreen requested.");
@@ -26,18 +21,5 @@ public partial class UiManager : AbstractAutoload<UiManager>
     {
         Logger.Info("ShowSettingsScreen requested.");
         ScreenManager.Instance.NavigateTo(SceneProvider.CreateSettingsScreen());
-    }
-
-    public void QuitGame()
-    {
-        Logger.Info("Quit game requested.");
-        SteamworksHelper.Instance.ShutdownSteam();
-        Logger.Info("After Steam Shutdown");
-        CallDeferred(nameof(QuitGameInternal));
-    }
-    
-    private void QuitGameInternal()
-    {
-        GetTree().Quit();
     }
 }

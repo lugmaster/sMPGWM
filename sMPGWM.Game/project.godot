@@ -18,8 +18,9 @@ config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 
 GameLogger="*uid://csb4p2s82jo0f"
 SteamworksHelper="*res://Scripts/Autoload/SteamworksHelper.cs"
+GameHandler="*uid://dnk44tr6vs3ar"
 ScreenManager="*uid://bq7viwqfm6306"
-UiManager="*uid://cktdqbevfghsf"
+StartMenuManager="*uid://cktdqbevfghsf"
 
 [display]
 

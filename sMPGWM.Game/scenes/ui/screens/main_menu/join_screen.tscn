@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://mnu6t8uobbrn"]
 
-[ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/screens/main_menu/base_menu_screen.tscn" id="1_awcdu"]
+[ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/base/base_menu_screen.tscn" id="1_awcdu"]
 [ext_resource type="Script" uid="uid://c6gs8fkf6y86m" path="res://Scripts/Ui/MainMenu/JoinScreen.cs" id="2_11u1t"]
 
 [node name="JoinScreen" unique_id=1431156458 instance=ExtResource("1_awcdu")]

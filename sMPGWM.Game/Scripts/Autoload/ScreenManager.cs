@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Autoload.Base;
-using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
@@ -49,10 +48,14 @@ public partial class ScreenManager : AbstractAutoload<ScreenManager>
         Logger.Info($"Navigated to screen: {nextScreen.Name}");
     }
 
-    public void LaunchMainGame()
+    public void TransitToNewScene(PackedScene newScreen)
     {
-        Logger.Info("Launching main game screen.");
-        GetTree().ChangeSceneToPacked(SceneProvider.GetMainGameScene());
+        if (newScreen == null)
+        {
+            throw new InvalidOperationException($"Error when transiting to {nameof(newScreen)} - cannot be null.");
+        }
+        Logger.Info("Transiting to new screen.");
+        GetTree().ChangeSceneToPacked(newScreen);
         _currentScreen.QueueFree();
         _screenHistory.Clear();
     }
@@ -79,7 +82,7 @@ public partial class ScreenManager : AbstractAutoload<ScreenManager>
         Logger.Info($"Returned to screen: {_currentScreen.Name}");
     }
 
-    public bool CanGoBack()
+    private bool CanGoBack()
     {
         return _screenHistory.Count > 0;
     }

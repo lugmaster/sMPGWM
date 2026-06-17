@@ -1,12 +1,12 @@
 ﻿using Godot;
 using sMPGWM.Scripts.Autoload;
+using sMPGWM.Scripts.Autoload;
 using sMPGWM.Scripts.Ui.MainMenu.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
-using UiManager = sMPGWM.Scripts.Autoload.UiManager;
 
-namespace sMPGWM.Scripts.Ui.MainMenu;
+namespace sMPGWM.Scripts.Ui;
 
-public partial class MainGameScreen : MainMenuSubMenuScreen
+public partial class StartingScreen : MainMenuSubMenuScreen
 {
     protected override string ScreenTitle => "Settings";
     private Button _joinButton = null!;
@@ -23,11 +23,11 @@ public partial class MainGameScreen : MainMenuSubMenuScreen
         _settingsButton = GetNode<Button>("%SettingsButton");
         _quitButton = GetNode<Button>("%QuitButton");
 
-        _joinButton.Pressed += UiManager.Instance.ShowJoinScreen;
-        _hostButton.Pressed += UiManager.Instance.ShowHostScreen;
-        _settingsButton.Pressed += UiManager.Instance.ShowSettingsScreen;
-        _quitButton.Pressed += UiManager.Instance.QuitGame;
+        _joinButton.Pressed += StartMenuManager.Instance.ShowJoinScreen;
+        _hostButton.Pressed += StartMenuManager.Instance.ShowHostScreen;
+        _settingsButton.Pressed += StartMenuManager.Instance.ShowSettingsScreen;
+        _quitButton.Pressed += () => GameHandler.Instance.QuitGame("Pressed QuitGameButton");
 
-        Logger.Info("MainGameScreen loaded.");
+        Logger.Info("StartingScreen loaded.");
     }
 }
