@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://csfidmr8pe45n"]
+
+[ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/base/base_menu.tscn" id="1_c8tas"]
+[ext_resource type="Texture2D" uid="uid://bchm6ax577ln0" path="res://assets/ui/backgrounds/main_menu_background.png" id="2_5pqit"]
+
+[node name="BaseStartMenu" unique_id=1431156458 instance=ExtResource("1_c8tas")]
+
+[node name="Background" type="TextureRect" parent="." index="0" unique_id=1548305126]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_5pqit")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="BackButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/FooterContainer" parent_id_path=PackedInt32Array(201438315) index="0" unique_id=1022482893]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 64)
+layout_mode = 2
+text = "Back"

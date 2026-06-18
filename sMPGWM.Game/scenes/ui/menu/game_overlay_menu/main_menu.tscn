@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://bqvxk4ld6wnyv"]
+
+[ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_ihc5a"]
+[ext_resource type="Script" uid="uid://tn0dlcu7lf67" path="res://Scripts/Ui/Game/GameOverlayMenus/MainMenu.cs" id="2_ihc5a"]
+
+[node name="MainMenu" unique_id=1431156458 instance=ExtResource("1_ihc5a")]
+script = ExtResource("2_ihc5a")
+
+[node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
+text = "Main Menu"
