@@ -2,9 +2,9 @@
 using System;
 using Godot;
 
-namespace sMPGWM.Scripts.Ui.MainMenu.Base;
+namespace sMPGWM.Scripts.Ui.Base;
 
-public partial class InGameMenuScreen : BaseMenuScreen
+public partial class GameOverlayMenu : BaseMenu
 {
     protected override string ScreenTitle => "InGameMenuScreen Placeholder";
     

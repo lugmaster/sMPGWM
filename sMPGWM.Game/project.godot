@@ -16,10 +16,10 @@ config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 
 [autoload]
 
-GameLogger="*uid://csb4p2s82jo0f"
-SteamworksHelper="*res://Scripts/Autoload/SteamworksHelper.cs"
+GlobalLogger="*uid://csb4p2s82jo0f"
+SteamworksHelper="*uid://cwgdwq3g3khns"
 GameHandler="*uid://dnk44tr6vs3ar"
-StartingScreenManager="*uid://cktdqbevfghsf"
+StartMenuManager="*uid://cktdqbevfghsf"
 InGameScreenManager="*uid://1jbwmikived8"
 
 [display]

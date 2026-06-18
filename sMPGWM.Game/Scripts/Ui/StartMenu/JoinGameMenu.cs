@@ -1,14 +1,15 @@
 ﻿using Godot;
 using sMPGWM.Scripts.Autoload;
-using sMPGWM.Scripts.Ui.MainMenu.Base;
+using sMPGWM.Scripts.Ui.Base;
 
-namespace sMPGWM.Scripts.Ui.MainMenu;
 
-public partial class JoinScreen : StartMenuScreen
+namespace sMPGWM.Scripts.Ui.StartMenu;
+
+public partial class JoinGameMenu : BaseStartMenu
 {
     private Button _startGameButton = null!;
     protected override string ScreenTitle => "Join Game";
-    
+
     protected override void OnReady()
     {
         base.OnReady();

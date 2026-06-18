@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cg8f4fn37ikfw"]
 
-[ext_resource type="Texture2D" uid="uid://6wgwqyl11a1h" path="res://assets/ui/mocks/ship_fighter_reference.png" id="1_cgyt3"]
+[ext_resource type="Texture2D" uid="uid://6wgwqyl11a1h" path="res://assets/mocks/ship_fighter_reference.png" id="1_cgyt3"]
 
 [node name="WorldScene" type="Node2D" unique_id=721027220]
 

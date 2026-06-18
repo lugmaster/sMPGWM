@@ -1,13 +1,12 @@
 using System.Threading.Tasks;
 using sMPGWM.Scripts.Autoload.Base;
-using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
 public partial class GameHandler : AbstractSingleton<GameHandler>
 {
     
-    public static void QuitToMainMenu(string reason = null, int delayMs = 35)
+    public static void QuitToStartMenu(string reason = null, int delayMs = 35)
     {
         if (!string.IsNullOrEmpty(reason))
         {
@@ -17,16 +16,16 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
         Instance.CallDeferred(nameof(Instance.StartQuitAsync), delayMs);
     }
 
-    public static void QuitToMainMenuBlocking(string reason, bool showAsError = true)
+    public static void QuitToStartMenuBlocking(string reason, bool showAsError = true)
     {
         Logger.Info($"Graceful quit triggered: {reason}");
 
         var combinedReason = showAsError
             ? $"Error: {reason}\nClick to return to Main Menu."
             : $"Success: {reason}\nClick to return to Main Menu.";
-        // StartingScreenManager.Instance.ShowNotificationBlocking(
+        // StartMenuManager.Instance.ShowNotificationBlocking(
         //     combinedReason,
-        //     () => Instance.CallDeferred(nameof(QuitToMainMenuInternal))
+        //     () => Instance.CallDeferred(nameof(QuitToStartMenuInternal))
         // );
         if (showAsError)
         {
@@ -37,7 +36,7 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
             Logger.Info(combinedReason);
         }
 
-        Instance.CallDeferred(nameof(QuitToMainMenuInternal));
+        Instance.CallDeferred(nameof(QuitToStartMenuInternal));
     }
 
     public void QuitGame(string reason)
@@ -56,18 +55,18 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
     private async void StartQuitAsync(int delayMs)
     {
         await Task.Delay(delayMs);
-        CallDeferred(nameof(QuitToMainMenuInternal));
+        CallDeferred(nameof(QuitToStartMenuInternal));
     }
 
-    private static void QuitToMainMenuInternal()
+    private static void QuitToStartMenuInternal()
     {
         Logger.Info("Quitting game, returning to main menu.");
-        StartingScreenManager.Instance.LoadStartingScreen();
+        StartMenuManager.Instance.LoadStartMenu();
     }
 
     public static void StartGame()
     {
         Logger.Info("Starting up game.");
-        StartingScreenManager.Instance.InitializeGame();
+        StartMenuManager.Instance.InitializeGame();
     }
 }

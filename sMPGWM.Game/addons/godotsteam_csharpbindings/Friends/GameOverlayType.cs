@@ -25,7 +25,7 @@ public static class GameOverlayTypeExtensions
             GameOverlayType.Friends => "Friends",
             GameOverlayType.Community => "Community",
             GameOverlayType.Players => "Players",
-            GameOverlayType.Settings => "Settings",
+            GameOverlayType.Settings => "SettingsMenu",
             GameOverlayType.OfficalGameGroup => "OfficalGameGroup",
             GameOverlayType.Stats => "Stats",
             GameOverlayType.Achievements => "Achievements",

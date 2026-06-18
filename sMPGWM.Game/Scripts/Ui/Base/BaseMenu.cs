@@ -1,9 +1,9 @@
 using Godot;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
-namespace sMPGWM.Scripts.Ui.MainMenu.Base;
+namespace sMPGWM.Scripts.Ui.Base;
 
-public abstract partial class BaseMenuScreen : Control
+public abstract partial class BaseMenu : Control
 {
     private Label _titleLabel = null!;
 

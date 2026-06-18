@@ -1,11 +1,10 @@
-using System;
 using Godot;
 using sMPGWM.Scripts.Autoload;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
-namespace sMPGWM.Scripts.Ui.InGame;
+namespace sMPGWM.Scripts.Ui.Game;
 
-public partial class InGameOverlay : CanvasLayer
+public partial class UiCanvas : CanvasLayer
 {
     // private ProgressBar _healthBar = null!;
     // private TextureRect _radarMock = null!;
@@ -30,9 +29,9 @@ public partial class InGameOverlay : CanvasLayer
         _menuLayer = GetNode<Control>("%MenuLayer");
         _menuHost = GetNode<Control>("%MenuHost");
 
-        InGameScreenManager.Instance.Register(_menuLayer, _menuHost);
+        GameOverlayManager.Instance.Register(_menuLayer, _menuHost);
 
-        Logger.Info("InGameOverlay loaded");
+        Logger.Info("UiCanvas loaded");
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -40,21 +39,21 @@ public partial class InGameOverlay : CanvasLayer
         if (@event.IsActionPressed("open_menu"))
         {
             Logger.Info("Main Menu toggled");
-            InGameScreenManager.Instance.ToggleMainMenu();
+            GameOverlayManager.Instance.ToggleMainMenu();
             GetViewport().SetInputAsHandled();
             return;
         }
 
         if (@event.IsActionPressed("open_inventory"))
         {
-            InGameScreenManager.Instance.ToggleInventory();
+            GameOverlayManager.Instance.ToggleInventoryMenu();
             GetViewport().SetInputAsHandled();
             return;
         }
         
         if (@event.IsActionPressed("open_map"))
         {
-            InGameScreenManager.Instance.ToggleMap();
+            GameOverlayManager.Instance.ToggleMapMenu();
             GetViewport().SetInputAsHandled();
             return;
         }

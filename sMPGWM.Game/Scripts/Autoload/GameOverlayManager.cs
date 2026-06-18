@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Provider;
-using sMPGWM.Scripts.Ui.MainMenu.Base;
+using sMPGWM.Scripts.Ui.Base;
 
 namespace sMPGWM.Scripts.Autoload;
 
-public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager>
+public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
 {
-    private readonly Dictionary<string, InGameMenuScreen> _cachedMenus = new();
+    private readonly Dictionary<string, GameOverlayMenu> _cachedMenus = new();
 
     private Control _menuLayer = null!;
     private Control _menuHost = null!;
-    private InGameMenuScreen? _currentMenu;
+    private GameOverlayMenu? _currentMenu;
     private bool _pausedByCurrentMenu;
 
     public bool IsMenuOpen => _currentMenu != null;
@@ -55,17 +55,17 @@ public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager
 
     public void ToggleMainMenu()
     {
-        ToggleMenu("MainMenu", InGameScreenSceneProvider.CreateMainMenu);
+        ToggleMenu("MainMenu", GameOverlayProvider.CreateMainMenu);
     }
 
-    public void ToggleInventory()
+    public void ToggleInventoryMenu()
     {
-        ToggleMenu("Inventory", InGameScreenSceneProvider.CreateInventoryMenu);
+        ToggleMenu("InventoryMenu", GameOverlayProvider.CreateInventoryMenu);
     }
 
-    public void ToggleMap()
+    public void ToggleMapMenu()
     {
-        ToggleMenu("Map", InGameScreenSceneProvider.CreateMapMenu);
+        ToggleMenu("MapMenu", GameOverlayProvider.CreateMapMenu);
     }
 
     public void CloseCurrentMenu()
@@ -87,7 +87,7 @@ public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager
         Logger.Info("Closed in-game menu.");
     }
 
-    private void ToggleMenu(string key, Func<InGameMenuScreen> createMenu)
+    private void ToggleMenu(string key, Func<GameOverlayMenu> createMenu)
     {
         if (_currentMenu != null && _cachedMenus.TryGetValue(key, out var menu) && _currentMenu == menu)
         {
@@ -98,7 +98,7 @@ public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager
         OpenMenu(key, createMenu);
     }
 
-    private void OpenMenu(string key, Func<InGameMenuScreen> createMenu)
+    private void OpenMenu(string key, Func<GameOverlayMenu> createMenu)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(createMenu);
@@ -126,7 +126,7 @@ public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager
         Logger.Info($"Opened in-game menu: {_currentMenu.Name}");
     }
 
-    private InGameMenuScreen GetOrCreateMenu(string key, Func<InGameMenuScreen> createMenu)
+    private GameOverlayMenu GetOrCreateMenu(string key, Func<GameOverlayMenu> createMenu)
     {
         
         if (_cachedMenus.TryGetValue(key, out var cachedMenu))

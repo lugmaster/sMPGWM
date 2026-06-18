@@ -1,9 +1,9 @@
 ﻿using Godot;
 using sMPGWM.Scripts.Autoload;
 
-namespace sMPGWM.Scripts.Ui.MainMenu.Base;
+namespace sMPGWM.Scripts.Ui.Base;
 
-public abstract partial class StartMenuScreen : BaseMenuScreen
+public abstract partial class BaseStartMenu : BaseMenu
 {
     private Button _backButton = null!;
 
@@ -11,6 +11,6 @@ public abstract partial class StartMenuScreen : BaseMenuScreen
     {
         _backButton = GetNode<Button>("%BackButton");
         _backButton.Text = "Back";
-        _backButton.Pressed += StartingScreenManager.Instance.GoBack;
+        _backButton.Pressed += StartMenuManager.Instance.GoBack;
     }
 }

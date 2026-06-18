@@ -1,6 +1,5 @@
 using System;
 using Godot;
-using sMPGWM.Scripts.Ui.MainMenu.Base;
 
 namespace sMPGWM.Scripts.Provider;
 
@@ -9,12 +8,12 @@ public static class BaseSceneProvider
     private static readonly PackedScene MainGameScene =
         LoadScene("res://scenes/game/main_game.tscn");
 
-    private static readonly PackedScene StartingScreenScene =
-        LoadScene("res://scenes/starting_screen.tscn");
+    private static readonly PackedScene StartMenuScene =
+        LoadScene("res://scenes/ui/menu/start_menu/start_menu.tscn");
 
     public static PackedScene GetMainGameScene() => MainGameScene;
 
-    public static PackedScene GetStartingScreen() => StartingScreenScene;
+    public static PackedScene GetStartMenuScene() => StartMenuScene;
 
     public static TNode Instantiate<TNode>(PackedScene scene)
         where TNode : Node
@@ -33,11 +32,5 @@ public static class BaseSceneProvider
 
         return scene ?? throw new InvalidOperationException(
             $"Could not load scene at path: {path}");
-    }
-
-    public static TControl LoadAndInstantiateControl<TControl>(string path)
-        where TControl : BaseMenuScreen
-    {
-        return Instantiate<TControl>(LoadScene(path));
     }
 }

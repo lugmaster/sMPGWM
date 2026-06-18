@@ -6,24 +6,24 @@ using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
-public partial class StartingScreenManager : AbstractSingleton<StartingScreenManager>
+public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
 {
-    public void ShowJoinScreen()
+    public void ShowJoinGameMenu()
     {
-        Logger.Info("ShowJoinScreen requested.");
-        NavigateTo(StartingScreenSceneProvider.CreateJoinScreen());
+        Logger.Info("ShowJoinGameMenu requested.");
+        NavigateTo(StartMenuProvider.CreateJoinGameMenu());
     }
     
-    public void ShowHostScreen()
+    public void ShowHostGameMenu()
     {
-        Logger.Info("ShowHostScreen requested.");
-        NavigateTo(StartingScreenSceneProvider.CreateHostScreen());
+        Logger.Info("ShowHostGameMenu requested.");
+        NavigateTo(StartMenuProvider.CreateHostGameMenu());
     }
 
-    public void ShowSettingsScreen()
+    public void ShowSettingsMenu()
     {
-        Logger.Info("ShowSettingsScreen requested.");
-        NavigateTo(StartingScreenSceneProvider.CreateSettingsScreen());
+        Logger.Info("ShowSettingsMenu requested.");
+        NavigateTo(StartMenuProvider.CreateSettingsMenu());
     }
 
     public void InitializeGame()
@@ -31,9 +31,9 @@ public partial class StartingScreenManager : AbstractSingleton<StartingScreenMan
         TransitToNewScene(BaseSceneProvider.GetMainGameScene());
     }
 
-    public void LoadStartingScreen()
+    public void LoadStartMenu()
     {
-        TransitToNewScene(BaseSceneProvider.GetStartingScreen());
+        TransitToNewScene(BaseSceneProvider.GetStartMenuScene());
     }
     
     private readonly Stack<Control> _screenHistory = new();
