@@ -4,7 +4,12 @@
 [ext_resource type="Script" uid="uid://cairqx8tgn3rn" path="res://Scripts/Ui/InGame/MapScreen.cs" id="2_1ch3m"]
 
 [node name="map_menu" unique_id=1431156458 instance=ExtResource("1_bhm63")]
+mouse_filter = 0
+script = ExtResource("2_1ch3m")
 
 [node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
 text = "Navigation Map"
-script = ExtResource("2_1ch3m")
+
+[node name="CloseButton" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="1" unique_id=334895891]
+custom_minimum_size = Vector2(0, 0)
+size_flags_horizontal = 1

@@ -5,7 +5,11 @@
 
 [node name="BaseInGameMenu" unique_id=1431156458 instance=ExtResource("1_u3tyy")]
 script = ExtResource("2_u7kbo")
+mouse_filter = 2
 
 [node name="CloseButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="1" unique_id=334895891]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
+size_flags_horizontal = 0
 text = "X"

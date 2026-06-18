@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Provider;
@@ -8,6 +9,8 @@ namespace sMPGWM.Scripts.Autoload;
 
 public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager>
 {
+    private readonly Dictionary<string, InGameMenuScreen> _cachedMenus = new();
+
     private Control _menuLayer = null!;
     private Control _menuHost = null!;
     private InGameMenuScreen? _currentMenu;
@@ -26,8 +29,8 @@ public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager
 
         _menuLayer = menuLayer;
         _menuHost = menuHost;
-
         _menuLayer.Visible = false;
+        _menuHost.Visible = false;
 
         Logger.Info("Registered in-game screen manager nodes.");
     }
@@ -40,27 +43,29 @@ public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager
         if (_menuLayer != menuLayer || _menuHost != menuHost)
             throw new InvalidOperationException("Tried to unregister invalid in-game screen manager nodes.");
 
-        CloseCurrentMenu();
+        DestroyCachedMenus();
 
         _menuLayer = null!;
         _menuHost = null!;
+        _currentMenu = null;
+        _pausedByCurrentMenu = false;
 
         Logger.Info("Unregistered in-game screen manager nodes.");
     }
 
-    public void TogglePauseMenu()
+    public void ToggleMainMenu()
     {
-        ToggleMenu(InGameScreenSceneProvider.CreateMainMenu);
+        ToggleMenu("MainMenu", InGameScreenSceneProvider.CreateMainMenu);
     }
 
     public void ToggleInventory()
     {
-        ToggleMenu(InGameScreenSceneProvider.CreateInventoryMenu);
+        ToggleMenu("Inventory", InGameScreenSceneProvider.CreateInventoryMenu);
     }
 
     public void ToggleMap()
     {
-        ToggleMenu(InGameScreenSceneProvider.CreateMapMenu);
+        ToggleMenu("Map", InGameScreenSceneProvider.CreateMapMenu);
     }
 
     public void CloseCurrentMenu()
@@ -68,49 +73,102 @@ public partial class InGameScreenManager : AbstractSingleton<InGameScreenManager
         if (_currentMenu == null)
             return;
 
-        var oldMenu = _currentMenu;
+        _currentMenu.Visible = false;
         _currentMenu = null;
 
-        oldMenu.QueueFree();
+        _menuLayer.Visible = false;
         _menuHost.Visible = false;
 
-        if (GetTree().Paused)
+        if (_pausedByCurrentMenu)
             GetTree().Paused = false;
+
+        _pausedByCurrentMenu = false;
 
         Logger.Info("Closed in-game menu.");
     }
 
-    private void ToggleMenu(Func<InGameMenuScreen> createMenu)
+    private void ToggleMenu(string key, Func<InGameMenuScreen> createMenu)
     {
-        if (_currentMenu != null)
+        if (_currentMenu != null && _cachedMenus.TryGetValue(key, out var menu) && _currentMenu == menu)
         {
             CloseCurrentMenu();
             return;
         }
 
-        OpenMenu(createMenu());
+        OpenMenu(key, createMenu);
     }
 
-    private void OpenMenu(InGameMenuScreen nextMenu)
+    private void OpenMenu(string key, Func<InGameMenuScreen> createMenu)
     {
-        ArgumentNullException.ThrowIfNull(nextMenu);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(createMenu);
 
-        if (_menuHost == null)
-            throw new InvalidOperationException("No in-game menu host registered.");
+        if (_menuLayer == null || _menuHost == null)
+            throw new InvalidOperationException("In-game screen manager is not registered.");
 
-        CloseCurrentMenu();
+        HideCurrentMenuOnly();
 
-        _menuHost.AddChild(nextMenu);
-        _menuHost.Visible = true;
+        var nextMenu = GetOrCreateMenu(key, createMenu);
 
+        nextMenu.Visible = true;
         _currentMenu = nextMenu;
-        _currentMenu.MenuClosed += CloseCurrentMenu;
+
+        _menuLayer.Visible = true;
+        _menuHost.Visible = true;
 
         _pausedByCurrentMenu = _currentMenu.PauseGame;
 
         if (_pausedByCurrentMenu)
             GetTree().Paused = true;
+        else if (GetTree().Paused)
+            GetTree().Paused = false;
 
         Logger.Info($"Opened in-game menu: {_currentMenu.Name}");
+    }
+
+    private InGameMenuScreen GetOrCreateMenu(string key, Func<InGameMenuScreen> createMenu)
+    {
+        
+        if (_cachedMenus.TryGetValue(key, out var cachedMenu))
+            return cachedMenu;
+
+        var menu = createMenu();
+
+        menu.Visible = false;
+        menu.MenuClosed += CloseCurrentMenu;
+
+        _menuHost.AddChild(menu);
+        _cachedMenus.Add(key, menu);
+
+        Logger.Info($"Created cached in-game menu: {key}");
+
+        return menu;
+    }
+
+    private void HideCurrentMenuOnly()
+    {
+        if (_currentMenu == null)
+            return;
+
+        _currentMenu.Visible = false;
+        _currentMenu = null;
+
+        if (_pausedByCurrentMenu)
+            GetTree().Paused = false;
+
+        _pausedByCurrentMenu = false;
+    }
+
+    private void DestroyCachedMenus()
+    {
+        CloseCurrentMenu();
+
+        foreach (var menu in _cachedMenus.Values)
+        {
+            menu.MenuClosed -= CloseCurrentMenu;
+            menu.QueueFree();
+        }
+
+        _cachedMenus.Clear();
     }
 }

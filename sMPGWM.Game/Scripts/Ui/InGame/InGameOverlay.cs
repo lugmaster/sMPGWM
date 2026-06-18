@@ -39,7 +39,8 @@ public partial class InGameOverlay : CanvasLayer
     {
         if (@event.IsActionPressed("open_menu"))
         {
-            InGameScreenManager.Instance.TogglePauseMenu();
+            Logger.Info("Main Menu toggled");
+            InGameScreenManager.Instance.ToggleMainMenu();
             GetViewport().SetInputAsHandled();
             return;
         }
@@ -51,7 +52,7 @@ public partial class InGameOverlay : CanvasLayer
             return;
         }
         
-        if (@event.IsActionPressed("ui_open_map"))
+        if (@event.IsActionPressed("open_map"))
         {
             InGameScreenManager.Instance.ToggleMap();
             GetViewport().SetInputAsHandled();

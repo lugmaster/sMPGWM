@@ -7,6 +7,8 @@
 layout_mode = 3
 anchors_preset = 0
 
+[node name="InGameOverlay" parent="." unique_id=766120166 instance=ExtResource("2_qgbr3")]
+
 [node name="WorldViewPortContainer" type="SubViewportContainer" parent="." unique_id=622524254]
 layout_mode = 0
 
@@ -18,5 +20,3 @@ size = Vector2i(1280, 720)
 render_target_update_mode = 4
 
 [node name="WorldScene" parent="WorldViewPortContainer/WorldViewport" unique_id=721027220 instance=ExtResource("1_p17hc")]
-
-[node name="InGameOverlay" parent="." unique_id=766120166 instance=ExtResource("2_qgbr3")]
