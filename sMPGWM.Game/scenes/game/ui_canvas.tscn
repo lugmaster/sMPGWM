@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bobi0ji036bw4"]
 
-[ext_resource type="Texture2D" uid="uid://cuuseaxm0i18m" path="res://assets/mocks/radar_mock.png" id="1_g7dwf"]
 [ext_resource type="Script" uid="uid://dkwp55w3o0stj" path="res://Scripts/Ui/Game/UiCanvas.cs" id="1_w7u23"]
+[ext_resource type="PackedScene" uid="uid://cklk7mqwxvqkw" path="res://scenes/ui/player_hud/player_hud.tscn" id="2_60q4y"]
 
 [node name="UiCanvas" type="CanvasLayer" unique_id=766120166]
 script = ExtResource("1_w7u23")
@@ -33,19 +33,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Hud" type="Control" parent="Root" unique_id=140263258]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="Hudlayer" type="Control" parent="Root" unique_id=140263258]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
-[node name="ProgressBar" type="ProgressBar" parent="Root/Hud" unique_id=2130303152]
-layout_mode = 0
-offset_right = 4.0
-offset_bottom = 27.0
-
-[node name="RadarMock" type="TextureRect" parent="Root/Hud" unique_id=417541640]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-texture = ExtResource("1_g7dwf")
+[node name="PlayerHud" parent="Root/Hudlayer" unique_id=530051118 instance=ExtResource("2_60q4y")]
+layout_mode = 1

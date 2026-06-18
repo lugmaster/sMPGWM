@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://cklk7mqwxvqkw"]
+
+[ext_resource type="PackedScene" uid="uid://b01bucnvb0gog" path="res://scenes/ui/player_hud/player_stats_panel.tscn" id="1_stats"]
+[ext_resource type="PackedScene" uid="uid://bx0y6mgnv4sxp" path="res://scenes/ui/player_hud/radar_control.tscn" id="2_radar"]
+[ext_resource type="PackedScene" uid="uid://dp0ih827sy63x" path="res://scenes/ui/player_hud/hotbar_control.tscn" id="3_adh7x"]
+
+[node name="PlayerHud" type="Control" unique_id=530051118]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StatsAnchor" type="Control" parent="." unique_id=1270770745]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 384.0
+offset_bottom = 164.0
+mouse_filter = 2
+
+[node name="PlayerStatsPanel" parent="StatsAnchor" unique_id=1531154431 instance=ExtResource("1_stats")]
+layout_mode = 1
+
+[node name="RadarAnchor" type="Control" parent="." unique_id=975005193]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -280.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="RadarControl" parent="RadarAnchor" unique_id=586651270 instance=ExtResource("2_radar")]
+layout_mode = 1
+
+[node name="HotBarAnchor" type="Control" parent="." unique_id=517701217]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -104.0
+offset_right = 320.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="HotbarControl" parent="HotBarAnchor" unique_id=1756593433 instance=ExtResource("3_adh7x")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
