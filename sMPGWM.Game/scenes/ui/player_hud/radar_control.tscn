@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://bx0y6mgnv4sxp"]
 
+[ext_resource type="Script" uid="uid://cb0x7b7dvy0mh" path="res://Scripts/Ui/Game/Hud/RadarControl.cs" id="1_2dlh1"]
 [ext_resource type="Texture2D" uid="uid://cuuseaxm0i18m" path="res://assets/mocks/radar_mock.png" id="1_texture"]
 
 [node name="RadarControl" type="Control" unique_id=586651270]
-custom_minimum_size = Vector2(256, 256)
+custom_minimum_size = Vector2(320, 320)
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,6 +12,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("1_2dlh1")
 
 [node name="RadarImage" type="TextureRect" parent="." unique_id=354621313]
 layout_mode = 1

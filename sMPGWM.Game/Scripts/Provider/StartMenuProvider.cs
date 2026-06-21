@@ -19,23 +19,17 @@ public static class StartMenuProvider
 
     public static Control CreateSettingsMenu()
     {
-        return Instantiate<Control>(SettingsMenuScene);
+        return BaseSceneProvider.Instantiate<Control>(SettingsMenuScene);
     }
 
     public static Control CreateJoinGameMenu()
     {
-        return Instantiate<Control>(JoinGameMenuScene);
+        return BaseSceneProvider.Instantiate<Control>(JoinGameMenuScene);
     }
 
     public static Control CreateHostGameMenu()
     {
-        return Instantiate<Control>(HostGameMenuScene);
-    }
-
-    private static TNode Instantiate<TNode>(PackedScene scene)
-        where TNode : Node
-    {
-        return BaseSceneProvider.Instantiate<TNode>(scene);
+        return BaseSceneProvider.Instantiate<Control>(HostGameMenuScene);
     }
 
     private static PackedScene LoadScene(string path)

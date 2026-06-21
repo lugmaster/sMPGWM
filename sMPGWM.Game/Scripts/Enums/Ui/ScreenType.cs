@@ -1,4 +1,4 @@
-﻿namespace sMPGWM.Scripts.Enums;
+﻿namespace sMPGWM.Scripts.Enums.Ui;
 
 public enum ScreenType
 {

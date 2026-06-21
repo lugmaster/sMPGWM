@@ -33,4 +33,10 @@ public static class BaseSceneProvider
         return scene ?? throw new InvalidOperationException(
             $"Could not load scene at path: {path}");
     }
+    
+    public static TNode LoadAndInstantiate<TNode>(string path) where TNode : Node
+    {
+        var scene = LoadScene(path);
+        return Instantiate<TNode>(scene);
+    } 
 }

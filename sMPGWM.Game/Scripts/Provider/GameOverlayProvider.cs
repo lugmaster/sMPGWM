@@ -11,22 +11,16 @@ public static class GameOverlayProvider
 
     public static GameOverlayMenu CreateMainMenu()
     {
-        return LoadAndInstantiate(MainMenuPath);
+        return BaseSceneProvider.LoadAndInstantiate<GameOverlayMenu>(MainMenuPath);
     }
 
     public static GameOverlayMenu CreateInventoryMenu()
     {
-        return LoadAndInstantiate(InventoryMenuPath);
+        return BaseSceneProvider.LoadAndInstantiate<GameOverlayMenu>(InventoryMenuPath);
     }
 
     public static GameOverlayMenu CreateMapMenu()
     {
-        return LoadAndInstantiate(MapMenuPath);
-    }
-
-    private static GameOverlayMenu LoadAndInstantiate(string path)
-    {
-        var scene = BaseSceneProvider.LoadScene(path);
-        return BaseSceneProvider.Instantiate<GameOverlayMenu>(scene);
+        return BaseSceneProvider.LoadAndInstantiate<GameOverlayMenu>(MapMenuPath);
     }
 }

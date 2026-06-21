@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://b71y4hy7l1fqd"]
+
+[ext_resource type="Script" uid="uid://wd62u8hyne0q" path="res://Scripts/Ui/Base/StatBar.cs" id="1_rbkj5"]
+
+[node name="StatBar" type="Control" unique_id=1063959680]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1560.0
+offset_bottom = -1064.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_rbkj5")
+
+[node name="ProgressBar" type="ProgressBar" parent="." unique_id=629352439]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+value = 75.0
+show_percentage = false
+
+[node name="NameLabel" type="Label" parent="." unique_id=670515521]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_right = -172.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 10
+text = "PgB_Label"
+vertical_alignment = 1
+
+[node name="ValueLabel" type="Label" parent="." unique_id=1669829363]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 232.0
+offset_right = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 10
+text = "168/200"
+horizontal_alignment = 2
+vertical_alignment = 1

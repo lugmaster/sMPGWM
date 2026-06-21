@@ -14,6 +14,7 @@
     <Folder Include="assets\ui\icons\" />
     <Folder Include="scenes\ui\controls\" />
     <Folder Include="scenes\ui\screens\" />
+    <Folder Include="Scripts\Controllers\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\ui\mocks\ship_fighter_reference.png" />

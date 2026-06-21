@@ -1,8 +1,11 @@
 [gd_scene format=3 uid="uid://cklk7mqwxvqkw"]
 
+[ext_resource type="Script" uid="uid://bfumwiqvr7041" path="res://Scripts/Ui/Game/Hud/PlayerHud.cs" id="1_rb7sb"]
 [ext_resource type="PackedScene" uid="uid://b01bucnvb0gog" path="res://scenes/ui/player_hud/player_stats_panel.tscn" id="1_stats"]
 [ext_resource type="PackedScene" uid="uid://bx0y6mgnv4sxp" path="res://scenes/ui/player_hud/radar_control.tscn" id="2_radar"]
+[ext_resource type="Script" path="res://Scripts/Ui/Game/Hud/PlayerStatsPanel.cs" id="3_4hd2l"]
 [ext_resource type="PackedScene" uid="uid://dp0ih827sy63x" path="res://scenes/ui/player_hud/hotbar_control.tscn" id="3_adh7x"]
+[ext_resource type="Script" path="res://Scripts/Ui/Game/Hud/RadarControl.cs" id="5_a3g8j"]
 
 [node name="PlayerHud" type="Control" unique_id=530051118]
 layout_mode = 3
@@ -12,20 +15,33 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("1_rb7sb")
 
 [node name="StatsAnchor" type="Control" parent="." unique_id=1270770745]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 0)
 layout_mode = 1
 anchors_preset = 0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 384.0
-offset_bottom = 164.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 376.0
+offset_bottom = 16.0
 mouse_filter = 2
 
 [node name="PlayerStatsPanel" parent="StatsAnchor" unique_id=1531154431 instance=ExtResource("1_stats")]
+unique_name_in_owner = true
 layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 16.0
+offset_bottom = 88.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_4hd2l")
 
 [node name="RadarAnchor" type="Control" parent="." unique_id=975005193]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -41,9 +57,13 @@ grow_vertical = 0
 mouse_filter = 2
 
 [node name="RadarControl" parent="RadarAnchor" unique_id=586651270 instance=ExtResource("2_radar")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(256, 256)
 layout_mode = 1
+script = ExtResource("5_a3g8j")
 
-[node name="HotBarAnchor" type="Control" parent="." unique_id=517701217]
+[node name="HotbarAnchor" type="Control" parent="." unique_id=517701217]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -58,10 +78,13 @@ grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
 
-[node name="HotbarControl" parent="HotBarAnchor" unique_id=1756593433 instance=ExtResource("3_adh7x")]
+[node name="HotbarControl" parent="HotbarAnchor" unique_id=1756593433 instance=ExtResource("3_adh7x")]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2

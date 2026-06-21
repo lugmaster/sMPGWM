@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dkwp55w3o0stj" path="res://Scripts/Ui/Game/UiCanvas.cs" id="1_w7u23"]
 [ext_resource type="PackedScene" uid="uid://cklk7mqwxvqkw" path="res://scenes/ui/player_hud/player_hud.tscn" id="2_60q4y"]
+[ext_resource type="Script" uid="uid://bfumwiqvr7041" path="res://Scripts/Ui/Game/Hud/PlayerHud.cs" id="3_30ifr"]
 
 [node name="UiCanvas" type="CanvasLayer" unique_id=766120166]
 script = ExtResource("1_w7u23")
@@ -43,4 +44,6 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="PlayerHud" parent="Root/Hudlayer" unique_id=530051118 instance=ExtResource("2_60q4y")]
+unique_name_in_owner = true
 layout_mode = 1
+script = ExtResource("3_30ifr")

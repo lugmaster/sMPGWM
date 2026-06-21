@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dp0ih827sy63x"]
 
-[ext_resource type="Script" uid="uid://cb3m4nx7hsej1" path="res://Scripts/Ui/Game/PlayerHud/HotbarControl.cs" id="1_6j8mg"]
+[ext_resource type="Script" uid="uid://cdnr3xi6qagm5" path="res://Scripts/Ui/Game/Hud/HotbarControl.cs" id="1_6j8mg"]
 
 [node name="HotbarControl" type="PanelContainer" unique_id=1772562676]
 custom_minimum_size = Vector2(640, 80)
@@ -20,5 +20,4 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 8
 alignment = 1
