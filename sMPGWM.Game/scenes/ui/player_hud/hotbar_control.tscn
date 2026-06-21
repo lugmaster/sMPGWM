@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dp0ih827sy63x"]
 
 [ext_resource type="Script" uid="uid://cdnr3xi6qagm5" path="res://Scripts/Ui/Game/Hud/HotbarControl.cs" id="1_6j8mg"]
+[ext_resource type="PackedScene" uid="uid://bxfy1glfrrw6a" path="res://scenes/ui/base/clickable_icon.tscn" id="2_2ryyu"]
 
 [node name="HotbarControl" type="PanelContainer" unique_id=1772562676]
 custom_minimum_size = Vector2(640, 80)
@@ -21,3 +22,30 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 alignment = 1
+
+[node name="ClickableIcon" parent="MarginContainer/ButtonContainer" unique_id=2048931584 instance=ExtResource("2_2ryyu")]
+layout_mode = 2
+
+[node name="ClickableIcon2" parent="MarginContainer/ButtonContainer" unique_id=914459956 instance=ExtResource("2_2ryyu")]
+layout_mode = 2
+
+[node name="ClickableIcon3" parent="MarginContainer/ButtonContainer" unique_id=427586207 instance=ExtResource("2_2ryyu")]
+layout_mode = 2
+
+[node name="ClickableIcon4" parent="MarginContainer/ButtonContainer" unique_id=1259216818 instance=ExtResource("2_2ryyu")]
+layout_mode = 2
+
+[node name="ClickableIcon5" parent="MarginContainer/ButtonContainer" unique_id=1922645987 instance=ExtResource("2_2ryyu")]
+layout_mode = 2
+
+[node name="ClickableIcon6" parent="MarginContainer/ButtonContainer" unique_id=1619931905 instance=ExtResource("2_2ryyu")]
+layout_mode = 2
+
+[node name="ClickableIcon7" parent="MarginContainer/ButtonContainer" unique_id=1152076798 instance=ExtResource("2_2ryyu")]
+layout_mode = 2
+
+[node name="ClickableIcon8" parent="MarginContainer/ButtonContainer" unique_id=1215054236 instance=ExtResource("2_2ryyu")]
+layout_mode = 2
+
+[node name="ClickableIcon9" parent="MarginContainer/ButtonContainer" unique_id=1720246653 instance=ExtResource("2_2ryyu")]
+layout_mode = 2

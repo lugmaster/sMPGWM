@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://bxfy1glfrrw6a"]
+
+[ext_resource type="Script" uid="uid://dqhp2qu7qg25n" path="res://Scripts/Ui/Base/ClickableIcon.cs" id="1_6bqkx"]
+[ext_resource type="Texture2D" uid="uid://b14ksx35yn6lp" path="res://assets/mocks/compass.png" id="1_rgkmo"]
+
+[node name="ClickableIcon" type="Button" unique_id=2048931584]
+custom_minimum_size = Vector2(48, 48)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1872.0
+offset_bottom = -1032.0
+grow_horizontal = 2
+grow_vertical = 2
+icon = ExtResource("1_rgkmo")
+script = ExtResource("1_6bqkx")

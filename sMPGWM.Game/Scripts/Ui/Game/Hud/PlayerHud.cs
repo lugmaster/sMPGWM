@@ -1,13 +1,17 @@
+using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Controllers.LivingEntity;
 using sMPGWM.Scripts.Enums.Game;
+using sMPGWM.Scripts.Ui.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Ui.Game.Hud;
 
 public partial class PlayerHud : Control
 {
+    public event Action<int>? HotbarSlotPressed;
+    
     private Control _statsAnchor = null!;
     private Control _radarAnchor = null!;
     private Control _hotbarAnchor = null!;
@@ -24,6 +28,7 @@ public partial class PlayerHud : Control
         _statsPanel = GetNode<PlayerStatsPanel>("%PlayerStatsPanel");
         _radarControl = GetNode<RadarControl>("%RadarControl");
         _hotbarControl = GetNode<HotbarControl>("%HotbarControl");
+        _hotbarControl.SlotPressed += slotIndex => HotbarSlotPressed?.Invoke(slotIndex);
 
         GetViewport().SizeChanged += ApplyLayout;
         ApplyLayout();
@@ -43,5 +48,10 @@ public partial class PlayerHud : Control
     public void Bind(LivingEntityState state, IReadOnlyCollection<StatTypes> visibleStats)
     {
         _statsPanel.Bind(state, visibleStats);
+    }
+
+    public void SetHotbarIcons(IReadOnlyList<IconDefinition> iconDefinitions)
+    {
+        _hotbarControl.SetIcons(iconDefinitions);
     }
 }

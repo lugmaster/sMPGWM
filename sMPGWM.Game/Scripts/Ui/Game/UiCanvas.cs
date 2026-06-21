@@ -27,6 +27,8 @@ public partial class UiCanvas : CanvasLayer
                 StatTypes.Shield,
                 StatTypes.Energy
         ]);
+        _playerHud.SetHotbarIcons(PlayerMock.Instance.GetHotBarSkills());
+        _playerHud.HotbarSlotPressed += PlayerMock.Instance.OnHotbarSlotPressed;
 
         Logger.Info("UiCanvas loaded");
     }

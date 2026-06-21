@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
+using sMPGWM.Scripts.Ui.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
 
@@ -7,43 +10,38 @@ namespace sMPGWM.Scripts.Ui.Game.Hud;
 
 public partial class HotbarControl : PanelContainer
 {
-    private const int HotbarSlotCount = 10;
-
     private HBoxContainer _buttonContainer = null!;
-    private readonly List<Button> _buttons = new();
+    public event Action<int>? SlotPressed;
 
     public override void _Ready()
     {
         _buttonContainer = GetNode<HBoxContainer>("%ButtonContainer");
 
-        CreateButtons();
+        ClearButtons();
 
         Logger.Info("HotbarControl loaded.");
     }
 
-    private void CreateButtons()
+    public void SetIcons(IReadOnlyList<IconDefinition> iconDefinitions)
     {
-        for (var i = 0; i < HotbarSlotCount; i++)
+        ClearButtons();
+
+        for (var i = 0; i < iconDefinitions.Count; i++)
         {
             var slotIndex = i;
+            var icon = BaseFactory.CreateClickableIcon(iconDefinitions[i]);
 
-            var button = new Button
-            {
-                Text = slotIndex == 9 ? "0" : (slotIndex + 1).ToString(),
-                FocusMode = FocusModeEnum.None,
-                // SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                // SizeFlagsVertical = SizeFlags.ExpandFill
-            };
+            icon.Pressed += () => SlotPressed?.Invoke(slotIndex);
 
-            button.Pressed += () => OnHotbarButtonPressed(slotIndex);
-
-            _buttons.Add(button);
-            _buttonContainer.AddChild(button);
+            _buttonContainer.AddChild(icon);
         }
     }
 
-    private static void OnHotbarButtonPressed(int slotIndex)
+    private void ClearButtons()
     {
-        Logger.Info($"Hotbar button clicked. SlotIndex: {slotIndex}");
+        foreach (var child in _buttonContainer.GetChildren().OfType<ClickableIcon>().ToList())
+        {
+            child.QueueFree();
+        }
     }
 }
