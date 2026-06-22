@@ -1,4 +1,6 @@
-﻿using Godot.Collections;
+﻿using System;
+using Godot;
+using Array = Godot.Collections.Array;
 using sMPGWM.Scripts.Enums.Game;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
@@ -26,5 +28,17 @@ public class TemporaryStatModifier(float value, ModifierType type, float timeRem
             (int)Type,
             TimeRemaining
         };
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is TemporaryStatModifier other &&
+               base.Equals(other) &&
+               Mathf.IsEqualApprox(TimeRemaining, other.TimeRemaining);
+    }
+
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
     }
 }

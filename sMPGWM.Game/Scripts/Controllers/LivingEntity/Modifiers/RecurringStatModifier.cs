@@ -1,4 +1,5 @@
 ﻿using System;
+using Godot;
 using sMPGWM.Scripts.Enums.Game;
 using Array = Godot.Collections.Array;
 
@@ -54,6 +55,18 @@ public class RecurringStatModifier(float value, ModifierType type, float timeRem
             TickInterval,
             _tickTimer
         };
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is RecurringStatModifier other &&
+               base.Equals(other) &&
+               Mathf.IsEqualApprox(TickInterval, other.TickInterval);
+    }
+
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
     }
 
     private static float Round(float value)

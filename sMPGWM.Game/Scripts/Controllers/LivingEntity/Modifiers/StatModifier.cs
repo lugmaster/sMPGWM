@@ -1,4 +1,6 @@
-﻿using Godot.Collections;
+﻿using System;
+using Godot;
+using Array = Godot.Collections.Array;
 using sMPGWM.Scripts.Enums.Game;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
@@ -19,5 +21,18 @@ public class StatModifier(float value, ModifierType type)
             Value,
             (int)Type
         };
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is StatModifier other &&
+               GetType() == other.GetType() &&
+               Mathf.IsEqualApprox(Value, other.Value) &&
+               Type == other.Type;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(GetType(), Type);
     }
 }
