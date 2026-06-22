@@ -33,6 +33,15 @@ public partial class UiCanvas : CanvasLayer
         Logger.Info("UiCanvas loaded");
     }
 
+    public override void _ExitTree()
+    {
+        if (_playerHud != null)
+            _playerHud.HotbarSlotPressed -= PlayerMock.Instance.OnHotbarSlotPressed;
+
+        if (_menuLayer != null && _menuHost != null)
+            GameOverlayManager.Instance.Unregister(_menuLayer, _menuHost);
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
         if (@event.IsActionPressed("open_menu"))

@@ -28,7 +28,7 @@ public partial class PlayerHud : Control
         _statsPanel = GetNode<PlayerStatsPanel>("%PlayerStatsPanel");
         _radarControl = GetNode<RadarControl>("%RadarControl");
         _hotbarControl = GetNode<HotbarControl>("%HotbarControl");
-        _hotbarControl.SlotPressed += slotIndex => HotbarSlotPressed?.Invoke(slotIndex);
+        _hotbarControl.SlotPressed += OnHotbarSlotPressed;
 
         GetViewport().SizeChanged += ApplyLayout;
         ApplyLayout();
@@ -37,12 +37,20 @@ public partial class PlayerHud : Control
 
     public override void _ExitTree()
     {
+        if (_hotbarControl != null)
+            _hotbarControl.SlotPressed -= OnHotbarSlotPressed;
+
         GetViewport().SizeChanged -= ApplyLayout;
     }
 
     private void ApplyLayout()
     {
         // TODO implement later
+    }
+
+    private void OnHotbarSlotPressed(int slotIndex)
+    {
+        HotbarSlotPressed?.Invoke(slotIndex);
     }
     
     public void Bind(LivingEntityState state, IReadOnlyCollection<StatTypes> visibleStats)

@@ -10,6 +10,8 @@ namespace sMPGWM.Scripts.Ui.Game.Hud;
 
 public partial class HotbarControl : PanelContainer
 {
+    private readonly Dictionary<ClickableIcon, Action> _slotPressedHandlers = new();
+
     private HBoxContainer _buttonContainer = null!;
     public event Action<int>? SlotPressed;
 
@@ -30,8 +32,10 @@ public partial class HotbarControl : PanelContainer
         {
             var slotIndex = i;
             var icon = BaseFactory.CreateClickableIcon(iconDefinitions[i]);
+            Action handler = () => SlotPressed?.Invoke(slotIndex);
 
-            icon.Pressed += () => SlotPressed?.Invoke(slotIndex);
+            icon.Pressed += handler;
+            _slotPressedHandlers.Add(icon, handler);
 
             _buttonContainer.AddChild(icon);
         }
@@ -41,6 +45,9 @@ public partial class HotbarControl : PanelContainer
     {
         foreach (var child in _buttonContainer.GetChildren().OfType<ClickableIcon>().ToList())
         {
+            if (_slotPressedHandlers.Remove(child, out var handler))
+                child.Pressed -= handler;
+
             child.QueueFree();
         }
     }
