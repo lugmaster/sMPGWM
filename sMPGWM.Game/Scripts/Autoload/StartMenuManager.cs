@@ -85,9 +85,11 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
             throw new InvalidOperationException($"Error when transiting to {nameof(newScreen)} - cannot be null.");
         }
         Logger.Info("Transiting to new screen.");
-        GetTree().ChangeSceneToPacked(newScreen);
-        _currentScreen.QueueFree();
+
+        _currentScreen = null!;
         _screenHistory.Clear();
+
+        GetTree().ChangeSceneToPacked(newScreen);
     }
 
     public void GoBack()
