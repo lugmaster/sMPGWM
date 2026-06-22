@@ -28,6 +28,6 @@ public partial class MainMenu : GameOverlayMenu
 
     private void OnQuitGameButtonOnPressed()
     {
-        GameHandler.QuitToStartMenu("Quitting game from main menu");
+        GameHandler.Instance.QuitToStartMenu("Quitting game from main menu");
     }
 }

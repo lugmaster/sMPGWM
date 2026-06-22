@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Godot;
 using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Provider;
 
@@ -6,8 +7,7 @@ namespace sMPGWM.Scripts.Autoload;
 
 public partial class GameHandler : AbstractSingleton<GameHandler>
 {
-    
-    public static void QuitToStartMenu(string reason = null, int delayMs = 35)
+    public void QuitToStartMenu(string reason = null, int delayMs = 35)
     {
         if (!string.IsNullOrEmpty(reason))
         {
@@ -17,7 +17,7 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
         Instance.CallDeferred(nameof(Instance.StartQuitAsync), delayMs);
     }
 
-    public static void QuitToStartMenuBlocking(string reason, bool showAsError = true)
+    public void QuitToStartMenuBlocking(string reason, bool showAsError = true)
     {
         Logger.Info($"Graceful quit triggered: {reason}");
 
@@ -43,11 +43,11 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
     public void QuitGame(string reason)
     {
         Logger.Info($"Quit game requested. Reason: {reason}");
-        SteamworksHelper.Instance.ShutdownSteam();
+        SteamworksHelper.ShutdownSteam();
         Logger.Info("After Steam Shutdown");
         Instance.CallDeferred(nameof(QuitGameInternal));
     }
-    
+
     private void QuitGameInternal()
     {
         GetTree().Quit();
@@ -65,9 +65,20 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
         GetTree().ChangeSceneToPacked(BaseSceneProvider.GetStartMenuScene());
     }
 
-    public  void StartGame()
+    public void StartGame()
     {
         Logger.Info("Starting up game.");
         GetTree().ChangeSceneToPacked(BaseSceneProvider.GetMainGameScene());
+    }
+
+    public void QuitWithOsError(string reason)
+    {
+        Logger.Error($"Error: {reason}");
+        OS.Alert($"Error: {reason}");
+        if (!Engine.IsEditorHint())
+        {
+            var tree = Engine.GetMainLoop() as SceneTree;
+            tree?.Quit(1);
+        }
     }
 }

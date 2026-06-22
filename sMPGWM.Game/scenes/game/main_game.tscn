@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://cthi5krpfsovj"]
 
+[ext_resource type="Script" uid="uid://sokcm4ho6xh5" path="res://Scripts/Autoload/GameManager.cs" id="1_7qhhq"]
 [ext_resource type="PackedScene" uid="uid://cg8f4fn37ikfw" path="res://scenes/game/world_scene.tscn" id="1_p17hc"]
 [ext_resource type="PackedScene" uid="uid://bobi0ji036bw4" path="res://scenes/game/ui_canvas.tscn" id="2_qgbr3"]
 
@@ -7,8 +8,10 @@
 layout_mode = 3
 anchors_preset = 0
 mouse_filter = 2
+script = ExtResource("1_7qhhq")
 
 [node name="UiCanvas" parent="." unique_id=766120166 instance=ExtResource("2_qgbr3")]
+unique_name_in_owner = true
 
 [node name="WorldViewPortContainer" type="SubViewportContainer" parent="." unique_id=622524254]
 layout_mode = 0

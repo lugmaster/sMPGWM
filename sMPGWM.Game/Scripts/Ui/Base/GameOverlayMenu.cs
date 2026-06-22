@@ -8,7 +8,7 @@ public partial class GameOverlayMenu : BaseMenu
 {
     protected override string ScreenTitle => "InGameMenuScreen Placeholder";
 
-    public event Action? MenuClosed;
+    public event Action? OnMenuClosed;
 
     private Button _closeButton = null!;
 
@@ -21,6 +21,6 @@ public partial class GameOverlayMenu : BaseMenu
 
     protected void RequestClose()
     {
-        MenuClosed?.Invoke();
+        OnMenuClosed?.Invoke();
     }
 }

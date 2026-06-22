@@ -88,22 +88,22 @@ public class LivingEntityState
         LivingEntityId = livingEntityStateVariant[12].AsInt32();
     }
 
-    public Stat GetStatByType(StatTypes type)
+    public Stat GetStatByType(StatType type)
     {
         // Condition is not a Stat 
         return type switch
         {
-            StatTypes.Health => Health,
-            StatTypes.HealthRegeneration => HealthRegeneration,
-            StatTypes.Shield => Shield,
-            StatTypes.ShieldRegeneration => ShieldRegeneration,
-            StatTypes.Energy => Energy,
-            StatTypes.EnergyRegeneration => EnergyRegeneration,
-            StatTypes.Speed => Speed,
-            StatTypes.Acceleration => Acceleration,
-            StatTypes.AfterBurnerSpeed => AfterBurnerSpeed,
-            StatTypes.AfterBurnerAcceleration => AfterBurnerAcceleration,
-            StatTypes.Condition => throw new ArgumentException(nameof(type), $"Condition is not stat!"),
+            StatType.Health => Health,
+            StatType.HealthRegeneration => HealthRegeneration,
+            StatType.Shield => Shield,
+            StatType.ShieldRegeneration => ShieldRegeneration,
+            StatType.Energy => Energy,
+            StatType.EnergyRegeneration => EnergyRegeneration,
+            StatType.Speed => Speed,
+            StatType.Acceleration => Acceleration,
+            StatType.AfterBurnerSpeed => AfterBurnerSpeed,
+            StatType.AfterBurnerAcceleration => AfterBurnerAcceleration,
+            StatType.Condition => throw new ArgumentException(nameof(type), $"Condition is not stat!"),
             _ => throw new ArgumentOutOfRangeException(nameof(type), $"Unknown StatType: {type}")
         };
     }
@@ -187,23 +187,23 @@ public class LivingEntityState
 
         if (_condition != oldState._condition)
         {
-            result.Add((int)StatTypes.Condition, (int)_condition);
+            result.Add((int)StatType.Condition, (int)_condition);
         }
 
-        AddIfChanged(StatTypes.Health, Health, oldState.Health);
-        AddIfChanged(StatTypes.HealthRegeneration, HealthRegeneration, oldState.HealthRegeneration);
-        AddIfChanged(StatTypes.Shield, Shield, oldState.Shield);
-        AddIfChanged(StatTypes.ShieldRegeneration, ShieldRegeneration, oldState.ShieldRegeneration);
-        AddIfChanged(StatTypes.Energy, Energy, oldState.Energy);
-        AddIfChanged(StatTypes.EnergyRegeneration, EnergyRegeneration, oldState.EnergyRegeneration);
-        AddIfChanged(StatTypes.Speed, Speed, oldState.Speed);
-        AddIfChanged(StatTypes.Acceleration, Acceleration, oldState.Acceleration);
-        AddIfChanged(StatTypes.AfterBurnerSpeed, AfterBurnerSpeed, oldState.AfterBurnerSpeed);
-        AddIfChanged(StatTypes.AfterBurnerAcceleration, AfterBurnerAcceleration, oldState.AfterBurnerAcceleration);
+        AddIfChanged(StatType.Health, Health, oldState.Health);
+        AddIfChanged(StatType.HealthRegeneration, HealthRegeneration, oldState.HealthRegeneration);
+        AddIfChanged(StatType.Shield, Shield, oldState.Shield);
+        AddIfChanged(StatType.ShieldRegeneration, ShieldRegeneration, oldState.ShieldRegeneration);
+        AddIfChanged(StatType.Energy, Energy, oldState.Energy);
+        AddIfChanged(StatType.EnergyRegeneration, EnergyRegeneration, oldState.EnergyRegeneration);
+        AddIfChanged(StatType.Speed, Speed, oldState.Speed);
+        AddIfChanged(StatType.Acceleration, Acceleration, oldState.Acceleration);
+        AddIfChanged(StatType.AfterBurnerSpeed, AfterBurnerSpeed, oldState.AfterBurnerSpeed);
+        AddIfChanged(StatType.AfterBurnerAcceleration, AfterBurnerAcceleration, oldState.AfterBurnerAcceleration);
 
         return result;
 
-        void AddIfChanged(StatTypes type, Stat current, Stat old)
+        void AddIfChanged(StatType type, Stat current, Stat old)
         {
             if (current.HasCurrentDelta(old))
             {
@@ -217,20 +217,20 @@ public class LivingEntityState
     {
         var result = new GCol.Dictionary<int, Variant>();
 
-        AddIfChanged(StatTypes.Health, Health, oldState.Health);
-        AddIfChanged(StatTypes.HealthRegeneration, HealthRegeneration, oldState.HealthRegeneration);
-        AddIfChanged(StatTypes.Shield, Shield, oldState.Shield);
-        AddIfChanged(StatTypes.ShieldRegeneration, ShieldRegeneration, oldState.ShieldRegeneration);
-        AddIfChanged(StatTypes.Energy, Energy, oldState.Energy);
-        AddIfChanged(StatTypes.EnergyRegeneration, EnergyRegeneration, oldState.EnergyRegeneration);
-        AddIfChanged(StatTypes.Speed, Speed, oldState.Speed);
-        AddIfChanged(StatTypes.Acceleration, Acceleration, oldState.Acceleration);
-        AddIfChanged(StatTypes.AfterBurnerSpeed, AfterBurnerSpeed, oldState.AfterBurnerSpeed);
-        AddIfChanged(StatTypes.AfterBurnerAcceleration, AfterBurnerAcceleration, oldState.AfterBurnerAcceleration);
+        AddIfChanged(StatType.Health, Health, oldState.Health);
+        AddIfChanged(StatType.HealthRegeneration, HealthRegeneration, oldState.HealthRegeneration);
+        AddIfChanged(StatType.Shield, Shield, oldState.Shield);
+        AddIfChanged(StatType.ShieldRegeneration, ShieldRegeneration, oldState.ShieldRegeneration);
+        AddIfChanged(StatType.Energy, Energy, oldState.Energy);
+        AddIfChanged(StatType.EnergyRegeneration, EnergyRegeneration, oldState.EnergyRegeneration);
+        AddIfChanged(StatType.Speed, Speed, oldState.Speed);
+        AddIfChanged(StatType.Acceleration, Acceleration, oldState.Acceleration);
+        AddIfChanged(StatType.AfterBurnerSpeed, AfterBurnerSpeed, oldState.AfterBurnerSpeed);
+        AddIfChanged(StatType.AfterBurnerAcceleration, AfterBurnerAcceleration, oldState.AfterBurnerAcceleration);
 
         return result;
 
-        void AddIfChanged(StatTypes type, Stat current, Stat old)
+        void AddIfChanged(StatType type, Stat current, Stat old)
         {
             if (current.HasPermaDelta(old))
             {
@@ -283,39 +283,39 @@ public class LivingEntityState
     {
         foreach (var entry in delta)
         {
-            switch ((StatTypes)entry.Key)
+            switch ((StatType)entry.Key)
             {
-                case StatTypes.Health:
+                case StatType.Health:
                     Health.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.HealthRegeneration:
+                case StatType.HealthRegeneration:
                     HealthRegeneration.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Shield:
+                case StatType.Shield:
                     Shield.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.ShieldRegeneration:
+                case StatType.ShieldRegeneration:
                     ShieldRegeneration.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Energy:
+                case StatType.Energy:
                     Energy.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.EnergyRegeneration:
+                case StatType.EnergyRegeneration:
                     EnergyRegeneration.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Speed:
+                case StatType.Speed:
                     Speed.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Acceleration:
+                case StatType.Acceleration:
                     Acceleration.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.AfterBurnerSpeed:
+                case StatType.AfterBurnerSpeed:
                     AfterBurnerSpeed.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.AfterBurnerAcceleration:
+                case StatType.AfterBurnerAcceleration:
                     AfterBurnerAcceleration.ApplyCurrentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Condition:
+                case StatType.Condition:
                     SetCondition((LivingEntityCondition)(int)entry.Value);
                     break;
                 default:
@@ -329,36 +329,36 @@ public class LivingEntityState
     {
         foreach (var entry in delta)
         {
-            switch ((StatTypes)entry.Key)
+            switch ((StatType)entry.Key)
             {
-                case StatTypes.Health:
+                case StatType.Health:
                     Health.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.HealthRegeneration:
+                case StatType.HealthRegeneration:
                     HealthRegeneration.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Shield:
+                case StatType.Shield:
                     Shield.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.ShieldRegeneration:
+                case StatType.ShieldRegeneration:
                     ShieldRegeneration.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Energy:
+                case StatType.Energy:
                     Energy.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.EnergyRegeneration:
+                case StatType.EnergyRegeneration:
                     EnergyRegeneration.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Speed:
+                case StatType.Speed:
                     Speed.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.Acceleration:
+                case StatType.Acceleration:
                     Acceleration.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.AfterBurnerSpeed:
+                case StatType.AfterBurnerSpeed:
                     AfterBurnerSpeed.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
-                case StatTypes.AfterBurnerAcceleration:
+                case StatType.AfterBurnerAcceleration:
                     AfterBurnerAcceleration.ApplyPermanentSync(entry.Value.AsGodotArray());
                     break;
                 default:

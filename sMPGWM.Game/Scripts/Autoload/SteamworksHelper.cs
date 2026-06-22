@@ -46,7 +46,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
         Steam.RunCallbacks();
     }
 
-    public void ShutdownSteam()
+    public static void ShutdownSteam()
     {
         Logger.Debug("Exiting Steam");
 
@@ -60,7 +60,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
         }
     }
 
-    private void InitializeSteamEx()
+    private static void InitializeSteamEx()
     {
         var initializeResponse = Steam.SteamInitEx(SteamAppId, true);
 
@@ -72,7 +72,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
         Logger.Debug("Steam initialized successfully with SteamInitEx.");
     }
 
-    private void InitializeSteam()
+    private static void InitializeSteam()
     {
         var initializeResponse = Steam.SteamInit(SteamAppId, true);
 
@@ -84,10 +84,8 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
         Logger.Debug("Steam initialized successfully with SteamInit.");
     }
 
-    private void QuitWithOsError(string reason)
+    private static void QuitWithOsError(string reason)
     {
-        Logger.Error($"Error: {reason}");
-        OS.Alert($"Error: {reason}");
-        GetTree().Quit(1);
+        GameHandler.Instance.QuitWithOsError(reason);
     }
 }

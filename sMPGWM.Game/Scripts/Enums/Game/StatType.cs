@@ -1,6 +1,6 @@
 namespace sMPGWM.Scripts.Enums.Game;
 
-public enum StatTypes
+public enum StatType
 {
     Condition = 0,
     Health = 1,

@@ -6,7 +6,7 @@ namespace sMPGWM.Scripts.Ui.Base;
 
 public partial class StatBar : Control
 {
-    public StatTypes Type { get; private set; }
+    public StatType Type { get; private set; }
 
     private ProgressBar _progressBar = null!;
     private Label _nameLabel = null!;
@@ -19,7 +19,7 @@ public partial class StatBar : Control
         _valueLabel = GetNode<Label>("%ValueLabel");
     }
 
-    public void Configure(StatTypes type, string title)
+    public void Configure(StatType type, string title)
     {
         Type = type;
         Title = title;

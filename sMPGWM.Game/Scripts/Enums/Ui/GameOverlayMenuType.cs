@@ -4,5 +4,5 @@ public enum GameOverlayMenuType
 {
     Main,
     Inventory,
-    Map
+    Map,
 }

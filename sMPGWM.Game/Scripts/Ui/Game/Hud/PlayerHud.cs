@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Controllers.LivingEntity;
 using sMPGWM.Scripts.Enums.Game;
+using sMPGWM.Scripts.Enums.GameState;
+using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Ui.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
@@ -57,7 +59,7 @@ public partial class PlayerHud : Control
         HotbarSlotPressed?.Invoke(slotIndex);
     }
     
-    public void Bind(LivingEntityState state, IReadOnlyCollection<StatTypes> visibleStats)
+    public void Bind(LivingEntityState state, IReadOnlyCollection<StatType> visibleStats)
     {
         _statsPanel.Bind(state, visibleStats);
     }
@@ -67,12 +69,37 @@ public partial class PlayerHud : Control
         _hotbarControl.SetIcons(iconDefinitions);
     }
 
-    public void SetInputProcessing(bool isProcessing)
+    public void ApplyGameState(MainGameState mainGameState)
     {
-        _isProcessingInput = isProcessing;
-        ProcessMode = isProcessing ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
-        MouseFilter = isProcessing ? MouseFilterEnum.Pass : MouseFilterEnum.Ignore;
+        _hotbarControl?.ApplyGameState(mainGameState);
+        switch (mainGameState)
+        {
+            case MainGameState.Active:
+                ApplyActiveState();
+                break;
 
-        _hotbarControl?.SetInputProcessing(isProcessing);
+            case MainGameState.InMenu:
+            case MainGameState.Inactive:
+                ApplyInactiveState();
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unexpected game state: {mainGameState}");
+        }
+
+    }
+    
+    private void ApplyActiveState()
+    {
+        ProcessMode = ProcessModeEnum.Inherit;
+        MouseFilter = MouseFilterEnum.Pass;
+        _isProcessingInput = true;
+    }
+
+    private void ApplyInactiveState()
+    {
+        ProcessMode = ProcessModeEnum.Disabled;
+        MouseFilter = MouseFilterEnum.Ignore;
+        _isProcessingInput = false;
     }
 }

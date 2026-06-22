@@ -4,6 +4,7 @@ using System.Linq;
 using Godot;
 using sMPGWM.Scripts.Controllers.LivingEntity;
 using sMPGWM.Scripts.Enums.Game;
+using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Provider;
 using sMPGWM.Scripts.Ui.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
@@ -12,10 +13,11 @@ namespace sMPGWM.Scripts.Ui.Game.Hud;
 
 public partial class PlayerStatsPanel : PanelContainer
 {
-    private readonly Dictionary<StatTypes, StatBar> _bars = new();
+    private readonly Dictionary<StatType, StatBar> _bars = new();
 
     private VBoxContainer _barContainer = null!;
     private LivingEntityState _livingEntityState = null!;
+    private bool _isProcessingInput = true;
 
     public override void _Ready()
     {
@@ -23,7 +25,7 @@ public partial class PlayerStatsPanel : PanelContainer
         Logger.Info("PlayerStatsPanel loaded.");
     }
 
-    public void Bind(LivingEntityState state, IReadOnlyCollection<StatTypes> visibleStats)
+    public void Bind(LivingEntityState state, IReadOnlyCollection<StatType> visibleStats)
     {
         _livingEntityState = state ?? throw new ArgumentNullException(nameof(state));
 
@@ -37,7 +39,7 @@ public partial class PlayerStatsPanel : PanelContainer
         RefreshAllBars();
     }
 
-    private void RebuildBars(IReadOnlyCollection<StatTypes> visibleStats)
+    private void RebuildBars(IReadOnlyCollection<StatType> visibleStats)
     {
         ClearBars();
 
@@ -71,18 +73,18 @@ public partial class PlayerStatsPanel : PanelContainer
             RefreshBar(type);
     }
 
-    private void RefreshBar(StatTypes type)
+    private void RefreshBar(StatType type)
     {
         var stat = _livingEntityState.GetStatByType(type);
         GetBar(type).Setup(stat.CurrentValue, stat.MaxValue);
     }
 
-    public void SetBarValue(StatTypes type, double value, double maxValue)
+    public void SetBarValue(StatType type, double value, double maxValue)
     {
         GetBar(type).Setup(value, maxValue);
     }
 
-    private StatBar GetBar(StatTypes type)
+    private StatBar GetBar(StatType type)
     {
         if (!_bars.TryGetValue(type, out var bar))
             throw new InvalidOperationException($"Missing StatBar type: {type}");
@@ -90,21 +92,21 @@ public partial class PlayerStatsPanel : PanelContainer
         return bar;
     }
 
-    private static string GetTitle(StatTypes type)
+    private static string GetTitle(StatType type)
     {
         return type switch
         {
-            StatTypes.Health => "Health",
-            StatTypes.Shield => "Shield",
-            StatTypes.Energy => "Energy",
-            StatTypes.HealthRegeneration => "Health Regen",
-            StatTypes.ShieldRegeneration => "Shield Regen",
-            StatTypes.EnergyRegeneration => "Energy Regen",
-            StatTypes.Speed => "Speed",
-            StatTypes.Acceleration => "Acceleration",
-            StatTypes.AfterBurnerSpeed => "Afterburner Speed",
-            StatTypes.AfterBurnerAcceleration => "Afterburner Acceleration",
-            StatTypes.Condition => throw new ArgumentException("Condition is not a StatBar stat.", nameof(type)),
+            StatType.Health => "Health",
+            StatType.Shield => "Shield",
+            StatType.Energy => "Energy",
+            StatType.HealthRegeneration => "Health Regen",
+            StatType.ShieldRegeneration => "Shield Regen",
+            StatType.EnergyRegeneration => "Energy Regen",
+            StatType.Speed => "Speed",
+            StatType.Acceleration => "Acceleration",
+            StatType.AfterBurnerSpeed => "Afterburner Speed",
+            StatType.AfterBurnerAcceleration => "Afterburner Acceleration",
+            StatType.Condition => throw new ArgumentException("Condition is not a StatBar stat.", nameof(type)),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
     }

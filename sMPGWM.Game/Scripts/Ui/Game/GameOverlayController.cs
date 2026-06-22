@@ -1,7 +1,7 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using Godot;
+using sMPGWM.Scripts.Enums.GameState;
 using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Provider;
 using sMPGWM.Scripts.Ui.Base;
@@ -11,172 +11,164 @@ namespace sMPGWM.Scripts.Ui.Game;
 
 public partial class GameOverlayController : CenterContainer
 {
-    private readonly Dictionary<GameOverlayMenuType, GameOverlayMenu> _cachedMenus = new();
-
     private Control _menuLayer = null!;
     private GameOverlayMenu? _currentMenu;
+    private MenuActionType? _currentOpenMenuAction;
     private bool _isDisabled;
 
-    public event Action CloseRequested = delegate { };
+    public event Action<MenuActionType>? OnMenuAction;
 
-    public GameOverlayMenuType? CurrentMenuType { get; private set; }
     public bool IsMenuOpen => _currentMenu != null;
 
     public override void _Ready()
     {
         _menuLayer = GetParent<Control>();
-        SetOverlayVisible(false);
+        EnableVisibility(false);
     }
 
     public override void _ExitTree()
     {
-        DestroyCachedMenus();
+        DestroyCurrentMenu();
     }
 
-    public bool ToggleMenu(GameOverlayMenuType menuType)
-    {
-        if (_isDisabled)
-            return false;
-
-        if (CurrentMenuType == menuType)
-        {
-            CloseMenu();
-            return false;
-        }
-
-        OpenMenu(menuType);
-        return true;
-    }
-
-    public void OpenMenu(GameOverlayMenuType menuType)
+    public void ApplyMenuAction(MenuActionType actionType)
     {
         if (_isDisabled)
             return;
+        
+        if (actionType == MenuActionType.CloseOverlayMenu)
+        {
+            DestroyCurrentMenu();
+            return;
+        }
 
-        HideCurrentMenu();
+        if (actionType == _currentOpenMenuAction)
+        {
+            CloseMenu();
+            return;
+        }
 
-        var nextMenu = GetOrCreateMenu(menuType);
+        OpenMenu(actionType);
+    }
 
-        nextMenu.Visible = true;
-        _currentMenu = nextMenu;
-        CurrentMenuType = menuType;
+    private void CloseMenu()
+    {
+        Logger.Info("Request Menu Close");
+        OnMenuAction?.Invoke(MenuActionType.CloseOverlayMenu);
+    }
 
-        SetOverlayVisible(true);
+    public void ApplyGameState(MainGameState mainGameState)
+    {
+        switch (mainGameState)
+        {
+            case MainGameState.Active:
+                SetEnabled();
+                break;
+
+            case MainGameState.InMenu:
+                SetEnabled();
+                break;
+
+            case MainGameState.Inactive:
+                SetDisabled();
+                DestroyCurrentMenu();
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(mainGameState), mainGameState, null);
+        }
+    }
+
+    private void OpenMenu(MenuActionType actionType)
+    {
+        DestroyCurrentMenu();
+
+        var menu = CreateMenu(actionType);
+
+        menu.OnMenuClosed += CloseMenu;
+
+        AddChild(menu);
+
+        _currentMenu = menu;
+        _currentOpenMenuAction = actionType;
+
+        EnableVisibility(true);
 
         Logger.Info($"Opened in-game menu: {_currentMenu.Name}");
     }
 
-    public void CloseMenu()
+    private void DestroyCurrentMenu()
     {
-        if (_currentMenu != null)
+        if (_currentMenu == null)
         {
-            HideCurrentMenu();
-            Logger.Info("Closed in-game menu.");
-        }
-        else
-        {
-            CurrentMenuType = null;
+            EnableVisibility(false);
+            _currentOpenMenuAction = null;
+            return;
         }
 
-        SetOverlayVisible(false);
-    }
 
-    public void ApplyGameState(GameStates gameState)
-    {
-        switch (gameState)
-        {
-            case GameStates.Active:
-                SetEnabled();
-                MouseFilter = MouseFilterEnum.Ignore;
-                CloseMenu();
-                break;
-            case GameStates.InMenu:
-                SetEnabled();
-                MouseFilter = MouseFilterEnum.Stop;
-                break;
-            case GameStates.Inactive:
-                SetDisabled();
-                CloseMenu();
-                break;
-        }
+        _currentMenu.OnMenuClosed -= CloseMenu;
+        _currentMenu.QueueFree();
+
+        _currentMenu = null;
+        _currentOpenMenuAction = null;
+        EnableVisibility(false);
     }
 
     private void SetEnabled()
     {
         _isDisabled = false;
-        ProcessMode = ProcessModeEnum.Inherit;
     }
 
     private void SetDisabled()
     {
         _isDisabled = true;
-        MouseFilter = MouseFilterEnum.Ignore;
-        ProcessMode = ProcessModeEnum.Disabled;
     }
 
-    private GameOverlayMenu GetOrCreateMenu(GameOverlayMenuType menuType)
+    private static GameOverlayMenu CreateMenu(MenuActionType actionType)
     {
-        if (_cachedMenus.TryGetValue(menuType, out var cachedMenu))
-            return cachedMenu;
-
-        var menu = CreateMenu(menuType);
-
-        menu.Visible = false;
-        menu.MenuClosed += RequestClose;
-
-        AddChild(menu);
-        _cachedMenus.Add(menuType, menu);
-
-        Logger.Info($"Created cached in-game menu: {menuType}");
-
-        return menu;
-    }
-
-    private static GameOverlayMenu CreateMenu(GameOverlayMenuType menuType)
-    {
-        return menuType switch
+        return actionType switch
         {
-            GameOverlayMenuType.Main => GameOverlayProvider.CreateMainMenu(),
-            GameOverlayMenuType.Inventory => GameOverlayProvider.CreateInventoryMenu(),
-            GameOverlayMenuType.Map => GameOverlayProvider.CreateMapMenu(),
-            _ => throw new ArgumentOutOfRangeException(nameof(menuType), menuType, null)
+            MenuActionType.OpenMainMenu => GameOverlayProvider.CreateMainMenu(),
+            MenuActionType.OpenInventoryMenu => GameOverlayProvider.CreateInventoryMenu(),
+            MenuActionType.OpenMapMenu => GameOverlayProvider.CreateMapMenu(),
+
+            MenuActionType.CloseOverlayMenu =>
+                throw new InvalidOperationException(
+                    $"{nameof(MenuActionType.CloseOverlayMenu)} does not create a menu."),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(actionType), actionType, null)
         };
     }
 
-    private void RequestClose()
+    private void EnableVisibility(bool visible)
     {
-        if (_isDisabled)
-            return;
-
-        CloseRequested();
+        _menuLayer.SetVisible(visible);
+        SetVisible(visible);
     }
 
-    private void HideCurrentMenu()
+
+    public override void _UnhandledInput(InputEvent @event)
     {
-        if (_currentMenu == null)
-            return;
-
-        _currentMenu.Visible = false;
-        _currentMenu = null;
-        CurrentMenuType = null;
-    }
-
-    private void SetOverlayVisible(bool visible)
-    {
-        _menuLayer.Visible = visible;
-        Visible = visible;
-    }
-
-    private void DestroyCachedMenus()
-    {
-        CloseMenu();
-
-        foreach (var menu in _cachedMenus.Values)
+        if (@event.IsActionPressed("MainMenu"))
         {
-            menu.MenuClosed -= RequestClose;
-            menu.QueueFree();
+            Logger.Info("Main Menu toggled");
+            OnMenuAction?.Invoke(MenuActionType.OpenMainMenu);
+            GetViewport().SetInputAsHandled();
+            return;
         }
 
-        _cachedMenus.Clear();
+        if (@event.IsActionPressed("InventoryMenu"))
+        {
+            OnMenuAction?.Invoke(MenuActionType.OpenInventoryMenu);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (@event.IsActionPressed("MapMenu"))
+        {
+            OnMenuAction?.Invoke(MenuActionType.OpenMapMenu);
+            GetViewport().SetInputAsHandled();
+        }
     }
 }

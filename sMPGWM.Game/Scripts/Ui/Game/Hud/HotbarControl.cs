@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
+using sMPGWM.Scripts.Enums.GameState;
 using sMPGWM.Scripts.Ui.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
@@ -46,14 +47,39 @@ public partial class HotbarControl : PanelContainer
             child.QueueFree();
         }
     }
-
-    public void SetInputProcessing(bool isProcessing)
+    
+    public void ApplyGameState(MainGameState mainGameState)
     {
-        _isProcessingInput = isProcessing;
-        ProcessMode = isProcessing ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
-        MouseFilter = isProcessing ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
+        switch (mainGameState)
+        {
+            case MainGameState.Active:
+                ApplyActiveState();
+                break;
 
+            case MainGameState.InMenu:
+            case MainGameState.Inactive:
+                ApplyInactiveState();
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unexpected game state: {mainGameState}");
+        }
         foreach (var child in _buttonContainer.GetChildren().OfType<ClickableIcon>())
-            child.Disabled = !isProcessing;
+            child.Disabled = !_isProcessingInput;
+
+    }
+    
+    private void ApplyActiveState()
+    {
+        ProcessMode = ProcessModeEnum.Inherit;
+        MouseFilter = MouseFilterEnum.Pass;
+        _isProcessingInput = true;
+    }
+
+    private void ApplyInactiveState()
+    {
+        ProcessMode = ProcessModeEnum.Disabled;
+        MouseFilter = MouseFilterEnum.Ignore;
+        _isProcessingInput = false;
     }
 }
