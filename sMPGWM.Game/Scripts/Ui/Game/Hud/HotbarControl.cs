@@ -13,6 +13,7 @@ public partial class HotbarControl : PanelContainer
     private readonly Dictionary<ClickableIcon, Action> _slotPressedHandlers = new();
 
     private HBoxContainer _buttonContainer = null!;
+    private bool _isProcessingInput = true;
     public event Action<int>? SlotPressed;
 
     public override void _Ready()
@@ -35,6 +36,7 @@ public partial class HotbarControl : PanelContainer
             Action handler = () => SlotPressed?.Invoke(slotIndex);
 
             icon.Pressed += handler;
+            icon.Disabled = !_isProcessingInput;
             _slotPressedHandlers.Add(icon, handler);
 
             _buttonContainer.AddChild(icon);
@@ -50,5 +52,15 @@ public partial class HotbarControl : PanelContainer
 
             child.QueueFree();
         }
+    }
+
+    public void SetInputProcessing(bool isProcessing)
+    {
+        _isProcessingInput = isProcessing;
+        ProcessMode = isProcessing ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
+        MouseFilter = isProcessing ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
+
+        foreach (var child in _buttonContainer.GetChildren().OfType<ClickableIcon>())
+            child.Disabled = !isProcessing;
     }
 }

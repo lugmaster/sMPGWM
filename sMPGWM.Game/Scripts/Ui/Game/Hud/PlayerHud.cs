@@ -19,6 +19,7 @@ public partial class PlayerHud : Control
     private PlayerStatsPanel _statsPanel = null!;
     private RadarControl _radarControl = null!;
     private HotbarControl _hotbarControl = null!;
+    private bool _isProcessingInput = true;
 
     public override void _Ready()
     {
@@ -50,6 +51,9 @@ public partial class PlayerHud : Control
 
     private void OnHotbarSlotPressed(int slotIndex)
     {
+        if (!_isProcessingInput)
+            return;
+
         HotbarSlotPressed?.Invoke(slotIndex);
     }
     
@@ -61,5 +65,14 @@ public partial class PlayerHud : Control
     public void SetHotbarIcons(IReadOnlyList<IconDefinition> iconDefinitions)
     {
         _hotbarControl.SetIcons(iconDefinitions);
+    }
+
+    public void SetInputProcessing(bool isProcessing)
+    {
+        _isProcessingInput = isProcessing;
+        ProcessMode = isProcessing ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
+        MouseFilter = isProcessing ? MouseFilterEnum.Pass : MouseFilterEnum.Ignore;
+
+        _hotbarControl?.SetInputProcessing(isProcessing);
     }
 }

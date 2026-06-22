@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Autoload.Base;
+using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Provider;
 using sMPGWM.Scripts.Ui.Base;
 
@@ -14,10 +15,12 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
     private Control _menuLayer = null!;
     private Control _menuHost = null!;
     private GameOverlayMenu? _currentMenu;
-    private bool _pausedByCurrentMenu;
+    private GameStates _gameState = GameStates.Active;
 
+    public event Action<GameStates> GameStateChanged = delegate { };
+
+    public GameStates GameState => _gameState;
     public bool IsMenuOpen => _currentMenu != null;
-    public bool IsGameInputBlocked => _currentMenu?.BlocksGameInput ?? false;
 
     public void Register(Control menuLayer, Control menuHost)
     {
@@ -31,6 +34,7 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
         _menuHost = menuHost;
         _menuLayer.Visible = false;
         _menuHost.Visible = false;
+        SetGameState(GameStates.Active);
 
         Logger.Info("Registered in-game screen manager nodes.");
     }
@@ -48,7 +52,7 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
         _menuLayer = null!;
         _menuHost = null!;
         _currentMenu = null;
-        _pausedByCurrentMenu = false;
+        SetGameState(GameStates.Active);
 
         Logger.Info("Unregistered in-game screen manager nodes.");
     }
@@ -74,15 +78,12 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
             return;
 
         _currentMenu.Visible = false;
+        _currentMenu.SetInputProcessing(false);
         _currentMenu = null;
 
         _menuLayer.Visible = false;
         _menuHost.Visible = false;
-
-        if (_pausedByCurrentMenu)
-            GetTree().Paused = false;
-
-        _pausedByCurrentMenu = false;
+        SetGameState(GameStates.Active);
 
         Logger.Info("Closed in-game menu.");
     }
@@ -106,22 +107,17 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
         if (_menuLayer == null || _menuHost == null)
             throw new InvalidOperationException("In-game screen manager is not registered.");
 
-        HideCurrentMenuOnly();
+        HideCurrentMenuOnly(false);
 
         var nextMenu = GetOrCreateMenu(key, createMenu);
 
         nextMenu.Visible = true;
+        nextMenu.SetInputProcessing(true);
         _currentMenu = nextMenu;
 
         _menuLayer.Visible = true;
         _menuHost.Visible = true;
-
-        _pausedByCurrentMenu = _currentMenu.PauseGame;
-
-        if (_pausedByCurrentMenu)
-            GetTree().Paused = true;
-        else if (GetTree().Paused)
-            GetTree().Paused = false;
+        SetGameState(GameStates.InMenu);
 
         Logger.Info($"Opened in-game menu: {_currentMenu.Name}");
     }
@@ -135,6 +131,7 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
         var menu = createMenu();
 
         menu.Visible = false;
+        menu.SetInputProcessing(false);
         menu.MenuClosed += CloseCurrentMenu;
 
         _menuHost.AddChild(menu);
@@ -145,18 +142,17 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
         return menu;
     }
 
-    private void HideCurrentMenuOnly()
+    private void HideCurrentMenuOnly(bool updateGameState = true)
     {
         if (_currentMenu == null)
             return;
 
         _currentMenu.Visible = false;
+        _currentMenu.SetInputProcessing(false);
         _currentMenu = null;
 
-        if (_pausedByCurrentMenu)
-            GetTree().Paused = false;
-
-        _pausedByCurrentMenu = false;
+        if (updateGameState)
+            SetGameState(GameStates.Active);
     }
 
     private void DestroyCachedMenus()
@@ -170,5 +166,15 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
         }
 
         _cachedMenus.Clear();
+    }
+
+    private void SetGameState(GameStates gameState)
+    {
+        if (_gameState == gameState)
+            return;
+
+        _gameState = gameState;
+        GameStateChanged(_gameState);
+        Logger.Info($"Game UI state changed: {_gameState}");
     }
 }

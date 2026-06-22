@@ -86,8 +86,7 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
         }
         Logger.Info("Transiting to new screen.");
 
-        _currentScreen = null!;
-        _screenHistory.Clear();
+        ClearManagedScreens();
 
         GetTree().ChangeSceneToPacked(newScreen);
     }
@@ -117,5 +116,32 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
     private bool CanGoBack()
     {
         return _screenHistory.Count > 0;
+    }
+
+    private void ClearManagedScreens()
+    {
+        SafeQueueFree(_currentScreen);
+
+        foreach (var screen in _screenHistory)
+            SafeQueueFree(screen);
+
+        _currentScreen = null!;
+        _screenHistory.Clear();
+    }
+
+    private static void SafeQueueFree(Control screen)
+    {
+        if (screen == null)
+            return;
+
+        try
+        {
+            if (GodotObject.IsInstanceValid(screen) && !screen.IsQueuedForDeletion())
+                screen.QueueFree();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Scene transitions can dispose nodes before the manager clears stale wrappers.
+        }
     }
 }
