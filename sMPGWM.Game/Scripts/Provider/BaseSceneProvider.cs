@@ -9,7 +9,7 @@ public static class BaseSceneProvider
         LoadScene("res://scenes/game/main_game.tscn");
 
     private static readonly PackedScene StartMenuScene =
-        LoadScene("res://scenes/ui/menu/start_menu/start_menu.tscn");
+        LoadScene("res://scenes/start_scene.tscn");
 
     public static PackedScene GetMainGameScene() => MainGameScene;
 

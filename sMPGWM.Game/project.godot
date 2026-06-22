@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="sMPGWM"
-run/main_scene="uid://6ov4wdhkeic1"
+run/main_scene="uid://bwppb4jr80bw0"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 
 [autoload]
@@ -19,7 +19,6 @@ config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 GlobalLogger="*uid://csb4p2s82jo0f"
 SteamworksHelper="*uid://cwgdwq3g3khns"
 GameHandler="*uid://dnk44tr6vs3ar"
-StartMenuManager="*uid://cktdqbevfghsf"
 InGameScreenManager="*uid://1jbwmikived8"
 
 [display]

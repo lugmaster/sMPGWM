@@ -28,12 +28,7 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
 
     public void InitializeGame()
     {
-        TransitToNewScene(BaseSceneProvider.GetMainGameScene());
-    }
-
-    public void LoadStartMenu()
-    {
-        TransitToNewScene(BaseSceneProvider.GetStartMenuScene());
+        GameHandler.Instance.StartGame();
     }
     
     private readonly Stack<Control> _screenHistory = new();
@@ -77,20 +72,6 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
         Logger.Info($"Navigated to screen: {nextScreen.Name}");
     }
 
-    //Loads entirely new Scene and cleans up old history. Used for starting game and coming back to main menu
-    private void TransitToNewScene(PackedScene newScreen)
-    {
-        if (newScreen == null)
-        {
-            throw new InvalidOperationException($"Error when transiting to {nameof(newScreen)} - cannot be null.");
-        }
-        Logger.Info("Transiting to new screen.");
-
-        ClearManagedScreens();
-
-        GetTree().ChangeSceneToPacked(newScreen);
-    }
-
     public void GoBack()
     {
         if (_currentScreen == null)
@@ -116,6 +97,11 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
     private bool CanGoBack()
     {
         return _screenHistory.Count > 0;
+    }
+
+    protected override void OnExitTree()
+    {
+        ClearManagedScreens();
     }
 
     private void ClearManagedScreens()

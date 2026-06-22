@@ -20,6 +20,6 @@ public partial class JoinGameMenu : BaseStartMenu
 
     private void OnJoinButtonPressed()
     {
-        GameHandler.StartGame();
+        StartMenuManager.Instance.InitializeGame();
     }
 }

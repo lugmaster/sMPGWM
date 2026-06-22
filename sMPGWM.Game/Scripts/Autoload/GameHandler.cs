@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using sMPGWM.Scripts.Autoload.Base;
+using sMPGWM.Scripts.Provider;
 
 namespace sMPGWM.Scripts.Autoload;
 
@@ -58,15 +59,15 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
         CallDeferred(nameof(QuitToStartMenuInternal));
     }
 
-    private static void QuitToStartMenuInternal()
+    private void QuitToStartMenuInternal()
     {
         Logger.Info("Quitting game, returning to main menu.");
-        StartMenuManager.Instance.LoadStartMenu();
+        GetTree().ChangeSceneToPacked(BaseSceneProvider.GetStartMenuScene());
     }
 
-    public static void StartGame()
+    public  void StartGame()
     {
         Logger.Info("Starting up game.");
-        StartMenuManager.Instance.InitializeGame();
+        GetTree().ChangeSceneToPacked(BaseSceneProvider.GetMainGameScene());
     }
 }
