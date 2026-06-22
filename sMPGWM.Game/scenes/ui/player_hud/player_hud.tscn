@@ -3,9 +3,7 @@
 [ext_resource type="Script" uid="uid://bfumwiqvr7041" path="res://Scripts/Ui/Game/Hud/PlayerHud.cs" id="1_rb7sb"]
 [ext_resource type="PackedScene" uid="uid://b01bucnvb0gog" path="res://scenes/ui/player_hud/player_stats_panel.tscn" id="1_stats"]
 [ext_resource type="PackedScene" uid="uid://bx0y6mgnv4sxp" path="res://scenes/ui/player_hud/radar_control.tscn" id="2_radar"]
-[ext_resource type="Script" path="res://Scripts/Ui/Game/Hud/PlayerStatsPanel.cs" id="3_4hd2l"]
 [ext_resource type="PackedScene" uid="uid://dp0ih827sy63x" path="res://scenes/ui/player_hud/hotbar_control.tscn" id="3_adh7x"]
-[ext_resource type="Script" path="res://Scripts/Ui/Game/Hud/RadarControl.cs" id="5_a3g8j"]
 
 [node name="PlayerHud" type="Control" unique_id=530051118]
 layout_mode = 3
@@ -38,7 +36,6 @@ offset_right = 16.0
 offset_bottom = 88.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("3_4hd2l")
 
 [node name="RadarAnchor" type="Control" parent="." unique_id=975005193]
 unique_name_in_owner = true
@@ -60,7 +57,6 @@ mouse_filter = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(256, 256)
 layout_mode = 1
-script = ExtResource("5_a3g8j")
 
 [node name="HotbarAnchor" type="Control" parent="." unique_id=517701217]
 unique_name_in_owner = true
