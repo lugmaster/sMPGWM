@@ -78,7 +78,6 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
             return;
 
         _currentMenu.Visible = false;
-        _currentMenu.SetInputProcessing(false);
         _currentMenu = null;
 
         _menuLayer.Visible = false;
@@ -112,7 +111,6 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
         var nextMenu = GetOrCreateMenu(key, createMenu);
 
         nextMenu.Visible = true;
-        nextMenu.SetInputProcessing(true);
         _currentMenu = nextMenu;
 
         _menuLayer.Visible = true;
@@ -131,7 +129,6 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
         var menu = createMenu();
 
         menu.Visible = false;
-        menu.SetInputProcessing(false);
         menu.MenuClosed += CloseCurrentMenu;
 
         _menuHost.AddChild(menu);
@@ -148,7 +145,6 @@ public partial class GameOverlayManager : AbstractSingleton<GameOverlayManager>
             return;
 
         _currentMenu.Visible = false;
-        _currentMenu.SetInputProcessing(false);
         _currentMenu = null;
 
         if (updateGameState)

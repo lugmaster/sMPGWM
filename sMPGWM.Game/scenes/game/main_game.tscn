@@ -6,6 +6,7 @@
 [node name="MainGame" type="Control" unique_id=464829365]
 layout_mode = 3
 anchors_preset = 0
+mouse_filter = 2
 
 [node name="UiCanvas" parent="." unique_id=766120166 instance=ExtResource("2_qgbr3")]
 

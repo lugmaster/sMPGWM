@@ -12,6 +12,7 @@ offset_right = -1560.0
 offset_bottom = -1064.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_rbkj5")
 
 [node name="ProgressBar" type="ProgressBar" parent="." unique_id=629352439]
@@ -23,6 +24,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 value = 75.0
 show_percentage = false
 

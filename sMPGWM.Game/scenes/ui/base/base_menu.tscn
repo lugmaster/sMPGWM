@@ -7,6 +7,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=446755785]
 layout_mode = 1
@@ -15,12 +16,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="MenuPanel" type="PanelContainer" parent="CenterContainer" unique_id=85467077]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/MenuPanel" unique_id=1349206848]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 32
 theme_override_constants/margin_top = 32
 theme_override_constants/margin_right = 32
@@ -29,10 +33,12 @@ theme_override_constants/margin_bottom = 32
 [node name="RootContent" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer" unique_id=1149754016]
 custom_minimum_size = Vector2(520, 0)
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 24
 
 [node name="HeaderContainer" type="HBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent" unique_id=20106782]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" unique_id=1532561777]
 unique_name_in_owner = true
@@ -47,7 +53,9 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+mouse_filter = 2
 
 [node name="FooterContainer" type="HBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent" unique_id=201438315]
 layout_mode = 2
+mouse_filter = 2
 alignment = 1

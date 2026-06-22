@@ -5,6 +5,7 @@ namespace sMPGWM.Scripts.Ui.Base;
 
 public abstract partial class BaseStartMenu : BaseMenu
 {
+
     private Button _backButton = null!;
 
     protected override void OnReady()
@@ -13,4 +14,6 @@ public abstract partial class BaseStartMenu : BaseMenu
         _backButton.Text = "Back";
         _backButton.Pressed += StartMenuManager.Instance.GoBack;
     }
+    
+    
 }

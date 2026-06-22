@@ -7,10 +7,12 @@
 custom_minimum_size = Vector2(640, 80)
 offset_right = 640.0
 offset_bottom = 80.0
+mouse_filter = 2
 script = ExtResource("1_6j8mg")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=493446499]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
@@ -21,6 +23,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+mouse_filter = 2
 alignment = 1
 
 [node name="ClickableIcon" parent="MarginContainer/ButtonContainer" unique_id=2048931584 instance=ExtResource("2_2ryyu")]
