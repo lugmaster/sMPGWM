@@ -1,6 +1,7 @@
+#nullable enable
 using System;
 using Godot;
-using sMPGWM.Scripts.Autoload;
+using sMPGWM.Scripts.Controllers;
 using sMPGWM.Scripts.Enums.Game;
 using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Mocks;
@@ -11,21 +12,21 @@ namespace sMPGWM.Scripts.Ui.Game;
 
 public partial class UiCanvas : CanvasLayer
 {
-
-    private Control _menuLayer = null!;
-    private Control _menuHost = null!;
     private PlayerHud _playerHud = null!;
+    private GameOverlayController _gameOverlayController = null!;
     private Action<int> _hotbarSlotPressedHandler = null!;
-    
+
+    public event Action OverlayCloseRequested = delegate { };
+
     public override void _Ready()
     {
-        _menuLayer = GetNode<Control>("%MenuLayer");
-        _menuHost = GetNode<Control>("%MenuHost");
         _playerHud = GetNode<PlayerHud>("%PlayerHud");
+        _gameOverlayController = GetNode<GameOverlayController>("%MenuHost");
 
-        GameOverlayManager.Instance.GameStateChanged += OnGameStateChanged;
-        GameOverlayManager.Instance.Register(_menuLayer, _menuHost);
-        OnGameStateChanged(GameOverlayManager.Instance.GameState);
+        MainGameController.Instance.Changed += OnGameStateChanged;
+        _gameOverlayController.CloseRequested += OnOverlayCloseRequested;
+        MainGameController.Instance.RegisterUiCanvas(this);
+        OnGameStateChanged(MainGameController.Instance.State);
 
         _playerHud.Bind(PlayerMock.Instance.LivingEntityState,
         [
@@ -47,42 +48,40 @@ public partial class UiCanvas : CanvasLayer
             if (_playerHud != null && _hotbarSlotPressedHandler != null)
                 _playerHud.HotbarSlotPressed -= _hotbarSlotPressedHandler;
 
-            if (_menuLayer != null && _menuHost != null)
-                GameOverlayManager.Instance.Unregister(_menuLayer, _menuHost);
+            if (_gameOverlayController != null)
+                _gameOverlayController.CloseRequested -= OnOverlayCloseRequested;
+
+            MainGameController.Instance.UnregisterUiCanvas(this);
         }
         finally
         {
-            GameOverlayManager.Instance.GameStateChanged -= OnGameStateChanged;
+            MainGameController.Instance.Changed -= OnGameStateChanged;
         }
     }
 
-    public override void _UnhandledInput(InputEvent @event)
+    public bool OpenOverlayMenu(GameOverlayMenuType menuType)
     {
-        if (@event.IsActionPressed("open_menu"))
-        {
-            Logger.Info("Main Menu toggled");
-            GameOverlayManager.Instance.ToggleMainMenu();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
+        return _gameOverlayController.ToggleMenu(menuType);
+    }
 
-        if (@event.IsActionPressed("open_inventory"))
-        {
-            GameOverlayManager.Instance.ToggleInventoryMenu();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-        
-        if (@event.IsActionPressed("open_map"))
-        {
-            GameOverlayManager.Instance.ToggleMapMenu();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
+    public void CloseOverlayMenu()
+    {
+        _gameOverlayController.CloseMenu();
+    }
+
+    public void ApplyGameState(GameStates gameState)
+    {
+        _playerHud.SetInputProcessing(gameState == GameStates.Active);
+        _gameOverlayController.ApplyGameState(gameState);
     }
 
     private void OnGameStateChanged(GameStates gameState)
     {
-        _playerHud.SetInputProcessing(gameState == GameStates.Active);
+        ApplyGameState(gameState);
+    }
+
+    private void OnOverlayCloseRequested()
+    {
+        OverlayCloseRequested();
     }
 }
