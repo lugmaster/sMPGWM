@@ -7,9 +7,9 @@ namespace sMPGWM.Scripts.Autoload;
 
 public partial class Logger : AbstractSingleton<Logger>
 {
-    [Export] public LogLevel MinimumLevel { get; set; } = LogLevel.Info;
-    [Export] public bool WriteToFile { get; set; }
-    [Export] public string LogFilePath { get; set; } = "user://game.log";
+    public LogLevel MinimumLevel { get; set; } = LogLevel.Info;
+    public bool WriteToFile { get; set; }
+    public string LogFilePath { get; set; } = "user://game.log";
 
     public static void Trace(string message) => Instance.Log(LogLevel.Trace, message);
     public static void Debug(string message) => Instance.Log(LogLevel.Debug, message);
