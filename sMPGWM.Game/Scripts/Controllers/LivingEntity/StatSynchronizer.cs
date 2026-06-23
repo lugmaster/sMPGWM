@@ -1,10 +1,7 @@
-using System.Collections.Generic;
-using Godot;
-using sMPGWM.Scripts.Autoload;
 using sMPGWM.Scripts.Autoload.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
-namespace sMPGWM.Scripts.Enums.Game;
+namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
 public partial class StatSynchronizer : AbstractSingleton<StatSynchronizer>
 {

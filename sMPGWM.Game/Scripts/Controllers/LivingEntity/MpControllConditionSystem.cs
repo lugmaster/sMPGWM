@@ -1,8 +1,4 @@
-using System;
-using sMPGWM.Scripts.Autoload;
-using sMPGWM.Scripts.Controllers.Player;
-
-namespace sMPGWM.Scripts.Enums.Game;
+namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
 // This is just a reference or idea giver. Read it carefully. Take the Concept from a Single File, where all system 
 // side effects regarding living entities are handled. 

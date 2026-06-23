@@ -1,4 +1,4 @@
-namespace sMPGWM.Scripts.Enums.Game;
+namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
 public class LivingEntityStateFactory
 {
