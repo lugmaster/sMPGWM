@@ -10,7 +10,8 @@ namespace sMPGWM.Scripts.Autoload;
 
 public partial class GameManager : AbstractSingleton<GameManager>
 {
-    private UiCanvas _canvas;
+    private UiCanvas _canvas = null!;
+    private Node2D _world = null!;
 
     private MainGameState _gameState = MainGameState.Inactive;
 
@@ -25,10 +26,42 @@ public partial class GameManager : AbstractSingleton<GameManager>
     protected override void OnReady()
     {
         _canvas = GetNode<UiCanvas>("UiCanvas");
+        _world = GetNode<Node2D>(
+            "WorldViewPortContainer/WorldViewport/WorldScene");
         _canvas.OnRequestHotbarAction += ConsumeOnHotbarSlotPressed;
         _canvas.OnRequestMenuAction += ConsumeMenuAction;
         CallDeferred(nameof(Start));
     }
+    
+    // private const double WaitingTime = 30.0f;
+    //
+    // private double _passedTime;
+    // private bool _fired;
+    // private bool _firedBack;
+    //
+    // public override void _Process(double delta)
+    // {
+    //     if (_fired && _firedBack)
+    //     {
+    //         return;
+    //     }
+    //
+    //     _passedTime += delta;
+    //
+    //     if (!_fired && _passedTime >= WaitingTime)
+    //     {
+    //         _fired = true;
+    //         Logger.Info($"Fired: {_passedTime} - Setting state to {_gameState}");
+    //         SetGameState(MainGameState.Inactive);
+    //     }
+    //
+    //     if (!_firedBack && _passedTime >= WaitingTime * 2)
+    //     {
+    //         _firedBack = true;
+    //         Logger.Info($"FiredBack: {_passedTime} - Setting state to {_gameState}");
+    //         SetGameState(MainGameState.Active);
+    //     }
+    // }
 
     private void Start()
     {

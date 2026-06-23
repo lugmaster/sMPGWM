@@ -6,6 +6,8 @@ namespace sMPGWM.Scripts.Autoload;
 public partial class GlobalStateManager : AbstractSingleton<GlobalStateManager>
 {
     public static bool IsWindowFocused { get; private set; } = true;
+    public static int FastSyncInterval { get; set; } = 2;
+    public static int SlowSyncInterval { get; set; } = 13;
 
 
     public override void _Notification(int what)
