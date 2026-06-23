@@ -58,7 +58,7 @@ public class MpControllerConditionSystem
     //             _mpController.ActionController.FreezeAction();
     //             if (_isHost)
     //             {
-    //                 _mpController.LivingEntityState.SetVitalsToZero();
+    //                 LivingEntityService should apply the zero-health outcome.
     //             }
     //
     //             if (_isPlayer)
@@ -101,7 +101,7 @@ public class MpControllerConditionSystem
     //             _mpController.MpTextureController.ShowCurrent();
     //             if (_isHost)
     //             {
-    //                 _mpController.LivingEntityState.RestoreVitalsToMax();
+    //                 LivingEntityService should apply a revive/raise outcome.
     //             }
     //
     //             if (_isPlayer)

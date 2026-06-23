@@ -1,4 +1,3 @@
-using Godot;
 using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
@@ -20,24 +19,11 @@ public class LivingEntityStateTracker
         _lastState.UpdateFullState(livingEntityStateVariant);
     }
 
-    public GCol.Dictionary<int, Variant> CreatePermanentDelta()
+    public GCol.Array CreateCombinedDelta(bool includePermanent)
     {
-        var delta = CurrentState.CreatePermanentDelta(_lastState);
-        if (delta.Count > 0)
-        {
-            _lastState.ApplyPermanentDelta(delta);
-        }
-
-        return delta;
-    }
-
-    public GCol.Dictionary<int, Variant> CreateCurrentDelta()
-    {
-        var delta = CurrentState.CreateCurrentDelta(_lastState);
-        if (delta.Count > 0)
-        {
-            _lastState.ApplyCurrentDelta(delta);
-        }
+        var delta = CurrentState.CreateDeltaVariant(_lastState, includePermanent);
+        if (LivingEntityState.DeltaVariantHasChanges(delta))
+            _lastState.ApplyDeltaVariant(delta);
 
         return delta;
     }

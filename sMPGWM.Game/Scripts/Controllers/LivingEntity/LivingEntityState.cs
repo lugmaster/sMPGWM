@@ -1,14 +1,19 @@
 ﻿using System;
-using Godot;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 using sMPGWM.Scripts.Enums.Game;
 using Array = Godot.Collections.Array;
-using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
 public class LivingEntityState
 {
+    private const int FullStateVariantCount = 13;
+    private const int DeltaVariantCount = 3;
+    private const int DeltaLivingEntityIdIndex = 0;
+    private const int DeltaCurrentIndex = 1;
+    private const int DeltaPermanentIndex = 2;
+    private const int StatSlotCount = (int)StatType.AfterBurnerAcceleration + 1;
+
     public Stat Health;
     public Stat HealthRegeneration;
     public Stat Shield;
@@ -30,9 +35,6 @@ public class LivingEntityState
         get => _condition;
         init => SetCondition(value);
     }
-
-    // replace with changed event to let ui listen to changes? good or bad idea?
-    public event Action<LivingEntityCondition, bool> OnConditionChanged;
 
     public LivingEntityState()
     {
@@ -70,10 +72,10 @@ public class LivingEntityState
 
     public void UpdateFullState(Array livingEntityStateVariant)
     {
-        if (livingEntityStateVariant.Count != 13)
+        if (livingEntityStateVariant.Count != FullStateVariantCount)
             throw new ArgumentException("Invalid livingEntityStateVariant format");
 
-        SetCondition((LivingEntityCondition)(int)livingEntityStateVariant[0], false);
+        SetCondition((LivingEntityCondition)(int)livingEntityStateVariant[0]);
         Health = new Stat(livingEntityStateVariant[1].As<Array>());
         HealthRegeneration = new Stat(livingEntityStateVariant[2].As<Array>());
         Shield = new Stat(livingEntityStateVariant[3].As<Array>());
@@ -110,134 +112,28 @@ public class LivingEntityState
 
     // THIS SHOULD ONLY BE USED FROM STATSYNCHRONIZER!
     // Use this to change all bitflags. for adding or removing single bit conditions use AddCondition or RemoveCondition methods below
-    private void SetCondition(LivingEntityCondition newCondition, bool applyVisualEffects = true)
+    internal void SetCondition(LivingEntityCondition newCondition)
     {
         if (_condition == newCondition) return;
 
         _condition = newCondition;
-        OnConditionChanged?.Invoke(_condition, applyVisualEffects);
     }
 
     // Creates a new Condition from provided bitflag - must be a new one to trigger comparison
-    private void RemoveCondition(LivingEntityCondition conditionToRemove, bool applyVisualEffects = true)
+    internal void RemoveCondition(LivingEntityCondition conditionToRemove)
     {
-        SetCondition(_condition.Remove(conditionToRemove), applyVisualEffects);
+        SetCondition(_condition.Remove(conditionToRemove));
     }
 
     // Creates a new Condition from provided bitflag - must be a new one to trigger comparison
-    private void AddCondition(LivingEntityCondition conditionToAdd, bool applyVisualEffects = true)
+    internal void AddCondition(LivingEntityCondition conditionToAdd)
     {
-        SetCondition(_condition.Add(conditionToAdd), applyVisualEffects);
+        SetCondition(_condition.Add(conditionToAdd));
     }
 
-    public void ApplyDamage(float amount, Node2D source)
+    internal void ReduceStatToZero(StatType type)
     {
-        // if (!AllowOnlyHostAccess()) return;
-        if (Shield.CurrentValue > 0)
-        {
-            var leftover = Shield.ReduceAndGetOverflow(amount);
-            if (leftover > 0)
-                ReduceHealth(leftover, source);
-        }
-        else
-        {
-            ReduceHealth(amount, source);
-        }
-    }
-
-    private void ReduceHealth(float amount, Node2D source)
-    {
-        if (Health.ReduceAndCheckZero(amount))
-        {
-            KillPlayer();
-            // if (LivingEntityType.IsMpController() && source is MpController controller)
-            // {
-            //     CombatMetricsSynchronizer.ConfirmKill(controller.OwningPeerId, LivingEntityId);
-            // }
-        }
-    }
-
-    public void KillPlayer()
-    {
-        // if (!AllowOnlyHostAccess()) return;
-        AddCondition(_condition | LivingEntityCondition.Dead);
-        SetVitalsToZero();
-    }
-
-    public void SetVitalsToZero()
-    {
-        // if (!AllowOnlyHostAccess()) return;
-        Health.DrainToZero();
-        Shield.DrainToZero();
-        Energy.DrainToZero();
-    }
-
-    public void RestoreVitalsToMax()
-    {
-        // if (!AllowOnlyHostAccess()) return;
-        Health.RestoreToMax();
-        Shield.RestoreToMax();
-        Energy.RestoreToMax();
-    }
-
-
-    public GCol.Dictionary<int, Variant> CreateCurrentDelta(LivingEntityState oldState)
-    {
-        var result = new GCol.Dictionary<int, Variant>();
-
-        if (_condition != oldState._condition)
-        {
-            result.Add((int)StatType.Condition, (int)_condition);
-        }
-
-        AddIfChanged(StatType.Health, Health, oldState.Health);
-        AddIfChanged(StatType.HealthRegeneration, HealthRegeneration, oldState.HealthRegeneration);
-        AddIfChanged(StatType.Shield, Shield, oldState.Shield);
-        AddIfChanged(StatType.ShieldRegeneration, ShieldRegeneration, oldState.ShieldRegeneration);
-        AddIfChanged(StatType.Energy, Energy, oldState.Energy);
-        AddIfChanged(StatType.EnergyRegeneration, EnergyRegeneration, oldState.EnergyRegeneration);
-        AddIfChanged(StatType.Speed, Speed, oldState.Speed);
-        AddIfChanged(StatType.Acceleration, Acceleration, oldState.Acceleration);
-        AddIfChanged(StatType.AfterBurnerSpeed, AfterBurnerSpeed, oldState.AfterBurnerSpeed);
-        AddIfChanged(StatType.AfterBurnerAcceleration, AfterBurnerAcceleration, oldState.AfterBurnerAcceleration);
-
-        return result;
-
-        void AddIfChanged(StatType type, Stat current, Stat old)
-        {
-            if (current.HasCurrentDelta(old))
-            {
-                var entry = current.ToCurrentVariant();
-                result.Add((int)type, entry);
-            }
-        }
-    }
-
-    public GCol.Dictionary<int, Variant> CreatePermanentDelta(LivingEntityState oldState)
-    {
-        var result = new GCol.Dictionary<int, Variant>();
-
-        AddIfChanged(StatType.Health, Health, oldState.Health);
-        AddIfChanged(StatType.HealthRegeneration, HealthRegeneration, oldState.HealthRegeneration);
-        AddIfChanged(StatType.Shield, Shield, oldState.Shield);
-        AddIfChanged(StatType.ShieldRegeneration, ShieldRegeneration, oldState.ShieldRegeneration);
-        AddIfChanged(StatType.Energy, Energy, oldState.Energy);
-        AddIfChanged(StatType.EnergyRegeneration, EnergyRegeneration, oldState.EnergyRegeneration);
-        AddIfChanged(StatType.Speed, Speed, oldState.Speed);
-        AddIfChanged(StatType.Acceleration, Acceleration, oldState.Acceleration);
-        AddIfChanged(StatType.AfterBurnerSpeed, AfterBurnerSpeed, oldState.AfterBurnerSpeed);
-        AddIfChanged(StatType.AfterBurnerAcceleration, AfterBurnerAcceleration, oldState.AfterBurnerAcceleration);
-
-        return result;
-
-        void AddIfChanged(StatType type, Stat current, Stat old)
-        {
-            if (current.HasPermaDelta(old))
-            {
-                var entry = current.ToPermanentVariant();
-                result.Add((int)type, entry);
-            }
-        }
+        GetStatByType(type).DrainToZero();
     }
 
     public LivingEntityState DeepCopy()
@@ -279,95 +175,6 @@ public class LivingEntityState
         };
     }
 
-    public void ApplyCurrentDelta(GCol.Dictionary<int, Variant> delta)
-    {
-        foreach (var entry in delta)
-        {
-            switch ((StatType)entry.Key)
-            {
-                case StatType.Health:
-                    Health.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.HealthRegeneration:
-                    HealthRegeneration.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Shield:
-                    Shield.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.ShieldRegeneration:
-                    ShieldRegeneration.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Energy:
-                    Energy.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.EnergyRegeneration:
-                    EnergyRegeneration.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Speed:
-                    Speed.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Acceleration:
-                    Acceleration.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.AfterBurnerSpeed:
-                    AfterBurnerSpeed.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.AfterBurnerAcceleration:
-                    AfterBurnerAcceleration.ApplyCurrentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Condition:
-                    SetCondition((LivingEntityCondition)(int)entry.Value);
-                    break;
-                default:
-                    Logger.Debug($"Unknown stat index: {entry.Key}");
-                    break;
-            }
-        }
-    }
-
-    public void ApplyPermanentDelta(GCol.Dictionary<int, Variant> delta)
-    {
-        foreach (var entry in delta)
-        {
-            switch ((StatType)entry.Key)
-            {
-                case StatType.Health:
-                    Health.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.HealthRegeneration:
-                    HealthRegeneration.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Shield:
-                    Shield.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.ShieldRegeneration:
-                    ShieldRegeneration.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Energy:
-                    Energy.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.EnergyRegeneration:
-                    EnergyRegeneration.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Speed:
-                    Speed.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.Acceleration:
-                    Acceleration.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.AfterBurnerSpeed:
-                    AfterBurnerSpeed.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                case StatType.AfterBurnerAcceleration:
-                    AfterBurnerAcceleration.ApplyPermanentSync(entry.Value.AsGodotArray());
-                    break;
-                default:
-                    Logger.Debug($"Unknown stat index: {entry.Key}");
-                    break;
-            }
-        }
-    }
-
     public bool IsTargetable()
     {
         return Condition.IsTargetAble();
@@ -392,6 +199,175 @@ public class LivingEntityState
     public float GetCurrentAcceleration(bool isAfterBurnerPressed)
     {
         return isAfterBurnerPressed ? AfterBurnerAcceleration.CurrentValue : Acceleration.CurrentValue;
+    }
+
+    public StatBreakdown GetStatBreakdown(StatType type)
+    {
+        return GetStatByType(type).CreateBreakdown(type);
+    }
+
+    public Array CreateDeltaVariant(LivingEntityState oldState, bool includePermanent)
+    {
+        return new Array
+        {
+            LivingEntityId,
+            CreateCurrentDeltaVariant(oldState),
+            includePermanent ? CreatePermanentDeltaVariant(oldState) : CreateEmptyDeltaSlots()
+        };
+    }
+
+    public void ApplyDeltaVariant(Array deltaVariant)
+    {
+        if (deltaVariant.Count != DeltaVariantCount)
+            throw new ArgumentException("Invalid living entity delta variant format");
+
+        var livingEntityId = deltaVariant[DeltaLivingEntityIdIndex].AsInt32();
+        if (LivingEntityId != 0 && LivingEntityId != livingEntityId)
+        {
+            Logger.Warning(
+                $"Applying delta for living entity {livingEntityId} to state {LivingEntityId}.");
+        }
+
+        ApplyCurrentDeltaVariant(deltaVariant[DeltaCurrentIndex].AsGodotArray());
+        ApplyPermanentDeltaVariant(deltaVariant[DeltaPermanentIndex].AsGodotArray());
+    }
+
+    public static bool DeltaVariantHasChanges(Array deltaVariant)
+    {
+        if (deltaVariant.Count != DeltaVariantCount)
+            throw new ArgumentException("Invalid living entity delta variant format");
+
+        return DeltaSlotsHaveChanges(deltaVariant[DeltaCurrentIndex].AsGodotArray()) ||
+               DeltaSlotsHaveChanges(deltaVariant[DeltaPermanentIndex].AsGodotArray());
+    }
+
+    private Array CreateCurrentDeltaVariant(LivingEntityState oldState)
+    {
+        var result = CreateEmptyDeltaSlots();
+
+        if (_condition != oldState._condition)
+            result[(int)StatType.Condition] = new Array { (int)_condition };
+
+        AddIfChanged(StatType.Health, Health, oldState.Health);
+        AddIfChanged(StatType.HealthRegeneration, HealthRegeneration, oldState.HealthRegeneration);
+        AddIfChanged(StatType.Shield, Shield, oldState.Shield);
+        AddIfChanged(StatType.ShieldRegeneration, ShieldRegeneration, oldState.ShieldRegeneration);
+        AddIfChanged(StatType.Energy, Energy, oldState.Energy);
+        AddIfChanged(StatType.EnergyRegeneration, EnergyRegeneration, oldState.EnergyRegeneration);
+        AddIfChanged(StatType.Speed, Speed, oldState.Speed);
+        AddIfChanged(StatType.Acceleration, Acceleration, oldState.Acceleration);
+        AddIfChanged(StatType.AfterBurnerSpeed, AfterBurnerSpeed, oldState.AfterBurnerSpeed);
+        AddIfChanged(StatType.AfterBurnerAcceleration, AfterBurnerAcceleration, oldState.AfterBurnerAcceleration);
+
+        return result;
+
+        void AddIfChanged(StatType type, Stat current, Stat old)
+        {
+            if (current.HasCurrentDelta(old))
+                result[(int)type] = current.ToCurrentVariant();
+        }
+    }
+
+    private Array CreatePermanentDeltaVariant(LivingEntityState oldState)
+    {
+        var result = CreateEmptyDeltaSlots();
+
+        AddIfChanged(StatType.Health, Health, oldState.Health);
+        AddIfChanged(StatType.HealthRegeneration, HealthRegeneration, oldState.HealthRegeneration);
+        AddIfChanged(StatType.Shield, Shield, oldState.Shield);
+        AddIfChanged(StatType.ShieldRegeneration, ShieldRegeneration, oldState.ShieldRegeneration);
+        AddIfChanged(StatType.Energy, Energy, oldState.Energy);
+        AddIfChanged(StatType.EnergyRegeneration, EnergyRegeneration, oldState.EnergyRegeneration);
+        AddIfChanged(StatType.Speed, Speed, oldState.Speed);
+        AddIfChanged(StatType.Acceleration, Acceleration, oldState.Acceleration);
+        AddIfChanged(StatType.AfterBurnerSpeed, AfterBurnerSpeed, oldState.AfterBurnerSpeed);
+        AddIfChanged(StatType.AfterBurnerAcceleration, AfterBurnerAcceleration, oldState.AfterBurnerAcceleration);
+
+        return result;
+
+        void AddIfChanged(StatType type, Stat current, Stat old)
+        {
+            if (current.HasPermaDelta(old))
+                result[(int)type] = current.ToPermanentVariant();
+        }
+    }
+
+    private void ApplyCurrentDeltaVariant(Array delta)
+    {
+        ValidateDeltaSlots(delta);
+
+        var conditionDelta = delta[(int)StatType.Condition].AsGodotArray();
+        if (conditionDelta.Count > 0)
+            SetCondition((LivingEntityCondition)conditionDelta[0].AsInt32());
+
+        ApplyStat(StatType.Health, Health);
+        ApplyStat(StatType.HealthRegeneration, HealthRegeneration);
+        ApplyStat(StatType.Shield, Shield);
+        ApplyStat(StatType.ShieldRegeneration, ShieldRegeneration);
+        ApplyStat(StatType.Energy, Energy);
+        ApplyStat(StatType.EnergyRegeneration, EnergyRegeneration);
+        ApplyStat(StatType.Speed, Speed);
+        ApplyStat(StatType.Acceleration, Acceleration);
+        ApplyStat(StatType.AfterBurnerSpeed, AfterBurnerSpeed);
+        ApplyStat(StatType.AfterBurnerAcceleration, AfterBurnerAcceleration);
+
+        void ApplyStat(StatType type, Stat stat)
+        {
+            var slot = delta[(int)type].AsGodotArray();
+            if (slot.Count > 0)
+                stat.ApplyCurrentSync(slot);
+        }
+    }
+
+    private void ApplyPermanentDeltaVariant(Array delta)
+    {
+        ValidateDeltaSlots(delta);
+
+        ApplyStat(StatType.Health, Health);
+        ApplyStat(StatType.HealthRegeneration, HealthRegeneration);
+        ApplyStat(StatType.Shield, Shield);
+        ApplyStat(StatType.ShieldRegeneration, ShieldRegeneration);
+        ApplyStat(StatType.Energy, Energy);
+        ApplyStat(StatType.EnergyRegeneration, EnergyRegeneration);
+        ApplyStat(StatType.Speed, Speed);
+        ApplyStat(StatType.Acceleration, Acceleration);
+        ApplyStat(StatType.AfterBurnerSpeed, AfterBurnerSpeed);
+        ApplyStat(StatType.AfterBurnerAcceleration, AfterBurnerAcceleration);
+
+        void ApplyStat(StatType type, Stat stat)
+        {
+            var slot = delta[(int)type].AsGodotArray();
+            if (slot.Count > 0)
+                stat.ApplyPermanentSync(slot);
+        }
+    }
+
+    private static Array CreateEmptyDeltaSlots()
+    {
+        var result = new Array();
+        for (var i = 0; i < StatSlotCount; i++)
+            result.Add(new Array());
+
+        return result;
+    }
+
+    private static bool DeltaSlotsHaveChanges(Array deltaSlots)
+    {
+        ValidateDeltaSlots(deltaSlots);
+
+        for (var i = 0; i < deltaSlots.Count; i++)
+        {
+            if (deltaSlots[i].AsGodotArray().Count > 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static void ValidateDeltaSlots(Array deltaSlots)
+    {
+        if (deltaSlots.Count != StatSlotCount)
+            throw new ArgumentException("Invalid living entity delta slots format");
     }
 
     // private static bool AllowOnlyHostAccess([CallerMemberName] string memberName = "")

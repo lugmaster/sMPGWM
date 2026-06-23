@@ -197,7 +197,7 @@ public partial class StatSynchronizer : AbstractSingleton<StatSynchronizer>
     //         _lastSlowSyncTick = ticksSinceStart;
     //     }
     //
-    //     // CurrentDeltas - e.g. damage, buffs, etc.
+    //     // CurrentDeltas - e.g. reduce/raise effects, buffs, etc.
     //     if (ticksSinceStart - _lastFastSyncTick >= FastSyncInterval)
     //     {
     //         var currentMpControllerDeltas = AssembleCurrentDeltaForSync(_mpControllerTrackers);

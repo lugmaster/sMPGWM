@@ -1,22 +1,48 @@
-﻿using System;
+using System;
 using Godot;
 using sMPGWM.Scripts.Enums.Game;
 using Array = Godot.Collections.Array;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
 
-public class RecurringStatModifier(float value, ModifierType type, float timeRemaining, float tickInterval, Stat target)
-    : TemporaryStatModifier(value, type, timeRemaining)
+public class RecurringStatModifier : TemporaryStatModifier
 {
-    public Stat Target { get;} = target;
-    public float TickInterval { get; } = tickInterval;
+    private static int RoundingPrecision => 3;
     private float _tickTimer;
-    private static int RoundingPrecision => 1;
-    
-    public RecurringStatModifier(Array values, Stat target) : 
-        this((float)values[0], (ModifierType)(int)values[1], (float)values[2], (float)values[3], target)
+
+    public RecurringStatModifier(
+        string instanceId,
+        string sourceId,
+        float value,
+        ModifierType type,
+        float timeRemaining,
+        float tickInterval,
+        Stat target,
+        ModifierSourceType sourceType = ModifierSourceType.Unknown,
+        string displayName = "",
+        ModifierStackPolicy stackPolicy = ModifierStackPolicy.Stack,
+        float tickTimer = 0f)
+        : base(instanceId, sourceId, value, type, timeRemaining, sourceType, displayName, stackPolicy)
     {
+        TickInterval = tickInterval;
+        Target = target;
+        _tickTimer = tickTimer;
     }
+
+    public RecurringStatModifier(Array values, Stat target)
+        : base(values)
+    {
+        if (values.Count < 4)
+            throw new ArgumentException("Invalid recurring stat modifier variant format");
+
+        TickInterval = values.Count >= 10 ? (float)values[8] : (float)values[3];
+        Target = target;
+        _tickTimer = values.Count >= 10 ? (float)values[9] : values.Count > 4 ? (float)values[4] : 0f;
+    }
+
+    public Stat Target { get; }
+    public float TickInterval { get; }
+    public float TickTimer => _tickTimer;
 
     public override void Tick(float delta)
     {
@@ -34,34 +60,31 @@ public class RecurringStatModifier(float value, ModifierType type, float timeRem
     {
         var amount = Type switch
         {
-            ModifierType.Flat => Value,
-            ModifierType.Percent => Round(Target.CurrentValue * Value),
+            ModifierType.Flat => Value * TickInterval,
+            ModifierType.Percent => Round(Target.CurrentValue * Value * TickInterval),
             _ => 0f
         };
-        
+
         if (amount < 0f)
             Target.Reduce(-amount);
         else
             Target.Raise(amount);
     }
-    
-    public new Array ToVariant()
+
+    public override Array ToVariant()
     {
-        return new Array
-        {
-            Value,
-            (int)Type,
-            TimeRemaining,
-            TickInterval,
-            _tickTimer
-        };
+        var result = base.ToVariant();
+        result.Add(TickInterval);
+        result.Add(_tickTimer);
+        return result;
     }
 
     public override bool Equals(object obj)
     {
         return obj is RecurringStatModifier other &&
                base.Equals(other) &&
-               Mathf.IsEqualApprox(TickInterval, other.TickInterval);
+               Mathf.IsEqualApprox(TickInterval, other.TickInterval) &&
+               Mathf.IsEqualApprox(_tickTimer, other._tickTimer);
     }
 
     public override int GetHashCode()

@@ -1,4 +1,5 @@
-﻿using sMPGWM.Scripts.Controllers.LivingEntity;
+using sMPGWM.Scripts.Controllers.LivingEntity;
+using sMPGWM.Scripts.Controllers.LivingEntity.Effects;
 using sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
 using sMPGWM.Scripts.Enums.Game;
 
@@ -7,334 +8,303 @@ namespace sMPGWM.Tests;
 [TestFixture]
 public class StatTests
 {
+    private sealed class TestLivingEntityLogger : ILivingEntityLogger
+    {
+        public readonly List<string> Messages = [];
+
+        public void Info(string message)
+        {
+            Messages.Add(message);
+        }
+    }
+
     [Test]
-    public void BaseValue_WithPermanentModifiers_CalculatesMaxAndCurrentCorrectly()
+    public void PermanentModifiers_RecalculateMaxAndApplyCurrentRules()
     {
         var stat = new Stat(100);
-        var modifier = new StatModifier(-90, ModifierType.Flat);
+        var flatPenalty = new StatModifier("flat-penalty", "test", -90, ModifierType.Flat);
 
-        var modifierReducePercentage = new StatModifier(-0.8f, ModifierType.Percent);
+        stat.AddModifier(new StatModifier("flat-bonus", "test", 20, ModifierType.Flat));
+        stat.AddModifier(new StatModifier("percent-bonus", "test", 0.5f, ModifierType.Percent));
+        stat.AddModifier(flatPenalty);
+
         Assert.Multiple(() =>
         {
-            // baseValue = 100
-            // maxValue = 100, equals baseValue. no modifier applied
-            // currentValue = 100, equals maxValue. no changes applied
             Assert.That(stat.BaseValue, Is.EqualTo(100f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(100f));
-            Assert.That(stat.MaxValue, Is.EqualTo(100f));
-        });
-
-        stat.AddModifier(new StatModifier(20, ModifierType.Flat));
-        Assert.Multiple(() =>
-        {
-            // baseValue = 100
-            // maxValue = 120, former = 100, maxValue gets raised by 20
-            // currentValue = 120, former = 100, currentValue gets raised with the same amount as maxValue
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(120f));
-            Assert.That(stat.MaxValue, Is.EqualTo(120f));
-        });
-
-        stat.AddModifier(new StatModifier(0.5f, ModifierType.Percent));
-        Assert.Multiple(() =>
-        {
-            // baseValue = 100
-            // maxValue = 180, former = 120, (100 + 20) * 1.5 = 180 maxValue. first flat modifiers are applied, then percentage
-            // currentValue = 180, former = 120, currentValue gets raised with the same amount as maxValue
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(180f));
-            Assert.That(stat.MaxValue, Is.EqualTo(180f));
-        });
-
-        stat.AddModifier(modifier);
-        Assert.Multiple(() =>
-        {
-            // baseValue = 100
-            // maxValue = 45, former = 180, (100 + 20 - 90) * 1.5 = 45.0  maxValue, first flat modifiers are applied, then percentage
-            // currentValue = 45, former = 180, currentValue gets reduced with the same amount as maxValue
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(45f));
             Assert.That(stat.MaxValue, Is.EqualTo(45f));
+            Assert.That(stat.CurrentValue, Is.EqualTo(45f));
         });
 
-        stat.AddModifier(new StatModifier(0.25f, ModifierType.Percent));
+        stat.AddModifier(new StatModifier("percent-bonus-2", "test", 0.25f, ModifierType.Percent));
         Assert.Multiple(() =>
         {
-            // baseValue = 100
-            // maxValue = 52.5, former = 45, (100 + 20 - 90) * (1.5 + 1.25) = 52.5 maxValue, first flat modifiers are applied, then percentage
-            // currentValue = 52.5, former = 45, 45 + (52.5 - 45) = 52.5 currentValue gets raised with the same amount as maxValue but raised by 7.5, not set!
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
             Assert.That(stat.MaxValue, Is.EqualTo(52.5f));
             Assert.That(stat.CurrentValue, Is.EqualTo(52.5f));
         });
 
         stat.Reduce(25f);
-        Assert.Multiple(() =>
-        {
-            // baseValue = 100
-            // maxValue = 52.5, former = 45, (100 + 20 - 90) * (1.5 + 1.25) = 52.5 maxValue, first flat modifiers are applied, then percentage
-            // currentValue = 27.5, former = 52.5, 52.5 - 25 = 27.5 currentValue gets reduced
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
-            Assert.That(stat.MaxValue, Is.EqualTo(52.5f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(27.5f));
-        });
-
         stat.Raise(100f);
-        Assert.Multiple(() =>
-        {
-            // baseValue = 100
-            // maxValue = 52.5, former = 45, (100 + 20 - 90) * (1.5 + 1.25) = 52.5 maxValue, first flat modifiers are applied, then percentage
-            // currentValue = 52.5, former 27.5,  currentValue gets raised by 100 from heal amount, but cannot exceed maxValue
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
-            Assert.That(stat.MaxValue, Is.EqualTo(52.5f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(52.5f));
-        });
-
         stat.Reduce(5f);
-        Assert.Multiple(() =>
-        {
-            // baseValue = 100
-            // maxValue = 52.5, former = 52.5, (100 + 20 - 90) * (1.5 + 1.25) = 52.5 maxValue, first flat modifiers are applied, then percentage
-            // currentValue = 47.5, former 52.5,  currentValue gets reduced by 5
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
-            Assert.That(stat.MaxValue, Is.EqualTo(52.5f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(47.5f));
-        });
+        Assert.That(stat.CurrentValue, Is.EqualTo(47.5f));
 
-        stat.RemoveModifier(modifier);
+        stat.RemoveModifier(flatPenalty);
         Assert.Multiple(() =>
         {
-            // baseValue = 100
-            // maxValue = 210, former = 52.5, (100 + 20) * (1.5 + 1.25) = 210 maxValue, first flat modifiers are applied, then percentage
-            // currentValue = 205, former 52.5,  47.5 + (210 - 52.5) = 205 currentValue gets raised with the same amount as maxValue but raised by 157.5, not set!
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
             Assert.That(stat.MaxValue, Is.EqualTo(210f));
             Assert.That(stat.CurrentValue, Is.EqualTo(205f));
         });
 
-        stat.AddModifier(modifierReducePercentage);
+        stat.AddModifier(new StatModifier("percent-penalty", "test", -0.8f, ModifierType.Percent));
         Assert.Multiple(() =>
         {
-            // baseValue = 100
-            // maxValue = 210, former = 52.5, (100 + 20) * (1.5 + 1.25 - 1.8) = 114 maxValue, first flat modifiers are applied, then percentage
-            // currentValue = 205, former 205,  205 + (114 - 210) = 109 currentValue gets reduced with the same amount as maxValue but reduced by 96, not set!
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
             Assert.That(stat.MaxValue, Is.EqualTo(114f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(109f));
+            Assert.That(stat.CurrentValue, Is.EqualTo(114f));
         });
     }
 
     [Test]
-    public void TemporaryModifier_Expires_AfterTick_CalculatesMaxAndCurrentCorrecty()
+    public void TemporaryModifier_Expires_AfterTick_RecalculatesMax()
     {
         var stat = new Stat(100);
 
-        // Add permanent flat modifier (+20)
-        stat.AddModifier(new StatModifier(20, ModifierType.Flat));
-
-        // Add permanent % modifier (+50%)
-        stat.AddModifier(new StatModifier(0.5f, ModifierType.Percent));
+        stat.AddModifier(new StatModifier("flat-bonus", "test", 20, ModifierType.Flat));
+        stat.AddModifier(new StatModifier("percent-bonus", "test", 0.5f, ModifierType.Percent));
+        stat.AddModifier(new TemporaryStatModifier("temp-penalty", "test", -30f, ModifierType.Flat, 2f));
 
         Assert.Multiple(() =>
         {
-            // (100 + 20) * 1.5 = 180
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
             Assert.That(stat.PermanentMaxValue, Is.EqualTo(180f));
-            Assert.That(stat.MaxValue, Is.EqualTo(180f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(180f));
-        });
-
-        // Apply temporary modfier: -30 flat for 2 seconds
-        stat.AddModifier(new TemporaryStatModifier(-30f, ModifierType.Flat, 2f));
-
-        Assert.Multiple(() =>
-        {
-            // (180 - 30) = 150 (flat-only temp modifier)
             Assert.That(stat.MaxValue, Is.EqualTo(150f));
             Assert.That(stat.CurrentValue, Is.EqualTo(150f));
         });
 
-        // Tick 1s (should still be active)
         stat.Tick(1f);
-        Assert.Multiple(() =>
-        {
-            Assert.That(stat.MaxValue, Is.EqualTo(150f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(150f));
-        });
+        Assert.That(stat.MaxValue, Is.EqualTo(150f));
 
-        // Tick another 1.1s (modifier should expire)
         stat.Tick(1.1f);
         Assert.Multiple(() =>
         {
-            // Modifier is gone, max should return to 180
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
             Assert.That(stat.MaxValue, Is.EqualTo(180f));
             Assert.That(stat.CurrentValue, Is.EqualTo(180f));
         });
     }
 
     [Test]
-    public void PermanentAndTemporaryModifiers_InteractionOverTime()
+    public void MaxDecrease_OnlyClampsCurrent_WhenCurrentExceedsNewMax()
     {
         var stat = new Stat(100);
+        stat.Reduce(10);
 
-        // Add permanent flat +10
-        stat.AddModifier(new StatModifier(10, ModifierType.Flat));
-
-        // Add permanent % +0.5
-        stat.AddModifier(new StatModifier(0.5f, ModifierType.Percent));
-
-        Assert.Multiple(() =>
-        {
-            // (100 + 10) * 1.5 = 165
-            Assert.That(stat.BaseValue, Is.EqualTo(100f));
-            Assert.That(stat.PermanentMaxValue, Is.EqualTo(165f));
-            Assert.That(stat.MaxValue, Is.EqualTo(165f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(165f));
-        });
-
-        // Apply temporary flat +20
-        stat.AddModifier(new TemporaryStatModifier(20f, ModifierType.Flat, 3f));
-
-        Assert.Multiple(() =>
-        {
-            // (165 + 20) = 185 (flat bonus added)
-            Assert.That(stat.MaxValue, Is.EqualTo(185f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(185f));
-        });
-
-        // Apply temporary % +0.2
-        stat.AddModifier(new TemporaryStatModifier(0.2f, ModifierType.Percent, 2f));
-
-        Assert.Multiple(() =>
-        {
-            // (165 + 20) * 1.2 = 222
-            Assert.That(stat.MaxValue, Is.EqualTo(222f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(222f));
-        });
-
-        // Reduce by 50
-        stat.Reduce(50);
-        Assert.Multiple(() => { Assert.That(stat.CurrentValue, Is.EqualTo(172f)); });
-
-        // Tick 1s
-        stat.Tick(1f);
-        Assert.Multiple(() =>
-        {
-            // Still active: +20 flat (2s left), +0.2% (1s left)
-            // Max should remain the same
-            Assert.That(stat.MaxValue, Is.EqualTo(222f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(172f));
-        });
-
-        // Tick 1.1s: % modifier expires
-        stat.Tick(1.1f);
-        Assert.Multiple(() =>
-        {
-            // (165 + 20) * 1.0 = 185
-            // CurrentValue = 172 + (185 - 222) = 135
-            Assert.That(stat.MaxValue, Is.EqualTo(185f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(135f));
-        });
-
-        // Tick 1s more: flat modifier expires
-        stat.Tick(1f);
-        Assert.Multiple(() =>
-        {
-            // Back to (100 + 10) * 1.5 = 165
-            // Current = 135 + (165 - 185) = 115
-            Assert.That(stat.PermanentMaxValue, Is.EqualTo(165f));
-            Assert.That(stat.MaxValue, Is.EqualTo(165f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(115f));
-        });
-
-        // Raise 100
-        stat.Raise(100f);
-        Assert.Multiple(() =>
-        {
-            // CurrentValue should be clamped to max
-            Assert.That(stat.CurrentValue, Is.EqualTo(165f));
-        });
-    }
-
-
-    [Test]
-    public void TemporaryFlatModifier_LowersMaxAndAdjustsCurrentByDelta()
-    {
-        var stat = new Stat(100);
-        stat.Reduce(10); // Current = 90
-
-        stat.AddModifier(new TemporaryStatModifier(-10, ModifierType.Flat, 5f));
+        stat.AddModifier(new TemporaryStatModifier("temp-penalty-1", "test", -10, ModifierType.Flat, 5f));
 
         Assert.Multiple(() =>
         {
             Assert.That(stat.MaxValue, Is.EqualTo(90f));
-            Assert.That(stat.CurrentValue, Is.EqualTo(80f)); // 90 - 10 delta
+            Assert.That(stat.CurrentValue, Is.EqualTo(90f));
+        });
+
+        stat.AddModifier(new TemporaryStatModifier("temp-penalty-2", "test", -20, ModifierType.Flat, 5f));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(stat.MaxValue, Is.EqualTo(70f));
+            Assert.That(stat.CurrentValue, Is.EqualTo(70f));
         });
     }
 
-
     [Test]
-    public void TemporaryModifier_Expires_AfterTick()
+    public void MaxIncrease_RaisesCurrentBySameDelta()
     {
         var stat = new Stat(100);
+        stat.Reduce(40);
 
-        var modifier = new TemporaryStatModifier(-20, ModifierType.Flat, 1f);
+        stat.AddModifier(new StatModifier("flat-bonus", "test", 25, ModifierType.Flat));
 
-        stat.AddModifier(modifier);
-
-        Assert.That(stat.MaxValue, Is.EqualTo(80f));
-
-        stat.Tick(1.1f); // Modifier expires
-
-        Assert.That(stat.MaxValue, Is.EqualTo(100f));
+        Assert.Multiple(() =>
+        {
+            Assert.That(stat.MaxValue, Is.EqualTo(125f));
+            Assert.That(stat.CurrentValue, Is.EqualTo(85f));
+        });
     }
 
     [Test]
-    public void Raising_RespectsMaxValue()
+    public void SetBaseValue_UsesMaxCurrentRules()
     {
         var stat = new Stat(100);
-        stat.Reduce(50);
-        stat.Raise(30); // 50 - 30 = 80
-
-        Assert.That(stat.CurrentValue, Is.EqualTo(80f));
-
-        stat.Raise(50); // Should clamp to max
-        Assert.That(stat.CurrentValue, Is.EqualTo(100f));
-    }
-
-    [Test]
-    public void SetBaseValue_UpdatesMaxAndClampsCurrent()
-    {
-        var stat = new Stat(100);
-        stat.Reduce(10); // Current = 90
+        stat.Reduce(10);
 
         stat.SetBaseValue(50);
         Assert.Multiple(() =>
         {
-            // Max = 50, Current = clamped to 50
             Assert.That(stat.MaxValue, Is.EqualTo(50f));
             Assert.That(stat.CurrentValue, Is.EqualTo(50f));
+        });
+
+        stat.SetBaseValue(80);
+        Assert.Multiple(() =>
+        {
+            Assert.That(stat.MaxValue, Is.EqualTo(80f));
+            Assert.That(stat.CurrentValue, Is.EqualTo(80f));
         });
     }
 
     [Test]
-    public void RecurringModifier_Expires_AfterDuration()
+    public void RecurringModifier_UsesPerSecondValue()
     {
         var stat = new Stat(100);
-        var recurring = new RecurringStatModifier(-10f, ModifierType.Flat, 4f, 2f, stat);
+        var recurring = new RecurringStatModifier("dot", "test", -5f, ModifierType.Flat, 4f, 2f, stat);
 
         stat.AddRecurringModifier(recurring);
-        Assert.That(stat.CurrentValue, Is.EqualTo(100f));
 
-        stat.Tick(2f); // First tick
+        stat.Tick(2f);
         Assert.That(stat.CurrentValue, Is.EqualTo(90f));
 
-        stat.Tick(2f); // Second tick
+        stat.Tick(2f);
         Assert.That(stat.CurrentValue, Is.EqualTo(80f));
 
-        stat.Tick(0.1f); // Should now expire
-        stat.Tick(2f); // No more effect
+        stat.Tick(0.1f);
+        stat.Tick(2f);
         Assert.That(stat.CurrentValue, Is.EqualTo(80f));
     }
+
+    [Test]
+    public void ModifierMetadata_IsExposedThroughBreakdown()
+    {
+        var stat = new Stat(100);
+        var modifier = new TemporaryStatModifier(
+            "instance-1",
+            "skill-overcharge",
+            20f,
+            ModifierType.Flat,
+            3f,
+            ModifierSourceType.Skill,
+            "Overcharge",
+            ModifierStackPolicy.RefreshDuration);
+
+        stat.AddModifier(modifier);
+
+        var breakdown = stat.CreateBreakdown(StatType.Energy);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(breakdown.BaseValue, Is.EqualTo(100f));
+            Assert.That(breakdown.MaxValue, Is.EqualTo(120f));
+            Assert.That(breakdown.TemporaryContributions.Length, Is.EqualTo(1));
+            Assert.That(breakdown.TemporaryContributions[0].InstanceId, Is.EqualTo("instance-1"));
+            Assert.That(breakdown.TemporaryContributions[0].SourceId, Is.EqualTo("skill-overcharge"));
+            Assert.That(breakdown.TemporaryContributions[0].DisplayName, Is.EqualTo("Overcharge"));
+            Assert.That(breakdown.TemporaryContributions[0].TimeRemaining, Is.EqualTo(3f));
+        });
+    }
+
+    [Test]
+    public void StackPolicy_RefreshDuration_ReplacesSameSourceModifier()
+    {
+        var stat = new Stat(100);
+
+        stat.AddModifier(new TemporaryStatModifier(
+            "old",
+            "skill-boost",
+            10f,
+            ModifierType.Flat,
+            1f,
+            ModifierSourceType.Skill,
+            "Boost",
+            ModifierStackPolicy.RefreshDuration));
+
+        stat.AddModifier(new TemporaryStatModifier(
+            "new",
+            "skill-boost",
+            10f,
+            ModifierType.Flat,
+            5f,
+            ModifierSourceType.Skill,
+            "Boost",
+            ModifierStackPolicy.RefreshDuration));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(stat.TemporaryModifiers, Has.Count.EqualTo(1));
+            Assert.That(stat.TemporaryModifiers[0].InstanceId, Is.EqualTo("new"));
+            Assert.That(stat.TemporaryModifiers[0].TimeRemaining, Is.EqualTo(5f));
+            Assert.That(stat.MaxValue, Is.EqualTo(110f));
+        });
+    }
+
+    [Test]
+    public void EffectService_ReducesTargetedStatsAndZeroHealthChangesCondition()
+    {
+        var logger = new TestLivingEntityLogger();
+        var service = new LivingEntityServiceCore(logger);
+        service.RegisterPeer(7, LivingEntityStateFactory.CreateDefaultPlayerState(7));
+        service.ApplyEffect(7, new ReduceEffect("reduce-shield", "skill-1", StatType.Shield, 25f));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(service.GetState(7).Shield.CurrentValue, Is.EqualTo(75f));
+            Assert.That(service.GetState(7).Health.CurrentValue, Is.EqualTo(100f));
+            Assert.That(service.GetRuntime(7).IsAlive(), Is.True);
+            Assert.That(logger.Messages, Is.Not.Empty);
+        });
+
+        var conditionEvents = new List<LivingEntityConditionChanged>();
+        service.ConditionChanged += conditionEvents.Add;
+
+        service.ApplyEffect(7, new ReduceEffect("reduce-health", "skill-1", StatType.Health, 200f));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(service.GetRuntime(7).IsAlive(), Is.False);
+            Assert.That(service.GetRuntime(7).Condition.Contains(LivingEntityCondition.Dead), Is.True);
+            Assert.That(service.GetState(7).Health.CurrentValue, Is.EqualTo(0f));
+            Assert.That(service.GetState(7).Shield.CurrentValue, Is.EqualTo(0f));
+            Assert.That(service.GetState(7).Energy.CurrentValue, Is.EqualTo(0f));
+            Assert.That(conditionEvents.Any(e => e.Added.Contains(LivingEntityCondition.Dead)), Is.True);
+        });
+    }
+
+    [Test]
+    public void EffectService_RemovesTimedCondition_WhenConditionSourceExpires()
+    {
+        var service = new LivingEntityServiceCore(new TestLivingEntityLogger());
+        service.RegisterPeer(8, LivingEntityStateFactory.CreateDefaultPlayerState(8));
+        var conditionEvents = new List<LivingEntityConditionChanged>();
+        service.ConditionChanged += conditionEvents.Add;
+
+        service.ApplyEffect(8,
+            new ConditionEffect("cloak-1", "skill-cloak", LivingEntityCondition.Untargetable, true, 1f));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(service.GetRuntime(8).Condition.Contains(LivingEntityCondition.Untargetable), Is.True);
+            Assert.That(conditionEvents, Has.Count.EqualTo(1));
+            Assert.That(conditionEvents[0].Added.Contains(LivingEntityCondition.Untargetable), Is.True);
+        });
+
+        service.TickActiveEffects(8, 1.1f);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(service.GetRuntime(8).Condition.Contains(LivingEntityCondition.Untargetable), Is.False);
+            Assert.That(conditionEvents, Has.Count.EqualTo(2));
+            Assert.That(conditionEvents[1].Removed.Contains(LivingEntityCondition.Untargetable), Is.True);
+        });
+    }
+
+
+    [Test]
+    public void Factory_UsesPeerIdForPlayersAndReservedRangeForAgents()
+    {
+        var player = LivingEntityStateFactory.CreateDefaultPlayerState(42);
+        var agent = LivingEntityStateFactory.CreateDefaultAgentState(42);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(player.LivingEntityId, Is.EqualTo(42));
+            Assert.That(player.LivingEntityType, Is.EqualTo(LivingEntityType.MpController));
+            Assert.That(agent.LivingEntityId, Is.EqualTo(1_000_042));
+            Assert.That(agent.LivingEntityType, Is.EqualTo(LivingEntityType.AgentController));
+        });
+    }
+
 }

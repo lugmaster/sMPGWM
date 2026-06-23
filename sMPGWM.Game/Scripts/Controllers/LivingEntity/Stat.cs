@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
@@ -10,18 +10,21 @@ namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
 public class Stat
 {
+    private readonly List<StatModifier> _permanentModifiers = [];
+    private readonly List<TemporaryStatModifier> _temporaryModifiers = [];
+    private readonly List<RecurringStatModifier> _recurringModifiers = [];
+
+    private static int RoundingPrecision => 3;
+
     public float BaseValue { get; private set; }
     public float CurrentValue { get; private set; }
     public float MaxValue { get; private set; }
     public float PermanentMaxValue { get; private set; }
 
-    public readonly List<StatModifier> PermanentModifiers = [];
-    public readonly List<TemporaryStatModifier> TemporaryModifiers = [];
-    public readonly List<RecurringStatModifier> RecurringModifiers = [];
+    public IReadOnlyList<StatModifier> PermanentModifiers => _permanentModifiers.AsReadOnly();
+    public IReadOnlyList<TemporaryStatModifier> TemporaryModifiers => _temporaryModifiers.AsReadOnly();
+    public IReadOnlyList<RecurringStatModifier> RecurringModifiers => _recurringModifiers.AsReadOnly();
 
-    private static int RoundingPrecision => 1;
-
-    // --- Constructors ---
     public Stat(float baseValue)
     {
         BaseValue = baseValue;
@@ -37,7 +40,7 @@ public class Stat
         RecalculatePermanent();
         RecalculateTemporary();
 
-        CurrentValue = currentValue;
+        CurrentValue = Round(currentValue);
 
         if (CurrentValue < 0 || CurrentValue > MaxValue)
         {
@@ -55,36 +58,36 @@ public class Stat
         BaseValue = (float)variant[0];
         CurrentValue = (float)variant[1];
 
-        PermanentModifiers.Clear();
+        _permanentModifiers.Clear();
         foreach (var item in variant[2].AsGodotArray())
-            PermanentModifiers.Add(new StatModifier(item.AsGodotArray()));
+            _permanentModifiers.Add(new StatModifier(item.AsGodotArray()));
 
-        TemporaryModifiers.Clear();
+        _temporaryModifiers.Clear();
         foreach (var item in variant[3].AsGodotArray())
-            TemporaryModifiers.Add(new TemporaryStatModifier(item.AsGodotArray()));
+            _temporaryModifiers.Add(new TemporaryStatModifier(item.AsGodotArray()));
 
-        RecurringModifiers.Clear();
+        _recurringModifiers.Clear();
         foreach (var item in variant[4].AsGodotArray())
-            RecurringModifiers.Add(new RecurringStatModifier(item.AsGodotArray(), this));
+            _recurringModifiers.Add(new RecurringStatModifier(item.AsGodotArray(), this));
 
         RecalculatePermanent();
-        RecalculateTemporary();
+        RecalculateTemporary(false);
+        CurrentValue = Round(Math.Clamp(CurrentValue, 0f, MaxValue));
     }
 
-    // --- Modifier Handling ---
     public void AddModifier(StatModifier modifier)
     {
         switch (modifier)
         {
             case RecurringStatModifier recurring:
-                RecurringModifiers.Add(recurring);
+                AddWithStackPolicy(_recurringModifiers, recurring);
                 break;
             case TemporaryStatModifier temporary:
-                TemporaryModifiers.Add(temporary);
+                AddWithStackPolicy(_temporaryModifiers, temporary);
                 RecalculateTemporary();
                 break;
             default:
-                PermanentModifiers.Add(modifier);
+                AddWithStackPolicy(_permanentModifiers, modifier);
                 RecalculatePermanent();
                 RecalculateTemporary();
                 break;
@@ -96,14 +99,14 @@ public class Stat
         switch (modifier)
         {
             case RecurringStatModifier recurring:
-                RecurringModifiers.Remove(recurring);
+                _recurringModifiers.Remove(recurring);
                 break;
             case TemporaryStatModifier temporary:
-                TemporaryModifiers.Remove(temporary);
+                _temporaryModifiers.Remove(temporary);
                 RecalculateTemporary();
                 break;
             default:
-                PermanentModifiers.Remove(modifier);
+                _permanentModifiers.Remove(modifier);
                 RecalculatePermanent();
                 RecalculateTemporary();
                 break;
@@ -112,47 +115,33 @@ public class Stat
 
     public void AddRecurringModifier(RecurringStatModifier recurringStat)
     {
-        RecurringModifiers.Add(recurringStat);
+        AddWithStackPolicy(_recurringModifiers, recurringStat);
     }
 
     public void SetBaseValue(float value)
     {
         BaseValue = value;
         RecalculatePermanent();
-
-        var flatBonus = 0f;
-        var percentBonus = 0f;
-
-        foreach (var mod in TemporaryModifiers)
-        {
-            switch (mod.Type)
-            {
-                case ModifierType.Flat: flatBonus += mod.Value; break;
-                case ModifierType.Percent: percentBonus += mod.Value; break;
-            }
-        }
-
-        MaxValue = Round((PermanentMaxValue + flatBonus) * (1 + percentBonus));
-        CurrentValue = MaxValue;
+        RecalculateTemporary();
     }
 
-    // --- Sync / Serialization ---
     public void ApplyCurrentSync(Array variant)
     {
         if (variant.Count != 4)
             throw new ArgumentException("Invalid stat delta variant");
 
-        CurrentValue = (float)variant[1];
+        CurrentValue = Round((float)variant[1]);
 
-        TemporaryModifiers.Clear();
+        _temporaryModifiers.Clear();
         foreach (var item in variant[2].AsGodotArray())
-            TemporaryModifiers.Add(new TemporaryStatModifier(item.AsGodotArray()));
+            _temporaryModifiers.Add(new TemporaryStatModifier(item.AsGodotArray()));
 
-        RecurringModifiers.Clear();
+        _recurringModifiers.Clear();
         foreach (var item in variant[3].AsGodotArray())
-            RecurringModifiers.Add(new RecurringStatModifier(item.AsGodotArray(), this));
+            _recurringModifiers.Add(new RecurringStatModifier(item.AsGodotArray(), this));
 
-        RecalculateTemporary();
+        RecalculateTemporary(false);
+        CurrentValue = Round(Math.Clamp(CurrentValue, 0f, MaxValue));
     }
 
     public void ApplyPermanentSync(Array variant)
@@ -161,10 +150,10 @@ public class Stat
             throw new ArgumentException("Invalid permanent stat sync format");
 
         BaseValue = (float)variant[0];
-        PermanentModifiers.Clear();
+        _permanentModifiers.Clear();
 
         foreach (var item in variant[1].AsGodotArray())
-            PermanentModifiers.Add(new StatModifier(item.AsGodotArray()));
+            _permanentModifiers.Add(new StatModifier(item.AsGodotArray()));
 
         RecalculatePermanent();
         RecalculateTemporary();
@@ -173,7 +162,7 @@ public class Stat
     public Array ToPermanentVariant()
     {
         var permArray = new Array();
-        foreach (var mod in PermanentModifiers)
+        foreach (var mod in _permanentModifiers)
             permArray.Add(mod.ToVariant());
 
         return new Array { BaseValue, permArray };
@@ -182,11 +171,11 @@ public class Stat
     public Array ToCurrentVariant()
     {
         var tempArray = new Array();
-        foreach (var mod in TemporaryModifiers)
+        foreach (var mod in _temporaryModifiers)
             tempArray.Add(mod.ToVariant());
 
         var recArray = new Array();
-        foreach (var mod in RecurringModifiers)
+        foreach (var mod in _recurringModifiers)
             recArray.Add(mod.ToVariant());
 
         return new Array
@@ -201,15 +190,15 @@ public class Stat
     public Array ToFullVariant()
     {
         var permArray = new Array();
-        foreach (var mod in PermanentModifiers)
+        foreach (var mod in _permanentModifiers)
             permArray.Add(mod.ToVariant());
 
         var tempArray = new Array();
-        foreach (var mod in TemporaryModifiers)
+        foreach (var mod in _temporaryModifiers)
             tempArray.Add(mod.ToVariant());
 
         var recArray = new Array();
-        foreach (var mod in RecurringModifiers)
+        foreach (var mod in _recurringModifiers)
             recArray.Add(mod.ToVariant());
 
         return new Array
@@ -229,42 +218,41 @@ public class Stat
             CurrentValue = CurrentValue
         };
 
-        foreach (var mod in PermanentModifiers)
-            copy.PermanentModifiers.Add(new StatModifier(mod.ToVariant()));
+        foreach (var mod in _permanentModifiers)
+            copy._permanentModifiers.Add(new StatModifier(mod.ToVariant()));
 
-        foreach (var tempMod in TemporaryModifiers)
-            copy.TemporaryModifiers.Add(new TemporaryStatModifier(tempMod.ToVariant()));
+        foreach (var tempMod in _temporaryModifiers)
+            copy._temporaryModifiers.Add(new TemporaryStatModifier(tempMod.ToVariant()));
 
-        foreach (var recMod in RecurringModifiers)
-            copy.RecurringModifiers.Add(new RecurringStatModifier(recMod.ToVariant(), copy));
+        foreach (var recMod in _recurringModifiers)
+            copy._recurringModifiers.Add(new RecurringStatModifier(recMod.ToVariant(), copy));
 
         copy.RecalculatePermanent();
-        copy.RecalculateTemporary();
+        copy.RecalculateTemporary(false);
 
         return copy;
     }
 
-    // --- Runtime Logic ---
     public void Tick(float delta)
     {
         var changed = false;
 
-        for (var i = TemporaryModifiers.Count - 1; i >= 0; i--)
+        for (var i = _temporaryModifiers.Count - 1; i >= 0; i--)
         {
-            TemporaryModifiers[i].Tick(delta);
-            if (!TemporaryModifiers[i].IsExpired) continue;
-            TemporaryModifiers.RemoveAt(i);
+            _temporaryModifiers[i].Tick(delta);
+            if (!_temporaryModifiers[i].IsExpired) continue;
+            _temporaryModifiers.RemoveAt(i);
             changed = true;
         }
 
         if (changed)
             RecalculateTemporary();
 
-        for (var i = RecurringModifiers.Count - 1; i >= 0; i--)
+        for (var i = _recurringModifiers.Count - 1; i >= 0; i--)
         {
-            RecurringModifiers[i].Tick(delta);
-            if (RecurringModifiers[i].IsExpired)
-                RecurringModifiers.RemoveAt(i);
+            _recurringModifiers[i].Tick(delta);
+            if (_recurringModifiers[i].IsExpired)
+                _recurringModifiers.RemoveAt(i);
         }
     }
 
@@ -278,23 +266,23 @@ public class Stat
     {
         if (CurrentValue >= amount)
         {
-            CurrentValue -= amount;
+            CurrentValue = Round(CurrentValue - amount);
             return 0f;
         }
 
-        float overflow = amount - CurrentValue;
+        var overflow = amount - CurrentValue;
         CurrentValue = 0f;
-        return overflow;
+        return Round(overflow);
     }
 
     public void Reduce(float amount)
     {
-        CurrentValue = MathF.Max(CurrentValue - amount, 0f);
+        CurrentValue = Round(MathF.Max(CurrentValue - amount, 0f));
     }
 
     public void Raise(float amount)
     {
-        CurrentValue = MathF.Min(CurrentValue + amount, MaxValue);
+        CurrentValue = Round(MathF.Min(CurrentValue + amount, MaxValue));
     }
 
     public void RestoreToMax()
@@ -312,19 +300,19 @@ public class Stat
         if (!Mathf.IsEqualApprox(oldStat.CurrentValue, CurrentValue))
             return true;
 
-        if (TemporaryModifiers.Count != oldStat.TemporaryModifiers.Count ||
-            RecurringModifiers.Count != oldStat.RecurringModifiers.Count)
+        if (_temporaryModifiers.Count != oldStat._temporaryModifiers.Count ||
+            _recurringModifiers.Count != oldStat._recurringModifiers.Count)
             return true;
 
-        for (int i = 0; i < TemporaryModifiers.Count; i++)
+        for (var i = 0; i < _temporaryModifiers.Count; i++)
         {
-            if (!TemporaryModifiers[i].Equals(oldStat.TemporaryModifiers[i]))
+            if (!_temporaryModifiers[i].Equals(oldStat._temporaryModifiers[i]))
                 return true;
         }
 
-        for (int i = 0; i < RecurringModifiers.Count; i++)
+        for (var i = 0; i < _recurringModifiers.Count; i++)
         {
-            if (!RecurringModifiers[i].Equals(oldStat.RecurringModifiers[i]))
+            if (!_recurringModifiers[i].Equals(oldStat._recurringModifiers[i]))
                 return true;
         }
 
@@ -336,57 +324,132 @@ public class Stat
         if (!Mathf.IsEqualApprox(oldStat.BaseValue, BaseValue) || !Mathf.IsEqualApprox(oldStat.MaxValue, MaxValue))
             return true;
 
-        if (PermanentModifiers.Count != oldStat.PermanentModifiers.Count)
+        if (_permanentModifiers.Count != oldStat._permanentModifiers.Count)
             return true;
 
-        for (int i = 0; i < PermanentModifiers.Count; i++)
+        for (var i = 0; i < _permanentModifiers.Count; i++)
         {
-            if (!PermanentModifiers[i].Equals(oldStat.PermanentModifiers[i]))
+            if (!_permanentModifiers[i].Equals(oldStat._permanentModifiers[i]))
                 return true;
         }
 
         return false;
     }
 
-    // --- Private Helpers ---
+    public StatBreakdown CreateBreakdown(StatType statType)
+    {
+        return new StatBreakdown(
+            statType,
+            BaseValue,
+            CurrentValue,
+            MaxValue,
+            CreateContributionArray(_permanentModifiers),
+            CreateContributionArray(_temporaryModifiers),
+            CreateContributionArray(_recurringModifiers));
+    }
+
     private void RecalculatePermanent()
     {
         var flatBonus = 0f;
         var percentBonus = 0f;
 
-        foreach (var mod in PermanentModifiers)
-        {
-            switch (mod.Type)
-            {
-                case ModifierType.Flat: flatBonus += mod.Value; break;
-                case ModifierType.Percent: percentBonus += mod.Value; break;
-            }
-        }
+        foreach (var mod in _permanentModifiers)
+            AddModifierValue(mod, ref flatBonus, ref percentBonus);
 
         PermanentMaxValue = Round((BaseValue + flatBonus) * (1 + percentBonus));
     }
 
-    private void RecalculateTemporary()
+    private void RecalculateTemporary(bool applyMaxDelta = true)
     {
         var flatBonus = 0f;
         var percentBonus = 0f;
 
-        foreach (var mod in TemporaryModifiers)
-        {
-            switch (mod.Type)
-            {
-                case ModifierType.Flat: flatBonus += mod.Value; break;
-                case ModifierType.Percent: percentBonus += mod.Value; break;
-            }
-        }
+        foreach (var mod in _temporaryModifiers)
+            AddModifierValue(mod, ref flatBonus, ref percentBonus);
 
         var oldMax = MaxValue;
         MaxValue = Round((PermanentMaxValue + flatBonus) * (1 + percentBonus));
 
+        if (applyMaxDelta)
+            ApplyMaxChange(oldMax);
+    }
+
+    private void ApplyMaxChange(float oldMax)
+    {
         var delta = MaxValue - oldMax;
-        CurrentValue += delta;
+        if (delta > 0f)
+            CurrentValue += delta;
+        else if (CurrentValue > MaxValue)
+            CurrentValue = MaxValue;
+
         CurrentValue = Round(Math.Clamp(CurrentValue, 0f, MaxValue));
     }
 
+    private static void AddModifierValue(StatModifier mod, ref float flatBonus, ref float percentBonus)
+    {
+        switch (mod.Type)
+        {
+            case ModifierType.Flat:
+                flatBonus += mod.Value;
+                break;
+            case ModifierType.Percent:
+                percentBonus += mod.Value;
+                break;
+        }
+    }
+
+    private static void AddWithStackPolicy<T>(List<T> modifiers, T modifier) where T : StatModifier
+    {
+        var sameSourceIndex = modifiers.FindIndex(existing =>
+            !string.IsNullOrEmpty(modifier.SourceId) &&
+            existing.SourceId == modifier.SourceId &&
+            existing.Type == modifier.Type);
+
+        if (sameSourceIndex < 0)
+        {
+            modifiers.Add(modifier);
+            return;
+        }
+
+        switch (modifier.StackPolicy)
+        {
+            case ModifierStackPolicy.RefreshDuration:
+            case ModifierStackPolicy.Replace:
+            case ModifierStackPolicy.StackAndRefresh:
+            case ModifierStackPolicy.MaxStacksRefresh:
+                modifiers[sameSourceIndex] = modifier;
+                break;
+            case ModifierStackPolicy.IgnoreIfActive:
+                break;
+            case ModifierStackPolicy.Stack:
+            default:
+                modifiers.Add(modifier);
+                break;
+        }
+    }
+
+    private static StatModifierContribution ToContribution(StatModifier modifier)
+    {
+        var timeRemaining = modifier is TemporaryStatModifier temporary ? temporary.TimeRemaining : (float?)null;
+        return new StatModifierContribution(
+            modifier.InstanceId,
+            modifier.SourceId,
+            modifier.SourceType,
+            modifier.DisplayName,
+            modifier.Type,
+            modifier.Value,
+            timeRemaining);
+    }
+
     private static float Round(float value) => MathF.Round(value, RoundingPrecision);
+
+    private static StatModifierContribution[] CreateContributionArray<T>(IReadOnlyList<T> modifiers)
+        where T : StatModifier
+    {
+        var result = new StatModifierContribution[modifiers.Count];
+        for (var i = 0; i < modifiers.Count; i++)
+            result[i] = ToContribution(modifiers[i]);
+
+        return result;
+    }
 }

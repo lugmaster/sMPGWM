@@ -1,33 +1,48 @@
-﻿using System;
+using System;
 using Godot;
-using Array = Godot.Collections.Array;
 using sMPGWM.Scripts.Enums.Game;
+using Array = Godot.Collections.Array;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
 
-public class TemporaryStatModifier(float value, ModifierType type, float timeRemaining)
-    : StatModifier(value, type)
+public class TemporaryStatModifier : StatModifier
 {
-    public TemporaryStatModifier(Array values) : this((float)values[0], (ModifierType)(int)values[1], (float)values[2])
+    public TemporaryStatModifier(
+        string instanceId,
+        string sourceId,
+        float value,
+        ModifierType type,
+        float timeRemaining,
+        ModifierSourceType sourceType = ModifierSourceType.Unknown,
+        string displayName = "",
+        ModifierStackPolicy stackPolicy = ModifierStackPolicy.Stack)
+        : base(instanceId, sourceId, value, type, sourceType, displayName, stackPolicy)
     {
+        TimeRemaining = timeRemaining;
     }
-    
+
+    public TemporaryStatModifier(Array values)
+        : base(values)
+    {
+        if (values.Count < 3)
+            throw new ArgumentException("Invalid temporary stat modifier variant format");
+
+        TimeRemaining = values.Count >= 8 ? (float)values[7] : (float)values[2];
+    }
+
     public bool IsExpired => TimeRemaining <= 0;
-    public float TimeRemaining { get; private set; } = timeRemaining;
+    public float TimeRemaining { get; private set; }
 
     public virtual void Tick(float delta)
     {
         TimeRemaining -= delta;
     }
 
-    public new Array ToVariant()
+    public override Array ToVariant()
     {
-        return new Array
-        {
-            Value,
-            (int)Type,
-            TimeRemaining
-        };
+        var result = base.ToVariant();
+        result.Add(TimeRemaining);
+        return result;
     }
 
     public override bool Equals(object obj)
