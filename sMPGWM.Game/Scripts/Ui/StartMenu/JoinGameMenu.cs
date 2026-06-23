@@ -10,11 +10,15 @@ public partial class JoinGameMenu : BaseStartMenu
     private Button _startGameButton = null!;
     protected override string ScreenTitle => "Join Game";
 
+    protected override void OnEnterTree()
+    {
+        base.OnEnterTree();
+        _startGameButton = GetNode<Button>("%StartGameButton");
+    }
+
     protected override void OnReady()
     {
         base.OnReady();
-
-        _startGameButton = GetNode<Button>("%StartGameButton");
         _startGameButton.Pressed += OnJoinButtonPressed;
     }
 

@@ -2,13 +2,13 @@ using System;
 using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Controllers.LivingEntity.Effects;
 using sMPGWM.Scripts.Enums.Game;
-using Array = Godot.Collections.Array;
+using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
 public sealed partial class LivingEntityService : AbstractSingleton<LivingEntityService>
 {
-    private readonly LivingEntityServiceCore _core = new(new GodotLivingEntityLogger());
+    private readonly LivingEntityServiceCore _core = new();
 
     public event Action<LivingEntityConditionChanged> ConditionChanged
     {
@@ -56,22 +56,22 @@ public sealed partial class LivingEntityService : AbstractSingleton<LivingEntity
         _core.ApplyEffect(peerId, effect);
     }
 
-    public Array GetDelta(int peerId, bool includePermanent)
+    public GCol.Array GetDelta(int peerId, bool includePermanent)
     {
         return _core.GetDelta(peerId, includePermanent);
     }
 
-    public Array GetDeltas(bool includePermanent)
+    public GCol.Array GetDeltas(bool includePermanent)
     {
         return _core.GetDeltas(includePermanent);
     }
 
-    public void ApplyDelta(Array delta)
+    public void ApplyDelta(GCol.Array delta)
     {
         _core.ApplyDelta(delta);
     }
 
-    public void ApplyDeltas(Array deltas)
+    public void ApplyDeltas(GCol.Array deltas)
     {
         _core.ApplyDeltas(deltas);
     }

@@ -5,19 +5,19 @@ using sMPGWM.Scripts.Enums;
 
 namespace sMPGWM.Scripts.Autoload;
 
-public partial class Logger : AbstractSingleton<Logger>
+public static class Logger
 {
-    public LogLevel MinimumLevel { get; set; } = LogLevel.Info;
-    public bool WriteToFile { get; set; }
-    public string LogFilePath { get; set; } = "user://game.log";
+    public static LogLevel MinimumLevel { get; set; } = LogLevel.Trace;
+    public static bool WriteToFile { get; set; }
+    public static string LogFilePath { get; set; } = "user://game.log";
 
-    public static void Trace(string message) => Instance.Log(LogLevel.Trace, message);
-    public static void Debug(string message) => Instance.Log(LogLevel.Debug, message);
-    public static void Info(string message) => Instance.Log(LogLevel.Info, message);
-    public static void Warning(string message) => Instance.Log(LogLevel.Warning, message);
-    public static void Error(string message) => Instance.Log(LogLevel.Error, message);
+    public static void Trace(string message) => Log(LogLevel.Trace, message);
+    public static void Debug(string message) => Log(LogLevel.Debug, message);
+    public static void Info(string message) => Log(LogLevel.Info, message);
+    public static void Warning(string message) => Log(LogLevel.Warning, message);
+    public static void Error(string message) => Log(LogLevel.Error, message);
 
-    private void Log(LogLevel level, string message)
+    private static void Log(LogLevel level, string message)
     {
         if (level < MinimumLevel)
             return;

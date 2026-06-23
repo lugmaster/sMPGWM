@@ -1,7 +1,7 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.Enums.Game;
-using Array = Godot.Collections.Array;
+using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
 
@@ -21,7 +21,7 @@ public class TemporaryStatModifier : StatModifier
         TimeRemaining = timeRemaining;
     }
 
-    public TemporaryStatModifier(Array values)
+    public TemporaryStatModifier(GCol.Array values)
         : base(values)
     {
         if (values.Count < 3)
@@ -38,7 +38,7 @@ public class TemporaryStatModifier : StatModifier
         TimeRemaining -= delta;
     }
 
-    public override Array ToVariant()
+    public override GCol.Array ToVariant()
     {
         var result = base.ToVariant();
         result.Add(TimeRemaining);

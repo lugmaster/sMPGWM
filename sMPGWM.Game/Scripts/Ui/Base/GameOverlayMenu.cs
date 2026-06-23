@@ -12,9 +12,15 @@ public partial class GameOverlayMenu : BaseMenu
 
     private Button _closeButton = null!;
 
+    protected override void OnEnterTree()
+    {
+        base.OnEnterTree();
+        _closeButton = GetNode<Button>("%CloseButton");
+    }
+
     protected override void OnReady()
     {
-        _closeButton = GetNode<Button>("%CloseButton");
+        base.OnReady();
         _closeButton.Text = "Close";
         _closeButton.Pressed += RequestClose;
     }

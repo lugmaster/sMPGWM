@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using Logger = sMPGWM.Scripts.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Autoload.Base;
 
@@ -10,8 +11,13 @@ public abstract partial class AbstractSingleton<TSelf> : Node
 
     public sealed override void _EnterTree()
     {
+        Logger.Trace($"{nameof(AbstractSingleton<TSelf>)}.{nameof(_EnterTree)} called for {typeof(TSelf).Name}.");
+
         if (Instance != null)
+        {
+            Logger.Error($"{nameof(AbstractSingleton<TSelf>)}.{nameof(_EnterTree)} reached duplicate singleton for {typeof(TSelf).Name}.");
             throw new InvalidOperationException($"{typeof(TSelf).Name} autoload already exists.");
+        }
 
         Instance = (TSelf)this;
         OnEnterTree();
@@ -19,11 +25,13 @@ public abstract partial class AbstractSingleton<TSelf> : Node
 
     public sealed override void _Ready()
     {
+        Logger.Trace($"{nameof(AbstractSingleton<TSelf>)}.{nameof(_Ready)} called for {typeof(TSelf).Name}.");
         OnReady();
     }
 
     public sealed override void _ExitTree()
     {
+        Logger.Trace($"{nameof(AbstractSingleton<TSelf>)}.{nameof(_ExitTree)} called for {typeof(TSelf).Name}.");
         OnExitTree();
 
         if (Instance == this)

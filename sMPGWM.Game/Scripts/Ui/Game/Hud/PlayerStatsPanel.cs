@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Godot;
 using sMPGWM.Scripts.Controllers.LivingEntity;
 using sMPGWM.Scripts.Enums.Game;
@@ -19,21 +18,40 @@ public partial class PlayerStatsPanel : PanelContainer
     private LivingEntityState _livingEntityState = null!;
     private bool _isProcessingInput = true;
 
+    public override void _EnterTree()
+    {
+        Logger.Trace($"{nameof(PlayerStatsPanel)}.{nameof(_EnterTree)} called.");
+        _barContainer = GetNode<VBoxContainer>("%BarContainer");
+    }
+
     public override void _Ready()
     {
-        _barContainer = GetNode<VBoxContainer>("%BarContainer");
-        Logger.Info("PlayerStatsPanel loaded.");
+        Logger.Trace($"{nameof(PlayerStatsPanel)}.{nameof(_Ready)} called.");
+        Logger.Debug($"{nameof(PlayerStatsPanel)}.{nameof(_Ready)} loaded.");
     }
 
     public void Bind(LivingEntityState state, IReadOnlyCollection<StatType> visibleStats)
     {
-        _livingEntityState = state ?? throw new ArgumentNullException(nameof(state));
+        Logger.Debug($"{nameof(PlayerStatsPanel)}.{nameof(Bind)} called.");
+        if (state == null)
+        {
+            Logger.Error($"{nameof(PlayerStatsPanel)}.{nameof(Bind)} received null {nameof(state)}.");
+            throw new ArgumentNullException(nameof(state));
+        }
+
+        _livingEntityState = state;
 
         if (visibleStats == null)
+        {
+            Logger.Error($"{nameof(PlayerStatsPanel)}.{nameof(Bind)} received null {nameof(visibleStats)}.");
             throw new ArgumentNullException(nameof(visibleStats));
+        }
 
         if (visibleStats.Count == 0)
+        {
+            Logger.Error($"{nameof(PlayerStatsPanel)}.{nameof(Bind)} received empty {nameof(visibleStats)}.");
             throw new ArgumentException("At least one visible stat is required.", nameof(visibleStats));
+        }
 
         RebuildBars(visibleStats);
         RefreshAllBars();
@@ -52,7 +70,10 @@ public partial class PlayerStatsPanel : PanelContainer
             statBar.Configure(type, GetTitle(type));
 
             if (!_bars.TryAdd(type, statBar))
+            {
+                Logger.Error($"{nameof(PlayerStatsPanel)}.{nameof(RebuildBars)} reached duplicate {nameof(StatType)}={type}.");
                 throw new InvalidOperationException($"Duplicate StatBar type: {type}");
+            }
         }
     }
 
@@ -60,8 +81,15 @@ public partial class PlayerStatsPanel : PanelContainer
     {
         _bars.Clear();
 
-        foreach (var child in _barContainer.GetChildren().ToArray())
+        var children = _barContainer.GetChildren();
+        for (var i = children.Count - 1; i >= 0; i--)
         {
+            if (children[i] is not Node child)
+            {
+                Logger.Warning($"{nameof(PlayerStatsPanel)}.{nameof(ClearBars)} found a non-node child entry.");
+                continue;
+            }
+
             _barContainer.RemoveChild(child);
             child.QueueFree();
         }
@@ -87,7 +115,10 @@ public partial class PlayerStatsPanel : PanelContainer
     private StatBar GetBar(StatType type)
     {
         if (!_bars.TryGetValue(type, out var bar))
+        {
+            Logger.Error($"{nameof(PlayerStatsPanel)}.{nameof(GetBar)} reached missing {nameof(StatType)}={type}.");
             throw new InvalidOperationException($"Missing StatBar type: {type}");
+        }
 
         return bar;
     }
@@ -106,8 +137,20 @@ public partial class PlayerStatsPanel : PanelContainer
             StatType.Acceleration => "Acceleration",
             StatType.AfterBurnerSpeed => "Afterburner Speed",
             StatType.AfterBurnerAcceleration => "Afterburner Acceleration",
-            StatType.Condition => throw new ArgumentException("Condition is not a StatBar stat.", nameof(type)),
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            StatType.Condition => throw CreateConditionTitleException(type),
+            _ => throw CreateUnsupportedTitleException(type)
         };
+    }
+
+    private static ArgumentException CreateConditionTitleException(StatType type)
+    {
+        Logger.Error($"{nameof(PlayerStatsPanel)}.{nameof(GetTitle)} received {nameof(type)}={type}; condition is not a stat bar stat.");
+        return new ArgumentException("Condition is not a StatBar stat.", nameof(type));
+    }
+
+    private static ArgumentOutOfRangeException CreateUnsupportedTitleException(StatType type)
+    {
+        Logger.Error($"{nameof(PlayerStatsPanel)}.{nameof(GetTitle)} received unsupported {nameof(type)}={type}.");
+        return new ArgumentOutOfRangeException(nameof(type), type, null);
     }
 }

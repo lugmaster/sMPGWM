@@ -58,7 +58,7 @@ public partial class PlayerMock: AbstractSingleton<PlayerMock>
 
     public void OnHotbarSlotPressed(int slotIndex)
     {
-        Logger.Info($"Request skill launch from hotbar slot {slotIndex}");
+        Logger.Debug($"{nameof(PlayerMock)}.{nameof(OnHotbarSlotPressed)} requested skill launch from hotbar slot {slotIndex}.");
 
         // Later:
         // SkillController.RequestLaunchSkill(slotIndex);

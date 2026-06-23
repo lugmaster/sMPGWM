@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Godot;
 using sMPGWM.Scripts.Enums.GameState;
 using sMPGWM.Scripts.Ui.Base;
@@ -15,17 +14,23 @@ public partial class HotbarControl : PanelContainer
     private bool _isProcessingInput = true;
     public event Action<int>? SlotPressed;
 
+    public override void _EnterTree()
+    {
+        Logger.Trace($"{nameof(HotbarControl)}.{nameof(_EnterTree)} called.");
+        _buttonContainer = GetNode<HBoxContainer>("%ButtonContainer");
+    }
+
     public override void _Ready()
     {
-        _buttonContainer = GetNode<HBoxContainer>("%ButtonContainer");
-
+        Logger.Trace($"{nameof(HotbarControl)}.{nameof(_Ready)} called.");
         ClearButtons();
 
-        Logger.Info("HotbarControl loaded.");
+        Logger.Debug($"{nameof(HotbarControl)}.{nameof(_Ready)} loaded.");
     }
 
     public void SetIcons(IReadOnlyList<IconDefinition> iconDefinitions)
     {
+        Logger.Debug($"{nameof(HotbarControl)}.{nameof(SetIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
         ClearButtons();
 
         for (var i = 0; i < iconDefinitions.Count; i++)
@@ -42,14 +47,17 @@ public partial class HotbarControl : PanelContainer
 
     private void ClearButtons()
     {
-        foreach (var child in _buttonContainer.GetChildren().OfType<ClickableIcon>().ToList())
+        var children = _buttonContainer.GetChildren();
+        for (var i = children.Count - 1; i >= 0; i--)
         {
-            child.QueueFree();
+            if (children[i] is ClickableIcon child)
+                child.QueueFree();
         }
     }
     
     public void ApplyGameState(MainGameState mainGameState)
     {
+        Logger.Debug($"{nameof(HotbarControl)}.{nameof(ApplyGameState)} called with {nameof(mainGameState)}={mainGameState}.");
         switch (mainGameState)
         {
             case MainGameState.Active:
@@ -62,10 +70,16 @@ public partial class HotbarControl : PanelContainer
                 break;
 
             default:
+                Logger.Error($"{nameof(HotbarControl)}.{nameof(ApplyGameState)} reached unexpected {nameof(mainGameState)}={mainGameState}.");
                 throw new InvalidOperationException($"Unexpected game state: {mainGameState}");
         }
-        foreach (var child in _buttonContainer.GetChildren().OfType<ClickableIcon>())
-            child.Disabled = !_isProcessingInput;
+
+        var children = _buttonContainer.GetChildren();
+        for (var i = 0; i < children.Count; i++)
+        {
+            if (children[i] is ClickableIcon child)
+                child.Disabled = !_isProcessingInput;
+        }
 
     }
     

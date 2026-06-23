@@ -11,7 +11,7 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
     {
         if (!string.IsNullOrEmpty(reason))
         {
-            Logger.Info($"Quit triggered: {reason}");
+            Logger.Debug($"{nameof(GameHandler)}.{nameof(QuitToStartMenu)} quit triggered with {nameof(reason)}={reason}.");
         }
 
         Instance.CallDeferred(nameof(Instance.StartQuitAsync), delayMs);
@@ -19,7 +19,7 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
 
     public void QuitToStartMenuBlocking(string reason, bool showAsError = true)
     {
-        Logger.Info($"Graceful quit triggered: {reason}");
+        Logger.Debug($"{nameof(GameHandler)}.{nameof(QuitToStartMenuBlocking)} graceful quit triggered with {nameof(reason)}={reason}.");
 
         var combinedReason = showAsError
             ? $"Error: {reason}\nClick to return to Main Menu."
@@ -34,7 +34,7 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
         }
         else
         {
-            Logger.Info(combinedReason);
+            Logger.Debug($"{nameof(GameHandler)}.{nameof(QuitToStartMenuBlocking)} completed with {nameof(combinedReason)}={combinedReason}.");
         }
 
         Instance.CallDeferred(nameof(QuitToStartMenuInternal));
@@ -42,9 +42,9 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
 
     public void QuitGame(string reason)
     {
-        Logger.Info($"Quit game requested. Reason: {reason}");
+        Logger.Debug($"{nameof(GameHandler)}.{nameof(QuitGame)} requested with {nameof(reason)}={reason}.");
         SteamworksHelper.ShutdownSteam();
-        Logger.Info("After Steam Shutdown");
+        Logger.Debug($"{nameof(GameHandler)}.{nameof(QuitGame)} completed Steam shutdown.");
         Instance.CallDeferred(nameof(QuitGameInternal));
     }
 
@@ -61,13 +61,13 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
 
     private void QuitToStartMenuInternal()
     {
-        Logger.Info("Quitting game, returning to main menu.");
+        Logger.Debug($"{nameof(GameHandler)}.{nameof(QuitToStartMenuInternal)} returning to main menu.");
         GetTree().ChangeSceneToPacked(BaseSceneProvider.GetStartMenuScene());
     }
 
     public void StartGame()
     {
-        Logger.Info("Starting up game.");
+        Logger.Debug($"{nameof(GameHandler)}.{nameof(StartGame)} starting up game.");
         GetTree().ChangeSceneToPacked(BaseSceneProvider.GetMainGameScene());
     }
 

@@ -1,5 +1,6 @@
 using Godot;
 using sMPGWM.Scripts.Enums.Ui;
+using Logger = sMPGWM.Scripts.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Ui.Base;
 
@@ -34,6 +35,7 @@ public partial class ClickableIcon : Button
 
     public override void _Ready()
     {
+        Logger.Trace($"{nameof(ClickableIcon)}.{nameof(_Ready)} called.");
         if (_iconTexture == null && Icon != null)
             _iconTexture = Icon;
 

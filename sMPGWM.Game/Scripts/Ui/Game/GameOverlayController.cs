@@ -20,19 +20,27 @@ public partial class GameOverlayController : CenterContainer
 
     public bool IsMenuOpen => _currentMenu != null;
 
+    public override void _EnterTree()
+    {
+        Logger.Trace($"{nameof(GameOverlayController)}.{nameof(_EnterTree)} called.");
+        _menuLayer = GetParent<Control>();
+    }
+
     public override void _Ready()
     {
-        _menuLayer = GetParent<Control>();
+        Logger.Trace($"{nameof(GameOverlayController)}.{nameof(_Ready)} called.");
         EnableVisibility(false);
     }
 
     public override void _ExitTree()
     {
+        Logger.Trace($"{nameof(GameOverlayController)}.{nameof(_ExitTree)} called.");
         DestroyCurrentMenu();
     }
 
     public void ApplyMenuAction(MenuActionType actionType)
     {
+        Logger.Debug($"{nameof(GameOverlayController)}.{nameof(ApplyMenuAction)} called with {nameof(actionType)}={actionType}.");
         if (_isDisabled)
             return;
         
@@ -53,12 +61,13 @@ public partial class GameOverlayController : CenterContainer
 
     private void CloseMenu()
     {
-        Logger.Info("Request Menu Close");
+        Logger.Debug($"{nameof(GameOverlayController)}.{nameof(CloseMenu)} requested menu close.");
         OnMenuAction?.Invoke(MenuActionType.CloseOverlayMenu);
     }
 
     public void ApplyGameState(MainGameState mainGameState)
     {
+        Logger.Debug($"{nameof(GameOverlayController)}.{nameof(ApplyGameState)} called with {nameof(mainGameState)}={mainGameState}.");
         switch (mainGameState)
         {
             case MainGameState.Active:
@@ -75,6 +84,7 @@ public partial class GameOverlayController : CenterContainer
                 break;
 
             default:
+                Logger.Error($"{nameof(GameOverlayController)}.{nameof(ApplyGameState)} reached unsupported {nameof(mainGameState)}={mainGameState}.");
                 throw new ArgumentOutOfRangeException(nameof(mainGameState), mainGameState, null);
         }
     }
@@ -94,7 +104,7 @@ public partial class GameOverlayController : CenterContainer
 
         EnableVisibility(true);
 
-        Logger.Info($"Opened in-game menu: {_currentMenu.Name}");
+        Logger.Debug($"{nameof(GameOverlayController)}.{nameof(OpenMenu)} opened in-game menu {_currentMenu.Name}.");
     }
 
     private void DestroyCurrentMenu()
@@ -134,10 +144,9 @@ public partial class GameOverlayController : CenterContainer
             MenuActionType.OpenMapMenu => GameOverlayProvider.CreateMapMenu(),
 
             MenuActionType.CloseOverlayMenu =>
-                throw new InvalidOperationException(
-                    $"{nameof(MenuActionType.CloseOverlayMenu)} does not create a menu."),
+                throw CreateCloseOverlayMenuException(),
 
-            _ => throw new ArgumentOutOfRangeException(nameof(actionType), actionType, null)
+            _ => throw CreateUnsupportedMenuActionException(actionType)
         };
     }
 
@@ -152,7 +161,7 @@ public partial class GameOverlayController : CenterContainer
     {
         if (@event.IsActionPressed("MainMenu"))
         {
-            Logger.Info("Main Menu toggled");
+            Logger.Debug($"{nameof(GameOverlayController)}.{nameof(_UnhandledInput)} toggled main menu.");
             OnMenuAction?.Invoke(MenuActionType.OpenMainMenu);
             GetViewport().SetInputAsHandled();
             return;
@@ -160,6 +169,7 @@ public partial class GameOverlayController : CenterContainer
 
         if (@event.IsActionPressed("InventoryMenu"))
         {
+            Logger.Debug($"{nameof(GameOverlayController)}.{nameof(_UnhandledInput)} toggled inventory menu.");
             OnMenuAction?.Invoke(MenuActionType.OpenInventoryMenu);
             GetViewport().SetInputAsHandled();
             return;
@@ -167,8 +177,21 @@ public partial class GameOverlayController : CenterContainer
 
         if (@event.IsActionPressed("MapMenu"))
         {
+            Logger.Debug($"{nameof(GameOverlayController)}.{nameof(_UnhandledInput)} toggled map menu.");
             OnMenuAction?.Invoke(MenuActionType.OpenMapMenu);
             GetViewport().SetInputAsHandled();
         }
+    }
+
+    private static InvalidOperationException CreateCloseOverlayMenuException()
+    {
+        Logger.Error($"{nameof(GameOverlayController)}.{nameof(CreateMenu)} reached {nameof(MenuActionType.CloseOverlayMenu)} which does not create a menu.");
+        return new InvalidOperationException($"{nameof(MenuActionType.CloseOverlayMenu)} does not create a menu.");
+    }
+
+    private static ArgumentOutOfRangeException CreateUnsupportedMenuActionException(MenuActionType actionType)
+    {
+        Logger.Error($"{nameof(GameOverlayController)}.{nameof(CreateMenu)} reached unsupported {nameof(actionType)}={actionType}.");
+        return new ArgumentOutOfRangeException(nameof(actionType), actionType, null);
     }
 }

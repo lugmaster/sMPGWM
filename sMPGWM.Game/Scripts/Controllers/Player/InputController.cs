@@ -40,8 +40,8 @@ public partial class InputController : AbstractSingleton<InputController>
 
     protected override void OnReady()
     {
-        Logger.Info(
-            $"Setting up InputController for authority {GetMultiplayerAuthority()} on peer {Multiplayer.GetUniqueId()}");
+        Logger.Debug(
+            $"{nameof(InputController)}.{nameof(OnReady)} setting up for authority {GetMultiplayerAuthority()} on peer {Multiplayer.GetUniqueId()}.");
         _inputModes.Add(_enableAutoBreaking);
         _inputModes.Add(_actionInput);
         _inputModes.Add(_alternateActionInput);
@@ -52,6 +52,7 @@ public partial class InputController : AbstractSingleton<InputController>
 
     public void ApplyUiState(MainGameState mainGameState)
     {
+        Logger.Debug($"{nameof(InputController)}.{nameof(ApplyUiState)} called with {nameof(mainGameState)}={mainGameState}.");
         _mainGameState = mainGameState;
     }
 
@@ -73,7 +74,9 @@ public partial class InputController : AbstractSingleton<InputController>
         }
         if (_mainGameState == MainGameState.Active)
         {
-            _inputModes.ForEach(action => action.Update());
+            for (var i = 0; i < _inputModes.Count; i++)
+                _inputModes[i].Update();
+
             Direction = Input.GetVector("Backwards", "Forwards", "StrafeLeft", "StrafeRight");
             UpdateInputs();
             DetectTargetSwitchPressed();
@@ -120,7 +123,9 @@ public partial class InputController : AbstractSingleton<InputController>
 
     private void ResetInputState()
     {
-        _inputModes.ForEach(action => action.ResetState());
+        for (var i = 0; i < _inputModes.Count; i++)
+            _inputModes[i].ResetState();
+
         Direction = Vector2.Zero;
         TargetSwitchJustReleased = false;
         TargetNearestSwitchJustReleased = false;

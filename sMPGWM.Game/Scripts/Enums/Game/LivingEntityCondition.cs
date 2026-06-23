@@ -17,17 +17,36 @@ public enum LivingEntityCondition
 
 public static class LivingEntityConditionExtensions
 {
+    public static readonly LivingEntityCondition[] Flags =
+    [
+        LivingEntityCondition.Dead,
+        LivingEntityCondition.Immobilized,
+        LivingEntityCondition.Invulnerable,
+        LivingEntityCondition.Untargetable,
+        LivingEntityCondition.EnergyDepleted,
+        LivingEntityCondition.Invisible
+    ];
+
+    public static LivingEntityCondition Add(this LivingEntityCondition state, LivingEntityCondition flag)
+    {
+        return state | flag;
+    }
+
     public static LivingEntityCondition Add(this LivingEntityCondition state, params LivingEntityCondition[] flags)
     {
-        for (int i = 0; i < flags.Length; i++)
+        for (var i = 0; i < flags.Length; i++)
             state |= flags[i];
         return state;
     }
 
+    public static LivingEntityCondition Remove(this LivingEntityCondition state, LivingEntityCondition flag)
+    {
+        return state & ~flag;
+    }
 
     public static LivingEntityCondition Remove(this LivingEntityCondition state, params LivingEntityCondition[] flags)
     {
-        for (int i = 0; i < flags.Length; i++)
+        for (var i = 0; i < flags.Length; i++)
             state &= ~flags[i];
         return state;
     }
@@ -54,12 +73,12 @@ public static class LivingEntityConditionExtensions
     
     public static string ToFlagListString(this LivingEntityCondition state)
     {
-        var activeFlags = Enum.GetValues<LivingEntityCondition>();
         var result = new List<string>();
 
-        foreach (var flag in activeFlags)
+        for (var i = 0; i < Flags.Length; i++)
         {
-            if (state.HasFlag(flag))
+            var flag = Flags[i];
+            if (state.Contains(flag))
                 result.Add(flag.ToString());
         }
 

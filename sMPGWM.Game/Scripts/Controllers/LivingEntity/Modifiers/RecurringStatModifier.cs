@@ -1,7 +1,7 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.Enums.Game;
-using Array = Godot.Collections.Array;
+using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
 
@@ -29,7 +29,7 @@ public class RecurringStatModifier : TemporaryStatModifier
         _tickTimer = tickTimer;
     }
 
-    public RecurringStatModifier(Array values, Stat target)
+    public RecurringStatModifier(GCol.Array values, Stat target)
         : base(values)
     {
         if (values.Count < 4)
@@ -71,7 +71,7 @@ public class RecurringStatModifier : TemporaryStatModifier
             Target.Raise(amount);
     }
 
-    public override Array ToVariant()
+    public override GCol.Array ToVariant()
     {
         var result = base.ToVariant();
         result.Add(TickInterval);

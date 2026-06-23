@@ -10,19 +10,19 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
 {
     public void ShowJoinGameMenu()
     {
-        Logger.Info("ShowJoinGameMenu requested.");
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowJoinGameMenu)} requested.");
         NavigateTo(StartMenuProvider.CreateJoinGameMenu());
     }
     
     public void ShowHostGameMenu()
     {
-        Logger.Info("ShowHostGameMenu requested.");
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowHostGameMenu)} requested.");
         NavigateTo(StartMenuProvider.CreateHostGameMenu());
     }
 
     public void ShowSettingsMenu()
     {
-        Logger.Info("ShowSettingsMenu requested.");
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowSettingsMenu)} requested.");
         NavigateTo(StartMenuProvider.CreateSettingsMenu());
     }
 
@@ -40,12 +40,15 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
         ArgumentNullException.ThrowIfNull(screen);
 
         if (_currentScreen != null)
+        {
+            Logger.Error($"{nameof(StartMenuManager)}.{nameof(RegisterInitialScreen)} reached duplicate initial screen.");
             throw new InvalidOperationException("Initial screen is already registered.");
+        }
 
         _currentScreen = screen;
         _currentScreen.Visible = true;
 
-        Logger.Info($"Registered initial screen: {screen.Name}");
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(RegisterInitialScreen)} registered initial screen {screen.Name}.");
     }
 
     public void NavigateTo(Control nextScreen)
@@ -53,13 +56,19 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
         ArgumentNullException.ThrowIfNull(nextScreen);
 
         if (_currentScreen == null)
+        {
+            Logger.Error($"{nameof(StartMenuManager)}.{nameof(NavigateTo)} reached missing current screen.");
             throw new InvalidOperationException("No current screen registered.");
+        }
 
         var parent = _currentScreen.GetParent();
 
         if (parent == null)
+        {
+            Logger.Error($"{nameof(StartMenuManager)}.{nameof(NavigateTo)} found no parent for current screen {_currentScreen.Name}.");
             throw new InvalidOperationException(
                 $"Current screen '{_currentScreen.Name}' has no parent.");
+        }
 
         _currentScreen.Visible = false;
         _screenHistory.Push(_currentScreen);
@@ -69,17 +78,20 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
         nextScreen.Visible = true;
         _currentScreen = nextScreen;
 
-        Logger.Info($"Navigated to screen: {nextScreen.Name}");
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(NavigateTo)} navigated to screen {nextScreen.Name}.");
     }
 
     public void GoBack()
     {
         if (_currentScreen == null)
+        {
+            Logger.Error($"{nameof(StartMenuManager)}.{nameof(GoBack)} reached missing current screen.");
             throw new InvalidOperationException("No current screen registered.");
+        }
 
         if (_screenHistory.Count == 0)
         {
-            Logger.Warning("Cannot go back. Screen history is empty.");
+            Logger.Warning($"{nameof(StartMenuManager)}.{nameof(GoBack)} cannot go back because screen history is empty.");
             return;
         }
 
@@ -91,7 +103,7 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
 
         oldScreen.QueueFree();
 
-        Logger.Info($"Returned to screen: {_currentScreen.Name}");
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(GoBack)} returned to screen {_currentScreen.Name}.");
     }
 
     private bool CanGoBack()

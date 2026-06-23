@@ -1,6 +1,7 @@
 using Godot;
 using sMPGWM.Scripts.Autoload;
 using sMPGWM.Scripts.Ui.Base;
+using Logger = sMPGWM.Scripts.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Ui.Game.GameOverlayMenus;
 
@@ -10,16 +11,21 @@ public partial class MainMenu : GameOverlayMenu
     
     private Button _quitGameButton = null!;
 
+    protected override void OnEnterTree()
+    {
+        base.OnEnterTree();
+        _quitGameButton = GetNode<Button>("%QuitGameButton");
+    }
+
     protected override void OnReady()
     {
         base.OnReady();
-
-        _quitGameButton = GetNode<Button>("%QuitGameButton");
         _quitGameButton.Pressed += OnQuitGameButtonOnPressed;
     }
 
     public override void _ExitTree()
     {
+        Logger.Trace($"{nameof(MainMenu)}.{nameof(_ExitTree)} called.");
         if (_quitGameButton != null)
             _quitGameButton.Pressed -= OnQuitGameButtonOnPressed;
 

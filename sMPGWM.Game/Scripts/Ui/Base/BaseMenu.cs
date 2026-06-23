@@ -9,15 +9,25 @@ public abstract partial class BaseMenu : Control
 
     protected abstract string ScreenTitle { get; }
 
+    public sealed override void _EnterTree()
+    {
+        Logger.Trace($"{nameof(BaseMenu)}.{nameof(_EnterTree)} called for {GetType().Name}.");
+        _titleLabel = GetNode<Label>("%TitleLabel");
+        OnEnterTree();
+    }
+
     public sealed override void _Ready()
     {
-        _titleLabel = GetNode<Label>("%TitleLabel");
-
+        Logger.Trace($"{nameof(BaseMenu)}.{nameof(_Ready)} called for {GetType().Name}.");
         _titleLabel.Text = ScreenTitle;
 
         OnReady();
 
-        Logger.Info($"{GetType().Name} loaded.");
+        Logger.Debug($"{nameof(BaseMenu)}.{nameof(_Ready)} loaded {GetType().Name}.");
+    }
+
+    protected virtual void OnEnterTree()
+    {
     }
 
     protected virtual void OnReady()

@@ -13,21 +13,10 @@ public class LivingEntityTests
     private const int OtherPeerB = 3;
     private const int OtherPeerC = 4;
 
-    private sealed class TestLivingEntityLogger : ILivingEntityLogger
-    {
-        public readonly List<string> Messages = [];
-
-        public void Info(string message)
-        {
-            Messages.Add(message);
-        }
-    }
-
     [Test]
     public void PlayerState_RemainsValid_WhenApplyingEffectsAndRecurringEnergyChanges()
     {
-        var logger = new TestLivingEntityLogger();
-        var service = CreateServiceWithFourLivingEntities(logger);
+        var service = CreateServiceWithFourLivingEntities();
         var conditionEvents = new List<LivingEntityConditionChanged>();
         service.ConditionChanged += conditionEvents.Add;
 
@@ -153,7 +142,6 @@ public class LivingEntityTests
             Assert.That(service.GetRuntime(OtherPeerA).IsAlive(), Is.True);
             Assert.That(service.GetRuntime(OtherPeerB).IsAlive(), Is.True);
             Assert.That(service.GetRuntime(OtherPeerC).IsAlive(), Is.True);
-            Assert.That(logger.Messages, Is.Not.Empty);
         });
     }
 
@@ -161,8 +149,8 @@ public class LivingEntityTests
     [Explicit("Requires Godot runtime. LivingEntityService delta APIs allocate Godot.Collections.Array, which crashes in the plain NUnit host.")]
     public void ServiceDeltas_AppliedToRegisteredPeers_UpdateRuntimeState()
     {
-        var host = CreateServiceWithFourLivingEntities(new TestLivingEntityLogger());
-        var client = CreateServiceWithFourLivingEntities(new TestLivingEntityLogger());
+        var host = CreateServiceWithFourLivingEntities();
+        var client = CreateServiceWithFourLivingEntities();
         var clientEvents = new List<LivingEntityConditionChanged>();
         client.ConditionChanged += clientEvents.Add;
 
@@ -186,9 +174,9 @@ public class LivingEntityTests
         });
     }
 
-    private static LivingEntityServiceCore CreateServiceWithFourLivingEntities(ILivingEntityLogger logger)
+    private static LivingEntityServiceCore CreateServiceWithFourLivingEntities()
     {
-        var service = new LivingEntityServiceCore(logger);
+        var service = new LivingEntityServiceCore();
         service.RegisterPeer(PlayerPeerId, LivingEntityStateFactory.CreateDefaultPlayerState(PlayerPeerId));
         service.RegisterPeer(OtherPeerA, LivingEntityStateFactory.CreateDefaultPlayerState(OtherPeerA));
         service.RegisterPeer(OtherPeerB, LivingEntityStateFactory.CreateDefaultPlayerState(OtherPeerB));

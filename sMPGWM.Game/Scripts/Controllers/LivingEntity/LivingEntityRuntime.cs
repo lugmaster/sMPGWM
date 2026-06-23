@@ -49,8 +49,12 @@ public sealed class LivingEntityRuntime
         sourceId = string.IsNullOrWhiteSpace(sourceId) ? "unknown" : sourceId;
         var oldCondition = State.Condition;
 
-        foreach (var flag in EnumerateFlags(condition))
+        for (var i = 0; i < LivingEntityConditionExtensions.Flags.Length; i++)
         {
+            var flag = LivingEntityConditionExtensions.Flags[i];
+            if (!condition.Contains(flag))
+                continue;
+
             if (!_conditionSources.TryGetValue(flag, out var sources))
             {
                 sources = new HashSet<string>();
@@ -117,8 +121,12 @@ public sealed class LivingEntityRuntime
     internal void RebuildConditionSourcesFromState(string sourceId)
     {
         _conditionSources.Clear();
-        foreach (var flag in EnumerateFlags(State.Condition))
-            _conditionSources[flag] = new HashSet<string> { sourceId };
+        for (var i = 0; i < LivingEntityConditionExtensions.Flags.Length; i++)
+        {
+            var flag = LivingEntityConditionExtensions.Flags[i];
+            if (State.Condition.Contains(flag))
+                _conditionSources[flag] = new HashSet<string> { sourceId };
+        }
     }
 
     internal void EmitConditionChangedFromExternal(LivingEntityCondition oldCondition, string sourceId)
@@ -139,8 +147,12 @@ public sealed class LivingEntityRuntime
 
     private void SeedConditionSources(LivingEntityCondition condition)
     {
-        foreach (var flag in EnumerateFlags(condition))
-            _conditionSources[flag] = new HashSet<string> { InitialConditionSourceId };
+        for (var i = 0; i < LivingEntityConditionExtensions.Flags.Length; i++)
+        {
+            var flag = LivingEntityConditionExtensions.Flags[i];
+            if (condition.Contains(flag))
+                _conditionSources[flag] = new HashSet<string> { InitialConditionSourceId };
+        }
     }
 
     private LivingEntityCondition BuildConditionFromSources()
@@ -153,18 +165,6 @@ public sealed class LivingEntityRuntime
         }
 
         return result;
-    }
-
-    private static IEnumerable<LivingEntityCondition> EnumerateFlags(LivingEntityCondition condition)
-    {
-        foreach (var flag in Enum.GetValues<LivingEntityCondition>())
-        {
-            if (flag == LivingEntityCondition.None)
-                continue;
-
-            if (condition.Contains(flag))
-                yield return flag;
-        }
     }
 
     private sealed class TimedConditionSource(

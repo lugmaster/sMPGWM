@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
 using sMPGWM.Scripts.Enums.Game;
-using Array = Godot.Collections.Array;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
+using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
@@ -13,6 +13,9 @@ public class Stat
     private readonly List<StatModifier> _permanentModifiers = [];
     private readonly List<TemporaryStatModifier> _temporaryModifiers = [];
     private readonly List<RecurringStatModifier> _recurringModifiers = [];
+    private readonly IReadOnlyList<StatModifier> _readonlyPermanentModifiers;
+    private readonly IReadOnlyList<TemporaryStatModifier> _readonlyTemporaryModifiers;
+    private readonly IReadOnlyList<RecurringStatModifier> _readonlyRecurringModifiers;
 
     private static int RoundingPrecision => 3;
 
@@ -21,11 +24,19 @@ public class Stat
     public float MaxValue { get; private set; }
     public float PermanentMaxValue { get; private set; }
 
-    public IReadOnlyList<StatModifier> PermanentModifiers => _permanentModifiers.AsReadOnly();
-    public IReadOnlyList<TemporaryStatModifier> TemporaryModifiers => _temporaryModifiers.AsReadOnly();
-    public IReadOnlyList<RecurringStatModifier> RecurringModifiers => _recurringModifiers.AsReadOnly();
+    public IReadOnlyList<StatModifier> PermanentModifiers => _readonlyPermanentModifiers;
+    public IReadOnlyList<TemporaryStatModifier> TemporaryModifiers => _readonlyTemporaryModifiers;
+    public IReadOnlyList<RecurringStatModifier> RecurringModifiers => _readonlyRecurringModifiers;
+
+    private Stat()
+    {
+        _readonlyPermanentModifiers = _permanentModifiers.AsReadOnly();
+        _readonlyTemporaryModifiers = _temporaryModifiers.AsReadOnly();
+        _readonlyRecurringModifiers = _recurringModifiers.AsReadOnly();
+    }
 
     public Stat(float baseValue)
+        : this()
     {
         BaseValue = baseValue;
         RecalculatePermanent();
@@ -34,6 +45,7 @@ public class Stat
     }
 
     public Stat(float baseValue, float currentValue)
+        : this()
     {
         BaseValue = baseValue;
 
@@ -50,10 +62,14 @@ public class Stat
         }
     }
 
-    public Stat(Array variant)
+    public Stat(GCol.Array variant)
+        : this()
     {
         if (variant.Count != 5)
+        {
+            Logger.Error($"{nameof(Stat)} constructor received invalid variant count {variant.Count}.");
             throw new ArgumentException("Invalid stat variant format");
+        }
 
         BaseValue = (float)variant[0];
         CurrentValue = (float)variant[1];
@@ -125,10 +141,13 @@ public class Stat
         RecalculateTemporary();
     }
 
-    public void ApplyCurrentSync(Array variant)
+    public void ApplyCurrentSync(GCol.Array variant)
     {
         if (variant.Count != 4)
+        {
+            Logger.Error($"{nameof(Stat)}.{nameof(ApplyCurrentSync)} received invalid variant count {variant.Count}.");
             throw new ArgumentException("Invalid stat delta variant");
+        }
 
         CurrentValue = Round((float)variant[1]);
 
@@ -144,10 +163,13 @@ public class Stat
         CurrentValue = Round(Math.Clamp(CurrentValue, 0f, MaxValue));
     }
 
-    public void ApplyPermanentSync(Array variant)
+    public void ApplyPermanentSync(GCol.Array variant)
     {
         if (variant.Count < 2)
+        {
+            Logger.Error($"{nameof(Stat)}.{nameof(ApplyPermanentSync)} received invalid variant count {variant.Count}.");
             throw new ArgumentException("Invalid permanent stat sync format");
+        }
 
         BaseValue = (float)variant[0];
         _permanentModifiers.Clear();
@@ -159,26 +181,26 @@ public class Stat
         RecalculateTemporary();
     }
 
-    public Array ToPermanentVariant()
+    public GCol.Array ToPermanentVariant()
     {
-        var permArray = new Array();
+        var permArray = new GCol.Array();
         foreach (var mod in _permanentModifiers)
             permArray.Add(mod.ToVariant());
 
-        return new Array { BaseValue, permArray };
+        return new GCol.Array { BaseValue, permArray };
     }
 
-    public Array ToCurrentVariant()
+    public GCol.Array ToCurrentVariant()
     {
-        var tempArray = new Array();
+        var tempArray = new GCol.Array();
         foreach (var mod in _temporaryModifiers)
             tempArray.Add(mod.ToVariant());
 
-        var recArray = new Array();
+        var recArray = new GCol.Array();
         foreach (var mod in _recurringModifiers)
             recArray.Add(mod.ToVariant());
 
-        return new Array
+        return new GCol.Array
         {
             BaseValue,
             CurrentValue,
@@ -187,21 +209,21 @@ public class Stat
         };
     }
 
-    public Array ToFullVariant()
+    public GCol.Array ToFullVariant()
     {
-        var permArray = new Array();
+        var permArray = new GCol.Array();
         foreach (var mod in _permanentModifiers)
             permArray.Add(mod.ToVariant());
 
-        var tempArray = new Array();
+        var tempArray = new GCol.Array();
         foreach (var mod in _temporaryModifiers)
             tempArray.Add(mod.ToVariant());
 
-        var recArray = new Array();
+        var recArray = new GCol.Array();
         foreach (var mod in _recurringModifiers)
             recArray.Add(mod.ToVariant());
 
-        return new Array
+        return new GCol.Array
         {
             BaseValue,
             CurrentValue,
@@ -400,10 +422,18 @@ public class Stat
 
     private static void AddWithStackPolicy<T>(List<T> modifiers, T modifier) where T : StatModifier
     {
-        var sameSourceIndex = modifiers.FindIndex(existing =>
-            !string.IsNullOrEmpty(modifier.SourceId) &&
-            existing.SourceId == modifier.SourceId &&
-            existing.Type == modifier.Type);
+        var sameSourceIndex = -1;
+        if (!string.IsNullOrEmpty(modifier.SourceId))
+        {
+            for (var i = 0; i < modifiers.Count; i++)
+            {
+                if (modifiers[i].SourceId != modifier.SourceId || modifiers[i].Type != modifier.Type)
+                    continue;
+
+                sameSourceIndex = i;
+                break;
+            }
+        }
 
         if (sameSourceIndex < 0)
         {

@@ -1,7 +1,7 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.Enums.Game;
-using Array = Godot.Collections.Array;
+using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
 
@@ -25,7 +25,7 @@ public class StatModifier
         StackPolicy = stackPolicy;
     }
 
-    public StatModifier(Array values)
+    public StatModifier(GCol.Array values)
     {
         if (values.Count < 2)
             throw new ArgumentException("Invalid stat modifier variant format");
@@ -47,9 +47,9 @@ public class StatModifier
     public ModifierType Type { get; }
     public ModifierStackPolicy StackPolicy { get; }
 
-    public virtual Array ToVariant()
+    public virtual GCol.Array ToVariant()
     {
-        return new Array
+        return new GCol.Array
         {
             Value,
             (int)Type,

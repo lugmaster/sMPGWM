@@ -13,20 +13,26 @@ public partial class StartMenu : BaseStartMenu
     private Button _settingsButton = null!;
     private Button _quitButton = null!;
 
-    protected override void OnReady()
+    protected override void OnEnterTree()
     {
-        StartMenuManager.Instance.RegisterInitialScreen(this);
+        base.OnEnterTree();
 
         _joinButton = GetNode<Button>("%JoinButton");
         _hostButton = GetNode<Button>("%HostButton");
         _settingsButton = GetNode<Button>("%SettingsButton");
         _quitButton = GetNode<Button>("%QuitButton");
+    }
+
+    protected override void OnReady()
+    {
+        base.OnReady();
+        StartMenuManager.Instance.RegisterInitialScreen(this);
 
         _joinButton.Pressed += StartMenuManager.Instance.ShowJoinGameMenu;
         _hostButton.Pressed += StartMenuManager.Instance.ShowHostGameMenu;
         _settingsButton.Pressed += StartMenuManager.Instance.ShowSettingsMenu;
         _quitButton.Pressed += () => GameHandler.Instance.QuitGame("Pressed QuitGameButton");
 
-        Logger.Info("StartingScreen loaded.");
+        Logger.Debug($"{nameof(StartMenu)}.{nameof(OnReady)} loaded.");
     }
 }

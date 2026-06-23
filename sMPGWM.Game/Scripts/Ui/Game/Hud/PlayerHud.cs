@@ -23,23 +23,30 @@ public partial class PlayerHud : Control
     private HotbarControl _hotbarControl = null!;
     private bool _isProcessingInput = true;
 
-    public override void _Ready()
+    public override void _EnterTree()
     {
+        Logger.Trace($"{nameof(PlayerHud)}.{nameof(_EnterTree)} called.");
         _statsAnchor = GetNode<Control>("%StatsAnchor");
         _radarAnchor = GetNode<Control>("%RadarAnchor");
         _hotbarAnchor = GetNode<Control>("%HotbarAnchor");
         _statsPanel = GetNode<PlayerStatsPanel>("%PlayerStatsPanel");
         _radarControl = GetNode<RadarControl>("%RadarControl");
         _hotbarControl = GetNode<HotbarControl>("%HotbarControl");
+    }
+
+    public override void _Ready()
+    {
+        Logger.Trace($"{nameof(PlayerHud)}.{nameof(_Ready)} called.");
         _hotbarControl.SlotPressed += OnHotbarSlotPressed;
 
         GetViewport().SizeChanged += ApplyLayout;
         ApplyLayout();
-        Logger.Info("PlayerHud loaded.");
+        Logger.Debug($"{nameof(PlayerHud)}.{nameof(_Ready)} loaded.");
     }
 
     public override void _ExitTree()
     {
+        Logger.Trace($"{nameof(PlayerHud)}.{nameof(_ExitTree)} called.");
         if (_hotbarControl != null)
             _hotbarControl.SlotPressed -= OnHotbarSlotPressed;
 
@@ -61,16 +68,19 @@ public partial class PlayerHud : Control
     
     public void Bind(LivingEntityState state, IReadOnlyCollection<StatType> visibleStats)
     {
+        Logger.Debug($"{nameof(PlayerHud)}.{nameof(Bind)} called.");
         _statsPanel.Bind(state, visibleStats);
     }
 
     public void SetHotbarIcons(IReadOnlyList<IconDefinition> iconDefinitions)
     {
+        Logger.Debug($"{nameof(PlayerHud)}.{nameof(SetHotbarIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
         _hotbarControl.SetIcons(iconDefinitions);
     }
 
     public void ApplyGameState(MainGameState mainGameState)
     {
+        Logger.Debug($"{nameof(PlayerHud)}.{nameof(ApplyGameState)} called with {nameof(mainGameState)}={mainGameState}.");
         _hotbarControl?.ApplyGameState(mainGameState);
         switch (mainGameState)
         {

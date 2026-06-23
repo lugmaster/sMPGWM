@@ -78,7 +78,7 @@ public partial class GameManager : AbstractSingleton<GameManager>
 
     public void ConsumeMenuAction(MenuActionType type)
     {
-        Logger.Info($"Consume menu action {type}");
+        Logger.Debug($"{nameof(GameManager)}.{nameof(ConsumeMenuAction)} called with {nameof(type)}={type}.");
         switch ((_gameState, type))
         {
             case (MainGameState.Active, MenuActionType.OpenInventoryMenu):
@@ -124,7 +124,7 @@ public partial class GameManager : AbstractSingleton<GameManager>
 
     public void ConsumeOnHotbarSlotPressed(int slotNumber)
     {
-        Logger.Info($"Consume hotbar slot {slotNumber}");
+        Logger.Debug($"{nameof(GameManager)}.{nameof(ConsumeOnHotbarSlotPressed)} called with {nameof(slotNumber)}={slotNumber}.");
         switch (_gameState)
         {
             case MainGameState.Active:
@@ -136,6 +136,7 @@ public partial class GameManager : AbstractSingleton<GameManager>
                 break;
 
             default:
+                Logger.Error($"{nameof(GameManager)}.{nameof(ConsumeOnHotbarSlotPressed)} reached unsupported {nameof(_gameState)}={_gameState}.");
                 throw new ArgumentOutOfRangeException(nameof(_gameState), _gameState, null);
         }
     }

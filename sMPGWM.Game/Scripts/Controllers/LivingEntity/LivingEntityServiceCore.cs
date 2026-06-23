@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using sMPGWM.Scripts.Autoload;
 using sMPGWM.Scripts.Controllers.LivingEntity.Effects;
 using sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
 using sMPGWM.Scripts.Enums.Game;
-using Array = Godot.Collections.Array;
+using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
@@ -13,12 +14,6 @@ public sealed class LivingEntityServiceCore
 
     private readonly Dictionary<int, LivingEntityRuntime> _runtimes = new();
     private readonly Dictionary<int, LivingEntityStateTracker> _trackers = new();
-    private readonly ILivingEntityLogger _logger;
-
-    public LivingEntityServiceCore(ILivingEntityLogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public event Action<LivingEntityConditionChanged> ConditionChanged;
 
@@ -33,7 +28,7 @@ public sealed class LivingEntityServiceCore
         _runtimes[peerId] = runtime;
         _trackers[peerId] = new LivingEntityStateTracker(state);
 
-        LogInfo($"Registered living entity state for peer {peerId}.");
+        Logger.Debug($"{nameof(LivingEntityServiceCore)}.{nameof(RegisterPeer)} registered living entity state for {nameof(peerId)}={peerId}.");
     }
 
     public LivingEntityRuntime RegisterPeerWithDefaultState(int peerId)
@@ -49,7 +44,7 @@ public sealed class LivingEntityServiceCore
             runtime.ConditionChanged -= OnRuntimeConditionChanged;
 
         _trackers.Remove(peerId);
-        LogInfo($"Unregistered living entity state for peer {peerId}.");
+        Logger.Debug($"{nameof(LivingEntityServiceCore)}.{nameof(UnregisterPeer)} unregistered living entity state for {nameof(peerId)}={peerId}.");
     }
 
     public bool HasPeer(int peerId)
@@ -78,15 +73,15 @@ public sealed class LivingEntityServiceCore
         ApplyEffect(target, effect);
     }
 
-    public Array GetDelta(int peerId, bool includePermanent)
+    public GCol.Array GetDelta(int peerId, bool includePermanent)
     {
         var tracker = GetRequiredTracker(peerId);
         return tracker.CreateCombinedDelta(includePermanent);
     }
 
-    public Array GetDeltas(bool includePermanent)
+    public GCol.Array GetDeltas(bool includePermanent)
     {
-        var result = new Array();
+        var result = new GCol.Array();
         foreach (var (_, tracker) in _trackers)
         {
             var delta = tracker.CreateCombinedDelta(includePermanent);
@@ -97,10 +92,13 @@ public sealed class LivingEntityServiceCore
         return result;
     }
 
-    public void ApplyDelta(Array delta)
+    public void ApplyDelta(GCol.Array delta)
     {
         if (delta.Count == 0)
+        {
+            Logger.Error($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyDelta)} received an empty delta.");
             throw new ArgumentException("Invalid empty living entity delta.", nameof(delta));
+        }
 
         var peerId = delta[0].AsInt32();
         var runtime = GetRequiredRuntime(peerId);
@@ -110,13 +108,13 @@ public sealed class LivingEntityServiceCore
         runtime.RebuildConditionSourcesFromState("delta");
         runtime.EmitConditionChangedFromExternal(oldCondition, "delta");
 
-        LogInfo($"Applied living entity delta for peer {peerId}.");
+        Logger.Debug($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyDelta)} applied living entity delta for {nameof(peerId)}={peerId}.");
     }
 
-    public void ApplyDeltas(Array deltas)
+    public void ApplyDeltas(GCol.Array deltas)
     {
-        foreach (var delta in deltas)
-            ApplyDelta(delta.AsGodotArray());
+        for (var i = 0; i < deltas.Count; i++)
+            ApplyDelta(deltas[i].AsGodotArray());
     }
 
     public void TickActiveEffects(int peerId, float delta)
@@ -148,6 +146,7 @@ public sealed class LivingEntityServiceCore
                     condition.IsApplied, condition.Duration);
                 break;
             default:
+                Logger.Error($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyEffect)} reached unhandled {nameof(effect)}={effect}.");
                 throw new ArgumentOutOfRangeException(nameof(effect), effect, "Unhandled living entity effect.");
         }
     }
@@ -155,24 +154,27 @@ public sealed class LivingEntityServiceCore
     private void ApplyReduce(LivingEntityRuntime target, string sourceId, StatType statType, float amount)
     {
         if (amount <= 0f)
+        {
+            Logger.Error($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyReduce)} received invalid {nameof(amount)}={amount}.");
             throw new ArgumentOutOfRangeException(nameof(amount), "Reduce amount must be greater than zero.");
+        }
 
         if (!target.IsAlive())
         {
-            LogInfo($"Ignored reduce from {sourceId}; target {target.State.LivingEntityId} is already dead.");
+            Logger.Debug($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyReduce)} ignored reduce from {nameof(sourceId)}={sourceId}; target {target.State.LivingEntityId} is already dead.");
             return;
         }
 
         if (statType == StatType.Health && target.Condition.Contains(LivingEntityCondition.Invulnerable))
         {
-            LogInfo($"Ignored health reduce from {sourceId}; target {target.State.LivingEntityId} is invulnerable.");
+            Logger.Debug($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyReduce)} ignored health reduce from {nameof(sourceId)}={sourceId}; target {target.State.LivingEntityId} is invulnerable.");
             return;
         }
 
         var stat = target.GetStatByType(statType);
         stat.Reduce(amount);
 
-        LogInfo($"Reduced {target.State.LivingEntityId}.{statType} by {amount:0.###} from {sourceId}. " +
+        Logger.Debug($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyReduce)} reduced {target.State.LivingEntityId}.{statType} by {amount:0.###} from {sourceId}. " +
                 $"Current={stat.CurrentValue:0.###}/{stat.MaxValue:0.###}");
 
         if (statType == StatType.Health && stat.CurrentValue <= 0f)
@@ -184,12 +186,15 @@ public sealed class LivingEntityServiceCore
     private void ApplyRaise(LivingEntityRuntime target, string sourceId, StatType statType, float amount)
     {
         if (amount <= 0f)
+        {
+            Logger.Error($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyRaise)} received invalid {nameof(amount)}={amount}.");
             throw new ArgumentOutOfRangeException(nameof(amount), "Raise amount must be greater than zero.");
+        }
 
         var stat = target.GetStatByType(statType);
         stat.Raise(amount);
 
-        LogInfo($"Raised {target.State.LivingEntityId}.{statType} by {amount:0.###} from {sourceId}. " +
+        Logger.Debug($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyRaise)} raised {target.State.LivingEntityId}.{statType} by {amount:0.###} from {sourceId}. " +
                 $"Current={stat.CurrentValue:0.###}/{stat.MaxValue:0.###}");
 
         ReconcileDerivedConditions(target);
@@ -200,8 +205,8 @@ public sealed class LivingEntityServiceCore
         var stat = target.GetStatByType(statType);
         stat.AddModifier(modifier);
 
-        LogInfo(
-            $"Applied modifier {modifier.DisplayName} from {sourceId} to {target.State.LivingEntityId}.{statType}. " +
+        Logger.Debug(
+            $"{nameof(LivingEntityServiceCore)}.{nameof(ApplyModifier)} applied modifier {modifier.DisplayName} from {sourceId} to {target.State.LivingEntityId}.{statType}. " +
             $"Current={stat.CurrentValue:0.###}/{stat.MaxValue:0.###}");
 
         ReconcileDerivedConditions(target);
@@ -220,8 +225,8 @@ public sealed class LivingEntityServiceCore
         else
             target.SetConditionSource(condition, effectInstanceId, isApplied);
 
-        LogInfo(
-            $"{(isApplied ? "Added" : "Removed")} condition {condition} from {target.State.LivingEntityId}. Source={sourceId}");
+        Logger.Debug(
+            $"{nameof(LivingEntityServiceCore)}.{nameof(SetCondition)} {(isApplied ? "added" : "removed")} condition {condition} from {target.State.LivingEntityId}. Source={sourceId}");
     }
 
     private void TickActiveEffects(LivingEntityRuntime target, float delta)
@@ -250,7 +255,7 @@ public sealed class LivingEntityServiceCore
         target.State.ReduceStatToZero(StatType.Shield);
         target.State.ReduceStatToZero(StatType.Energy);
 
-        LogInfo($"Living entity {target.State.LivingEntityId} reached zero health. Source={sourceId}");
+        Logger.Debug($"{nameof(LivingEntityServiceCore)}.{nameof(ApplyZeroHealthOutcome)} living entity {target.State.LivingEntityId} reached zero health. Source={sourceId}");
     }
 
     private void ReconcileDerivedConditions(LivingEntityRuntime target)
@@ -266,6 +271,7 @@ public sealed class LivingEntityServiceCore
         if (_runtimes.TryGetValue(peerId, out var runtime))
             return runtime;
 
+        Logger.Error($"{nameof(LivingEntityServiceCore)}.{nameof(GetRequiredRuntime)} found no living entity runtime for {nameof(peerId)}={peerId}.");
         throw new InvalidOperationException($"No living entity runtime registered for peer {peerId}.");
     }
 
@@ -274,16 +280,12 @@ public sealed class LivingEntityServiceCore
         if (_trackers.TryGetValue(peerId, out var tracker))
             return tracker;
 
+        Logger.Error($"{nameof(LivingEntityServiceCore)}.{nameof(GetRequiredTracker)} found no living entity tracker for {nameof(peerId)}={peerId}.");
         throw new InvalidOperationException($"No living entity tracker registered for peer {peerId}.");
     }
 
     private void OnRuntimeConditionChanged(LivingEntityConditionChanged change)
     {
         ConditionChanged?.Invoke(change);
-    }
-
-    private void LogInfo(string message)
-    {
-        _logger.Info(message);
     }
 }

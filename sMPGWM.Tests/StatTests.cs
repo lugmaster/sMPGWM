@@ -8,16 +8,6 @@ namespace sMPGWM.Tests;
 [TestFixture]
 public class StatTests
 {
-    private sealed class TestLivingEntityLogger : ILivingEntityLogger
-    {
-        public readonly List<string> Messages = [];
-
-        public void Info(string message)
-        {
-            Messages.Add(message);
-        }
-    }
-
     [Test]
     public void PermanentModifiers_RecalculateMaxAndApplyCurrentRules()
     {
@@ -234,8 +224,7 @@ public class StatTests
     [Test]
     public void EffectService_ReducesTargetedStatsAndZeroHealthChangesCondition()
     {
-        var logger = new TestLivingEntityLogger();
-        var service = new LivingEntityServiceCore(logger);
+        var service = new LivingEntityServiceCore();
         service.RegisterPeer(7, LivingEntityStateFactory.CreateDefaultPlayerState(7));
         service.ApplyEffect(7, new ReduceEffect("reduce-shield", "skill-1", StatType.Shield, 25f));
 
@@ -244,7 +233,6 @@ public class StatTests
             Assert.That(service.GetState(7).Shield.CurrentValue, Is.EqualTo(75f));
             Assert.That(service.GetState(7).Health.CurrentValue, Is.EqualTo(100f));
             Assert.That(service.GetRuntime(7).IsAlive(), Is.True);
-            Assert.That(logger.Messages, Is.Not.Empty);
         });
 
         var conditionEvents = new List<LivingEntityConditionChanged>();
@@ -266,7 +254,7 @@ public class StatTests
     [Test]
     public void EffectService_RemovesTimedCondition_WhenConditionSourceExpires()
     {
-        var service = new LivingEntityServiceCore(new TestLivingEntityLogger());
+        var service = new LivingEntityServiceCore();
         service.RegisterPeer(8, LivingEntityStateFactory.CreateDefaultPlayerState(8));
         var conditionEvents = new List<LivingEntityConditionChanged>();
         service.ConditionChanged += conditionEvents.Add;
@@ -306,5 +294,4 @@ public class StatTests
             Assert.That(agent.LivingEntityType, Is.EqualTo(LivingEntityType.AgentController));
         });
     }
-
 }
