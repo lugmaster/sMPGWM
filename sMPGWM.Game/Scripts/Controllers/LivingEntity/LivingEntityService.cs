@@ -1,8 +1,7 @@
 using System;
 using sMPGWM.Scripts.Autoload.Base;
-using sMPGWM.Scripts.Controllers.LivingEntity.Effects;
+using sMPGWM.Scripts.Controllers.LivingEntity.Runtime;
 using sMPGWM.Scripts.Enums.Game;
-using GCol = Godot.Collections;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
@@ -46,43 +45,22 @@ public sealed partial class LivingEntityService : AbstractSingleton<LivingEntity
         return _core.GetState(peerId);
     }
 
-    public StatBreakdown GetStatBreakdown(int peerId, StatType statType)
+    public PackedByteArray ProcessLivingEntity(
+        int peerId,
+        long networkTick,
+        ActiveEffect[] activeEffects,
+        int activeEffectCount)
     {
-        return _core.GetStatBreakdown(peerId, statType);
+        return _core.ProcessLivingEntity(peerId, networkTick, activeEffects, activeEffectCount);
     }
 
-    public void ApplyEffect(int peerId, LivingEntityEffect effect)
+    public UiDto GetUpdateForUiLoop(int peerId)
     {
-        _core.ApplyEffect(peerId, effect);
+        return _core.GetUpdateForUiLoop(peerId);
     }
 
-    public GCol.Array GetDelta(int peerId, bool includePermanent)
+    public void ApplyDelta(int peerId, PackedByteArray delta)
     {
-        return _core.GetDelta(peerId, includePermanent);
-    }
-
-    public GCol.Array GetDeltas(bool includePermanent)
-    {
-        return _core.GetDeltas(includePermanent);
-    }
-
-    public void ApplyDelta(GCol.Array delta)
-    {
-        _core.ApplyDelta(delta);
-    }
-
-    public void ApplyDeltas(GCol.Array deltas)
-    {
-        _core.ApplyDeltas(deltas);
-    }
-
-    public void TickActiveEffects(int peerId, float delta)
-    {
-        _core.TickActiveEffects(peerId, delta);
-    }
-
-    public void TickAllActiveEffects(float delta)
-    {
-        _core.TickAllActiveEffects(delta);
+        _core.ApplyDelta(peerId, delta);
     }
 }

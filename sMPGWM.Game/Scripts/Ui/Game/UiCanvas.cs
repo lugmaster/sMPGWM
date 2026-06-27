@@ -33,7 +33,7 @@ public partial class UiCanvas : CanvasLayer
         [
             StatType.Health,
                 StatType.Shield,
-                StatType.Energy
+                StatType.EnergyStorage
         ]);
         _playerHud.SetHotbarIcons(PlayerMock.Instance.GetHotBarSkills());
         _playerHud.HotbarSlotPressed += RequestHotbarAction;

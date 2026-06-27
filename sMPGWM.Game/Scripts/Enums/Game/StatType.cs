@@ -2,15 +2,30 @@ namespace sMPGWM.Scripts.Enums.Game;
 
 public enum StatType
 {
-    Condition = 0,
-    Health = 1,
-    HealthRegeneration = 2,
-    Shield = 3,
-    ShieldRegeneration = 4,
-    Energy = 5,
-    EnergyRegeneration = 6,
-    Speed = 7,
-    Acceleration = 8,
-    AfterBurnerSpeed = 9,
-    AfterBurnerAcceleration = 10
+    Health = 0,
+    EnergyStorage = 1,
+    Shield = 2,
+    Armor = 3,
+    Speed = 4,
+    Acceleration = 5,
+    OxygenStorage = 6,
+    FoodStorage = 7,
+    WaterStorage = 8,
+    CriticalHitChance = 9,
+    CriticalHitBonusDamage = 10,
+    AttackSpeed = 11,
+    HealthRegeneration = 12,
+    EnergyProduction = 13,
+    EnergyConsumption = 14,
+    ShieldRegeneration = 15,
+    ShieldRechargeCooldown = 16,
+    OxygenConsumption = 17,
+    OxygenGeneration = 18,
+    FoodConsumption = 19,
+    FoodGeneration = 20,
+    WaterConsumption = 21,
+    WaterGeneration = 22,
+
+    Energy = EnergyStorage,
+    EnergyRegeneration = EnergyProduction
 }

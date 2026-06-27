@@ -1,6 +1,7 @@
 using sMPGWM.Scripts.Controllers.LivingEntity;
+using sMPGWM.Scripts.Controllers.LivingEntity.Definitions;
 using sMPGWM.Scripts.Controllers.LivingEntity.Effects;
-using sMPGWM.Scripts.Controllers.LivingEntity.Modifiers;
+using sMPGWM.Scripts.Controllers.LivingEntity.Runtime;
 using sMPGWM.Scripts.Enums.Game;
 
 namespace sMPGWM.Tests;
@@ -8,179 +9,292 @@ namespace sMPGWM.Tests;
 [TestFixture]
 public class LivingEntityTests
 {
-    private const int PlayerPeerId = 1;
-    private const int OtherPeerA = 2;
-    private const int OtherPeerB = 3;
-    private const int OtherPeerC = 4;
+    private const long EntityId = 1;
+
+    [SetUp]
+    public void SetUp()
+    {
+        EffectDefinitionRegistry.Clear();
+        RegisterCoreDefinitions();
+        StateEngine.Configure(new StateEngineConfig
+        {
+            CausalRecordsEnabledForDeterministicTests = true,
+            SnapshotRetentionTicks = 45,
+            GlobalRegenerationIntervalTicks = 30
+        });
+        StateEngine.Reset();
+    }
 
     [Test]
-    public void PlayerState_RemainsValid_WhenApplyingEffectsAndRecurringEnergyChanges()
+    public void DeathAndRevive_FollowDeadBlockingRules()
     {
-        var service = CreateServiceWithFourLivingEntities();
-        var conditionEvents = new List<LivingEntityConditionChanged>();
-        service.ConditionChanged += conditionEvents.Add;
+        var state = CreateState();
+        StateEngine.AddLivingEntity(state);
 
-        service.ApplyEffect(PlayerPeerId,
-            new StatModifierEffect(
-                "speed-boost-1",
-                "engine-upgrade",
-                StatType.Speed,
-                new StatModifier(
-                    "speed-mod-1",
-                    "engine-upgrade",
-                    25f,
-                    ModifierType.Flat,
-                    ModifierSourceType.Item,
-                    "Engine Upgrade")));
-
-        service.ApplyEffect(PlayerPeerId,
-            new ConditionEffect(
-                "invulnerable-shield-1",
-                "shield-skill",
-                LivingEntityCondition.Invulnerable,
-                true,
-                0.5f));
-
-        service.ApplyEffect(PlayerPeerId, new ReduceEffect("shield-reduce-1", "test", StatType.Shield, 40f));
-        service.ApplyEffect(PlayerPeerId, new RaiseEffect("shield-raise-1", "test", StatType.Shield, 10f));
-        service.ApplyEffect(PlayerPeerId, new ReduceEffect("energy-reduce-1", "test", StatType.Energy, 30f));
+        StateEngine.ProcessLivingEntity(EntityId, 1, [Effect(1, 101, 1)], 1);
 
         Assert.Multiple(() =>
         {
-            var runtime = service.GetRuntime(PlayerPeerId);
-            Assert.That(runtime.State.Speed.MaxValue, Is.EqualTo(25f));
-            Assert.That(runtime.State.Shield.CurrentValue, Is.EqualTo(70f));
-            Assert.That(runtime.State.Energy.CurrentValue, Is.EqualTo(70f));
-            Assert.That(runtime.Condition.Contains(LivingEntityCondition.Invulnerable), Is.True);
-            Assert.That(runtime.Condition.Contains(LivingEntityCondition.EnergyDepleted), Is.False);
+            Assert.That(state.Health.CurrentValue, Is.EqualTo(0f));
+            Assert.That(state.Condition.Contains(LivingEntityCondition.Dead), Is.True);
         });
 
-        var energy = service.GetState(PlayerPeerId).Energy;
-        service.ApplyEffect(PlayerPeerId,
-            new StatModifierEffect(
-                "energy-drain-effect",
-                "drain-aura",
-                StatType.Energy,
-                new RecurringStatModifier(
-                    "energy-drain-mod",
-                    "drain-aura",
-                    -20f,
-                    ModifierType.Flat,
-                    2f,
-                    1f,
-                    energy,
-                    ModifierSourceType.Skill,
-                    "Drain Aura")));
+        StateEngine.ProcessLivingEntity(EntityId, 2, [Effect(2, 102, 2)], 1);
+        Assert.That(state.Health.CurrentValue, Is.EqualTo(0f));
 
-        service.TickActiveEffects(PlayerPeerId, 1f);
+        StateEngine.ProcessLivingEntity(EntityId, 3, [Effect(3, 103, 3)], 1);
+
         Assert.Multiple(() =>
         {
-            Assert.That(service.GetState(PlayerPeerId).Energy.CurrentValue, Is.EqualTo(50f));
-            Assert.That(service.GetRuntime(PlayerPeerId).Condition.Contains(LivingEntityCondition.EnergyDepleted),
-                Is.False);
-        });
-
-        service.TickActiveEffects(PlayerPeerId, 1f);
-        Assert.Multiple(() =>
-        {
-            Assert.That(service.GetState(PlayerPeerId).Energy.CurrentValue, Is.EqualTo(30f));
-            Assert.That(service.GetRuntime(PlayerPeerId).Condition.Contains(LivingEntityCondition.EnergyDepleted),
-                Is.False);
-        });
-
-        service.ApplyEffect(PlayerPeerId, new ReduceEffect("energy-reduce-2", "test", StatType.Energy, 15f));
-        Assert.Multiple(() =>
-        {
-            Assert.That(service.GetState(PlayerPeerId).Energy.CurrentValue, Is.EqualTo(15f));
-            Assert.That(service.GetRuntime(PlayerPeerId).Condition.Contains(LivingEntityCondition.EnergyDepleted),
-                Is.False);
-        });
-
-        service.ApplyEffect(PlayerPeerId, new ReduceEffect("energy-reduce-3", "test", StatType.Energy, 15f));
-        Assert.Multiple(() =>
-        {
-            Assert.That(service.GetState(PlayerPeerId).Energy.CurrentValue, Is.EqualTo(0f));
-            Assert.That(service.GetRuntime(PlayerPeerId).Condition.Contains(LivingEntityCondition.EnergyDepleted),
-                Is.True);
-            Assert.That(
-                conditionEvents.Any(e => e.Added.Contains(LivingEntityCondition.EnergyDepleted)),
-                Is.True);
-        });
-
-        service.ApplyEffect(PlayerPeerId,
-            new StatModifierEffect(
-                "energy-restore-effect",
-                "battery-regen",
-                StatType.Energy,
-                new RecurringStatModifier(
-                    "energy-restore-mod",
-                    "battery-regen",
-                    12.5f,
-                    ModifierType.Flat,
-                    2f,
-                    1f,
-                    service.GetState(PlayerPeerId).Energy,
-                    ModifierSourceType.Skill,
-                    "Battery Regen")));
-
-        service.TickActiveEffects(PlayerPeerId, 1f);
-        Assert.Multiple(() =>
-        {
-            Assert.That(service.GetState(PlayerPeerId).Energy.CurrentValue, Is.EqualTo(12.5f));
-            Assert.That(service.GetRuntime(PlayerPeerId).Condition.Contains(LivingEntityCondition.EnergyDepleted),
-                Is.False);
-            Assert.That(
-                conditionEvents.Any(e => e.Removed.Contains(LivingEntityCondition.EnergyDepleted)),
-                Is.True);
-        });
-
-        service.TickActiveEffects(PlayerPeerId, 1f);
-        Assert.Multiple(() =>
-        {
-            Assert.That(service.GetState(PlayerPeerId).Energy.CurrentValue, Is.EqualTo(25f));
-            Assert.That(service.GetRuntime(PlayerPeerId).IsAlive(), Is.True);
-            Assert.That(service.GetRuntime(OtherPeerA).IsAlive(), Is.True);
-            Assert.That(service.GetRuntime(OtherPeerB).IsAlive(), Is.True);
-            Assert.That(service.GetRuntime(OtherPeerC).IsAlive(), Is.True);
+            Assert.That(state.Health.CurrentValue, Is.EqualTo(25f));
+            Assert.That(state.Condition.Contains(LivingEntityCondition.Dead), Is.False);
         });
     }
 
     [Test]
-    [Explicit("Requires Godot runtime. LivingEntityService delta APIs allocate Godot.Collections.Array, which crashes in the plain NUnit host.")]
-    public void ServiceDeltas_AppliedToRegisteredPeers_UpdateRuntimeState()
+    public void PoisonCondition_UsesAncestorClosure_AndCleanseRemovesUnderlyingEffect()
     {
-        var host = CreateServiceWithFourLivingEntities();
-        var client = CreateServiceWithFourLivingEntities();
-        var clientEvents = new List<LivingEntityConditionChanged>();
-        client.ConditionChanged += clientEvents.Add;
+        var state = CreateState();
+        StateEngine.AddLivingEntity(state);
 
-        host.ApplyEffect(OtherPeerA, new ReduceEffect("energy-a", "test", StatType.Energy, 35f));
-        host.ApplyEffect(OtherPeerB,
-            new ConditionEffect("invisible-b", "test", LivingEntityCondition.Invisible, true));
-        host.ApplyEffect(OtherPeerC, new ReduceEffect("health-c", "test", StatType.Health, 100f));
-
-        client.ApplyDelta(host.GetDelta(OtherPeerA, includePermanent: false));
-        client.ApplyDelta(host.GetDelta(OtherPeerB, includePermanent: false));
-        client.ApplyDelta(host.GetDelta(OtherPeerC, includePermanent: false));
+        StateEngine.ProcessLivingEntity(EntityId, 1, [Effect(6, 201, 1)], 1);
 
         Assert.Multiple(() =>
         {
-            Assert.That(client.GetRuntime(OtherPeerA).State.Energy.CurrentValue, Is.EqualTo(65f));
-            Assert.That(client.GetRuntime(OtherPeerB).Condition.Contains(LivingEntityCondition.Invisible), Is.True);
-            Assert.That(client.GetRuntime(OtherPeerC).Condition.Contains(LivingEntityCondition.Dead), Is.True);
-            Assert.That(client.GetRuntime(OtherPeerC).State.Health.CurrentValue, Is.EqualTo(0f));
-            Assert.That(clientEvents.Any(e => e.Added.Contains(LivingEntityCondition.Invisible)), Is.True);
-            Assert.That(clientEvents.Any(e => e.Added.Contains(LivingEntityCondition.Dead)), Is.True);
+            Assert.That(state.Health.CurrentValue, Is.EqualTo(95f));
+            Assert.That(state.Condition.Contains(LivingEntityCondition.Poison), Is.True);
+            Assert.That(state.Condition.Contains(LivingEntityCondition.DamageOverTime), Is.True);
+            Assert.That(state.Condition.Contains(LivingEntityCondition.Debuff), Is.True);
+        });
+
+        StateEngine.ProcessLivingEntity(EntityId, 2, [Effect(7, 202, 2)], 1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(state.Health.CurrentValue, Is.EqualTo(90f));
+            Assert.That(state.Condition.Contains(LivingEntityCondition.Poison), Is.False);
+            Assert.That(state.ActiveEffectCount, Is.EqualTo(0));
         });
     }
 
-    private static LivingEntityServiceCore CreateServiceWithFourLivingEntities()
+    [Test]
+    public void IndependentStacks_ReplaceOldest_WhenMaxStacksReached()
     {
-        var service = new LivingEntityServiceCore();
-        service.RegisterPeer(PlayerPeerId, LivingEntityStateFactory.CreateDefaultPlayerState(PlayerPeerId));
-        service.RegisterPeer(OtherPeerA, LivingEntityStateFactory.CreateDefaultPlayerState(OtherPeerA));
-        service.RegisterPeer(OtherPeerB, LivingEntityStateFactory.CreateDefaultPlayerState(OtherPeerB));
-        service.RegisterPeer(OtherPeerC, LivingEntityStateFactory.CreateDefaultPlayerState(OtherPeerC));
-        return service;
+        var state = CreateState();
+        StateEngine.AddLivingEntity(state);
+
+        StateEngine.ProcessLivingEntity(EntityId, 1, [Effect(6, 301, 1)], 1);
+        StateEngine.ProcessLivingEntity(EntityId, 2, [Effect(6, 302, 2)], 1);
+        StateEngine.ProcessLivingEntity(EntityId, 3, [Effect(6, 303, 3)], 1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(state.ActiveEffectCount, Is.EqualTo(2));
+            Assert.That(state.ActiveEffects.Take(state.ActiveEffectCount).Select(effect => effect.RuntimeEffectId), Is.EquivalentTo(new[] { 302L, 303L }));
+            Assert.That(state.Health.CurrentValue, Is.EqualTo(75f));
+        });
+    }
+
+    [Test]
+    public void ChildEffectDepthOverflow_IsRejectedDeterministically()
+    {
+        RegisterDepthChainDefinitions();
+        var state = CreateState();
+        StateEngine.AddLivingEntity(state);
+
+        var delta = StateEngine.ProcessLivingEntity(EntityId, 1, [Effect(20, 401, 1)], 1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(state.Health.CurrentValue, Is.EqualTo(94f));
+            Assert.That(DeltaReader.TryRead(delta, out var read), Is.True);
+            Assert.That(read.CausalRecords.Any(record => record.Type == CausalRecordType.ChildEffectRejected), Is.True);
+        });
+    }
+
+    [Test]
+    public void DeltaRoundTrip_AppliesFinalAuthoritativeState()
+    {
+        var hostState = CreateState();
+        StateEngine.AddLivingEntity(hostState);
+        var delta = StateEngine.ProcessLivingEntity(EntityId, 1, [Effect(8, 501, 1)], 1);
+
+        StateEngine.Reset();
+        var clientState = CreateState();
+        StateEngine.AddLivingEntity(clientState);
+
+        StateEngine.ApplyDelta(EntityId, delta);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(clientState.Shield.CurrentValue, Is.EqualTo(60f));
+            Assert.That(clientState.NetworkTick, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void RollbackCorrection_ReplaysStoredEffectHistoryFromCorrectedTick()
+    {
+        var state = CreateState();
+        StateEngine.AddLivingEntity(state);
+        StateEngine.ProcessLivingEntity(EntityId, 1, [], 0);
+        StateEngine.ProcessLivingEntity(EntityId, 2, [Effect(8, 601, 2)], 1);
+
+        var corrected = CreateState();
+        corrected.NetworkTick = 1;
+        corrected.Health = new Stat(100f, 80f);
+        var correction = new DeltaWriter().Write(
+            corrected,
+            SimulationLane.Fast,
+            1UL << (int)StatType.Health,
+            false,
+            false,
+            [],
+            0);
+
+        StateEngine.ApplyDelta(EntityId, correction);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(state.Health.CurrentValue, Is.EqualTo(80f));
+            Assert.That(state.Shield.CurrentValue, Is.EqualTo(60f));
+            Assert.That(state.NetworkTick, Is.EqualTo(2));
+        });
+    }
+
+    [Test]
+    public void DeterministicReplay_ProducesIdenticalStateAndDelta()
+    {
+        var first = RunReplay();
+        var second = RunReplay();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(second.State.Health.CurrentValue, Is.EqualTo(first.State.Health.CurrentValue));
+            Assert.That(second.State.Condition, Is.EqualTo(first.State.Condition));
+            Assert.That(second.Delta.ToArray(), Is.EqualTo(first.Delta.ToArray()));
+        });
+    }
+
+    private static (LivingEntityState State, PackedByteArray Delta) RunReplay()
+    {
+        StateEngine.Reset();
+        var state = CreateState();
+        StateEngine.AddLivingEntity(state);
+        var effects = new[]
+        {
+            Effect(6, 701, 1),
+            Effect(8, 702, 1)
+        };
+        var delta = StateEngine.ProcessLivingEntity(EntityId, 1, effects, effects.Length);
+        return (state, delta);
+    }
+
+    private static LivingEntityState CreateState()
+    {
+        var state = new LivingEntityState(80)
+        {
+            EntityId = EntityId,
+            LivingEntityType = LivingEntityType.MpController
+        };
+        state.InitializeStat(StatType.Health, 100f);
+        state.InitializeStat(StatType.EnergyStorage, 100f);
+        state.InitializeStat(StatType.Shield, 100f);
+        state.ClearDirty();
+        return state;
+    }
+
+    private static ActiveEffect Effect(int definitionId, long runtimeId, long tick)
+    {
+        return ActiveEffectFactory.Create(definitionId, runtimeId, 10, 20, EntityId, tick);
+    }
+
+    private static void RegisterCoreDefinitions()
+    {
+        EffectDefinitionRegistry.RegisterRange(
+        [
+            new EffectDefinition
+            {
+                EffectDefinitionId = 1,
+                Name = "Fatal Damage",
+                Target = new EffectTarget(StatType.Health, StatValueKind.Current, StatManipulation.Reduce, StatCalculation.Flat, 200f)
+            },
+            new EffectDefinition
+            {
+                EffectDefinitionId = 2,
+                Name = "Normal Heal",
+                Target = new EffectTarget(StatType.Health, StatValueKind.Current, StatManipulation.Raise, StatCalculation.Flat, 25f)
+            },
+            new EffectDefinition
+            {
+                EffectDefinitionId = 3,
+                Name = "Revive",
+                CanTriggerWhileDead = true,
+                ChildEffectDefinitionIds = [4, 5]
+            },
+            new EffectDefinition
+            {
+                EffectDefinitionId = 4,
+                Name = "Restore Health",
+                CanTriggerWhileDead = true,
+                Target = new EffectTarget(StatType.Health, StatValueKind.Current, StatManipulation.Raise, StatCalculation.Flat, 25f)
+            },
+            new EffectDefinition
+            {
+                EffectDefinitionId = 5,
+                Name = "Remove Dead",
+                CanTriggerWhileDead = true,
+                ConditionRemoveRequest = LivingEntityCondition.Dead
+            },
+            new EffectDefinition
+            {
+                EffectDefinitionId = 6,
+                Name = "Poison",
+                ClassificationConditions = LivingEntityCondition.Poison,
+                ConditionAddRequest = LivingEntityCondition.Poison,
+                Target = new EffectTarget(StatType.Health, StatValueKind.Current, StatManipulation.Reduce, StatCalculation.Flat, 5f),
+                Trigger = new EffectTrigger(EffectTriggerType.OverTime, 1),
+                Duration = EffectDuration.TemporaryTicks(5),
+                StackPolicy = EffectStackPolicy.Stack,
+                StackBehavior = EffectStackBehavior.IndependentStacks,
+                MaxStacks = 2,
+                MaxStackOverflowPolicy = MaxStackOverflowPolicy.ReplaceOldest
+            },
+            new EffectDefinition
+            {
+                EffectDefinitionId = 7,
+                Name = "Cleanse Poison",
+                EffectRemovalRule = new EffectRemovalRule
+                {
+                    RequiredConditions = LivingEntityCondition.Poison,
+                    IncludeChildConditions = true,
+                    MaxRemoveCount = 1,
+                    RemoveOldestFirst = true
+                }
+            },
+            new EffectDefinition
+            {
+                EffectDefinitionId = 8,
+                Name = "Shield Hit",
+                Target = new EffectTarget(StatType.Shield, StatValueKind.Current, StatManipulation.Reduce, StatCalculation.Flat, 40f)
+            }
+        ]);
+
+        var reports = EffectValidator.ValidateRegistered();
+        Assert.That(reports.Where(report => report.Severity == ValidationSeverity.Error), Is.Empty);
+    }
+
+    private static void RegisterDepthChainDefinitions()
+    {
+        for (var i = 20; i <= 26; i++)
+        {
+            EffectDefinitionRegistry.Register(new EffectDefinition
+            {
+                EffectDefinitionId = i,
+                CanTriggerWhileDead = true,
+                Target = new EffectTarget(StatType.Health, StatValueKind.Current, StatManipulation.Reduce, StatCalculation.Flat, 1f),
+                ChildEffectDefinitionIds = i == 26 ? [] : [i + 1]
+            });
+        }
     }
 }
