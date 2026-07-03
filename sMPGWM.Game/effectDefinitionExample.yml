@@ -1,0 +1,318 @@
+Schema:
+  EffectDefinitionId:
+    Type: string
+    Example: example.effect.identifier
+  Name:
+    Type: string
+    Example: Default Effect
+  Description:
+    Type: string
+    Example: Default EffectDefinition template generated from the provided Effects document.
+  Required:
+    - EffecDefinitionId
+    - Name
+    - Description
+  
+  Trigger:
+    Type: object
+    properties:
+      TriggerType:
+        Type: Enum
+        values: [ Immediate, OverTime, OverTimeConstant, OnExpire, OnRemoval ]
+        default: Immediate
+      TickIntervalMs:
+        Type: float
+        default: 0.0
+        hint:
+          only with: [ OverTime ], describes in which intervall a OverTime effect triggers
+      TriggerConditions:
+        anyOf:
+          - Type: OnConditionsPresent
+            conditions:
+              type: array
+              items: [ conditionOnTarget ]
+              operator:
+                type: enum
+                values: [ any, all ]
+                default: any
+              hint: any/all condition(s) must be present on target LivingEntityState
+              required: size 1
+            nullable: true
+          - Type: OnConditionsMissing
+            conditions:
+              type: array
+              items: [ conditionOnTarget ]
+              operator:
+                type: enum
+                values: [ any, all ]
+                default: any
+              hint: any/all condition(s) must be absent on target LivingEntityState
+              required: size 1
+            nullable: true
+          - Type: OnClassificationsPresent
+            conditions:
+              type: array
+              items: [ classificationOnTarget ]
+              operator:
+                type: enum
+                values: [ any, all ]
+                default: any
+              hint: any/all classification(s) must be present on target LivingEntityState
+              required: size 1
+            nullable: true
+          - Type: OnClassificationsMissing
+            conditions:
+              type: array
+              items: [ classificationOnTarget ]
+              operator:
+                type: enum
+                values: [ any, all ]
+                default: any
+              hint: any/all classification(s) must be absent on target LivingEntityState
+              required: size 1
+            nullable: true
+          - Type: OnStatValueAbove
+            thresholdPercent:
+              Type: Number
+              min: 1%
+            Stat:
+              Type: any Stat
+              Example: Health
+            required:
+              - Stat
+              - thresholdPercent
+            nullable: true
+          - Type: OnStatValueBelow
+            thresholdPercent:
+              Type: Number
+              min: 1%
+            Stat:
+              Type: any Stat
+              Example: Health
+            required:
+              - Stat
+              - trehsholdPercent
+            nullable: true
+        nullable: true
+        rules:
+          - if triggerCondition is not null, than at least and at most any of [TriggerConditions.values] must not be null
+    required:
+      -TriggerType
+    rules:
+      -If TriggerType is [OverTime] then TickIntervalMs is required and must be greater 100ms.
+      -If TriggerType is not [OverTime] then TickIntervalsMs must be ignored. 
+  
+  Duration:
+    DurationType:
+      Type: Enum
+      values: [ Once, Temporary, Permanent ]
+      default: Once
+    DurationMS: 
+      Type: float
+      default: 0.0
+    required: DurationType
+    rules:
+      -If DurationType is [Temporary] then DurationMS is required and must be greater 100ms.
+      -If DurationType is not [Temporary] then DurationMS must be ignored.
+  
+  
+  Target:
+    TargetStat:
+      Type: any Stat
+      Example: Health
+    TargetValueKind:
+      Type: Enum
+      values: [ Current, Max ]
+    Manipulation:
+      Type: Enum
+      values: [ Raise, Reduce ]
+    Calculation:
+      Type: Enum
+      values: [ Flat, Percentage ]
+    Value:
+      Type: float
+      Example: 45.05
+    required: 
+      - TargetStat
+      - TargetValueKind
+      - Manipulation
+      - Calculation
+      - Value
+    nullable: true
+  
+  ConditionAndClassificationRequests:
+    anyOf:
+      ConditionsAddRequest:
+        Conditions:
+          Type: array
+          Example: [ ConditionA, ConditionB ]
+          nullable: true
+      ConditionsRemoveRequest:
+        Conditions:
+          Type: array
+          Example: [ ConditionA, ConditionC ]
+          nullable: true
+      ClassificationsAddRequest:
+        Type: array
+        Example: [ ClassificationA ]
+        nullable: true
+      ClassificationsRemoveRequest:
+        Type: array
+        Example: [ ClassificationC ]
+        nullable: true
+    nullable: true
+    rules:
+      - if ConditionAndClassificationRequests is not null, than at least any of [ConditionsAddRequest.size, ConditionsRemoveRequest.size, ClassificationsAddRequest.size, ClassificationsRemoveRequest.size] must be greater 0
+  
+  Blocking:
+    Type: Object
+      BlockPolicy: 
+        Type: Enum
+        values: [ConsumeOnFail, Retry]
+        default: ConsumeOnFail
+        hint: defines what happens if BlockedByCondition or BlockedByClassification evaluates to true
+      anyOf:
+        BlockedByCondition:
+          type: array
+          items: [ conditionOnTarget ]
+          operator:
+            type: enum
+            values: [ any, all ]
+            default: any
+          nullable: true
+          hint: any/all condition(s) must be present on target LivingEntityState
+        BlockedByClassification:
+          type: array
+          items: [ classificationsOnTarget ]
+          operator:
+            type: enum
+            values: [ any, all ]
+            default: any
+          hint: any/all classifications(s) must be present on target LivingEntityState
+          nullable: true
+    nullable: true
+    required: BlockPolicy
+    rules:
+      - if BlockPolicy is not null, than at least any of [BlockedByCondition.Size, BlockedByClassification.Size] must be greater 0. 
+      
+  EffectRemovalRequest:
+    type: object
+    anyOf:
+      EffectDefinitionIds: 
+        Type: array
+        items: [EffectDefinitionId]
+        hint: requests removal of all EffectDefinitionId(s) machting active effect definition ids on target LivingEntityState
+        required: size 1
+        nullable: true
+      SourceIds:
+        Type: array
+        items: [SourceId]
+        hint: requests removal of all SourceId(s) machting active effect source ids on target LivingEntityState
+        required: size 1
+        nullable: true
+      OriginIds:
+        Type: array
+        items: [ OriginId ]
+        hint: requests removal of all OriginId(s) machting active effect origin ids on target LivingEntityState
+        required: size 1
+        nullable: true
+      Classifications:
+        Type: array
+        items: [ Classification ]
+        hint: requests removal of all Classification(s) machting active effect Classification(s) on target LivingEntityState
+        required: size 1
+        nullable: true
+      Conditions:
+        Type: array
+        items: [ Condition ]
+        hint: requests removal of all OriginId(s) machting active effect source ids on target LivingEntityState
+        required: size 1
+        nullable: true
+      EffectsTargetingStats:
+        Type: array
+        items: [ Stat ]
+        hint: requests removal of all Stat(s) machting active effects targeting Stat ids on target LivingEntityState
+        required: size 1
+        nullable: true
+      StackGroupIds:
+        Type: array
+        items: [ StackGroupIdId ]
+        hint: requests removal of all StackGroupId(s) machting active effect stack group ids on target LivingEntityState
+        required: size 1
+        nullable: true
+    EffectRemovalBehaviour:
+      Type: object
+      MaxRemoveCount: 
+        Type: int
+        default: 1
+      RemoveOldestFirst:
+        Type: bool
+        default: true
+      nullable: true
+      
+    nullable: true
+    rules:
+      - if EffectRemovalRequest is not null, than at least any of [EffectDefinitionIds.Size, SourceIds.Size, OriginIds.Size, Classifications.Size, Conditions.Size, EffectsTargetingStats.Size, items.Size] must be greater 0.
+      - if EffectRemovalBehaviour is null than all machting active effects are requested to be removed
+  
+  EffectRemovalPolicy:
+    Type: Enum
+    values: [ ByAnySource,,BySourceId, ByOriginId ]
+    default: ByAnSource
+  
+  
+  CanTriggerWhileDead:
+    Type: bool
+    default: false
+    
+  Stacking:
+    Type: object
+    StackGroupId: 
+      type: integer
+      example: 12345
+    StackScope: 
+      Type: Emum
+      Values: [ByEffectDefinitionId, SameSource, SameSourceAndOrigin, ByStackGroupId]
+      default: ByEffectDefinitionId
+    StackPolicy: 
+      Type: Enum
+      values: [Stack, Replace, Discard]
+      default: Stack
+    StackBehavior: 
+      Type: Enum
+      values: [IndependentStacks, RefreshDuration, AddStackRefreshDuration, AddStackNoRefresh]
+      default: IndependentStacks
+    MaxStackOverflowPolicy: 
+      Type: Enum
+      values: [ReplaceOldest, RejectNewest]
+      default: ReplaceOldest
+      nullable: true
+    LimitStacks:
+      Type: boolean
+      default: false
+    MaxStacksToOverflow: 
+      Type: int
+    nullable: true
+    rules:
+      - MaxStackOverflowPolicy must be set, for MaxStacksToOverflow to be recognized
+    
+  
+  Visibility: 
+    Type: Enum
+    Values: [Internal, Hud, Menu]
+    default: Internal
+  
+  ChildEffectDefinitionIds:
+    Type: Array
+    items: [EffectDefinitionId]
+    hint: child effect ids that should be executed on ChildEffectBehaviour
+  
+  ChildEffectBehaviour: 
+    Type: Enum
+    Values: [Instant, OnEffectTrigger]
+    default: Instant
+    
+  IsEffectContainer:
+    Type: bool
+    default: false
+    rule: if IsEffectContainer, skipp effect and only process childEffects

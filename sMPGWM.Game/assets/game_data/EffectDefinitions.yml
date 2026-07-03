@@ -1,0 +1,126 @@
+Heal:
+  EffectDefinitionId: heal
+  Name: Heal
+  Description: Heals Target entity with given target.value
+
+  Trigger:
+    Type: Immediate
+
+  Duration:
+    Type: Once
+
+  Target:
+    TargetStat: Health
+    TargetValueKind: Current
+    Manipulation: Raise
+    Calculation: Flat
+    Value: 50.0
+
+  Blocking:
+    BlockPolicy: ConsumeOnFail
+    BlockedByCondition:
+      Conditions: [ Incurable ]
+    BlockedByClassification:
+      Classifications: [ CannotBeHealed ]
+
+  Visibility: Internal
+
+
+CurseOfEternity:
+  EffectDefinitionId: curese_of_eternity
+  Name: Curse Of Eternity
+  Description: Applies a permanent curse to a target, so that the target looses half of its max energy. Also removes all non permanent  bonuses to energy regeneration. Can be removed by all effects that request removal by condition cursed. is permanent
+
+  Trigger:
+    Type: Immediate
+
+  Duration:
+    Type: Permanent
+
+  Target:
+    TargetStat: Energy
+    TargetValueKind: Max
+    Manipulation: Reduce
+    Calculation: Percentage
+    Value: 50.0
+
+  Conditions:
+    ConditionsAddRequest:
+      Conditions: [ Cursed ]
+
+  Classifications:
+    ClassificationsAddRequest:
+      Classifications: [ CannotBeRegenerated ]
+
+  Blocking:
+    BlockPolicy: ConsumeOnFail
+    BlockedByCondition:
+      Conditions: [ ]
+    BlockedByClassification:
+      Classifications: [ CurseImmunity ]
+
+  EffectRemovalRequest:
+    EffectsTargetingStats: [ EnergyRegeneration ]
+  
+  EffectRemovalRule:
+    EffectRemovalPolicy:
+      - Type: ByAnySource
+  
+  Stacking:
+    StackScope: ByEffectDefinitionId
+    StackPolicy: Discard
+
+  Visibility: Hud
+
+CorrodingPoison:
+  EffectDefinitionId: corroding_poison
+  Name: Corroding Poison
+  Description: Hits the target and applies up to 5 Stacks, where each Stack reduces Armor by 5 Percent until duration is over or is removed by any source that removes poisoned condition.
+
+  Trigger:
+    Type: OverTimeConstant
+
+  Duration:
+    Type: Temporary
+    DurationMS: 1500
+
+  Target:
+    TargetStat: Armor
+    TargetValueKind: Max
+    Manipulation: Reduce
+    Calculation: Percentage
+    Value: 50.0
+
+  Conditions:
+    ConditionsAddRequest:
+      Conditions: [ Poisoned ]
+
+  Classifications:
+    ClassificationsAddRequest:
+      Classifications: [ Corroding ]
+
+  Blocking:
+    BlockPolicy: Retry
+    BlockedByClassification:
+      Classifications: [ ImmuneToPoison ]
+
+  EffectRemovalRule:
+    EffectRemovalPolicy:
+      - Type: ByAnySource
+      - Type: BySourceId
+      - Type: ByOriginId
+    RemovalOrdering:
+      Primary: RemoveOldestFirst
+      Secondary: AppliedNetworkTick
+      Tertiary: InsertionSequence
+      FinalTieBreaker: RuntimeEffectId
+      
+  Stacking:
+    StackGroupId: 2345
+    StackScope: ByEffectDefinitionId
+    StackPolicy: Stack
+    StackBehavior: AddStackRefreshDuration
+    MaxStacks: 5
+    MaxStackOverflowPolicy: ReplaceOldest
+
+  Visibility: hud
