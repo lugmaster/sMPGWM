@@ -9,10 +9,11 @@ Heal:
     DurationType: Once
   Target:
     TargetStat: Health
-    TargetValueKind: Current
+    TargetValueKind: CurrentValue
     Manipulation: Raise
     Calculation: Flat
     Value: 50.0
+    ApplicationMode: Instant
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
@@ -20,27 +21,28 @@ Heal:
     BlockedByClassification:
       - CannotBeHealed
   Visibility: Internal
-CurseOfEternity:
+EnergyStorageCurse:
   Definition:
-    EffectDefinitionId: effect.permanent.curse_of_eternity
-    Name: Curse Of Eternity
-    Description: Applies a permanent curse that reduces max EnergyStorage by 50% and requests removal of active effects targeting
-      EnergyRegeneration.
+    EffectDefinitionId: effect.curse.energy_storage_capacity
+    Name: Energy Storage Curse
+    Description: Reduces EnergyStorage capacity by 50% while active and requests removal of active effects targeting EnergyProduction.
   Trigger:
-    TriggerType: Immediate
+    TriggerType: WhileActive
   Duration:
-    DurationType: Permanent
+    DurationType: UntilRemoved
   Target:
     TargetStat: EnergyStorage
-    TargetValueKind: Max
+    TargetValueKind: CurrentMaxValue
     Manipulation: Reduce
     Calculation: Percentage
     Value: 0.5
+    ApplicationMode: WhileActive
   ConditionAndClassificationRequests:
     ConditionsAddRequest:
       - Cursed
     ClassificationsAddRequest:
       - CannotBeRegenerated
+      - Debuff
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByClassification:
@@ -49,7 +51,7 @@ CurseOfEternity:
       - Invulnerable
   EffectRemovalRequest:
     EffectsTargetingStats:
-      - EnergyRegeneration
+      - EnergyProduction
   EffectRemovalPolicy: ByAnySource
   Stacking:
     StackScope: ByEffectDefinitionId
@@ -57,21 +59,21 @@ CurseOfEternity:
   Visibility: Hud
 CorrodingPoison:
   Definition:
-    EffectDefinitionId: effect.overtime_constant.corroding_poison
+    EffectDefinitionId: effect.while_active.corroding_poison
     Name: Corroding Poison
-    Description: Applies up to 5 stacks. Each stack temporarily reduces effective Armor by 5% while active, then Armor snaps
-      back when the effect expires or is removed.
+    Description: Applies up to 5 stacks. Each stack temporarily reduces effective Armor by 5% while active, then Armor snaps back when the effect expires or is removed.
   Trigger:
-    TriggerType: OverTimeConstant
+    TriggerType: WhileActive
   Duration:
     DurationType: Temporary
     DurationMS: 1500.0
   Target:
     TargetStat: Armor
-    TargetValueKind: Current
+    TargetValueKind: CurrentValue
     Manipulation: Reduce
     Calculation: Percentage
     Value: 0.05
+    ApplicationMode: WhileActive
   ConditionAndClassificationRequests:
     ConditionsAddRequest:
       - Poisoned
@@ -108,10 +110,11 @@ Revive:
     DurationType: Once
   Target:
     TargetStat: Health
-    TargetValueKind: Current
+    TargetValueKind: CurrentValue
     Manipulation: Raise
     Calculation: Flat
     Value: 50.0
+    ApplicationMode: Instant
   ConditionAndClassificationRequests:
     ConditionsRemoveRequest:
       - Dead
@@ -139,10 +142,11 @@ SuperEvilDot:
     DurationMS: 2100.0
   Target:
     TargetStat: Health
-    TargetValueKind: Current
+    TargetValueKind: CurrentValue
     Manipulation: Reduce
     Calculation: Flat
     Value: 75.0
+    ApplicationMode: Instant
   ConditionAndClassificationRequests:
     ClassificationsAddRequest:
       - AffectedBySuperEvilDot
@@ -159,23 +163,88 @@ SuperEvilDot:
     MaxStacks: 5
     MaxStackOverflowPolicy: ReplaceOldest
   Visibility: Hud
+MaxHealthRot:
+  Definition:
+    EffectDefinitionId: effect.rot.max_health
+    Name: Max Health Rot
+    Description: Every due tick accumulates a temporary Health capacity reduction. The accumulated reduction disappears when the effect expires or is removed.
+  Trigger:
+    TriggerType: OverTime
+    TickIntervalMs: 1000.0
+  Duration:
+    DurationType: Temporary
+    DurationMS: 5000.0
+  Target:
+    TargetStat: Health
+    TargetValueKind: CurrentMaxValue
+    Manipulation: Reduce
+    Calculation: Percentage
+    Value: 0.05
+    ApplicationMode: AccumulateWhileActive
+  ConditionAndClassificationRequests:
+    ConditionsAddRequest:
+      - Infected
+    ClassificationsAddRequest:
+      - Infection
+      - Debuff
+  Blocking:
+    BlockPolicy: Retry
+    BlockedByCondition:
+      - Invulnerable
+  EffectRemovalPolicy: ByAnySource
+  Stacking:
+    StackScope: ByEffectDefinitionId
+    StackPolicy: Stack
+    StackBehavior: IndependentStacks
+    MaxStacks: 5
+    MaxStackOverflowPolicy: ReplaceOldest
+  Visibility: Hud
+ShieldCapacityBoost:
+  Definition:
+    EffectDefinitionId: effect.buff.shield_capacity
+    Name: Shield Capacity Boost
+    Description: Raises Shield capacity by a flat amount while active. Positive capacity compensation may raise current Shield only for the capacity delta gained above EffectiveMaxValue.
+  Trigger:
+    TriggerType: WhileActive
+  Duration:
+    DurationType: Temporary
+    DurationMS: 3000.0
+  Target:
+    TargetStat: Shield
+    TargetValueKind: CurrentMaxValue
+    Manipulation: Raise
+    Calculation: Flat
+    Value: 50.0
+    ApplicationMode: WhileActive
+  ConditionAndClassificationRequests:
+    ClassificationsAddRequest:
+      - Buff
+  Blocking:
+    BlockPolicy: RemoveOnFail
+  Stacking:
+    StackScope: ByEffectDefinitionId
+    StackPolicy: Replace
+    StackBehavior: RefreshDuration
+    MaxStacks: 1
+    MaxStackOverflowPolicy: ReplaceOldest
+  Visibility: Hud
 Overheating:
   Definition:
     EffectDefinitionId: effect.buff.weapon.overheating
     Name: Overheating
-    Description: Temporarily raises effective AttackSpeed by 50%. When the buff expires naturally, it applies the Overheating
-      Cooldown child effect.
+    Description: Temporarily raises effective AttackSpeed by 50%. When the buff expires naturally, it applies the Overheating Cooldown child effect.
   Trigger:
-    TriggerType: OverTimeConstant
+    TriggerType: WhileActive
   Duration:
     DurationType: Temporary
     DurationMS: 5000.0
   Target:
     TargetStat: AttackSpeed
-    TargetValueKind: Current
+    TargetValueKind: CurrentValue
     Manipulation: Raise
     Calculation: Percentage
     Value: 0.5
+    ApplicationMode: WhileActive
   ConditionAndClassificationRequests:
     ClassificationsAddRequest:
       - Overheating
@@ -199,7 +268,7 @@ OverheatingCooldown:
     Name: Overheating Cooldown
     Description: Applies the Overheated condition while active. Attack effects should block against condition Overheated.
   Trigger:
-    TriggerType: OverTimeConstant
+    TriggerType: WhileActive
   Duration:
     DurationType: Temporary
     DurationMS: 5000.0
@@ -213,4 +282,56 @@ OverheatingCooldown:
     StackGroupId: 123
     StackScope: ByStackGroupId
     StackPolicy: Discard
+  Visibility: Hud
+EnergyProductionSurge:
+  Definition:
+    EffectDefinitionId: effect.buff.energy_production_surge
+    Name: Energy Production Surge
+    Description: Raises effective EnergyProduction rate while active. The Value is authored in EnergyProduction's per-ms unit.
+  Trigger:
+    TriggerType: WhileActive
+  Duration:
+    DurationType: Temporary
+    DurationMS: 2500.0
+  Target:
+    TargetStat: EnergyProduction
+    TargetValueKind: CurrentValue
+    Manipulation: Raise
+    Calculation: Percentage
+    Value: 0.25
+    ApplicationMode: WhileActive
+  ConditionAndClassificationRequests:
+    ClassificationsAddRequest:
+      - Buff
+  Stacking:
+    StackScope: ByEffectDefinitionId
+    StackPolicy: Replace
+    StackBehavior: RefreshDuration
+    MaxStacks: 1
+  Visibility: Hud
+DelayedExplosion:
+  Definition:
+    EffectDefinitionId: effect.delayed.explosion
+    Name: Delayed Explosion
+    Description: Deals Health damage when the effect expires naturally.
+  Trigger:
+    TriggerType: OnExpire
+  Duration:
+    DurationType: Temporary
+    DurationMS: 2000.0
+  Target:
+    TargetStat: Health
+    TargetValueKind: CurrentValue
+    Manipulation: Reduce
+    Calculation: Flat
+    Value: 100.0
+    ApplicationMode: Instant
+  ConditionAndClassificationRequests:
+    ClassificationsAddRequest:
+      - Fire
+      - Debuff
+  Blocking:
+    BlockPolicy: RemoveOnFail
+    BlockedByCondition:
+      - Invulnerable
   Visibility: Hud

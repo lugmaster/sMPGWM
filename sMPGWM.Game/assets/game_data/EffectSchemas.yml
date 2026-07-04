@@ -1,33 +1,41 @@
-SchemaVersion: 1.0.0
+SchemaVersion: 2.0.0
 SchemaKind: FLU.RPG.StateEngine.Effects
 SourcePrecedence:
+  - stats.md version 6.2
   - EffectSchemas.yml and EffectDefinitions.yml decisions from source YAML and clarification answers
   - Extracted Effects section
-  - PRD 6.1 context
+  - PRD 6.1 context only
 DecisionsApplied:
-  - BlockPolicy canonical enum value is RemoveOnFail, not ConsumeOnFail.
-  - Stack limit field is MaxStacks. LimitStacks and MaxStacksToOverflow are removed.
-  - OverTimeConstant is a persistent active modifier/state-carrier while active; it does not tick and ignores TickIntervalMs.
-  - ResourcePool stats use Current for transactional changes only; persistent buffs/debuffs target Max.
-  - Attribute stats, including rate/regen/production/consumption stats, may use Current as effective runtime value; temporary
-    Current modifiers are recalculated from active effects and snap back to Max when removed.
-  - ClassificationsAddRequest attaches classifications to the ActiveEffect metadata only; classifications are not target-state
-    flags. ClassificationsRemoveRequest is removed.
-  - 'ChildEffectDefinitions use per-child ChildEffectTrigger values: BoundToParent, OnParentExpired, OnParentRemoved, OnParentExpiredOrRemoved.'
-  - 'StackScope enum remains: ByEffectDefinitionId, SameSource, SameSourceAndOrigin, ByStackGroupId.'
-  - 'EffectRemovalPolicy enum remains: ByAnySource, BySourceId, ByOriginId.'
-  - 'Calculation Percentage values are decimal fractions: 0.50 means 50 percent.'
+  - Passive effects are removed from the Effects model. Passives are handled by a separate passive modifier pipeline.
+  - EffectType is removed. All definitions in this schema are ActiveEffect definitions.
+  - DurationType Permanent is renamed to UntilRemoved for active effects that persist until explicit removal.
+  - TriggerType OverTimeConstant is renamed to WhileActive.
+  - TargetValueKind values are CurrentValue and CurrentMaxValue.
+  - CurrentMaxValue is valid only for PoolStats.
+  - WhileActive must not target CurrentValue of a PoolStat.
+  - AttributeStats and FlowStats may only be actively modified through WhileActive + CurrentValue + ApplicationMode WhileActive.
+  - Immediate, OnExpire, and OnRemoval stat targets are restricted to PoolStat.CurrentValue + ApplicationMode Instant.
+  - OverTime stat targets are restricted to PoolStat.CurrentValue + ApplicationMode Instant or PoolStat.CurrentMaxValue + ApplicationMode AccumulateWhileActive.
+  - ApplicationMode is optional and may be explicit when valid. Defaults are inferred deterministically from trigger, stat category, and target value kind.
+  - AccumulateWhileActive contribution is runtime state on ActiveEffect. It is not mutable EffectDefinition data.
+  - Refreshing an AccumulateWhileActive effect preserves accumulated value. Replacing it removes the old accumulator and starts fresh.
+  - IndependentStacks with AccumulateWhileActive creates one independent accumulator per accepted ActiveEffect.
+  - Calculation Percentage values are decimal fractions. Active modifier percentages use the passive baseline; Instant PoolStat.CurrentValue percentages use CurrentMaxValue at execution time.
+  - AccumulateWhileActive percentage reductions are capped at -100 percent contribution. Raises have no dedicated schema cap in the first implementation.
+  - FlowStat target Value is authored in the stat's canonical per-ms unit where applicable.
+  - PoolStat.CurrentValue clamps after each individual CurrentValue modification record.
+  - PoolStat.CurrentMaxValue may use unclamped intermediate values during resolution but is clamped at the end of capacity resolution.
+  - Positive pool capacity compensation is based only on positive capacity delta gained this tick above EffectiveMaxValue.
+  - Removing a capacity debuff back toward EffectiveMaxValue does not raise CurrentValue.
+  - ClassificationsAddRequest attaches classifications to ActiveEffect metadata only. ClassificationsRemoveRequest is invalid.
 Enums:
-  EffectType:
-    - Active
-    - Passive
   EffectProcessing:
     - Fast
     - Slow
   TriggerType:
     - Immediate
     - OverTime
-    - OverTimeConstant
+    - WhileActive
     - OnExpire
     - OnRemoval
   TriggerConditionType:
@@ -45,16 +53,20 @@ Enums:
   DurationType:
     - Once
     - Temporary
-    - Permanent
+    - UntilRemoved
   TargetValueKind:
-    - Current
-    - Max
+    - CurrentValue
+    - CurrentMaxValue
   Manipulation:
     - Raise
     - Reduce
   Calculation:
     - Flat
     - Percentage
+  ApplicationMode:
+    - Instant
+    - WhileActive
+    - AccumulateWhileActive
   BlockPolicy:
     - RemoveOnFail
     - Retry
@@ -89,34 +101,137 @@ Enums:
     - OnParentRemoved
     - OnParentExpiredOrRemoved
 StatCategories:
-  ResourcePool:
+  PoolStat:
     - Health
-    - EnergyStorage
     - Shield
+    - EnergyStorage
     - OxygenStorage
     - FoodStorage
     - WaterStorage
-  Attribute:
+  FlowStat:
+    - HealthRegeneration
+    - ShieldRegeneration
+    - EnergyProduction
+    - EnergyConsumption
+    - OxygenProduction
+    - OxygenConsumption
+    - FoodProduction
+    - FoodConsumption
+    - WaterProduction
+    - WaterConsumption
+  AttributeStat:
     - Armor
     - Speed
     - Acceleration
-    - AfterBurnerSpeed
-    - AfterBurnerAcceleration
+    - AfterburnerSpeed
+    - AfterburnerAcceleration
+    - AttackSpeed
     - CriticalHitChance
     - CriticalHitBonusDamage
-    - AttackSpeed
-    - CoolDownReduction
-    - HealthRegeneration
-    - EnergyProduction
-    - EnergyConsumption
-    - ShieldRegeneration
+    - BonusCriticalHitChance
+    - CooldownReduction
+    - LifeLeech
+    - RetaliationDamage
     - ShieldRechargeDuration
-    - OxygenConsumption
+    - BonusDamageKinetic
+    - BonusDamageThermal
+    - BonusDamageExplosive
+    - ResistanceKinetic
+    - ResistanceThermal
+    - ResistanceExplosive
+DeprecatedInvalidValues:
+  EffectType:
+    - Passive
+  DurationType:
+    - Permanent
+  TriggerType:
+    - OverTimeConstant
+  TargetValueKind:
+    - Current
+    - Max
+  Stat:
+    - AfterBurnerSpeed
+    - AfterBurnerAcceleration
+    - CoolDownReduction
+    - BonusCriticalHitChange
+    - Lifeleech
     - OxygenGeneration
-    - FoodConsumption
     - FoodGeneration
-    - WaterConsumption
     - WaterGeneration
+ApplicationModeDefaults:
+  - When:
+      TriggerType: Immediate
+      StatCategory: PoolStat
+      TargetValueKind: CurrentValue
+    Default: Instant
+  - When:
+      TriggerType: OverTime
+      StatCategory: PoolStat
+      TargetValueKind: CurrentValue
+    Default: Instant
+  - When:
+      TriggerType: OnExpire
+      StatCategory: PoolStat
+      TargetValueKind: CurrentValue
+    Default: Instant
+  - When:
+      TriggerType: OnRemoval
+      StatCategory: PoolStat
+      TargetValueKind: CurrentValue
+    Default: Instant
+  - When:
+      TriggerType: WhileActive
+      StatCategory: PoolStat
+      TargetValueKind: CurrentMaxValue
+    Default: WhileActive
+  - When:
+      TriggerType: OverTime
+      StatCategory: PoolStat
+      TargetValueKind: CurrentMaxValue
+    Default: AccumulateWhileActive
+  - When:
+      TriggerType: WhileActive
+      StatCategory: AttributeStat
+      TargetValueKind: CurrentValue
+    Default: WhileActive
+  - When:
+      TriggerType: WhileActive
+      StatCategory: FlowStat
+      TargetValueKind: CurrentValue
+    Default: WhileActive
+ValidTargetCombinations:
+  - TriggerType: Immediate
+    StatCategory: PoolStat
+    TargetValueKind: CurrentValue
+    ApplicationMode: Instant
+  - TriggerType: OverTime
+    StatCategory: PoolStat
+    TargetValueKind: CurrentValue
+    ApplicationMode: Instant
+  - TriggerType: OverTime
+    StatCategory: PoolStat
+    TargetValueKind: CurrentMaxValue
+    ApplicationMode: AccumulateWhileActive
+  - TriggerType: WhileActive
+    StatCategory: PoolStat
+    TargetValueKind: CurrentMaxValue
+    ApplicationMode: WhileActive
+  - TriggerType: WhileActive
+    StatCategory: AttributeStat
+    TargetValueKind: CurrentValue
+    ApplicationMode: WhileActive
+  - TriggerType: WhileActive
+    StatCategory: FlowStat
+    TargetValueKind: CurrentValue
+    ApplicationMode: WhileActive
+  - TriggerType: OnExpire
+    StatCategory: PoolStat
+    TargetValueKind: CurrentValue
+    ApplicationMode: Instant
+  - TriggerType: OnRemoval
+    StatCategory: PoolStat
+    TargetValueKind: CurrentValue
+    ApplicationMode: Instant
 EffectDefinitionSchema:
   Type: object
   Required:
@@ -139,10 +254,6 @@ EffectDefinitionSchema:
         Description:
           Type: string
           Nullable: false
-    EffectType:
-      Type: enum
-      ValuesRef: EffectType
-      Default: Active
     EffectProcessing:
       Type: enum
       ValuesRef: EffectProcessing
@@ -168,15 +279,13 @@ EffectDefinitionSchema:
           Type: array
           ItemsRef: TriggerCondition
           Nullable: true
-          Default: [ ]
+          Default: []
       Rules:
         - If TriggerType is OverTime, TickIntervalMs is required and must be greater than 100.
         - If TriggerType is not OverTime, TickIntervalMs is ignored and should be omitted from canonical definitions.
-        - OverTimeConstant does not execute repeatedly every engine tick. It contributes a persistent active modifier or active
-          condition/classification while the ActiveEffect exists.
+        - WhileActive contributes active modifiers, conditions, or classifications while the ActiveEffect exists. It does not tick.
         - OnExpire requires Duration.DurationType = Temporary.
-        - OnRemoval requires Duration.DurationType = Permanent or Temporary and is triggered by explicit removal, not natural
-          expiry.
+        - OnRemoval requires Duration.DurationType = Temporary or UntilRemoved and is triggered by explicit removal, not natural expiry.
     Duration:
       Type: object
       Required:
@@ -192,8 +301,9 @@ EffectDefinitionSchema:
           Nullable: true
       Rules:
         - If DurationType is Temporary, DurationMS is required and must be greater than 100.
-        - If DurationType is not Temporary, DurationMS is ignored and should be omitted from canonical definitions.
+        - If DurationType is Once or UntilRemoved, DurationMS should be omitted from canonical definitions.
         - Runtime duration is converted to NetworkTick values; simulation must not use wall-clock duration at runtime.
+        - UntilRemoved is an active effect lifetime, not passive behavior.
     Target:
       Type: object
       Nullable: true
@@ -218,15 +328,26 @@ EffectDefinitionSchema:
           ValuesRef: Calculation
         Value:
           Type: float
+        ApplicationMode:
+          Type: enum
+          ValuesRef: ApplicationMode
+          Nullable: true
       Rules:
         - Each effect may have at most one Target.
+        - TargetValueKind must be CurrentValue or CurrentMaxValue.
+        - Active effects must not target BaseValue or EffectiveMaxValue.
+        - ApplicationMode is optional. If omitted, it is inferred from ApplicationModeDefaults.
+        - Explicit ApplicationMode is allowed only when the combination exists in ValidTargetCombinations.
+        - CurrentMaxValue is valid only for PoolStats.
+        - WhileActive must not target CurrentValue of a PoolStat.
+        - AttributeStats and FlowStats may only use WhileActive + CurrentValue + ApplicationMode WhileActive.
+        - Immediate, OnExpire, and OnRemoval stat targets may only use PoolStat.CurrentValue + ApplicationMode Instant.
+        - OverTime stat targets may only use PoolStat.CurrentValue + ApplicationMode Instant or PoolStat.CurrentMaxValue + ApplicationMode AccumulateWhileActive.
         - Calculation Percentage values are decimal fractions; 0.05 means 5 percent.
-        - ResourcePool Current is valid only for transactional changes such as damage, heal, drain, regeneration, or consumption.
-          Persistent ResourcePool buffs/debuffs must target Max.
-        - Attribute Current is the effective runtime value and may be modified by temporary non-passive effects. Attribute Current
-          is recalculated from active modifiers and snaps back to Max when those modifiers expire or are removed.
-        - Attribute Max is the passive/base/equipment-adjusted baseline and should be recalculated only when passive/permanent/source
-          state changes.
+        - Active modifier percentages use the passive baseline as reference.
+        - Instant PoolStat.CurrentValue Percentage uses the pool CurrentMaxValue at execution time.
+        - AccumulateWhileActive Percentage Reduce contributions are capped at -100 percent.
+        - FlowStat Value is authored in the stat's canonical per-ms unit where applicable.
     ConditionAndClassificationRequests:
       Type: object
       Nullable: true
@@ -246,10 +367,12 @@ EffectDefinitionSchema:
       Rules:
         - If present, at least one contained array must contain at least one value.
         - ConditionsAddRequest and ConditionsRemoveRequest target LivingEntityState conditions.
-        - For OverTimeConstant Temporary/Permanent effects, ConditionsAddRequest represents an active condition contribution
-          while the ActiveEffect exists; the condition remains if another active effect still contributes it.
+        - Condition requests are allowed with all trigger types.
+        - For WhileActive effects, condition requests contribute while the ActiveEffect exists and are removed when the effect expires or is removed.
+        - For OverTime effects, condition contribution begins after the effect has ticked at least once and is removed when the effect expires or is removed.
+        - For Immediate, OnExpire, and OnRemoval effects, condition requests are transactional when the effect triggers.
         - ClassificationsAddRequest attaches classifications to the ActiveEffect metadata only. It does not mutate LivingEntityState.
-        - ClassificationsRemoveRequest is not valid; classifications disappear when the ActiveEffect expires or is removed.
+        - ClassificationsRemoveRequest is invalid; classifications disappear when the ActiveEffect expires or is removed.
     Blocking:
       Type: object
       Nullable: true
@@ -271,8 +394,7 @@ EffectDefinitionSchema:
         - BlockedByClassification checks classifications attached to active effects on the target.
         - Dead blocks by default unless CanTriggerWhileDead is true.
         - Blocking is evaluated before trigger and trigger conditions.
-        - RemoveOnFail consumes/removes the effect when blocked. Retry keeps the effect active until its next due execution,
-          natural expiry, or explicit removal.
+        - RemoveOnFail consumes/removes the effect when blocked. Retry keeps the effect active until its next due execution, natural expiry, or explicit removal.
     EffectRemovalRequest:
       Type: object
       Nullable: true
@@ -323,8 +445,8 @@ EffectDefinitionSchema:
         - If present, at least one selector array must contain at least one value.
         - Selectors are combined with AND between fields and OR within each field list.
         - If EffectRemovalBehaviour is omitted, all matching active effects are requested for removal.
-        - Passive effects can only be removed by EffectRuntimeIds.
-        - 'Removal ordering is deterministic: RemoveOldestFirst, AppliedNetworkTick, InsertionSequence, EffectRuntimeId.'
+        - Passives are not effects and cannot be removed through EffectRemovalRequest.
+        - Removal ordering is deterministic: RemoveOldestFirst, AppliedNetworkTick, InsertionSequence, EffectRuntimeId.
     EffectRemovalPolicy:
       Type: enum
       ValuesRef: EffectRemovalPolicy
@@ -364,6 +486,10 @@ EffectDefinitionSchema:
         - MaxStacks is the canonical stack limit field. MaxStacksToOverflow and LimitStacks are invalid.
         - If StackPolicy is Stack and MaxStacks is set, MaxStacks must be greater than 0.
         - When MaxStacks is reached, use MaxStackOverflowPolicy. Default is ReplaceOldest.
+        - AccumulateWhileActive follows normal stacking first.
+        - If an AccumulateWhileActive effect is refreshed, keep accumulated value and refresh only duration.
+        - If an AccumulateWhileActive effect is replaced, remove the old ActiveEffect and accumulator, then create a new ActiveEffect with a fresh accumulator.
+        - If StackBehavior is IndependentStacks for AccumulateWhileActive, each accepted ActiveEffect has its own independent accumulator.
     Visibility:
       Type: enum
       ValuesRef: Visibility
@@ -378,12 +504,9 @@ EffectDefinitionSchema:
       Type: bool
       Default: false
   Rules:
-    - An effect is valid if IsEffectContainer is false and at least one of Target, ConditionAndClassificationRequests, EffectRemovalRequest,
-      or ChildEffectDefinitions is present.
-    - A container is valid if IsEffectContainer is true, Target is omitted, ConditionAndClassificationRequests is omitted, and
-      ChildEffectDefinitions is present with at least one entry.
-    - EffectDefinitions are validated once at startup. An EffectDefinition is valid only if all referenced child definitions
-      are valid and the child graph is acyclic.
+    - An effect is valid if IsEffectContainer is false and at least one of Target, ConditionAndClassificationRequests, EffectRemovalRequest, or ChildEffectDefinitions is present.
+    - A container is valid if IsEffectContainer is true, Target is omitted, ConditionAndClassificationRequests is omitted, EffectRemovalRequest is omitted, and ChildEffectDefinitions is present with at least one entry.
+    - EffectDefinitions are validated once at startup. An EffectDefinition is valid only if all referenced child definitions are valid and the child graph is acyclic.
 ReusableSchemas:
   TriggerCondition:
     Type: object
@@ -448,10 +571,6 @@ EffectRuntimeSchema:
   Fields:
     EffectRuntimeId:
       Type: id
-    EffectType:
-      Type: enum
-      ValuesRef: EffectType
-      Readonly: true
     EffectProcessing:
       Type: enum
       ValuesRef: EffectProcessing
@@ -482,6 +601,20 @@ EffectRuntimeSchema:
     StackCount:
       Type: int
       Default: 1
+    AppliedTickCount:
+      Type: int
+      Default: 0
+      UsedBy: AccumulateWhileActive
+    AccumulatedFlatModifier:
+      Type: float
+      Default: 0.0
+      UsedBy: AccumulateWhileActive
+    AccumulatedPercentageModifier:
+      Type: float
+      Default: 0.0
+      UsedBy: AccumulateWhileActive
+      Rules:
+        - Reduce contributions are capped at -1.0 before stat resolution contribution.
     ParentEffectRuntimeId:
       Type: id
       Nullable: true
