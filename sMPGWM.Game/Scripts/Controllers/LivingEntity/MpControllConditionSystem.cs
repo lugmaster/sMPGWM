@@ -2,6 +2,9 @@ namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
 // This is just a reference or idea giver. Read it carefully. Take the Concept from a Single File, where all system 
 // side effects regarding living entities are handled. 
+/// <summary>
+/// Placeholder for future presentation-side condition reactions on multiplayer controllers.
+/// </summary>
 public class MpControllerConditionSystem
 {
     // private LivingEntityCondition _current;

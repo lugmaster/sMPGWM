@@ -3,10 +3,16 @@ using sMPGWM.Scripts.Enums.Game;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
+/// <summary>
+/// Creates initial living-entity states with fixed capacities and default stat values.
+/// </summary>
 public static class LivingEntityStateFactory
 {
     private const int FirstAgentLivingEntityId = 1_000_000;
 
+    /// <summary>
+    /// Creates a default player-controlled living-entity state for the supplied peer id.
+    /// </summary>
     public static LivingEntityState CreateDefaultPlayerState(int peerId)
     {
         var state = new LivingEntityState(StateEngine.Config.PlayerActiveEffectCapacity)
@@ -20,6 +26,9 @@ public static class LivingEntityStateFactory
         return state;
     }
 
+    /// <summary>
+    /// Creates a default agent living-entity state with an id in the reserved agent range.
+    /// </summary>
     public static LivingEntityState CreateDefaultAgentState(int agentId)
     {
         var state = new LivingEntityState(StateEngine.Config.SimpleNpcActiveEffectCapacity)
@@ -33,6 +42,9 @@ public static class LivingEntityStateFactory
         return state;
     }
 
+    /// <summary>
+    /// Converts an agent id into the reserved living-entity id range.
+    /// </summary>
     public static int ToAgentLivingEntityId(int agentId)
     {
         if (agentId < 0)

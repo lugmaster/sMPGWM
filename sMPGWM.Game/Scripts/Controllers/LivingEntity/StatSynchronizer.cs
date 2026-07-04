@@ -3,6 +3,9 @@ using Logger = sMPGWM.Scripts.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
+/// <summary>
+/// Placeholder singleton for future network synchronization around living-entity state deltas.
+/// </summary>
 public partial class StatSynchronizer : AbstractSingleton<StatSynchronizer>
 {
     //  private static int FastSyncInterval => GlobalStateManager.FastSyncInterval;

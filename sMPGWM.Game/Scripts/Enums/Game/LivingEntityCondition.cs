@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace sMPGWM.Scripts.Enums.Game;
 
+/// <summary>
+/// Shared condition vocabulary for entity state, effect classification, blocking, and removal matching.
+/// </summary>
 [Flags]
 public enum LivingEntityCondition : ulong
 {
@@ -28,8 +31,14 @@ public enum LivingEntityCondition : ulong
     Internal = 1UL << 18
 }
 
+/// <summary>
+/// Provides flag helpers for working with living-entity condition masks.
+/// </summary>
 public static class LivingEntityConditionExtensions
 {
+    /// <summary>
+    /// Lists every non-empty condition flag in deterministic declaration order.
+    /// </summary>
     public static readonly LivingEntityCondition[] Flags =
     [
         LivingEntityCondition.Dead,
@@ -53,11 +62,17 @@ public static class LivingEntityConditionExtensions
         LivingEntityCondition.Internal
     ];
 
+    /// <summary>
+    /// Returns a condition mask with the specified flag added.
+    /// </summary>
     public static LivingEntityCondition Add(this LivingEntityCondition state, LivingEntityCondition flag)
     {
         return state | flag;
     }
 
+    /// <summary>
+    /// Returns a condition mask with all specified flags added.
+    /// </summary>
     public static LivingEntityCondition Add(this LivingEntityCondition state, params LivingEntityCondition[] flags)
     {
         for (var i = 0; i < flags.Length; i++)
@@ -65,11 +80,17 @@ public static class LivingEntityConditionExtensions
         return state;
     }
 
+    /// <summary>
+    /// Returns a condition mask with the specified flag removed.
+    /// </summary>
     public static LivingEntityCondition Remove(this LivingEntityCondition state, LivingEntityCondition flag)
     {
         return state & ~flag;
     }
 
+    /// <summary>
+    /// Returns a condition mask with all specified flags removed.
+    /// </summary>
     public static LivingEntityCondition Remove(this LivingEntityCondition state, params LivingEntityCondition[] flags)
     {
         for (var i = 0; i < flags.Length; i++)
@@ -77,11 +98,17 @@ public static class LivingEntityConditionExtensions
         return state;
     }
 
+    /// <summary>
+    /// Returns true when all bits in the requested flag mask are present.
+    /// </summary>
     public static bool Contains(this LivingEntityCondition state, LivingEntityCondition flag)
     {
         return (state & flag) == flag;
     }
     
+    /// <summary>
+    /// Returns true when none of the supplied condition flags are present.
+    /// </summary>
     public static bool NotContains(this LivingEntityCondition state, params LivingEntityCondition[] flags)
     {
         for (var i = 0; i < flags.Length; i++)
@@ -92,11 +119,17 @@ public static class LivingEntityConditionExtensions
         return true;
     }
 
+    /// <summary>
+    /// Returns true when the condition mask allows normal targeting.
+    /// </summary>
     public static bool IsTargetAble(this LivingEntityCondition state)
     {
         return state.NotContains(LivingEntityCondition.Dead, LivingEntityCondition.Untargetable);
     }
     
+    /// <summary>
+    /// Formats active condition flags for debug output.
+    /// </summary>
     public static string ToFlagListString(this LivingEntityCondition state)
     {
         var result = new List<string>();

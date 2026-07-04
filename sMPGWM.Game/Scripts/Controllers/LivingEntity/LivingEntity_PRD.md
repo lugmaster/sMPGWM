@@ -1,894 +1,853 @@
-# LivingEntity PRD
+# LivingEntity / RPG State Engine PRD
 
-## Purpose
+## Status
 
-`LivingEntity` is the gameplay state package for living objects in the game: players, NPCs, enemies, agents, and future boss entities.
+This document reflects the current implementation in `sMPGWM.Game/Scripts/Controllers/LivingEntity`.
 
-The package owns stat values, stat modifiers, living-entity conditions, state snapshots, and ordered state deltas for host-authoritative multiplayer sync.
+The old `StatModifier`, `TemporaryStatModifier`, `RecurringStatModifier`, `LivingEntityEffect`,
+`StatBreakdown`, and Godot `Array` delta model have been removed from the implementation.
 
-Movement synchronization is handled by another package. This package only exposes movement-relevant stat values and conditions, such as speed, acceleration, immobilized, dead, invisible, invulnerable, and targetability.
-
-## Core Principles
-
-1. The host is authoritative.
-2. External systems do not directly mutate `LivingEntityState`.
-3. External systems submit `LivingEntityEffect` instances to `LivingEntityService`.
-4. `LivingEntityService` is the only class that should react to living entity state changes.
-5. `LivingEntityState` is primarily a serializable data model.
-6. `LivingEntityRuntime` wraps one state and owns runtime-only condition source tracking.
-7. `LivingEntityStateTracker` snapshots state and creates ordered delta arrays for sync.
-8. `StatBreakdown` is for UI/debug explanation only, not gameplay decisions.
-9. Conditions are source-tracked so one expired effect does not remove a condition still granted by another source.
-10. Reducing `Health` to zero is a special service-owned outcome that adds `Dead` and drains shield/energy.
-
-## Ownership Model
-
-### Runtime Flow
+The current implementation is an effect-driven RPG state engine:
 
 ```text
-External system
-  -> LivingEntityService.ApplyEffect(peerId, effect)
-  -> LivingEntityServiceCore processes effect
-  -> LivingEntityRuntime updates condition sources if needed
-  -> LivingEntityState stores final stat/condition values
-  -> LivingEntityService.ConditionChanged notifies subscribers
+Gameplay code creates ActiveEffect values.
+StateEngine validates and processes those effects.
+StateEngine mutates LivingEntityState.
+StateEngine emits compact packed binary delta payloads when state changes.
+UI pulls UiDto data only when needed.
 ```
 
-### Sync Flow
+## Goals
 
-```text
-Host service owns state
-  -> GetDelta(peerId, includePermanent)
-  -> send ordered Godot Array over network
-  -> remote service ApplyDelta(delta)
-  -> state updated
-  -> runtime rebuilds condition sources from authoritative condition flags
-  -> ConditionChanged emitted if condition changed
+The living-entity package should provide deterministic, host-authoritative simulation for RPG state on ships and future living entities.
+
+Primary requirements:
+
+- Use integer `NetworkTick` timing.
+- Keep `LivingEntityState` array-backed and compact.
+- Process all gameplay mutation through `StateEngine`.
+- Keep effect definitions immutable.
+- Keep active effects flat and fixed-capacity.
+- Emit compact binary deltas.
+- Support rollback/resimulation.
+- Keep UI data pull-based through `UiDto`.
+- Keep causal records separate from normal UI DTOs.
+
+## Non-Goals
+
+This package does not own:
+
+- Movement physics.
+- Rendering or presentation logic.
+- Target acquisition.
+- Steam transport.
+- Skill, item, weapon, talent, or ship-system authoring.
+- Final content-definition loading from external files.
+
+Those systems may create `ActiveEffect` values, but state mutation remains owned by `StateEngine`.
+
+## Current Entry Points
+
+### `StateEngine`
+
+File: `StateEngine.cs`
+
+`StateEngine` is the static simulation entry point.
+
+Public API:
+
+```csharp
+public static StateEngineConfig Config { get; }
+public static void Configure(StateEngineConfig config)
+public static void Reset()
+public static void AddLivingEntity(LivingEntityState state)
+public static PackedByteArray ProcessLivingEntity(
+    long entityId,
+    long networkTick,
+    ActiveEffect[] activeEffects,
+    int activeEffectCount)
+public static UiDto GetUpdateForUiLoop(long entityId)
+public static void ApplyDelta(long entityId, PackedByteArray delta)
+public static bool StatesEqualForReconciliation(
+    LivingEntityState left,
+    LivingEntityState right)
 ```
 
-## Public Entry Point
+Rules:
+
+- `ProcessLivingEntity` expects ordered effects for one entity and one network tick.
+- Effects with mismatched `TargetEntityId` or `EffectNetworkTick` are ignored.
+- Missing or invalid effect definitions are rejected deterministically.
+- The returned `PackedByteArray` is empty when no state changed.
+- `GetUpdateForUiLoop` is pull-based and should not be called automatically every tick.
 
 ### `LivingEntityService`
 
 File: `LivingEntityService.cs`
 
-`LivingEntityService` is the Godot-facing singleton facade.
+Godot singleton facade around `LivingEntityServiceCore`.
 
-```csharp
-public sealed partial class LivingEntityService : AbstractSingleton<LivingEntityService>
-```
-
-It is not an autoload by itself. It becomes the singleton when a node instance is added to the scene tree.
-
-It delegates implementation to `LivingEntityServiceCore`.
-
-#### Events
-
-```csharp
-public event Action<LivingEntityConditionChanged> ConditionChanged;
-```
-
-Subscribers:
-- movement system
-- action system
-- presentation/animation/sound systems
-- UI systems that need immediate condition updates
-- future sync/metrics systems
-
-The event is emitted after service-owned changes or authoritative delta application change condition flags.
-
-#### Methods
-
-```csharp
-public void RegisterPeer(int peerId, LivingEntityState state)
-```
-
-Registers one living entity state for one peer id. Creates a `LivingEntityRuntime` and `LivingEntityStateTracker`.
-
-```csharp
-public LivingEntityRuntime RegisterPeerWithDefaultState(int peerId)
-```
-
-Creates a default player state with `LivingEntityStateFactory`, registers it, and returns the runtime.
-
-```csharp
-public void UnregisterPeer(int peerId)
-```
-
-Removes runtime and tracker and unsubscribes runtime condition forwarding.
-
-```csharp
-public bool HasPeer(int peerId)
-```
-
-Returns whether the service knows a peer.
-
-```csharp
-public LivingEntityRuntime GetRuntime(int peerId)
-```
-
-Returns runtime for gameplay queries. Do not use this to mutate state from outside the service.
-
-```csharp
-public LivingEntityState GetState(int peerId)
-```
-
-Returns raw state for read/serialization paths.
-
-```csharp
-public StatBreakdown GetStatBreakdown(int peerId, StatType statType)
-```
-
-Returns a UI/debug snapshot explaining one stat.
-
-```csharp
-public void ApplyEffect(int peerId, LivingEntityEffect effect)
-```
-
-Main mutation entry point. External systems should call this instead of mutating state directly.
-
-```csharp
-public Array GetDelta(int peerId, bool includePermanent)
-public Array GetDeltas(bool includePermanent)
-```
-
-Creates ordered delta arrays for one peer or all peers. `includePermanent` should be true on slow-sync ticks.
-
-```csharp
-public void ApplyDelta(Array delta)
-public void ApplyDeltas(Array deltas)
-```
-
-Applies authoritative ordered delta arrays.
-
-```csharp
-public void TickActiveEffects(int peerId, float delta)
-public void TickAllActiveEffects(float delta)
-```
-
-Ticks timed condition sources and active stat modifiers.
-
-## Testable Core
+It exists for scene/autoload usage and delegates state work to `StateEngine`.
 
 ### `LivingEntityServiceCore`
 
 File: `LivingEntityServiceCore.cs`
 
-This contains the same public API as `LivingEntityService`, but is not a Godot `Node`. Unit tests use this class to avoid constructing Godot native objects outside a Godot runtime.
+Non-node facade used by tests or plain C# code.
 
-#### Stored Data
+It stores peer-id to `LivingEntityRuntime` mappings and forwards:
 
-```csharp
-private readonly Dictionary<int, LivingEntityRuntime> _runtimes;
-private readonly Dictionary<int, LivingEntityStateTracker> _trackers;
-private readonly ILivingEntityLogger _logger;
-```
-
-Why:
-- `_runtimes`: one closed living entity aggregate per peer id.
-- `_trackers`: one snapshot tracker per peer id for delta creation.
-- `_logger`: injected so tests can use a no-op/mock logger and runtime can use Godot logging.
-
-#### Internal Effect Handling
-
-```csharp
-private void ApplyEffect(LivingEntityRuntime target, LivingEntityEffect effect)
-```
-
-Dispatches specific effect types:
-- `ReduceEffect`
-- `RaiseEffect`
-- `StatModifierEffect`
-- `ConditionEffect`
-
-```csharp
-private void ApplyReduce(LivingEntityRuntime target, string sourceId, StatType statType, float amount)
-```
-
-Reduces one specific stat. If `statType == StatType.Health` and health reaches zero, applies zero-health outcome.
-
-```csharp
-private void ApplyRaise(LivingEntityRuntime target, string sourceId, StatType statType, float amount)
-```
-
-Raises one specific stat, clamped by stat max.
-
-```csharp
-private void ApplyModifier(LivingEntityRuntime target, string sourceId, StatType statType, StatModifier modifier)
-```
-
-Adds a modifier to one stat.
-
-```csharp
-private void SetCondition(
-    LivingEntityRuntime target,
-    string effectInstanceId,
-    string sourceId,
-    LivingEntityCondition condition,
-    bool isApplied,
-    float duration = 0f)
-```
-
-Adds/removes a condition source. If `duration > 0`, creates a timed condition source.
-
-```csharp
-private void TickActiveEffects(LivingEntityRuntime target, float delta)
-```
-
-Ticks timed condition sources and all stat modifier lists on the entity.
-
-```csharp
-private void ApplyZeroHealthOutcome(LivingEntityRuntime target, string sourceId)
-```
-
-Adds `Dead` as a condition source and drains shield/energy.
-
-## Runtime Aggregate
+- entity registration
+- effect processing
+- UI DTO requests
+- authoritative delta application
+- condition-changed event forwarding
 
 ### `LivingEntityRuntime`
 
 File: `LivingEntityRuntime.cs`
 
-`LivingEntityRuntime` wraps one `LivingEntityState` and owns runtime-only condition source tracking.
+Small facade around one `LivingEntityState`.
 
-#### Stored Data
+It does not own complex mutation logic. It exposes:
 
-```csharp
-public LivingEntityState State { get; }
-public LivingEntityCondition Condition => State.Condition;
-private readonly Dictionary<LivingEntityCondition, HashSet<string>> _conditionSources;
-private readonly List<TimedConditionSource> _timedConditionSources;
+- `State`
+- `Condition`
+- `ConditionChanged`
+- `IsAlive`
+- `IsTargetable`
+- `GetStatByType`
+
+## Object Graph
+
+The graph below shows which objects directly reference which other objects in the current implementation.
+
+```text
+LivingEntityService (Godot singleton facade)
+  |
+  +-- LivingEntityServiceCore _core
+        |
+        +-- Dictionary<int, LivingEntityRuntime> _runtimes
+        |     |
+        |     +-- LivingEntityRuntime
+        |           |
+        |           +-- LivingEntityState State
+        |
+        +-- calls StateEngine static API
+
+
+StateEngine (static)
+  |
+  +-- StateEngineConfig _config
+  |
+  +-- Dictionary<long, LivingEntityStateTracker> Trackers
+  |     |
+  |     +-- LivingEntityStateTracker
+  |           |
+  |           +-- LivingEntityState CurrentState
+  |           |
+  |           +-- LivingEntityState[] _snapshots
+  |           |
+  |           +-- ActiveEffect[][] _effectHistory
+  |
+  +-- DeltaWriter _deltaWriter
+  |
+  +-- scratch buffers
+        |
+        +-- ActiveEffect[] _pendingChildEffects
+        +-- StatModificationRecord[] _statModificationRecords
+        +-- CausalRecord[] _causalRecords
+        +-- float[] _oldBaseValues
+        +-- float[] _oldMaxValues
+        +-- float[] _oldCurrentValues
+        +-- int[] _matchedRemovalIndices
+
+
+LivingEntityState
+  |
+  +-- float[] BaseValues
+  +-- float[] MaxValues
+  +-- float[] CurrentValues
+  |
+  +-- ActiveEffect[] ActiveEffects
+  |
+  +-- condition fields
+        |
+        +-- ulong ExplicitConditionFlags
+        +-- ulong DerivedConditionFlags
+        +-- ulong ConditionFlags
+
+
+ActiveEffect
+  |
+  +-- int EffectDefinitionId
+  |
+  +-- runtime ids and timing
+        |
+        +-- RuntimeEffectId
+        +-- SourceId
+        +-- OriginId
+        +-- TargetEntityId
+        +-- AppliedNetworkTick
+        +-- EffectNetworkTick
+        +-- LastExecutedNetworkTick
+        +-- ExpireNetworkTick
+        +-- ParentRuntimeEffectId
+        +-- InsertionSequence
+        +-- ChildSequence
+
+Note:
+ActiveEffect does not hold an object reference to EffectDefinition.
+It stores EffectDefinitionId and StateEngine resolves the definition through EffectDefinitionRegistry.
+
+
+EffectDefinitionRegistry (static)
+  |
+  +-- Dictionary<int, EffectDefinition> Definitions
+  +-- HashSet<int> InvalidDefinitionIds
+
+
+EffectDefinition
+  |
+  +-- EffectTarget? Target
+  +-- EffectTrigger Trigger
+  +-- EffectDuration Duration
+  +-- EffectRemovalRule? EffectRemovalRule
+  +-- int[] ChildEffectDefinitionIds
+  |
+  +-- condition masks
+        |
+        +-- ClassificationConditions
+        +-- ConditionAddRequest
+        +-- ConditionRemoveRequest
+        +-- BlockedBy
+
+
+ConditionRegistry (static)
+  |
+  +-- ConditionDefinition[] Definitions
+  +-- ulong[] ParentByBit
+  +-- ulong[] AncestorClosureByBit
+  +-- ulong[] DescendantClosureByBit
+
+
+DeltaWriter
+  |
+  +-- reads LivingEntityState
+  +-- reads CausalRecord[]
+  +-- writes PackedByteArray
+
+
+DeltaReader
+  |
+  +-- reads PackedByteArray
+  +-- creates StateDelta
+        |
+        +-- ChangedStatPayload[] ChangedStats
+        +-- ActiveEffect[] ActiveEffects
+        +-- CausalRecord[] CausalRecords
+
+
+StateEngine.GetUpdateForUiLoop(entityId)
+  |
+  +-- reads LivingEntityState
+  +-- resolves EffectDefinition through EffectDefinitionRegistry
+  +-- creates UiDto
+        |
+        +-- UiStatDto[] Stats
+        +-- UiEffectDto[] VisibleEffects
 ```
 
-Why:
-- `State`: serializable values that sync over network.
-- `Condition`: current aggregate condition flags.
-- `_conditionSources`: tracks which effect/source grants each condition.
-- `_timedConditionSources`: tracks source expiration for timed conditions.
-
-#### Events
-
-```csharp
-public event Action<LivingEntityConditionChanged> ConditionChanged;
-```
-
-`LivingEntityRuntime` emits this internally. `LivingEntityServiceCore` subscribes to every runtime and re-emits through the service-level event.
-
-#### Public Query Methods
-
-```csharp
-public bool IsAlive()
-public bool IsTargetable()
-public Stat GetStatByType(StatType type)
-public StatBreakdown GetStatBreakdown(StatType type)
-```
-
-Use runtime for gameplay queries:
-- movement checks `Condition`
-- target systems call `IsTargetable`
-- action systems inspect energy/stat values
-
-Do not use runtime to mutate state outside service code.
-
-#### Internal Mutation Methods
-
-```csharp
-internal void SetConditionSource(LivingEntityCondition condition, string sourceId, bool isApplied)
-```
-
-Adds/removes a source for one or more condition flags. Rebuilds final condition flags and emits condition change if needed.
-
-```csharp
-internal void SetTimedConditionSource(LivingEntityCondition condition, string sourceId, float duration)
-```
-
-Adds a condition source that expires after `duration`.
-
-```csharp
-internal void TickConditionSources(float delta)
-```
-
-Expires timed sources and removes their condition grants.
-
-```csharp
-internal void RebuildConditionSourcesFromState(string sourceId)
-```
-
-Used after authoritative delta application. Recreates source tracking from synced condition flags.
-
-```csharp
-internal void EmitConditionChangedFromExternal(LivingEntityCondition oldCondition, string sourceId)
-```
-
-Used after delta application to emit service/runtime condition events if authoritative condition flags changed.
-
-## Serializable State
+## Runtime Data Model
 
 ### `LivingEntityState`
 
 File: `LivingEntityState.cs`
 
-`LivingEntityState` stores actual stat objects, condition flags, entity id, type, and serialization methods.
+Stores complete mutable simulation state for one living entity.
 
-#### Stored Data
-
-```csharp
-public Stat Health;
-public Stat HealthRegeneration;
-public Stat Shield;
-public Stat ShieldRegeneration;
-public Stat Energy;
-public Stat EnergyRegeneration;
-public Stat Speed;
-public Stat Acceleration;
-public Stat AfterBurnerSpeed;
-public Stat AfterBurnerAcceleration;
-public int LivingEntityId;
-public LivingEntityType LivingEntityType;
-private LivingEntityCondition _condition;
-```
-
-Why:
-- stats represent the model state of a living entity.
-- `LivingEntityId` is the sync identity.
-- player living entity ids should match peer id.
-- agent ids are reserved by factory at `1_000_000+`.
-- `_condition` is the final synced condition bitfield.
-
-#### Query Properties/Methods
+Core storage:
 
 ```csharp
-public LivingEntityCondition Condition { get; init; }
-public Stat GetStatByType(StatType type)
-public bool IsTargetable()
-public bool IsAlive()
-public float GetCurrentSpeed(bool isAfterBurnerPressed)
-public float GetCurrentAcceleration(bool isAfterBurnerPressed)
-public StatBreakdown GetStatBreakdown(StatType type)
+public float[] BaseValues { get; }
+public float[] MaxValues { get; }
+public float[] CurrentValues { get; }
+public ActiveEffect[] ActiveEffects { get; }
+public int ActiveEffectCount { get; internal set; }
+public ulong ConditionFlags { get; }
 ```
 
-#### Internal Mutation Helpers
+Important details:
 
-```csharp
-internal void SetCondition(LivingEntityCondition newCondition)
-internal void RemoveCondition(LivingEntityCondition conditionToRemove)
-internal void AddCondition(LivingEntityCondition conditionToAdd)
-internal void ReduceStatToZero(StatType type)
-```
-
-These are intentionally internal. External systems should not call them. They exist so `LivingEntityRuntime` and `LivingEntityServiceCore` can update the stored state.
-
-#### Full State Serialization
-
-```csharp
-public Array ToVariant()
-public void UpdateFullState(Array livingEntityStateVariant)
-```
-
-Full-state structure:
-
-```text
-[
-  condition,
-  health,
-  healthRegeneration,
-  shield,
-  shieldRegeneration,
-  energy,
-  energyRegeneration,
-  speed,
-  acceleration,
-  afterBurnerSpeed,
-  afterBurnerAcceleration,
-  livingEntityType,
-  livingEntityId
-]
-```
-
-#### Delta Serialization
-
-```csharp
-public Array CreateDeltaVariant(LivingEntityState oldState, bool includePermanent)
-public void ApplyDeltaVariant(Array deltaVariant)
-public static bool DeltaVariantHasChanges(Array deltaVariant)
-```
-
-Delta structure:
-
-```text
-[
-  livingEntityId,
-  currentDeltaSlots,
-  permanentDeltaSlots
-]
-```
-
-Each delta slot array is ordered by `StatType`. Empty slots mean no change.
-
-`currentDeltaSlots` includes:
-- condition
-- current values
-- temporary modifiers
-- recurring modifiers
-
-`permanentDeltaSlots` includes:
-- base value
-- permanent modifiers
-
-## Snapshot Tracking
-
-### `LivingEntityStateTracker`
-
-File: `LivingEntityStateTracker.cs`
-
-Tracks current state against a private last-state snapshot.
-
-#### Stored Data
-
-```csharp
-public LivingEntityState CurrentState { get; }
-private readonly LivingEntityState _lastState;
-```
-
-Why:
-- `CurrentState` points at the live state.
-- `_lastState` stores the last synced baseline.
-
-#### Methods
-
-```csharp
-public LivingEntityStateTracker(LivingEntityState currentState)
-public void ApplyFullInitialState(Array livingEntityStateVariant)
-public Array CreateCombinedDelta(bool includePermanent)
-```
-
-`CreateCombinedDelta` returns one ordered delta containing current changes and, if requested, permanent changes.
-
-## Stats
+- `StatType` maps directly to array indices.
+- Active effect capacity is fixed at state creation.
+- The state stores explicit, derived, and effective condition flags.
+- Dirty tracking is stored as `DirtyStats`, `DirtyConditions`, and `DirtyEffects`.
+- Convenience properties such as `Health`, `Shield`, and `EnergyStorage` return `Stat` snapshots over the arrays.
 
 ### `Stat`
 
 File: `Stat.cs`
 
-Stores base/current/max values and active modifiers for one stat.
-
-#### Stored Data
+`Stat` is now an immutable snapshot:
 
 ```csharp
-public float BaseValue { get; private set; }
-public float CurrentValue { get; private set; }
-public float MaxValue { get; private set; }
-public float PermanentMaxValue { get; private set; }
-public IReadOnlyList<StatModifier> PermanentModifiers { get; }
-public IReadOnlyList<TemporaryStatModifier> TemporaryModifiers { get; }
-public IReadOnlyList<RecurringStatModifier> RecurringModifiers { get; }
+public float BaseValue { get; }
+public float CurrentValue { get; }
+public float MaxValue { get; }
 ```
 
-Why:
-- `BaseValue`: unmodified stat basis.
-- `PermanentMaxValue`: base plus permanent modifiers.
-- `MaxValue`: permanent max plus temporary modifiers.
-- `CurrentValue`: current usable amount, clamped to max.
-- modifier lists are read-only from outside to preserve recalculation rules.
+It no longer owns modifiers or tick logic.
 
-#### Constructors
+### `ActiveEffect`
+
+File: `Runtime/ActiveEffect.cs`
+
+`ActiveEffect` is a flat runtime struct.
+
+It stores runtime identity and timing:
 
 ```csharp
-public Stat(float baseValue)
-public Stat(float baseValue, float currentValue)
-public Stat(Array variant)
+RuntimeEffectId
+EffectDefinitionId
+SourceId
+OriginId
+TargetEntityId
+AppliedNetworkTick
+EffectNetworkTick
+LastExecutedNetworkTick
+ExpireNetworkTick
+StackCount
+ParentRuntimeEffectId
+ChildDepth
+RuntimeFlags
+InsertionSequence
+ChildSequence
 ```
 
-#### Modifier Methods
+It does not reference child collections and does not reference `EffectDefinition` directly.
+
+### `EffectDefinition`
+
+File: `Definitions/EffectDefinition.cs`
+
+Immutable static data that describes how an active effect behaves.
+
+Important fields:
 
 ```csharp
-public void AddModifier(StatModifier modifier)
-public void RemoveModifier(StatModifier modifier)
-public void AddRecurringModifier(RecurringStatModifier recurringStat)
+EffectDefinitionId
+StackGroupId
+Name
+Description
+SourceType
+ClassificationConditions
+Trigger
+Duration
+SimulationLane
+Target
+ConditionAddRequest
+ConditionRemoveRequest
+EffectRemovalRule
+BlockedBy
+CanTriggerWhileDead
+BlockPolicy
+StackScope
+StackPolicy
+StackBehavior
+MaxStacks
+MaxStackOverflowPolicy
+Visibility
+ChildEffectDefinitionIds
 ```
 
-Modifier stack policy is applied when adding modifiers.
+Validity rule:
 
-#### Value Methods
+An effect definition must contain at least one of:
 
-```csharp
-public void SetBaseValue(float value)
-public void Tick(float delta)
-public bool ReduceAndCheckZero(float amount)
-public float ReduceAndGetOverflow(float amount)
-public void Reduce(float amount)
-public void Raise(float amount)
-public void RestoreToMax()
-public void DrainToZero()
-```
+- `Target`
+- `ConditionAddRequest`
+- `ConditionRemoveRequest`
+- `EffectRemovalRule`
+- `ChildEffectDefinitionIds`
 
-Max/current rule:
-- if max increases, current increases by the same delta.
-- if max decreases, current is only clamped if it exceeds new max.
+## Tick Model
 
-#### Sync Methods
-
-```csharp
-public void ApplyCurrentSync(Array variant)
-public void ApplyPermanentSync(Array variant)
-public Array ToPermanentVariant()
-public Array ToCurrentVariant()
-public Array ToFullVariant()
-public Stat DeepCopy()
-public bool HasCurrentDelta(Stat oldStat)
-public bool HasPermaDelta(Stat oldStat)
-```
-
-#### UI/Debug
-
-```csharp
-public StatBreakdown CreateBreakdown(StatType statType)
-```
-
-Creates an on-demand stat explanation snapshot. Do not call in frame loops.
-
-## Effects
-
-### Base Effect
-
-```csharp
-public abstract record LivingEntityEffect(string EffectInstanceId, string SourceId);
-```
-
-Fields:
-- `EffectInstanceId`: unique id for this effect application.
-- `SourceId`: skill/item/system source id.
-
-### `ReduceEffect`
-
-```csharp
-public sealed record ReduceEffect(
-    string EffectInstanceId,
-    string SourceId,
-    StatType StatType,
-    float Amount)
-```
-
-Reduces one targeted stat.
-
-### `RaiseEffect`
-
-```csharp
-public sealed record RaiseEffect(
-    string EffectInstanceId,
-    string SourceId,
-    StatType StatType,
-    float Amount)
-```
-
-Raises one targeted stat.
-
-### `StatModifierEffect`
-
-```csharp
-public sealed record StatModifierEffect(
-    string EffectInstanceId,
-    string SourceId,
-    StatType StatType,
-    StatModifier Modifier)
-```
-
-Adds a modifier to one targeted stat.
-
-### `ConditionEffect`
-
-```csharp
-public sealed record ConditionEffect(
-    string EffectInstanceId,
-    string SourceId,
-    LivingEntityCondition Condition,
-    bool IsApplied,
-    float Duration = 0f)
-```
-
-Adds/removes a condition source. If `Duration > 0`, the condition source expires during service ticking.
-
-## Modifiers
-
-### `StatModifier`
-
-File: `Modifiers/StatModifier.cs`
-
-#### Stored Data
-
-```csharp
-public string InstanceId { get; }
-public string SourceId { get; }
-public ModifierSourceType SourceType { get; }
-public string DisplayName { get; }
-public float Value { get; }
-public ModifierType Type { get; }
-public ModifierStackPolicy StackPolicy { get; }
-```
-
-Why:
-- `InstanceId`: unique modifier instance.
-- `SourceId`: skill/item/passive/system source.
-- `SourceType`: categorizes source for UI/debug.
-- `DisplayName`: UI tooltip label.
-- `Value`: flat or percent value.
-- `Type`: flat or percent.
-- `StackPolicy`: controls duplicate source behavior.
-
-Constructors:
-
-```csharp
-public StatModifier(
-    string instanceId,
-    string sourceId,
-    float value,
-    ModifierType type,
-    ModifierSourceType sourceType = ModifierSourceType.Unknown,
-    string displayName = "",
-    ModifierStackPolicy stackPolicy = ModifierStackPolicy.Stack)
-
-public StatModifier(Array values)
-```
-
-Serialization:
-
-```csharp
-public virtual Array ToVariant()
-```
-
-### `TemporaryStatModifier`
-
-Adds duration.
-
-```csharp
-public float TimeRemaining { get; private set; }
-public bool IsExpired => TimeRemaining <= 0;
-public virtual void Tick(float delta)
-public override Array ToVariant()
-```
-
-### `RecurringStatModifier`
-
-Adds periodic stat application.
-
-```csharp
-public Stat Target { get; }
-public float TickInterval { get; }
-public float TickTimer => _tickTimer;
-public override void Tick(float delta)
-public override Array ToVariant()
-```
-
-`RecurringStatModifier(Array values, Stat target)` requires `target` because the serialized array stores data only; the runtime `Stat` reference cannot be serialized.
-
-## UI/Debug Snapshots
-
-### `StatBreakdown`
-
-File: `StatBreakdown.cs`
-
-```csharp
-public readonly struct StatBreakdown(
-    StatType statType,
-    float baseValue,
-    float currentValue,
-    float maxValue,
-    StatModifierContribution[] permanentContributions,
-    StatModifierContribution[] temporaryContributions,
-    StatModifierContribution[] recurringContributions)
-```
-
-Properties:
-- `StatType`
-- `BaseValue`
-- `CurrentValue`
-- `MaxValue`
-- `PermanentContributions`
-- `TemporaryContributions`
-- `RecurringContributions`
-
-Use for:
-- tooltip
-- character sheet
-- debug inspector
-
-Do not use for:
-- movement logic
-- targeting logic
-- frame-loop gameplay checks
-
-### `StatModifierContribution`
-
-File: `StatModifierContribution.cs`
-
-```csharp
-public readonly struct StatModifierContribution(
-    string instanceId,
-    string sourceId,
-    ModifierSourceType sourceType,
-    string displayName,
-    ModifierType modifierType,
-    float value,
-    float? timeRemaining)
-```
-
-Represents one row in a stat breakdown tooltip/debug view.
-
-## Factories
-
-### `LivingEntityStateFactory`
-
-```csharp
-public static LivingEntityState CreateDefaultPlayerState(int peerId)
-public static LivingEntityState CreateDefaultAgentState(int agentId)
-public static int ToAgentLivingEntityId(int agentId)
-```
+The implementation uses `NetworkTick` as an integer `long`.
 
 Rules:
-- player living entity id equals peer id.
-- agent ids start at `1_000_000 + agentId`.
 
-## Events And Subscriptions
+- Fast simulation is 30 TPS.
+- Slow simulation is derived from fast ticks.
+- Slow lane condition is `networkTick % SlowSimulationDivisor == 0`.
+- Runtime durations and intervals use integer ticks.
+- No wall-clock time is used by the state engine.
 
-### Event Source
+Default config:
 
-`LivingEntityRuntime.ConditionChanged` is emitted internally when condition source tracking changes final condition flags.
+```csharp
+StateTicksPerSecond = 30
+SlowSimulationDivisor = 2
+GlobalRegenerationIntervalTicks = 30
+GlobalSlowRegenerationIntervalTicks = 15
+MaxChildEffectDepth = 5
+MaxChildEffectsPerEntityPerTick = 3
+MaxIncomingEffectsPerEntityPerTick = 20
+SnapshotRetentionTicks = 45
+MinSnapshotRetentionTicks = 30
+MaxSnapshotRetentionTicks = 60
+StatComparisonPrecisionDecimals = 3
+```
 
-`LivingEntityServiceCore` subscribes to each runtime:
+## Effect Processing Flow
+
+Current processing order:
 
 ```text
-runtime.ConditionChanged += OnRuntimeConditionChanged
+1. Load tracker/current state.
+2. Clear scratch buffers.
+3. Capture previous stat/condition values.
+4. Store incoming effect history for rollback.
+5. Validate incoming effect tick/entity/definition.
+6. Accept incoming effects into the flat active-effect buffer.
+7. Apply stack policy and overflow behavior.
+8. Process active effects in deterministic buffer order.
+9. Queue child effects into the bounded per-tick child buffer.
+10. Process stat-triggered effects.
+11. Compact removed effects in place.
+12. Resolve stats.
+13. Apply regeneration if interval is due.
+14. Rebuild effect-granted and inferred conditions.
+15. Mark dirty state by comparing to previous values.
+16. Store snapshot.
+17. Emit packed delta if dirty.
 ```
 
-`LivingEntityServiceCore.ConditionChanged` re-emits the event.
+## Stat Resolution
 
-`LivingEntityService.ConditionChanged` delegates to the core event.
-
-### Event Payload
-
-```csharp
-public readonly struct LivingEntityConditionChanged(
-    int livingEntityId,
-    LivingEntityCondition added,
-    LivingEntityCondition removed,
-    LivingEntityCondition current,
-    string sourceId)
-```
-
-Use this for:
-- movement responsiveness
-- action freeze/unfreeze
-- presentation effects
-- UI condition indicators
-
-## Enums
-
-### `LivingEntityCondition`
-
-Flag enum:
-- `None`
-- `Dead`
-- `Immobilized`
-- `Invulnerable`
-- `Untargetable`
-- `EnergyDepleted`
-- `Invisible`
-
-Helpers:
-
-```csharp
-Add(...)
-Remove(...)
-Contains(...)
-NotContains(...)
-IsTargetAble()
-ToFlagListString()
-```
-
-### `StatType`
-
-Ordered stat enum. Order matters for delta arrays.
+Stats use array-backed values:
 
 ```text
-Condition = 0
-Health = 1
-HealthRegeneration = 2
-Shield = 3
-ShieldRegeneration = 4
-Energy = 5
-EnergyRegeneration = 6
-Speed = 7
-Acceleration = 8
-AfterBurnerSpeed = 9
-AfterBurnerAcceleration = 10
+BaseValues[(int)StatType.Health]
+MaxValues[(int)StatType.Health]
+CurrentValues[(int)StatType.Health]
 ```
 
-### Modifier Enums
+Resolution behavior:
+
+- Temporary max modifiers are recalculated from active effects.
+- Current-value modifications come from executed stat modification records.
+- Percentage modifiers are additive, not multiplicative.
+- If max increases, current increases by the same absolute delta.
+- If max decreases and current exceeds max, current is clamped.
+- Current is clamped after current modifiers and after regeneration.
+
+## Conditions
+
+Conditions use `LivingEntityCondition`, a single flag enum for:
+
+- runtime entity state
+- active-effect classification
+- blocking
+- effect-removal matching
+- UI grouping
+- validation
+
+The implementation stores:
+
+```text
+ExplicitConditionFlags
+DerivedConditionFlags
+ConditionFlags = explicit + derived + ancestor closure
+```
+
+The condition hierarchy is static in `ConditionRegistry`.
+
+Examples:
+
+```text
+Poison
+  -> DamageOverTime
+      -> Debuff
+
+EnergyDepleted
+  -> Energy
+
+Immobilized
+  -> Movement
+```
+
+If an effect grants `Poison`, the effective condition flags also include `DamageOverTime` and `Debuff`.
+
+Derived conditions currently include:
+
+- `Health <= 0` adds `Dead`.
+- `EnergyStorage <= 0` adds `EnergyDepleted`.
+
+## Death and Revive
+
+`Dead` blocks effects by default.
+
+An effect can execute while dead only when:
 
 ```csharp
-ModifierType.Flat
-ModifierType.Percent
+CanTriggerWhileDead = true
 ```
+
+Revive-style behavior should be modeled as a parent effect with child effects:
+
+```text
+Revive
+  -> RestoreHealth
+  -> RemoveDead
+```
+
+End-of-tick inference re-adds `Dead` if health remains `<= 0`.
+
+## Stacking
+
+Stack identity:
+
+```text
+StackBaseId = StackGroupId != 0 ? StackGroupId : EffectDefinitionId
+StackScope adds SourceId or SourceId + OriginId
+```
+
+Supported concepts:
+
+- `EffectStackPolicy.Stack`
+- `EffectStackPolicy.Replace`
+- `EffectStackPolicy.Discard`
+- `EffectStackBehavior.IndependentStacks`
+- `EffectStackBehavior.RefreshDuration`
+- `EffectStackBehavior.AddStackRefreshDuration`
+- `EffectStackBehavior.AddStackNoRefresh`
+- `MaxStackOverflowPolicy.RejectNewest`
+- `MaxStackOverflowPolicy.ReplaceOldest`
+- `MaxStackOverflowPolicy.RefreshOldest`
+- `MaxStackOverflowPolicy.ReplaceWeakest`
+
+Current note:
+
+`ReplaceWeakest` is only valid when `HasDeterministicStrengthComparison` is true. Otherwise validation reports an error.
+
+## Child Effects
+
+Child effects are queued as normal `ActiveEffect` structs.
+
+They store:
+
+```text
+ParentRuntimeEffectId
+ChildDepth
+ChildSequence
+```
+
+Limits:
 
 ```csharp
-ModifierSourceType.Unknown
-ModifierSourceType.Skill
-ModifierSourceType.Item
-ModifierSourceType.Passive
-ModifierSourceType.System
+MaxChildEffectDepth = 5
+MaxChildEffectsPerEntityPerTick = 3
 ```
+
+Overflow behavior:
+
+- Reject extra child effects deterministically.
+- Add causal records when causal records are enabled.
+- Continue simulation.
+
+## Deltas
+
+### `PackedByteArray`
+
+File: `Runtime/PackedByteArray.cs`
+
+This project uses a local `PackedByteArray` wrapper because the current Godot C# binding in this project does not expose a CLR `PackedByteArray` type.
+
+The wrapper contains packed bytes and exposes:
 
 ```csharp
-ModifierStackPolicy.Stack
-ModifierStackPolicy.RefreshDuration
-ModifierStackPolicy.Replace
-ModifierStackPolicy.IgnoreIfActive
-ModifierStackPolicy.StackAndRefresh
-ModifierStackPolicy.MaxStacksRefresh
+Count
+IsEmpty
+ToArray()
+Empty
 ```
 
-## Current Tests
+### `DeltaWriter`
 
-File: `sMPGWM.Tests/StatTests.cs`
+File: `Runtime/DeltaWriter.cs`
 
-Existing test cases:
+Writes compact little-endian binary payloads.
 
-1. `PermanentModifiers_RecalculateMaxAndApplyCurrentRules`
-   - verifies permanent flat/percent modifiers, max recalculation, current max-increase/current-clamp rules.
+The payload can include:
 
-2. `TemporaryModifier_Expires_AfterTick_RecalculatesMax`
-   - verifies temporary modifier expiration and max/current recalculation.
+- header
+- changed stats
+- final effective condition flags
+- final active effects
+- causal records
 
-3. `MaxDecrease_OnlyClampsCurrent_WhenCurrentExceedsNewMax`
-   - verifies max decrease does not reduce current unless current exceeds new max.
+### `DeltaReader`
 
-4. `MaxIncrease_RaisesCurrentBySameDelta`
-   - verifies max increase raises current by the same delta.
+File: `Runtime/DeltaReader.cs`
 
-5. `SetBaseValue_UsesMaxCurrentRules`
-   - verifies changing base value follows max/current rules.
+Reads packed bytes into `StateDelta`.
 
-6. `RecurringModifier_UsesPerSecondValue`
-   - verifies recurring modifier value is treated as per-second value.
+### `StateDelta`
 
-7. `ModifierMetadata_IsExposedThroughBreakdown`
-   - verifies instance/source/display/time metadata appears in `StatBreakdown`.
+File: `Runtime/StateDelta.cs`
 
-8. `StackPolicy_RefreshDuration_ReplacesSameSourceModifier`
-   - verifies same-source refresh policy replaces the active temporary modifier.
+Structured decoded delta data:
 
-9. `EffectService_ReducesTargetedStatsAndZeroHealthChangesCondition`
-   - currently named with old service wording.
-   - verifies service/core reduces targeted stats and zero health adds `Dead`.
+```csharp
+DeltaVersion
+EntityId
+NetworkTick
+SimulationLane
+PayloadFlags
+DirtyStats
+ConditionFlags
+ChangedStats
+ActiveEffects
+CausalRecords
+```
 
-10. `EffectService_RemovesTimedCondition_WhenConditionSourceExpires`
-    - currently named with old service wording.
-    - verifies timed condition source expiration removes the condition and emits remove event.
+## Causal Records
 
-11. `Factory_UsesPeerIdForPlayersAndReservedRangeForAgents`
-    - verifies player ids equal peer ids and agent ids use reserved range.
+Causal records explain why state changed.
 
-## Known Testing Limitation
+Examples:
 
-Plain NUnit tests cannot safely allocate some Godot native objects such as `Godot.Collections.Array` or construct `Node` subclasses without a Godot runtime.
+- effect executed
+- effect blocked
+- effect expired
+- effect removed
+- stack added
+- stack refreshed
+- child effect queued
+- child effect rejected
+- condition add accepted
+- condition remove accepted
+- stat modification record
+- capacity overflow
 
-Current approach:
-- test service logic with `LivingEntityServiceCore`
-- inject a fake `ILivingEntityLogger`
-- avoid delta unit tests that allocate Godot arrays
+Causal records are not part of normal `UiDto`.
 
-Needed later:
-- Godot-context integration tests for:
-  - `LivingEntityService` singleton node
-  - `GetDelta`
-  - `ApplyDelta`
-  - full state sync application
+Use them for:
 
-## Follow-Up Work
+- deterministic tests
+- replay
+- debug inspection
+- explaining state changes
 
-1. Rename test methods with `EffectService_...` to `LivingEntityService_...`.
-2. Add Godot integration tests for delta serialization.
-3. Move condition side effects for movement/presentation into subscribers.
-4. Decide whether recurring modifiers should remain self-applying or be fully owned by service/runtime active effects.
-5. Implement actual multiplayer sync using `LivingEntityService.GetDeltas` and `ApplyDeltas`.
-6. Add saved-state loading to `LivingEntityStateFactory`.
+Do not use them as the normal HUD/menu state model.
+
+## UI DTO
+
+File: `UiDto.cs`
+
+`UiDto` is the only current UI inspection DTO.
+
+It contains:
+
+```csharp
+EntityId
+NetworkTick
+UiStatDto[] Stats
+LivingEntityCondition Conditions
+UiEffectDto[] VisibleEffects
+```
+
+`UiStatDto` contains:
+
+```csharp
+StatType
+CurrentValue
+MaxValue
+```
+
+`UiEffectDto` contains display-ready effect state for visible effects:
+
+```csharp
+RuntimeEffectId
+EffectDefinitionId
+SourceId
+OriginId
+Name
+Description
+StackCount
+RemainingTicks
+TriggerType
+Calculation
+AffectedStat
+ClassificationConditions
+GrantedConditions
+IsBlocked
+Duration
+TickInterval
+Manipulation
+ValuePerTick
+```
+
+Visibility rules:
+
+- `EffectVisibility.Hud` appears in `VisibleEffects`.
+- `EffectVisibility.Menu` appears in `VisibleEffects`.
+- `EffectVisibility.Internal` does not appear in normal `UiDto`.
+
+## Validation
+
+File: `Definitions/EffectValidator.cs`
+
+Validation checks:
+
+- empty effect definitions
+- invalid max stack counts
+- `ReplaceWeakest` without deterministic strength comparison
+- permanent effects with `OnExpire`
+- missing child effect references
+- child depth overflow
+- child cycles
+- unknown condition references
+
+Invalid definitions are marked in `EffectDefinitionRegistry` and rejected at runtime.
+
+## Snapshot and Resimulation
+
+File: `LivingEntityStateTracker.cs`
+
+The tracker stores:
+
+```csharp
+LivingEntityState CurrentState
+LivingEntityState[] _snapshots
+ActiveEffect[][] _effectHistory
+```
+
+Use cases:
+
+- apply authoritative host deltas
+- find a past tick snapshot
+- replay stored effects from the corrected tick
+- discard obsolete history
+
+Reconciliation comparison:
+
+- stats compare at `StatComparisonPrecisionDecimals`
+- conditions compare by exact effective condition flags
+
+## Stat List
+
+`StatType` maps directly to array indices.
+
+Current values:
+
+```text
+Health
+EnergyStorage
+Shield
+Armor
+Speed
+Acceleration
+OxygenStorage
+FoodStorage
+WaterStorage
+CriticalHitChance
+CriticalHitBonusDamage
+AttackSpeed
+HealthRegeneration
+EnergyProduction
+EnergyConsumption
+ShieldRegeneration
+ShieldRechargeCooldown
+OxygenConsumption
+OxygenGeneration
+FoodConsumption
+FoodGeneration
+WaterConsumption
+WaterGeneration
+```
+
+Compatibility aliases:
+
+```text
+Energy = EnergyStorage
+EnergyRegeneration = EnergyProduction
+```
+
+## Condition List
+
+Current `LivingEntityCondition` flags:
+
+```text
+None
+Dead
+Immobilized
+Invulnerable
+Untargetable
+EnergyDepleted
+Invisible
+Poison
+Burn
+Bleed
+Buff
+Debuff
+DamageOverTime
+HealOverTime
+Movement
+Energy
+Shield
+Survival
+Permanent
+Internal
+```
+
+## Test Coverage
+
+Current tests cover:
+
+- temporary max modifier recalculation
+- max/current compensation
+- additive percentage modifiers
+- regeneration interval behavior
+- factory id and capacity behavior
+- death and revive blocking rules
+- poison ancestor condition closure
+- cleanse/removal matching
+- independent stack replacement
+- child effect overflow
+- delta round trip
+- rollback correction and effect-history replay
+- deterministic replay
+
+Current command:
+
+```text
+dotnet test
+```
+
+## Known Implementation Notes
+
+Current differences from the ideal full PRD:
+
+- `PackedByteArray` is a local wrapper around `byte[]`, not a Godot native CLR type.
+- Content definitions are registered in memory through `EffectDefinitionRegistry`.
+- `StateEngine` is static and uses static scratch buffers, so parallel simulation calls are not currently supported.
+- TRACE logging is not implemented yet.
+- No-allocation hot-path tests are not implemented yet.
+- `ReplaceWeakest` validation exists, but actual strength comparison is not implemented.
+- `StatSynchronizer` and `MpControllerConditionSystem` remain placeholders.
+
+## Review Checklist
+
+When reviewing changes in this package, verify:
+
+- `ActiveEffect` stores ids, not object references to definitions.
+- `LivingEntityState` stays array-backed.
+- New runtime timing uses `NetworkTick`, not seconds.
+- New mutation paths go through `StateEngine`.
+- New UI state is exposed through `UiDto`, not causal records.
+- Condition matching uses `LivingEntityCondition`, not a separate tag enum.
+- New effect-removal behavior is deterministic.
+- Child effects remain flat and bounded.
+- Delta changes remain versioned and binary.

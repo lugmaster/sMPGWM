@@ -7,6 +7,9 @@ using sMPGWM.Scripts.Enums.Game;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity;
 
+/// <summary>
+/// Static authoritative RPG state engine for deterministic living-entity simulation.
+/// </summary>
 public static class StateEngine
 {
     private static readonly Dictionary<long, LivingEntityStateTracker> Trackers = new();
@@ -26,8 +29,14 @@ public static class StateEngine
     private static long _nextInsertionSequence = 1;
     private static long _nextCausalSequence = 1;
 
+    /// <summary>
+    /// Gets the active state-engine configuration.
+    /// </summary>
     public static StateEngineConfig Config => _config;
 
+    /// <summary>
+    /// Replaces the active configuration and resizes reusable scratch buffers as needed.
+    /// </summary>
     public static void Configure(StateEngineConfig config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -35,6 +44,9 @@ public static class StateEngine
         EnsureScratchCapacity(config.DefaultActiveEffectCapacity + config.MaxIncomingEffectsPerEntityPerTick + config.MaxChildEffectsPerEntityPerTick);
     }
 
+    /// <summary>
+    /// Clears all registered entities and resets deterministic runtime sequences.
+    /// </summary>
     public static void Reset()
     {
         Trackers.Clear();
@@ -46,6 +58,9 @@ public static class StateEngine
         _nextCausalSequence = 1;
     }
 
+    /// <summary>
+    /// Adds a living-entity state to engine tracking and stores its initial snapshot.
+    /// </summary>
     public static void AddLivingEntity(LivingEntityState state)
     {
         ArgumentNullException.ThrowIfNull(state);
@@ -54,6 +69,9 @@ public static class StateEngine
         Trackers[state.EntityId].StoreSnapshot(state.NetworkTick);
     }
 
+    /// <summary>
+    /// Processes ordered active effects for one entity and returns a compact delta if state changed.
+    /// </summary>
     public static PackedByteArray ProcessLivingEntity(
         long entityId,
         long networkTick,
@@ -64,6 +82,9 @@ public static class StateEngine
         return ProcessLivingEntityInternal(tracker, networkTick, activeEffects, activeEffectCount, true, true);
     }
 
+    /// <summary>
+    /// Builds pull-based UI data for the latest tracked state of one entity.
+    /// </summary>
     public static UiDto GetUpdateForUiLoop(long entityId)
     {
         var state = GetRequiredTracker(entityId).CurrentState;
@@ -128,6 +149,9 @@ public static class StateEngine
         };
     }
 
+    /// <summary>
+    /// Applies an authoritative delta to an entity and resimulates stored ticks when required.
+    /// </summary>
     public static void ApplyDelta(long entityId, PackedByteArray delta)
     {
         if (!DeltaReader.TryRead(delta, out var stateDelta))
@@ -160,6 +184,9 @@ public static class StateEngine
         tracker.DiscardOlderThan(stateDelta.NetworkTick);
     }
 
+    /// <summary>
+    /// Compares two states using configured stat precision and exact effective-condition matching.
+    /// </summary>
     public static bool StatesEqualForReconciliation(LivingEntityState left, LivingEntityState right)
     {
         var scale = MathF.Pow(10, _config.StatComparisonPrecisionDecimals);

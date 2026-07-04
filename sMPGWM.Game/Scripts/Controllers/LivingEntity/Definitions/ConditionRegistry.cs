@@ -3,6 +3,9 @@ using sMPGWM.Scripts.Enums.Game;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Definitions;
 
+/// <summary>
+/// Static condition metadata registry with deterministic ancestor and descendant closure helpers.
+/// </summary>
 public static class ConditionRegistry
 {
     private static readonly ConditionDefinition[] Definitions =
@@ -71,14 +74,23 @@ public static class ConditionRegistry
         }
     }
 
+    /// <summary>
+    /// Gets all registered condition definitions in deterministic order.
+    /// </summary>
     public static ReadOnlySpan<ConditionDefinition> All => Definitions;
 
+    /// <summary>
+    /// Returns true when the supplied condition mask contains only known condition bits.
+    /// </summary>
     public static bool IsKnown(LivingEntityCondition condition)
     {
         var mask = (ulong)condition;
         return (mask & ~KnownConditionMask) == 0;
     }
 
+    /// <summary>
+    /// Builds the ancestor-condition closure for explicit condition bits.
+    /// </summary>
     public static ulong BuildAncestorClosure(ulong explicitFlags)
     {
         var result = 0UL;
@@ -93,16 +105,25 @@ public static class ConditionRegistry
         return result;
     }
 
+    /// <summary>
+    /// Builds effective condition flags by adding all ancestors to explicit flags.
+    /// </summary>
     public static ulong BuildEffectiveFlags(ulong explicitFlags)
     {
         return explicitFlags | BuildAncestorClosure(explicitFlags);
     }
 
+    /// <summary>
+    /// Expands a condition mask to include every descendant condition.
+    /// </summary>
     public static ulong ExpandWithDescendants(LivingEntityCondition condition)
     {
         return ExpandWithDescendants((ulong)condition);
     }
 
+    /// <summary>
+    /// Expands a raw condition mask to include every descendant condition.
+    /// </summary>
     public static ulong ExpandWithDescendants(ulong conditionMask)
     {
         var result = conditionMask;

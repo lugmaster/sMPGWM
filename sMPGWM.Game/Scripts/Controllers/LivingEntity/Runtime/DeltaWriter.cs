@@ -3,17 +3,29 @@ using sMPGWM.Scripts.Controllers.LivingEntity.Definitions;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Runtime;
 
+/// <summary>
+/// Writes compact little-endian binary deltas for changed living-entity state.
+/// </summary>
 public sealed class DeltaWriter
 {
+    /// <summary>
+    /// Current binary delta format version.
+    /// </summary>
     public const byte CurrentVersion = 1;
     private byte[] _buffer;
     private int _position;
 
+    /// <summary>
+    /// Creates a reusable delta writer with the supplied initial byte capacity.
+    /// </summary>
     public DeltaWriter(int initialCapacity = 4096)
     {
         _buffer = new byte[initialCapacity];
     }
 
+    /// <summary>
+    /// Writes changed state and optional causal records into a packed byte payload.
+    /// </summary>
     public PackedByteArray Write(
         LivingEntityState state,
         SimulationLane lane,

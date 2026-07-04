@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,13 +7,22 @@ using sMPGWM.Scripts.Enums.Game;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Definitions;
 
+/// <summary>
+/// Validates effect definitions before they are accepted by runtime simulation.
+/// </summary>
 public static class EffectValidator
 {
+    /// <summary>
+    /// Validates all registered effect definitions against the supplied or default configuration.
+    /// </summary>
     public static ValidationReport[] ValidateRegistered(StateEngineConfig? config = null)
     {
         return Validate(EffectDefinitionRegistry.All, config ?? StateEngineConfig.Default);
     }
 
+    /// <summary>
+    /// Validates an explicit effect-definition set and returns a deterministic report list.
+    /// </summary>
     public static ValidationReport[] Validate(IEnumerable<EffectDefinition> definitions, StateEngineConfig config)
     {
         var definitionArray = definitions.OrderBy(definition => definition.EffectDefinitionId).ToArray();

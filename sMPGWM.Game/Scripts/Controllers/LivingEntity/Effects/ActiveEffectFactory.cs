@@ -3,8 +3,14 @@ using sMPGWM.Scripts.Controllers.LivingEntity.Runtime;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Effects;
 
+/// <summary>
+/// Creates initialized runtime active-effect structs from immutable effect definitions.
+/// </summary>
 public static class ActiveEffectFactory
 {
+    /// <summary>
+    /// Creates an active effect by resolving the supplied effect definition id from the registry.
+    /// </summary>
     public static ActiveEffect Create(
         int effectDefinitionId,
         long runtimeEffectId,
@@ -21,6 +27,9 @@ public static class ActiveEffectFactory
             parentRuntimeEffectId, childDepth, childSequence);
     }
 
+    /// <summary>
+    /// Creates an active effect from an already resolved effect definition.
+    /// </summary>
     public static ActiveEffect Create(
         EffectDefinition definition,
         long runtimeEffectId,

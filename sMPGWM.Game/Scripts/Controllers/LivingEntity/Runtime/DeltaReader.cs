@@ -4,8 +4,14 @@ using sMPGWM.Scripts.Enums.Game;
 
 namespace sMPGWM.Scripts.Controllers.LivingEntity.Runtime;
 
+/// <summary>
+/// Reads compact state-engine binary deltas into structured delta data.
+/// </summary>
 public static class DeltaReader
 {
+    /// <summary>
+    /// Attempts to parse a packed state delta payload.
+    /// </summary>
     public static bool TryRead(PackedByteArray packedBytes, out StateDelta delta)
     {
         var bytes = packedBytes.ToArray();

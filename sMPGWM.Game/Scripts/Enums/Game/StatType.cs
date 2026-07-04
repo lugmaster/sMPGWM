@@ -1,5 +1,8 @@
 namespace sMPGWM.Scripts.Enums.Game;
 
+/// <summary>
+/// Identifies every numeric living-entity stat and maps directly to state array indices.
+/// </summary>
 public enum StatType
 {
     Health = 0,
