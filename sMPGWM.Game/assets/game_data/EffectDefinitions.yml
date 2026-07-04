@@ -1,13 +1,14 @@
 Heal:
-  EffectDefinitionId: heal
-  Name: Heal
-  Description: Heals Target entity with given target.value
+  Definition:
+    EffectDefinitionId: effect.raise.heal
+    Name: Heal
+    Description: Heals Target entity with given target.value
 
   Trigger:
-    Type: Immediate
+    TriggerType: Immediate
 
   Duration:
-    Type: Once
+    DurationType: Once
 
   Target:
     TargetStat: Health
@@ -17,25 +18,24 @@ Heal:
     Value: 50.0
 
   Blocking:
-    BlockPolicy: ConsumeOnFail
-    BlockedByCondition:
-      Conditions: [ Incurable ]
-    BlockedByClassification:
-      Classifications: [ CannotBeHealed ]
+    BlockPolicy: RemoveOnFail
+    BlockedByCondition: [ Incurable ]
+    BlockedByClassification: [ CannotBeHealed ]
 
   Visibility: Internal
 
 
 CurseOfEternity:
-  EffectDefinitionId: curese_of_eternity
-  Name: Curse Of Eternity
-  Description: Applies a permanent curse to a target, so that the target looses half of its max energy. Also removes all non permanent  bonuses to energy regeneration. Can be removed by all effects that request removal by condition cursed. is permanent
+  Definition:
+    EffectDefinitionId: effect.permament.curse_of_eternity
+    Name: Curse Of Eternity
+    Description: Applies a permanent curse to a target, so that the target looses half of its max energy. Also removes all non permanent  bonuses to energy regeneration. Can be removed by all effects that request removal by condition cursed. is permanent
 
   Trigger:
-    Type: Immediate
+    TriggerType: Immediate
 
   Duration:
-    Type: Permanent
+    DurationType: Permanent
 
   Target:
     TargetStat: Energy
@@ -43,28 +43,21 @@ CurseOfEternity:
     Manipulation: Reduce
     Calculation: Percentage
     Value: 50.0
-
-  Conditions:
-    ConditionsAddRequest:
-      Conditions: [ Cursed ]
-
-  Classifications:
-    ClassificationsAddRequest:
-      Classifications: [ CannotBeRegenerated ]
+  
+  ConditionAndClassificationRequests:
+    ConditionsAddRequest: [ Cursed ]
+    ClassificationsAddRequest: [ CannotBeRegenerated ]
 
   Blocking:
-    BlockPolicy: ConsumeOnFail
-    BlockedByCondition:
-      Conditions: [ ]
-    BlockedByClassification:
-      Classifications: [ CurseImmunity ]
+    BlockPolicy: RemoveOnFail
+    BlockedByClassification: [ CurseImmunity ]
+    BlockedByConditions: [ Invulnerable ]
 
   EffectRemovalRequest:
     EffectsTargetingStats: [ EnergyRegeneration ]
   
-  EffectRemovalRule:
-    EffectRemovalPolicy:
-      - Type: ByAnySource
+  EffectRemovalPolicy:
+    - Type: ByAnySource
   
   Stacking:
     StackScope: ByEffectDefinitionId
@@ -73,15 +66,16 @@ CurseOfEternity:
   Visibility: Hud
 
 CorrodingPoison:
-  EffectDefinitionId: corroding_poison
-  Name: Corroding Poison
-  Description: Hits the target and applies up to 5 Stacks, where each Stack reduces Armor by 5 Percent until duration is over or is removed by any source that removes poisoned condition.
+  Definition:
+    EffectDefinitionId: effect.overtime_constant.corroding_poison
+    Name: Corroding Poison
+    Description: Hits the target and applies up to 5 Stacks, where each Stack reduces Armor by 5 Percent until duration is over or is removed by any source that removes poisoned condition.
 
   Trigger:
-    Type: OverTimeConstant
+    TriggerType: OverTimeConstant
 
   Duration:
-    Type: Temporary
+    DurationType: Temporary
     DurationMS: 1500
 
   Target:
@@ -91,32 +85,17 @@ CorrodingPoison:
     Calculation: Percentage
     Value: 50.0
 
-  Conditions:
-    ConditionsAddRequest:
-      Conditions: [ Poisoned ]
-
-  Classifications:
-    ClassificationsAddRequest:
-      Classifications: [ Corroding ]
+  ConditionAndClassificationRequests:
+    ConditionsAddRequest: [ Poisoned ]
+    ClassificationsAddRequest: [ Corroding ]
 
   Blocking:
     BlockPolicy: Retry
-    BlockedByClassification:
-      Classifications: [ ImmuneToPoison ]
+    BlockedByClassification: [ ImmuneToPoison, ImmunToCorroding ]
 
-  EffectRemovalRule:
-    EffectRemovalPolicy:
-      - Type: ByAnySource
-      - Type: BySourceId
-      - Type: ByOriginId
-    RemovalOrdering:
-      Primary: RemoveOldestFirst
-      Secondary: AppliedNetworkTick
-      Tertiary: InsertionSequence
-      FinalTieBreaker: RuntimeEffectId
-      
+  EffectRemovalPolicy: ByAnySource
+  
   Stacking:
-    StackGroupId: 2345
     StackScope: ByEffectDefinitionId
     StackPolicy: Stack
     StackBehavior: AddStackRefreshDuration
@@ -124,3 +103,142 @@ CorrodingPoison:
     MaxStackOverflowPolicy: ReplaceOldest
 
   Visibility: hud
+
+Revive:
+  Definition:
+    EffectDefinitionId: effect.health.revive
+    Name: Revives
+    Description: Removes the Condition Dead and restores an amount of current health
+  
+  Tigger:
+    TriggerType: Immediate
+    TriggerConditions:
+      OnConditionsPresent: [ Dead ]
+  
+  Duration:
+    DurationType: Once
+  
+  Target:
+    TargetStat: Health
+    TargetValueKind: Current
+    Manipulation: Raise
+    Calculation: Flat
+    Value: 50.0
+  
+  ConditionAndClassificationRequests:
+    ConditionsRemoveRequest: [ Dead ]
+  
+  Blocking:
+    BlockPolicy: ConsumeOnFail
+    BlockedByCondition: [ Incurable ]
+    BlockedByClassification: [ CannotBeHealed ]
+  
+  Stacking:
+    StackScope: ByEffectDefinitionId
+    StackPolicy: Stack
+    StackBehavior: Discard
+  
+  CanTriggerWhileDead: true
+
+SuperEvilDot:
+  Definition:
+    EffectDefinitionId: effect.dot.super_evil_dot
+    Name: Super Evil Dot
+    Description: the receives 1 stack up to 5 Stacks, where each Stack drains Life by 75 flat every tick until duration is over or is removed by any source that removes affected_by_super_evil_dot classification.
+
+  Trigger:
+    TriggerType: OverTime
+    TickIntervalMs: 300ms
+
+  Duration:
+    DurationType: Temporary
+    DurationMS: 2100ms
+
+  Target:
+    TargetStat: Health
+    TargetValueKind: Current
+    Manipulation: Reduce
+    Calculation: Flat
+    Value: 75.0
+
+  ConditionAndClassificationRequests:
+    ClassificationsAddRequest: [ affected_by_super_evil_dot ]
+
+  Blocking:
+    BlockPolicy: Retry
+    BlockedByCondition: [ Invulnerable ]
+
+  EffectRemovalPolicy: ByAnySource
+
+  Stacking:
+    StackScope: ByEffectDefinitionId
+    StackPolicy: Stack
+    StackBehavior: AddStackRefreshDuration
+    MaxStacks: 5
+    MaxStackOverflowPolicy: ReplaceOldest
+
+  Visibility: hud
+
+Overheating:
+  Definition:
+    EffectDefinitionId: effect.buff.wepaon.overheating
+    Name: Overheating
+    Description: Raises AttackSpeed temporary by 50%, but after the effect is has expired, the weapons are so overheated, that they need to on cooldown.
+  
+  
+  Trigger:
+    TriggerType: OverTimeConstant
+    
+  Duration:
+    DurationType: Temporary
+    DurationMS: 5000ms
+
+  Target:
+    TargetStat: AttackSpeed
+    TargetValueKind: Current
+    Manipulation: Raise
+    Calculation: Percentage
+    Value: 50.0
+
+  ConditionAndClassificationRequests:
+    ClassificationsAddRequest: [ Overheating ]
+  
+  ChildEffecDefinition:
+    - itemIndex: 1
+      ChildEffectDefinitionId: effect.buff.wepaon.overheating.cooldown
+      ChildEffectTrigger: OnParentExpired
+  
+  Stacking:
+    StackGroupId: 123
+    StackPolicy: ByStackGroupId
+    StackBehavior: Discard
+  
+  Blocking:
+    BlockPolicy: RemoveOnFail
+    BlockedByCondition: [ EnergyDrained ]
+  
+OverheatingCooldown:
+  Definition:
+    EffectDefinitionId: effect.buff.wepaon.overheating.cooldown
+    Name: Overheating Cooldown
+    Description: The Weapons are overheated and cannot be used. Note that AttackEffect should be blocked by Classification Overheated. If Effect ends Overheated is removed.
+  
+  Trigger:
+    TriggerType: OverTimeConstant
+  
+  Duration:
+    DurationType: Temporary
+    DurationMS: 5000ms
+      
+  ConditionAndClassificationRequests:
+    ClassificationsAddRequest: [ Overheated ]
+
+  
+  
+  
+
+      
+  
+    
+      
+  
