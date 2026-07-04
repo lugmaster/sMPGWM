@@ -1,3 +1,4 @@
+version: 6.2.1
 ## 9. Stats
 
 Stats describe numeric properties of a `LivingEntity`.

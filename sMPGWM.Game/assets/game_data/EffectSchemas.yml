@@ -1,7 +1,7 @@
-SchemaVersion: 2.0.0
+SchemaVersion: 6.2.1
 SchemaKind: FLU.RPG.StateEngine.Effects
 SourcePrecedence:
-  - stats.md version 6.2
+  - stats.md version 6.2.1
   - EffectSchemas.yml and EffectDefinitions.yml decisions from source YAML and clarification answers
   - Extracted Effects section
   - PRD 6.1 context only

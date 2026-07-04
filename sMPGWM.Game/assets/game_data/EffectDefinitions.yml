@@ -1,3 +1,4 @@
+Version: 6.2.1
 Heal:
   Definition:
     EffectDefinitionId: effect.raise.heal

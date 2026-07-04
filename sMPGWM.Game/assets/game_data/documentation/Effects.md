@@ -1,3 +1,4 @@
+version: 6.2.1
 # Effects
 
 ## 1. Scope and Source Precedence
@@ -11,9 +12,12 @@ Source precedence for this refinement was:
 3. Explicit clarification decisions from the effect-refinement questionnaire.
 4. PRD 6.1 as context only.
 
-The StateEngine is effect-driven: gameplay systems create `ActiveEffect` inputs, and only the StateEngine mutates `LivingEntityState` stats, conditions, active effects, and deltas.
+The StateEngine is effect-driven: gameplay systems create `ActiveEffect` inputs, and only the StateEngine mutates
+`LivingEntityState` stats, conditions, active effects, and deltas.
 
-Passives are not effects. Passive stat sources from items, talents, level-ups, ship configuration, or permanent upgrade state are processed by a separate passive modifier pipeline and are not represented by `ActiveEffect` or `EffectDefinition` entries.
+Passives are not effects. Passive stat sources from items, talents, level-ups, ship configuration, or permanent upgrade
+state are processed by a separate passive modifier pipeline and are not represented by `ActiveEffect` or
+`EffectDefinition` entries.
 
 ---
 
@@ -36,7 +40,8 @@ A valid container has:
 - no direct `EffectRemovalRequest`,
 - at least one child effect.
 
-Each definition is validated at startup. A definition is valid only if all referenced child effects are valid and the child graph is acyclic.
+Each definition is validated at startup. A definition is valid only if all referenced child effects are valid and the
+child graph is acyclic.
 
 ---
 
@@ -86,10 +91,10 @@ CurrentValue
 
 Active effects may target only:
 
-| TargetValueKind | Valid use |
-|---|---|
-| `CurrentValue` | Pool transactions, or effective active runtime values for FlowStats and AttributeStats. |
-| `CurrentMaxValue` | Active runtime capacity modifiers for PoolStats only. |
+| TargetValueKind   | Valid use                                                                               |
+|-------------------|-----------------------------------------------------------------------------------------|
+| `CurrentValue`    | Pool transactions, or effective active runtime values for FlowStats and AttributeStats. |
+| `CurrentMaxValue` | Active runtime capacity modifiers for PoolStats only.                                   |
 
 Active effects must not target:
 
@@ -121,14 +126,16 @@ WaterStorage
 
 Valid effect target combinations:
 
-| TargetValueKind | Meaning |
-|---|---|
-| `CurrentValue` | Transactional pool change such as damage, heal, drain, restore, cost, production application, or consumption application. |
-| `CurrentMaxValue` | Runtime capacity modifier such as temporary max Health buff, Shield capacity debuff, or EnergyStorage capacity buff. |
+| TargetValueKind   | Meaning                                                                                                                   |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `CurrentValue`    | Transactional pool change such as damage, heal, drain, restore, cost, production application, or consumption application. |
+| `CurrentMaxValue` | Runtime capacity modifier such as temporary max Health buff, Shield capacity debuff, or EnergyStorage capacity buff.      |
 
 `CurrentValue` is clamped after every individual `CurrentValue` stat modification record.
 
-`CurrentMaxValue` is resolved from all active capacity modifiers and clamped only after full capacity resolution. Intermediate capacity values may temporarily fall outside valid bounds during resolution because early clamping would change the final stat-modification outcome.
+`CurrentMaxValue` is resolved from all active capacity modifiers and clamped only after full capacity resolution.
+Intermediate capacity values may temporarily fall outside valid bounds during resolution because early clamping would
+change the final stat-modification outcome.
 
 After final capacity resolution:
 
@@ -160,7 +167,8 @@ Flow stats are authored as values per millisecond:
 RegenerationValuePerMs
 ```
 
-The target field remains named `Value`. For FlowStats, `Value` represents a rate contribution in the stat's canonical value unit.
+The target field remains named `Value`. For FlowStats, `Value` represents a rate contribution in the stat's canonical
+value unit.
 
 FlowStats may be actively modified only as:
 
@@ -224,16 +232,17 @@ Target:
 
 Fields:
 
-| Field | Meaning |
-|---|---|
-| `TargetStat` | The stat to affect. |
-| `TargetValueKind` | `CurrentValue` or `CurrentMaxValue`. |
-| `Manipulation` | `Raise` or `Reduce`. |
-| `Calculation` | `Flat` or `Percentage`. |
-| `Value` | Numeric amount. For FlowStats this is a value-per-ms rate contribution where applicable. |
+| Field             | Meaning                                                                                                  |
+|-------------------|----------------------------------------------------------------------------------------------------------|
+| `TargetStat`      | The stat to affect.                                                                                      |
+| `TargetValueKind` | `CurrentValue` or `CurrentMaxValue`.                                                                     |
+| `Manipulation`    | `Raise` or `Reduce`.                                                                                     |
+| `Calculation`     | `Flat` or `Percentage`.                                                                                  |
+| `Value`           | Numeric amount. For FlowStats this is a value-per-ms rate contribution where applicable.                 |
 | `ApplicationMode` | Optional. Determines whether the target is applied instantly, while active, or accumulated while active. |
 
-`ApplicationMode` is optional. If omitted, the validator/runtime applies deterministic defaults based on `TriggerType`, stat category, and `TargetValueKind`.
+`ApplicationMode` is optional. If omitted, the validator/runtime applies deterministic defaults based on `TriggerType`,
+stat category, and `TargetValueKind`.
 
 ---
 
@@ -241,38 +250,39 @@ Fields:
 
 `ApplicationMode` controls how a stat target contributes to the state.
 
-| ApplicationMode | Meaning |
-|---|---|
-| `Instant` | Creates a transactional stat modification record when the effect triggers or is due. |
-| `WhileActive` | Contributes a recalculated active modifier while the ActiveEffect exists. The contribution disappears when the effect expires or is removed. |
+| ApplicationMode         | Meaning                                                                                                                                                                         |
+|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Instant`               | Creates a transactional stat modification record when the effect triggers or is due.                                                                                            |
+| `WhileActive`           | Contributes a recalculated active modifier while the ActiveEffect exists. The contribution disappears when the effect expires or is removed.                                    |
 | `AccumulateWhileActive` | Each due tick increases an accumulated active modifier stored in the ActiveEffect runtime state. The accumulated contribution disappears when the effect expires or is removed. |
 
 ### 7.1 Default ApplicationMode Rules
 
 If `ApplicationMode` is omitted, use these defaults:
 
-| TriggerType | Stat category | TargetValueKind | Default ApplicationMode |
-|---|---|---|---|
-| `Immediate` | PoolStat | `CurrentValue` | `Instant` |
-| `OverTime` | PoolStat | `CurrentValue` | `Instant` per due tick |
-| `OnExpire` | PoolStat | `CurrentValue` | `Instant` |
-| `OnRemoval` | PoolStat | `CurrentValue` | `Instant` |
-| `WhileActive` | PoolStat | `CurrentMaxValue` | `WhileActive` |
-| `OverTime` | PoolStat | `CurrentMaxValue` | `AccumulateWhileActive` |
-| `WhileActive` | AttributeStat | `CurrentValue` | `WhileActive` |
-| `WhileActive` | FlowStat | `CurrentValue` | `WhileActive` |
+| TriggerType   | Stat category | TargetValueKind   | Default ApplicationMode |
+|---------------|---------------|-------------------|-------------------------|
+| `Immediate`   | PoolStat      | `CurrentValue`    | `Instant`               |
+| `OverTime`    | PoolStat      | `CurrentValue`    | `Instant` per due tick  |
+| `OnExpire`    | PoolStat      | `CurrentValue`    | `Instant`               |
+| `OnRemoval`   | PoolStat      | `CurrentValue`    | `Instant`               |
+| `WhileActive` | PoolStat      | `CurrentMaxValue` | `WhileActive`           |
+| `OverTime`    | PoolStat      | `CurrentMaxValue` | `AccumulateWhileActive` |
+| `WhileActive` | AttributeStat | `CurrentValue`    | `WhileActive`           |
+| `WhileActive` | FlowStat      | `CurrentValue`    | `WhileActive`           |
 
-Explicit `ApplicationMode` is allowed in authored definitions as long as it is valid for the chosen trigger/stat/value combination.
+Explicit `ApplicationMode` is allowed in authored definitions as long as it is valid for the chosen trigger/stat/value
+combination.
 
 ### 7.2 Valid Stat Target Combinations
 
-| TriggerType | Valid stat target combination |
-|---|---|
-| `Immediate` | `PoolStat.CurrentValue` with `ApplicationMode: Instant` only. |
-| `OverTime` | `PoolStat.CurrentValue` with `ApplicationMode: Instant`, or `PoolStat.CurrentMaxValue` with `ApplicationMode: AccumulateWhileActive`. |
-| `WhileActive` | `PoolStat.CurrentMaxValue`, `AttributeStat.CurrentValue`, or `FlowStat.CurrentValue` with `ApplicationMode: WhileActive`. |
-| `OnExpire` | `PoolStat.CurrentValue` with `ApplicationMode: Instant` only. |
-| `OnRemoval` | `PoolStat.CurrentValue` with `ApplicationMode: Instant` only. |
+| TriggerType   | Valid stat target combination                                                                                                         |
+|---------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| `Immediate`   | `PoolStat.CurrentValue` with `ApplicationMode: Instant` only.                                                                         |
+| `OverTime`    | `PoolStat.CurrentValue` with `ApplicationMode: Instant`, or `PoolStat.CurrentMaxValue` with `ApplicationMode: AccumulateWhileActive`. |
+| `WhileActive` | `PoolStat.CurrentMaxValue`, `AttributeStat.CurrentValue`, or `FlowStat.CurrentValue` with `ApplicationMode: WhileActive`.             |
+| `OnExpire`    | `PoolStat.CurrentValue` with `ApplicationMode: Instant` only.                                                                         |
+| `OnRemoval`   | `PoolStat.CurrentValue` with `ApplicationMode: Instant` only.                                                                         |
 
 Invalid combinations include:
 
@@ -288,7 +298,8 @@ Any AttributeStat/FlowStat + CurrentMaxValue
 
 ### 7.3 AccumulateWhileActive
 
-`AccumulateWhileActive` is used for effects that worsen or grow over time, but whose accumulated contribution must still disappear when the effect ends.
+`AccumulateWhileActive` is used for effects that worsen or grow over time, but whose accumulated contribution must still
+disappear when the effect ends.
 
 Example:
 
@@ -327,11 +338,15 @@ AccumulatedFlatModifier
 AccumulatedPercentageModifier
 ```
 
-The implementation may store either accumulated values or enough deterministic counters to recompute them during rollback/resimulation.
+The implementation may store either accumulated values or enough deterministic counters to recompute them during
+rollback/resimulation.
 
-No dedicated accumulation cap field exists in the first implementation. Caps are controlled by `Duration`, `TickIntervalMs`, `Value`, `MaxStacks`, and final stat clamping.
+No dedicated accumulation cap field exists in the first implementation. Caps are controlled by `Duration`,
+`TickIntervalMs`, `Value`, `MaxStacks`, and final stat clamping.
 
-For `Calculation: Percentage`, each due tick accumulates another additive percentage contribution based on the passive baseline. For `Manipulation: Reduce`, accumulated percentage reduction is capped at `-100%`. For `Manipulation: Raise`, no special schema cap exists in the first implementation.
+For `Calculation: Percentage`, each due tick accumulates another additive percentage contribution based on the passive
+baseline. For `Manipulation: Reduce`, accumulated percentage reduction is capped at `-100%`. For `Manipulation: Raise`,
+no special schema cap exists in the first implementation.
 
 ### 7.4 Stacking with AccumulateWhileActive
 
@@ -341,9 +356,11 @@ If duplicate handling discards the new effect, no new accumulator is created.
 
 If duplicate handling refreshes the existing effect, the accumulated value is kept and only duration is refreshed.
 
-If duplicate handling replaces the existing effect, the old ActiveEffect and its accumulator are removed and a new ActiveEffect starts with a fresh accumulator.
+If duplicate handling replaces the existing effect, the old ActiveEffect and its accumulator are removed and a new
+ActiveEffect starts with a fresh accumulator.
 
-If `StackBehavior: IndependentStacks` is used, each accepted duplicate ActiveEffect has its own independent accumulator. Later stacks must not retroactively change earlier accumulated values.
+If `StackBehavior: IndependentStacks` is used, each accepted duplicate ActiveEffect has its own independent accumulator.
+Later stacks must not retroactively change earlier accumulated values.
 
 ---
 
@@ -363,11 +380,11 @@ Percentage modifiers are additive, not multiplicative.
 
 For active stat modifiers:
 
-| Target | Percentage basis |
-|---|---|
-| `PoolStat.CurrentMaxValue` | `EffectiveMaxValue` |
+| Target                       | Percentage basis                              |
+|------------------------------|-----------------------------------------------|
+| `PoolStat.CurrentMaxValue`   | `EffectiveMaxValue`                           |
 | `AttributeStat.CurrentValue` | passive/equipment-adjusted effective baseline |
-| `FlowStat.CurrentValue` | passive/equipment-adjusted effective baseline |
+| `FlowStat.CurrentValue`      | passive/equipment-adjusted effective baseline |
 
 Example:
 
@@ -379,7 +396,8 @@ Effective Armor.CurrentValue: 120
 
 ### 8.2 Instant Pool CurrentValue Percentage Basis
 
-For `ApplicationMode: Instant` targeting `PoolStat.CurrentValue`, percentage values use the pool's `CurrentMaxValue` at execution time.
+For `ApplicationMode: Instant` targeting `PoolStat.CurrentValue`, percentage values use the pool's `CurrentMaxValue` at
+execution time.
 
 Example:
 
@@ -405,11 +423,13 @@ Order for PoolStats:
 6. Clamp `CurrentValue` after each `CurrentValue` modification record.
 7. Final clamp `CurrentValue` to `[0, CurrentMaxValue]`.
 
-Positive capacity compensation is based only on the positive capacity delta gained this tick. It is not repeatedly applied every tick while a buff remains active.
+Positive capacity compensation is based only on the positive capacity delta gained this tick. It is not repeatedly
+applied every tick while a buff remains active.
 
 Removing a capacity debuff that returns `CurrentMaxValue` toward `EffectiveMaxValue` does not raise `CurrentValue`.
 
-Applying a capacity buff that raises `CurrentMaxValue` above `EffectiveMaxValue` raises `CurrentValue` by the positive gained capacity delta, capped at the new `CurrentMaxValue`.
+Applying a capacity buff that raises `CurrentMaxValue` above `EffectiveMaxValue` raises `CurrentValue` by the positive
+gained capacity delta, capped at the new `CurrentMaxValue`.
 
 ---
 
@@ -417,17 +437,18 @@ Applying a capacity buff that raises `CurrentMaxValue` above `EffectiveMaxValue`
 
 `Trigger` defines when an effect executes or contributes to active state.
 
-| TriggerType | Meaning |
-|---|---|
-| `Immediate` | Executes when processed. |
-| `OverTime` | Executes when due according to `TickIntervalMs` while active. Requires `TickIntervalMs > 100` and `DurationType: Temporary` or `UntilRemoved`. |
-| `WhileActive` | Contributes active modifiers, conditions, or classifications while the ActiveEffect exists. It does not tick and ignores `TickIntervalMs`. |
-| `OnExpire` | Executes once when the effect expires naturally by duration. Requires `DurationType: Temporary`. |
-| `OnRemoval` | Executes once when the effect is explicitly removed. Requires `DurationType: Temporary` or `UntilRemoved`. |
+| TriggerType   | Meaning                                                                                                                                        |
+|---------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Immediate`   | Executes when processed.                                                                                                                       |
+| `OverTime`    | Executes when due according to `TickIntervalMs` while active. Requires `TickIntervalMs > 100` and `DurationType: Temporary` or `UntilRemoved`. |
+| `WhileActive` | Contributes active modifiers, conditions, or classifications while the ActiveEffect exists. It does not tick and ignores `TickIntervalMs`.     |
+| `OnExpire`    | Executes once when the effect expires naturally by duration. Requires `DurationType: Temporary`.                                               |
+| `OnRemoval`   | Executes once when the effect is explicitly removed. Requires `DurationType: Temporary` or `UntilRemoved`.                                     |
 
 ### 10.1 Immediate
 
-`Immediate` effects execute once when accepted and then are consumed unless they create child effects or lifecycle behavior requiring retention.
+`Immediate` effects execute once when accepted and then are consumed unless they create child effects or lifecycle
+behavior requiring retention.
 
 Valid stat target:
 
@@ -437,7 +458,8 @@ PoolStat.CurrentValue + ApplicationMode: Instant
 
 ### 10.2 OverTime
 
-`OverTime` effects are active for their lifetime, but they only create stat modification records when due in the current simulation step.
+`OverTime` effects are active for their lifetime, but they only create stat modification records when due in the current
+simulation step.
 
 Valid stat targets:
 
@@ -491,20 +513,22 @@ OnStatValueBelow
 OnStatValueAbove
 ```
 
-`OnStatReduced` and `OnStatRaised` trigger from validated stat modification records, not from the final consolidated outcome.
+`OnStatReduced` and `OnStatRaised` trigger from validated stat modification records, not from the final consolidated
+outcome.
 
 `OnStatValueBelow` and `OnStatValueAbove` trigger from final resolved stat values after all modifications are applied.
 
-Condition/classification trigger checks are evaluated when the effect is in turn. They do not look ahead to effects that execute later in the same turn.
+Condition/classification trigger checks are evaluated when the effect is in turn. They do not look ahead to effects that
+execute later in the same turn.
 
 ---
 
 ## 12. Duration
 
-| DurationType | Meaning |
-|---|---|
-| `Once` | Executes once, then is consumed. |
-| `Temporary` | Remains active for `DurationMS`, then expires. |
+| DurationType   | Meaning                                                                |
+|----------------|------------------------------------------------------------------------|
+| `Once`         | Executes once, then is consumed.                                       |
+| `Temporary`    | Remains active for `DurationMS`, then expires.                         |
 | `UntilRemoved` | Remains active until explicitly removed. This is not passive behavior. |
 
 Rules:
@@ -537,15 +561,16 @@ Condition requests are allowed with all trigger types.
 
 Trigger-specific meaning:
 
-| TriggerType | Condition request behavior |
-|---|---|
-| `Immediate` | Applies transactionally when the effect triggers. |
-| `WhileActive` | Contributes while the ActiveEffect exists. Contribution is removed when the effect expires or is removed. |
-| `OverTime` | The effect is active for its lifetime. Condition contribution begins after the effect has ticked at least once and is removed when the effect expires or is removed. |
-| `OnExpire` | Applies transactionally when the effect expires naturally. |
-| `OnRemoval` | Applies transactionally when the effect is explicitly removed. |
+| TriggerType   | Condition request behavior                                                                                                                                           |
+|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Immediate`   | Applies transactionally when the effect triggers.                                                                                                                    |
+| `WhileActive` | Contributes while the ActiveEffect exists. Contribution is removed when the effect expires or is removed.                                                            |
+| `OverTime`    | The effect is active for its lifetime. Condition contribution begins after the effect has ticked at least once and is removed when the effect expires or is removed. |
+| `OnExpire`    | Applies transactionally when the effect expires naturally.                                                                                                           |
+| `OnRemoval`   | Applies transactionally when the effect is explicitly removed.                                                                                                       |
 
-If multiple active effects contribute the same condition, the condition remains present until all contributing effects are gone or until deterministic StateEngine rules resolve otherwise.
+If multiple active effects contribute the same condition, the condition remains present until all contributing effects
+are gone or until deterministic StateEngine rules resolve otherwise.
 
 ### 13.2 Classifications
 
@@ -563,9 +588,12 @@ Classifications are used for:
 - debug/inspection identity,
 - classification trigger conditions.
 
-`ClassificationsRemoveRequest` is invalid. Classifications disappear automatically when the ActiveEffect expires or is removed.
+`ClassificationsRemoveRequest` is invalid. Classifications disappear automatically when the ActiveEffect expires or is
+removed.
 
-For `OverTime`, classifications are considered active-effect metadata during the effect lifetime. If the implementation distinguishes contribution activation, any trigger-gated classification contribution begins after the effect has ticked at least once.
+For `OverTime`, classifications are considered active-effect metadata during the effect lifetime. If the implementation
+distinguishes contribution activation, any trigger-gated classification contribution begins after the effect has ticked
+at least once.
 
 ---
 
@@ -580,10 +608,10 @@ Blocking:
   BlockedByClassification: [ CannotBeHealed ]
 ```
 
-| BlockPolicy | Meaning |
-|---|---|
-| `RemoveOnFail` | The effect is consumed/removed when blocked. Default. |
-| `Retry` | The effect remains active and retries when due, until it succeeds, expires, or is removed. |
+| BlockPolicy    | Meaning                                                                                    |
+|----------------|--------------------------------------------------------------------------------------------|
+| `RemoveOnFail` | The effect is consumed/removed when blocked. Default.                                      |
+| `Retry`        | The effect remains active and retries when due, until it succeeds, expires, or is removed. |
 
 `Dead` blocks effects by default. Effects that must execute while dead need:
 
@@ -595,7 +623,8 @@ CanTriggerWhileDead: true
 
 ## 15. EffectRemovalRequest
 
-Effects do not directly remove other effects. They request removal and the StateEngine validates and applies it deterministically.
+Effects do not directly remove other effects. They request removal and the StateEngine validates and applies it
+deterministically.
 
 Supported selectors:
 
@@ -673,29 +702,29 @@ Stacking:
 
 ### 16.1 StackScope
 
-| StackScope | Meaning |
-|---|---|
-| `ByEffectDefinitionId` | Duplicate identity is the same `EffectDefinitionId`. Default. |
-| `SameSource` | Duplicate identity includes the same `SourceId`. |
-| `SameSourceAndOrigin` | Duplicate identity includes the same `SourceId` and `OriginId`. |
-| `ByStackGroupId` | Duplicate identity uses `StackGroupId`; requires `StackGroupId`. |
+| StackScope             | Meaning                                                          |
+|------------------------|------------------------------------------------------------------|
+| `ByEffectDefinitionId` | Duplicate identity is the same `EffectDefinitionId`. Default.    |
+| `SameSource`           | Duplicate identity includes the same `SourceId`.                 |
+| `SameSourceAndOrigin`  | Duplicate identity includes the same `SourceId` and `OriginId`.  |
+| `ByStackGroupId`       | Duplicate identity uses `StackGroupId`; requires `StackGroupId`. |
 
 ### 16.2 StackPolicy
 
-| StackPolicy | Meaning |
-|---|---|
-| `Stack` | Accept duplicate according to `StackBehavior`. |
-| `Replace` | Replace an existing duplicate with the new effect. |
-| `Discard` | Discard the new duplicate. |
+| StackPolicy | Meaning                                            |
+|-------------|----------------------------------------------------|
+| `Stack`     | Accept duplicate according to `StackBehavior`.     |
+| `Replace`   | Replace an existing duplicate with the new effect. |
+| `Discard`   | Discard the new duplicate.                         |
 
 ### 16.3 StackBehavior
 
-| StackBehavior | Meaning |
-|---|---|
-| `IndependentStacks` | Each stack is a separate `ActiveEffect`. Default. |
-| `RefreshDuration` | Value does not stack; duration is refreshed. |
-| `AddStackRefreshDuration` | Stack count increases and duration is refreshed. |
-| `AddStackNoRefresh` | Stack count increases and duration is not refreshed. |
+| StackBehavior             | Meaning                                              |
+|---------------------------|------------------------------------------------------|
+| `IndependentStacks`       | Each stack is a separate `ActiveEffect`. Default.    |
+| `RefreshDuration`         | Value does not stack; duration is refreshed.         |
+| `AddStackRefreshDuration` | Stack count increases and duration is refreshed.     |
+| `AddStackNoRefresh`       | Stack count increases and duration is not refreshed. |
 
 ### 16.4 MaxStacks
 
@@ -733,12 +762,12 @@ ChildEffectDefinitions:
 
 Supported child triggers:
 
-| ChildEffectTrigger | Meaning |
-|---|---|
-| `BoundToParent` | Default. Child is created when parent triggers and expires/is removed with the parent. |
-| `OnParentExpired` | Child is created when parent naturally expires. Child is then independent. |
-| `OnParentRemoved` | Child is created when parent is explicitly removed. Child is then independent. |
-| `OnParentExpiredOrRemoved` | Child is created when parent either expires or is removed. Child is then independent. |
+| ChildEffectTrigger         | Meaning                                                                                |
+|----------------------------|----------------------------------------------------------------------------------------|
+| `BoundToParent`            | Default. Child is created when parent triggers and expires/is removed with the parent. |
+| `OnParentExpired`          | Child is created when parent naturally expires. Child is then independent.             |
+| `OnParentRemoved`          | Child is created when parent is explicitly removed. Child is then independent.         |
+| `OnParentExpiredOrRemoved` | Child is created when parent either expires or is removed. Child is then independent.  |
 
 Child effects are processed in deterministic list order.
 
@@ -783,7 +812,8 @@ CorrodingPoison:
     ApplicationMode: WhileActive
 ```
 
-Result: reduces effective Armor by 5% while active. It does not reduce Armor again every tick. When the effect ends, its contribution is removed and Armor is recalculated.
+Result: reduces effective Armor by 5% while active. It does not reduce Armor again every tick. When the effect ends, its
+contribution is removed and Armor is recalculated.
 
 ### 18.3 Max Health Rot
 
@@ -804,7 +834,8 @@ MaxHealthRot:
     ApplicationMode: AccumulateWhileActive
 ```
 
-Result: each due tick adds another `-10` active Health capacity contribution. When the effect expires or is removed, the accumulated contribution disappears and Health capacity snaps back according to remaining modifiers.
+Result: each due tick adds another `-10` active Health capacity contribution. When the effect expires or is removed, the
+accumulated contribution disappears and Health capacity snaps back according to remaining modifiers.
 
 ### 18.4 Overheating
 
@@ -853,7 +884,8 @@ At startup, the `EffectValidator` must check:
 - `CurrentMaxValue` is used only for PoolStats.
 - AttributeStat and FlowStat active modifiers use `WhileActive + CurrentValue + ApplicationMode: WhileActive`.
 - `Immediate`, `OnExpire`, and `OnRemoval` stat targets use `PoolStat.CurrentValue + ApplicationMode: Instant`.
-- `OverTime` stat targets use either `PoolStat.CurrentValue + ApplicationMode: Instant` or `PoolStat.CurrentMaxValue + ApplicationMode: AccumulateWhileActive`.
+- `OverTime` stat targets use either `PoolStat.CurrentValue + ApplicationMode: Instant` or
+  `PoolStat.CurrentMaxValue + ApplicationMode: AccumulateWhileActive`.
 - Explicit `ApplicationMode`, when present, is valid for the selected trigger/stat/value combination.
 - `AccumulateWhileActive` runtime state is stored on `ActiveEffect`, not on `EffectDefinition`.
 - `AccumulateWhileActive` percentage reductions cap at `-100%` contribution.
