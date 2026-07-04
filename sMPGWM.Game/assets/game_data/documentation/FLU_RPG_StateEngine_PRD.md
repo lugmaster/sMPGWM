@@ -1,29 +1,168 @@
+---
+number headings: first-level 1, max 6, _.1.1
+---
+
 # PRD: RPG State Engine
+
+- [[#1 Goal|1 Goal]]
+- [[#2 Scope|2 Scope]]
+    - [[#2 Scope#2.1 In Scope|2.1 In Scope]]
+    - [[#2 Scope#2.2 Out of Scope|2.2 Out of Scope]]
+- [[#3 First Use Case|3 First Use Case]]
+- [[#4 Tick Model|4 Tick Model]]
+    - [[#4 Tick Model#4.1 Godot Physics Loop|4.1 Godot Physics Loop]]
+    - [[#4 Tick Model#4.2 NetworkTick|4.2 NetworkTick]]
+    - [[#4 Tick Model#4.3 Slow Simulation|4.3 Slow Simulation]]
+    - [[#4 Tick Model#4.4 Durations|4.4 Durations]]
+- [[#5 Core Runtime Model|5 Core Runtime Model]]
+- [[#6 Core Architecture|6 Core Architecture]]
+    - [[#6 Core Architecture#6.1 High-Level Flow|6.1 High-Level Flow]]
+    - [[#6 Core Architecture#6.2 Core Rule|6.2 Core Rule]]
+- [[#7 Entity Model|7 Entity Model]]
+    - [[#7 Entity Model#7.1 Player Controller Composition|7.1 Player Controller Composition]]
+    - [[#7 Entity Model#7.2 LivingEntity|7.2 LivingEntity]]
+- [[#8 LivingEntityState|8 LivingEntityState]]
+- [[#9 Stats|9 Stats]]
+    - [[#9 Stats#9.1 Stat Value Definitions|9.1 Stat Value Definitions]]
+    - [[#9 Stats#9.2 BaseValue Mutation|9.2 BaseValue Mutation]]
+    - [[#9 Stats#9.3 Complete Stat List|9.3 Complete Stat List]]
+    - [[#9 Stats#9.4 Stat Dirty Tracking|9.4 Stat Dirty Tracking]]
+- [[#10 Stat Modification Model|10 Stat Modification Model]]
+    - [[#10 Stat Modification Model#10.1 StatModificationRecord|10.1 StatModificationRecord]]
+    - [[#10 Stat Modification Model#10.2 TargetValueKind|10.2 TargetValueKind]]
+    - [[#10 Stat Modification Model#10.3 Manipulation|10.3 Manipulation]]
+    - [[#10 Stat Modification Model#10.4 Calculation|10.4 Calculation]]
+    - [[#10 Stat Modification Model#10.5 Additive Percentage Rule|10.5 Additive Percentage Rule]]
+- [[#11 Stat Calculation Order|11 Stat Calculation Order]]
+    - [[#11 Stat Calculation Order#11.1 Max Value Compensation|11.1 Max Value Compensation]]
+    - [[#11 Stat Calculation Order#11.2 Recalculation Instead of Inverse Effects|11.2 Recalculation Instead of Inverse Effects]]
+- [[#12 Regeneration|12 Regeneration]]
+- [[#13 Conditions|13 Conditions]]
+    - [[#13 Conditions#13.1 Condition List|13.1 Condition List]]
+    - [[#13 Conditions#13.2 Condition Operations|13.2 Condition Operations]]
+    - [[#13 Conditions#13.3 Dead Default Blocking Rule|13.3 Dead Default Blocking Rule]]
+- [[#14 Effect-Driven Gameplay|14 Effect-Driven Gameplay]]
+- [[#15 EffectDefinition|15 EffectDefinition]]
+    - [[#15 EffectDefinition#15.1 EffectDefinition Fields|15.1 EffectDefinition Fields]]
+    - [[#15 EffectDefinition#15.2 EffectDefinition Validity Rule|15.2 EffectDefinition Validity Rule]]
+    - [[#15 EffectDefinition#15.3 Single Target Rule|15.3 Single Target Rule]]
+    - [[#15 EffectDefinition#15.4 Effect Classification|15.4 Effect Classification]]
+    - [[#15 EffectDefinition#15.5 StackGroupId|15.5 StackGroupId]]
+- [[#16 Effect Target|16 Effect Target]]
+    - [[#16 Effect Target#16.1 EffectTarget Fields|16.1 EffectTarget Fields]]
+    - [[#16 Effect Target#16.2 Effect Target Examples|16.2 Effect Target Examples]]
+- [[#17 ActiveEffect|17 ActiveEffect]]
+    - [[#17 ActiveEffect#17.1 ActiveEffect Fields|17.1 ActiveEffect Fields]]
+    - [[#17 ActiveEffect#17.2 NetworkTick on ActiveEffect|17.2 NetworkTick on ActiveEffect]]
+    - [[#17 ActiveEffect#17.3 ActiveEffect Storage|17.3 ActiveEffect Storage]]
+- [[#18 Effect Sources|18 Effect Sources]]
+    - [[#18 Effect Sources#18.1 SourceType|18.1 SourceType]]
+    - [[#18 Effect Sources#18.2 SourceId|18.2 SourceId]]
+    - [[#18 Effect Sources#18.3 OriginId|18.3 OriginId]]
+    - [[#18 Effect Sources#18.4 TargetEntityId|18.4 TargetEntityId]]
+- [[#19 Effect Trigger|19 Effect Trigger]]
+    - [[#19 Effect Trigger#19.1 OnStatRaised / OnStatReduced Rule|19.1 OnStatRaised / OnStatReduced Rule]]
+    - [[#19 Effect Trigger#19.2 OnStatValueBelow / OnStatValueAbove Rule|19.2 OnStatValueBelow / OnStatValueAbove Rule]]
+- [[#20 Effect Duration|20 Effect Duration]]
+- [[#21 Blocking|21 Blocking]]
+- [[#22 BlockPolicy|22 BlockPolicy]]
+- [[#23 Effect Removal|23 Effect Removal]]
+    - [[#23 Effect Removal#23.1 EffectRemovalRequest|23.1 EffectRemovalRequest]]
+    - [[#23 Effect Removal#23.2 EffectRemovalPolicy|23.2 EffectRemovalPolicy]]
+    - [[#23 Effect Removal#23.3 Removal Validation|23.3 Removal Validation]]
+    - [[#23 Effect Removal#23.4 Removal Ordering|23.4 Removal Ordering]]
+    - [[#23 Effect Removal#23.5 Removal Validity|23.5 Removal Validity]]
+- [[#24 Visibility|24 Visibility]]
+- [[#25 Stacking|25 Stacking]]
+    - [[#25 Stacking#25.1 Stack Identity Key|25.1 Stack Identity Key]]
+    - [[#25 Stacking#25.2 StackScope|25.2 StackScope]]
+    - [[#25 Stacking#25.3 StackPolicy|25.3 StackPolicy]]
+    - [[#25 Stacking#25.4 StackBehavior|25.4 StackBehavior]]
+    - [[#25 Stacking#25.5 MaxStackOverflowPolicy|25.5 MaxStackOverflowPolicy]]
+    - [[#25 Stacking#25.6 Stacking Examples|25.6 Stacking Examples]]
+        - [[#25.6 Stacking Examples#25.6.1 Poison Damage Over Time|25.6.1 Poison Damage Over Time]]
+        - [[#25.6 Stacking Examples#25.6.2 Simple Shield Buff|25.6.2 Simple Shield Buff]]
+        - [[#25.6 Stacking Examples#25.6.3 Rage Buff|25.6.3 Rage Buff]]
+        - [[#25.6 Stacking Examples#25.6.4 Permanent Passive|25.6.4 Permanent Passive]]
+- [[#26 Child Effects|26 Child Effects]]
+    - [[#26 Child Effects#26.1 No Target Acquisition|26.1 No Target Acquisition]]
+    - [[#26 Child Effects#26.2 Child Effect Storage|26.2 Child Effect Storage]]
+    - [[#26 Child Effects#26.3 Child Depth Fail-Safe|26.3 Child Depth Fail-Safe]]
+    - [[#26 Child Effects#26.4 Per-Tick Effect Budget|26.4 Per-Tick Effect Budget]]
+- [[#27 Deterministic Effect Processing Order|27 Deterministic Effect Processing Order]]
+- [[#28 StateEngine|28 StateEngine]]
+    - [[#28 StateEngine#28.1 StateEngine Responsibilities|28.1 StateEngine Responsibilities]]
+    - [[#28 StateEngine#28.2 Public API|28.2 Public API]]
+        - [[#28.2 Public API#28.2.1 Register Living Entity|28.2.1 Register Living Entity]]
+        - [[#28.2 Public API#28.2.2 Process Living Entities|28.2.2 Process Living Entities]]
+- [[#29 StateEngine Tick Lifecycle|29 StateEngine Tick Lifecycle]]
+    - [[#29 StateEngine Tick Lifecycle#29.1 Removal Strategy|29.1 Removal Strategy]]
+- [[#30 LivingEntityStateTracker|30 LivingEntityStateTracker]]
+    - [[#30 LivingEntityStateTracker#30.1 Responsibilities|30.1 Responsibilities]]
+    - [[#30 LivingEntityStateTracker#30.2 Snapshot and Effect History Retention|30.2 Snapshot and Effect History Retention]]
+    - [[#30 LivingEntityStateTracker#30.3 Snapshot Storage Model|30.3 Snapshot Storage Model]]
+    - [[#30 LivingEntityStateTracker#30.4 Target Scale|30.4 Target Scale]]
+    - [[#30 LivingEntityStateTracker#30.5 Current Implementation Scope|30.5 Current Implementation Scope]]
+- [[#31 Delta Format|31 Delta Format]]
+    - [[#31 Delta Format#31.1 Proposed Round-Trip Solution|31.1 Proposed Round-Trip Solution]]
+    - [[#31 Delta Format#31.2 Delta Header|31.2 Delta Header]]
+    - [[#31 Delta Format#31.3 Final State Payload|31.3 Final State Payload]]
+    - [[#31 Delta Format#31.4 Delta Versioning|31.4 Delta Versioning]]
+    - [[#31 Delta Format#31.5 Payload Flags|31.5 Payload Flags]]
+- [[#32 Logging|32 Logging]]
+- [[#33 StateEngineConfig|33 StateEngineConfig]]
+- [[#34 Performance and Allocation Requirements|34 Performance and Allocation Requirements]]
+    - [[#34 Performance and Allocation Requirements#34.1 Avoid in Hot Path|34.1 Avoid in Hot Path]]
+    - [[#34 Performance and Allocation Requirements#34.2 Scratch Buffers|34.2 Scratch Buffers]]
+- [[#35 Determinism Requirements|35 Determinism Requirements]]
+- [[#36 Validation Requirements|36 Validation Requirements]]
+    - [[#36 Validation Requirements#36.1 EffectValidator Responsibilities|36.1 EffectValidator Responsibilities]]
+    - [[#36 Validation Requirements#36.2 Validation Timing|36.2 Validation Timing]]
+    - [[#36 Validation Requirements#36.3 Validation Output|36.3 Validation Output]]
+- [[#37 Example Effect Scenarios|37 Example Effect Scenarios]]
+    - [[#37 Example Effect Scenarios#37.1 Normal Heal|37.1 Normal Heal]]
+    - [[#37 Example Effect Scenarios#37.2 Revive|37.2 Revive]]
+    - [[#37 Example Effect Scenarios#37.3 Shield Booster|37.3 Shield Booster]]
+    - [[#37 Example Effect Scenarios#37.4 Poison Damage Over Time|37.4 Poison Damage Over Time]]
+    - [[#37 Example Effect Scenarios#37.5 EMP|37.5 EMP]]
+    - [[#37 Example Effect Scenarios#37.6 Cleanse|37.6 Cleanse]]
+    - [[#37 Example Effect Scenarios#37.7 Effects open for implementation/discussion how to|37.7 Effects open for implementation/discussion how to]]
+        - [[#37.7 Effects open for implementation/discussion how to#37.7.1 Retaliation|37.7.1 Retaliation]]
+        - [[#37.7 Effects open for implementation/discussion how to#37.7.2 Lifeleach|37.7.2 Lifeleach]]
+        - [[#37.7 Effects open for implementation/discussion how to#37.7.3 CooldownReducer|37.7.3 CooldownReducer]]
+- [[#38 Implementation Milestones|38 Implementation Milestones]]
+    - [[#38 Implementation Milestones#38.1 Milestone 2 — Effect Complexity|38.1 Milestone 2 — Effect Complexity]]
+- [[#39 Testing and Acceptance Criteria|39 Testing and Acceptance Criteria]]
+    - [[#39 Testing and Acceptance Criteria#39.1 Deterministic Replay Tests|39.1 Deterministic Replay Tests]]
+    - [[#39 Testing and Acceptance Criteria#39.2 Stacking Tests|39.2 Stacking Tests]]
+    - [[#39 Testing and Acceptance Criteria#39.3 Death/Revive Tests|39.3 Death/Revive Tests]]
+    - [[#39 Testing and Acceptance Criteria#39.4 Delta Round-Trip Tests|39.4 Delta Round-Trip Tests]]
+    - [[#39 Testing and Acceptance Criteria#39.5 Rollback/Resimulation Tests|39.5 Rollback/Resimulation Tests]]
+    - [[#39 Testing and Acceptance Criteria#39.6 No-Allocation Hot-Path Tests|39.6 No-Allocation Hot-Path Tests]]
+    - [[#39 Testing and Acceptance Criteria#39.7 Child-Effect Overflow Tests|39.7 Child-Effect Overflow Tests]]
+    - [[#39 Testing and Acceptance Criteria#39.8 Condition Rebuild Tests|39.8 Condition Rebuild Tests]]
+
 
 **Version:** 6.1
 **Engine:** Godot 4.6.2  
 **Language:** C# / Mono  
 **Multiplayer:** Steam Multiplayer Peer integration is out of scope  
 **Genre:** 2D Space RPG  
-**Network Model:** Client-Server Network Model with Server Authoritative Rewind and Client-Side Prediction /
-Reconciliation
+**Network Model:** Client-Server Network Model with Server Authoritative Rewind and Client-Side Prediction / Reconciliation
 **Network ticks per second (TPS)** 30
 **Execution Context:** Host-authoritative gameplay state simulation  
 **Primary Output:** Compact packed delta data, optimized for full round trip generation
 **Target Platform:** Desktop PC  
 **Target Active Entities:** 250 living entities  
-**Document Usage:** Agentic implementation workflow, technical planning, test generation, PRD review, and iterative
-implementation guidance
+**Document Usage:** Agentic implementation workflow, technical planning, test generation, PRD review, and iterative implementation guidance
 
 ---
 
-## 1. Goal
+## 1 Goal
 
 Develop a deterministic, low-memory, low-allocation **RPG State Engine** for a 2D space RPG.
 
-The engine models gameplay living entities through one common state model. The current product scope is focused on the
-processing of such entities per Network Tick with a State engine, that encapsulated the whole state processing and
-provides convienent methods to apply effects and calculate a delta state from a simulation step.
+The engine models gameplay living entities through one common state model. The current product scope is focused on the processing of such entities per Network Tick with a State engine, that encapsulated the whole state processing and provides convienent methods to apply effects and calculate a delta state from a simulation step.
 
 The system is effect-driven:
 
@@ -47,7 +186,7 @@ The architecture must be:
 
 ---
 
-## 2. Scope
+## 2 Scope
 
 ### 2.1 In Scope
 
@@ -81,13 +220,11 @@ The following systems may create effects, but their own implementation is out of
 - Weapons
 - Ship systems
 
-Network synchronization transport itself is out of scope. However, the **StateEngine** must support host-authoritative
-active effect inputs from the past, applying corrections to past ticks, and resimulating from stored state and effect
-history and generate a delta from simulated tick.
+Network synchronization transport itself is out of scope. However, the **StateEngine** must support host-authoritative active effect inputs from the past, applying corrections to past ticks, and resimulating from stored state and effect history and generate a delta from simulated tick.
 
 ---
 
-## 3. First Use Case
+## 3 First Use Case
 
 The first use case is a deterministic test simulation.
 
@@ -107,8 +244,7 @@ Expected active effect changes
 The initial implementation must be able to:
 
 1. Register/Unregister predefined living entity.
-2. Process predefined effects in deterministic order for all registered entities for one simulation step with
-   resimulation past states and effects.
+2. Process predefined effects in deterministic order for all registered entities for one simulation step with resimulation past states and effects.
 3. Produce compact deltas.
 4. Provide a final livinEntityState for the latest networktick
 
@@ -116,7 +252,7 @@ The first use case is not a visual gameplay scene. It is a simulation correctnes
 
 ---
 
-## 4. Tick Model
+## 4 Tick Model
 
 ### 4.1 Godot Physics Loop
 
@@ -138,8 +274,7 @@ Slow StateEngine tick: 15 TPS
 Slow StateEngine execution: every 4th physics frame
 ``````
 
-Note that this is only for clarification. `StateEngine` gets called and does not use `_PhysicsProcess` or `_Process`
-itself.
+Note that this is only for clarification. `StateEngine` gets called and does not use `_PhysicsProcess` or `_Process` itself.
 
 ### 4.2 NetworkTick
 
@@ -161,12 +296,8 @@ This includes:
 - Effect execution interval
 - Effect expiry
 - Regeneration interval
-- Snapshot retention (Snapshot retention defines how many past simulation ticks are kept in memory for rollback and
-  resimulation. Each retained tick must provide enough LivingEntityState and applied ActiveEffect history to reconstruct
-  the current state from a corrected past tick.)
-- Resimulation windows (The resimulation window is the number of simulation ticks replayed after applying a retained
-  past state. It is calculated as current NetworkTick minus the corrected delta NetworkTick. The StateEngine must retain
-  enough snapshots and applied ActiveEffect history to replay this window deterministically.)
+- Snapshot retention (Snapshot retention defines how many past simulation ticks are kept in memory for rollback and resimulation. Each retained tick must provide enough LivingEntityState and applied ActiveEffect history to reconstruct the current state from a corrected past tick.)
+- Resimulation windows (The resimulation window is the number of simulation ticks replayed after applying a retained past state. It is calculated as current NetworkTick minus the corrected delta NetworkTick. The StateEngine must retain enough snapshots and applied ActiveEffect history to replay this window deterministically.)
 - Active effect history
 
 ### 4.3 Slow Simulation
@@ -181,18 +312,15 @@ Slow StateEngine: 15 TPS
 Slow tick condition: NetworkTick % 2 == 0
 ```
 
-The slow lane is intended for lower-frequency systems, such as survival/resource maintenance, non-combat background
-state, permanent/passive effects that do not need to execute every fast tick, and non-urgent active-effect capacity
-maintenance. Examples include:
+The slow lane is intended for lower-frequency systems, such as survival/resource maintenance, non-combat background state, permanent/passive effects that do not need to execute every fast tick, and non-urgent active-effect capacity maintenance. Examples include:
 
 - Oxygen consumption/generation
 - Food consumption/generation
 - Water consumption/generation
 - Permanent effects (e.g. provided from items or passives)
 
-Permanent effects belong to both simulation lanes.
-The important part is, that added or subtracted stat bonus or malus resulting from permanent modifiers must be applied
-every fast lane Tick.
+Permanent effects  belong to both simulation lanes.
+The important part is, that added or subtracted stat bonus or malus resulting from permanent modifiers must be applied every fast lane Tick.
 But the recalculation of that bonus or malus should only be recalculated if
 Permanent effects where added, removed, or dirtied by their source state.
 
@@ -207,12 +335,11 @@ Minimum Effect duration: 100 ms
 Runtime representation: long NetworkTick values
 ```
 
-The runtime must not use wall-clock duration values for simulation decisions. Runtime only knows NetworkTicks. But
-EffectDefinition must use ms.
+The runtime must not use wall-clock duration values for simulation decisions. Runtime only knows NetworkTicks. But EffectDefinition must use ms.
 
 ---
 
-## 5. Core Runtime Model
+## 5 Core Runtime Model
 
 The required runtime model is:
 
@@ -255,7 +382,7 @@ DeltaWriterBuffer
 
 ---
 
-## 6. Core Architecture
+## 6 Core Architecture
 
 ### 6.1 High-Level Flow
 
@@ -289,21 +416,17 @@ Only the **StateEngine** may mutate it:
 - Derived state
 - Delta state
 
-Gameplay systems may create `ActiveEffect` instances, but those effects are requests. The StateEngine decides whether
-they are valid and how they modify state.
+Gameplay systems may create `ActiveEffect` instances, but those effects are requests. The StateEngine decides whether they are valid and how they modify state.
 
 ---
 
-## 7. Entity Model
+## 7 Entity Model
 
 ### 7.1 Player Controller Composition
 
-A `PlayerController` or `AgentController` are `LivingEntities` and they own a `LivingEntityState` by composition.
-Therefor `StageEngine` does not need to care which origin it has. Every registered LivingEntity is processed. The
-StateEngine handles everything internal.
+A `PlayerController` or `AgentController` are `LivingEntities` and they own a `LivingEntityState` by composition. Therefor `StageEngine` does not need to care which origin it has. Every registered LivingEntity is processed. The StateEngine handles everything internal.
 
-The StateEngine does not model direct control ownership logic. It only processes simulation steps and provide updated
-`LivingEntitieStates` for LivingEntity.
+The StateEngine does not model direct control ownership logic. It only processes simulation steps and provide updated `LivingEntitieStates` for LivingEntity.
 
 ### 7.2 LivingEntity
 
@@ -326,7 +449,7 @@ The `LivingEntityState` itself must not contain complex gameplay mutation logic.
 
 ---
 
-## 8. LivingEntityState
+## 8 LivingEntityState
 
 A `LivingEntityState` represents the complete simulation state of a living entity for the current `NetworkTick`.
 
@@ -373,7 +496,7 @@ This avoids dictionary lookups and object allocation in the hot path.
 
 ---
 
-## 9. Stats
+## 9 Stats
 
 Stats describe numeric properties of a `LivingEntity`.
 
@@ -391,11 +514,11 @@ CurrentValue
 
 ### 9.1 Stat Value Definitions
 
-| Value          | Description                                                                                                      |
-|----------------|------------------------------------------------------------------------------------------------------------------|
-| `BaseValue`    | The natural/default value of the stat without active modifiers. Runtime mutation of `BaseValue` is out of scope. |
-| `MaxValue`     | The current maximum value the stat can reach, including active modifiers.                                        |
-| `CurrentValue` | The current value of the stat, usually clamped between `0` and `MaxValue`.                                       |
+| Value | Description |
+|---|---|
+| `BaseValue` | The natural/default value of the stat without active modifiers. Runtime mutation of `BaseValue` is out of scope. |
+| `MaxValue` | The current maximum value the stat can reach, including active modifiers. |
+| `CurrentValue` | The current value of the stat, usually clamped between `0` and `MaxValue`. |
 
 ### 9.2 BaseValue Mutation
 
@@ -407,34 +530,34 @@ For this PRD, `BaseValues[]` are provided as valid and unchangeable when registe
 
 The following table is the current stat list for this PRD.
 
-| Stat                      |           Range | Simulation Lane | Description                                                                                                                   |
-|---------------------------|----------------:|-----------------|-------------------------------------------------------------------------------------------------------------------------------|
-| `Health`                  | `[0, maxFloat]` | Fast 30 TPS     | If at zero, death is inferred.                                                                                                |
-| `EnergyStorage`           | `[0, maxFloat]` | Fast 30 TPS     | Used for certain skills or afterburning.                                                                                      |
-| `Shield`                  | `[0, maxFloat]` | Fast 30 TPS     | Absorbs incoming damage. Applied before armor.                                                                                |
-| `Armor`                   | `[0, maxFloat]` | Fast 30 TPS     | Determines the percentage of applied damage that is reduced.                                                                  |
-| `Speed`                   | `[0, maxFloat]` | Fast 30 TPS     | Determines how fast the player can go. Effective movement use is out of scope for this PRD.                                   |
-| `Acceleration`            | `[0, maxFloat]` | Fast 30 TPS     | Determines how fast the player reaches speed. Effective movement use is out of scope for this PRD.                            |
-| `AfterBurnerSpeed`        | `[0, maxFloat]` | Fast 30 TPS     | Determines how fast the player can go with afterburner. Effective movement use is out of scope for this PRD.                  |
-| `AfterBurnerAcceleration` | `[0, maxFloat]` | Fast 30 TPS     | Determines how fast the player reaches max afterburner speed. Effective movement use is out of scope for this PRD.            |
-| `CriticalHitChance`       | `[0, maxFloat]` | Fast 30 TPS     | Determines percentage chance to make a critical hit. Effective combat roll use is out of scope for this PRD.                  |
-| `CriticalHitBonusDamage`  | `[0, maxFloat]` | Fast 30 TPS     | Determines how much bonus damage is applied on a critical hit. Effective combat roll use is out of scope for this PRD.        |
-| `AttackSpeed`             | `[0, maxFloat]` | Fast 30 TPS     | Reduces time between attacks in percent. Effective attack scheduling is out of scope for this PRD.                            |
-| `CoolDownReducation`      | `[0, maxFloat]` | Fast 30 TPS     | Flat amount applied to `Health` each regeneration tick.                                                                       |
-| `HealthRegeneration`      | `[0, maxFloat]` | Fast 30 TPS     | Flat amount applied to `Health` each regeneration tick.                                                                       |
-| `EnergyProduction`        | `[0, maxFloat]` | Fast 30 TPS     | Flat amount applied to `EnergyStorage` each regeneration tick.                                                                |
-| `EnergyConsumption`       | `[0, maxFloat]` | Fast 30 TPS     | Flat amount subtracted from `EnergyStorage` each regeneration tick.                                                           |
-| `ShieldRegeneration`      | `[0, maxFloat]` | Fast 30 TPS     | Flat amount applied to `Shield` each regeneration tick.                                                                       |
-| `ShieldRechargeDuration`  | `[0, maxFloat]` | Fast 30 TPS     | Time in seconds the shield needs before restoration after reaching zero.                                                      |
-| `OxygenConsumption`       | `[0, maxFloat]` | Slow 15 TPS     | Flat amount subtracted from `OxygenStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD. |
-| `OxygenGeneration`        | `[0, maxFloat]` | Slow 15 TPS     | Flat amount applied to `OxygenStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD.      |
-| `FoodConsumption`         | `[0, maxFloat]` | Slow 15 TPS     | Flat amount subtracted from `FoodStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD.   |
-| `FoodGeneration`          | `[0, maxFloat]` | Slow 15 TPS     | Flat amount applied to `FoodStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD.        |
-| `WaterConsumption`        | `[0, maxFloat]` | Slow 15 TPS     | Flat amount subtracted from `WaterStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD.  |
-| `WaterGeneration`         | `[0, maxFloat]` | Slow 15 TPS     | Flat amount applied to `WaterStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD.       |
-| `OxygenStorage`           | `[0, maxFloat]` | Slow 15 TPS     | Determines how much oxygen is left. Effective survival use is out of scope for this PRD.                                      |
-| `FoodStorage`             | `[0, maxFloat]` | Slow 15 TPS     | Determines how much food is left. Effective survival use is out of scope for this PRD.                                        |
-| `WaterStorage`            | `[0, maxFloat]` | Slow 15 TPS     | Determines how much water is left. Effective survival use is out of scope for this PRD.                                       |
+| Stat | Range | Simulation Lane | Description |
+|---|---:|---|---|
+| `Health` | `[0, maxFloat]` | Fast 30 TPS | If at zero, death is inferred. |
+| `EnergyStorage` | `[0, maxFloat]` | Fast 30 TPS | Used for certain skills or afterburning. |
+| `Shield` | `[0, maxFloat]` | Fast 30 TPS | Absorbs incoming damage. Applied before armor. |
+| `Armor` | `[0, maxFloat]` | Fast 30 TPS | Determines the percentage of applied damage that is reduced. |
+| `Speed` | `[0, maxFloat]` | Fast 30 TPS | Determines how fast the player can go. Effective movement use is out of scope for this PRD. |
+| `Acceleration` | `[0, maxFloat]` | Fast 30 TPS | Determines how fast the player reaches speed. Effective movement use is out of scope for this PRD. |
+| `AfterBurnerSpeed` | `[0, maxFloat]` | Fast 30 TPS | Determines how fast the player can go with afterburner. Effective movement use is out of scope for this PRD. |
+| `AfterBurnerAcceleration` | `[0, maxFloat]` | Fast 30 TPS | Determines how fast the player reaches max afterburner speed. Effective movement use is out of scope for this PRD. |
+| `CriticalHitChance` | `[0, maxFloat]` | Fast 30 TPS | Determines percentage chance to make a critical hit. Effective combat roll use is out of scope for this PRD. |
+| `CriticalHitBonusDamage` | `[0, maxFloat]` | Fast 30 TPS | Determines how much bonus damage is applied on a critical hit. Effective combat roll use is out of scope for this PRD. |
+| `AttackSpeed` | `[0, maxFloat]` | Fast 30 TPS | Reduces time between attacks in percent. Effective attack scheduling is out of scope for this PRD. |
+| `CoolDownReducation` | `[0, maxFloat]` | Fast 30 TPS | Flat amount applied to `Health` each regeneration tick. |
+| `HealthRegeneration` | `[0, maxFloat]` | Fast 30 TPS | Flat amount applied to `Health` each regeneration tick. |
+| `EnergyProduction` | `[0, maxFloat]` | Fast 30 TPS | Flat amount applied to `EnergyStorage` each regeneration tick. |
+| `EnergyConsumption` | `[0, maxFloat]` | Fast 30 TPS | Flat amount subtracted from `EnergyStorage` each regeneration tick. |
+| `ShieldRegeneration` | `[0, maxFloat]` | Fast 30 TPS | Flat amount applied to `Shield` each regeneration tick. |
+| `ShieldRechargeDuration` | `[0, maxFloat]` | Fast 30 TPS | Time in seconds the shield needs before restoration after reaching zero. |
+| `OxygenConsumption` | `[0, maxFloat]` | Slow 15 TPS | Flat amount subtracted from `OxygenStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD. |
+| `OxygenGeneration` | `[0, maxFloat]` | Slow 15 TPS | Flat amount applied to `OxygenStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD. |
+| `FoodConsumption` | `[0, maxFloat]` | Slow 15 TPS | Flat amount subtracted from `FoodStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD. |
+| `FoodGeneration` | `[0, maxFloat]` | Slow 15 TPS | Flat amount applied to `FoodStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD. |
+| `WaterConsumption` | `[0, maxFloat]` | Slow 15 TPS | Flat amount subtracted from `WaterStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD. |
+| `WaterGeneration` | `[0, maxFloat]` | Slow 15 TPS | Flat amount applied to `WaterStorage` each slow regeneration tick. Effective survival use is out of scope for this PRD. |
+| `OxygenStorage` | `[0, maxFloat]` | Slow 15 TPS | Determines how much oxygen is left. Effective survival use is out of scope for this PRD. |
+| `FoodStorage` | `[0, maxFloat]` | Slow 15 TPS | Determines how much food is left. Effective survival use is out of scope for this PRD. |
+| `WaterStorage` | `[0, maxFloat]` | Slow 15 TPS | Determines how much water is left. Effective survival use is out of scope for this PRD. |
 
 ### 9.4 Stat Dirty Tracking
 
@@ -452,7 +575,7 @@ Dirty stats are used to determine whether delta data must be emitted.
 
 ---
 
-## 10. Stat Modification Model
+## 10 Stat Modification Model
 
 Effects do not directly mutate stat values.
 
@@ -483,28 +606,27 @@ StatModificationRecord:
 
 Each stat-mutating effect targets exactly one value kind:
 
-| Value     | Description                   |
-|-----------|-------------------------------|
+| Value | Description |
+|---|---|
 | `Current` | Modifies only `CurrentValue`. |
-| `Max`     | Modifies only `MaxValue`.     |
+| `Max` | Modifies only `MaxValue`. |
 
 `CurrentAndMax` is intentionally removed from this PRD.
 
-If a gameplay concept needs to modify both current and max values, it must be represented as a parent effect with child
-effects, one targeting `Current` and one targeting `Max`.
+If a gameplay concept needs to modify both current and max values, it must be represented as a parent effect with child effects, one targeting `Current` and one targeting `Max`.
 
 ### 10.3 Manipulation
 
-| Value    | Description                 |
-|----------|-----------------------------|
-| `Raise`  | Increases the target value. |
+| Value | Description |
+|---|---|
+| `Raise` | Increases the target value. |
 | `Reduce` | Decreases the target value. |
 
 ### 10.4 Calculation
 
-| Value        | Description                                                      |
-|--------------|------------------------------------------------------------------|
-| `Flat`       | Applies a fixed value directly.                                  |
+| Value | Description |
+|---|---|
+| `Flat` | Applies a fixed value directly. |
 | `Percentage` | Adds to the additive percentage modifier for the targeted value. |
 
 A single effect target cannot modify flat and percentage values at the same time.
@@ -528,7 +650,7 @@ The engine must not multiply percentage modifiers together
 
 ---
 
-## 11. Stat Calculation Order
+## 11 Stat Calculation Order
 
 For each affected stat, the StateEngine resolves stat changes in this deterministic order:
 
@@ -552,8 +674,7 @@ CurrentValue old:   40
 CurrentValue new:   60
 ```
 
-If `MaxValue` is reduced and `CurrentValue` is higher than the new `MaxValue`, `CurrentValue` is clamped to the new
-`MaxValue`.
+If `MaxValue` is reduced and `CurrentValue` is higher than the new `MaxValue`, `CurrentValue` is clamped to the new `MaxValue`.
 
 ```text
 MaxValue previous: 100
@@ -581,7 +702,7 @@ This avoids accumulated drift and supports resimulation.
 
 ---
 
-## 12. Regeneration
+## 12 Regeneration
 
 Regeneration tick rate is defined as a global StateEngine setting.
 
@@ -594,12 +715,11 @@ GlobalRegenerationIntervalTicks - calculates once on startup from RegenerationIn
 
 Regeneration is applied only when its interval condition is met. Based on stat this can be slow or fast lane
 
-Regeneration should be represented internally as stat modification records or an equivalent deterministic scratch-buffer
-operation.
+Regeneration should be represented internally as stat modification records or an equivalent deterministic scratch-buffer operation.
 
 ---
 
-## 13. Conditions
+## 13 Conditions
 
 `LivingEntityCondition` is the single condition vocabulary used by the StateEngine.
 
@@ -644,8 +764,7 @@ Infected
 
 If the entity is not `Dead`, it is considered alive enough for StateEngine processing. Clean State is `None`.
 
-Lifecycle states such as `Spawned`, `Initialized`, `wait_for_revive`, and `ready_for_revive` are intentionally removed
-from this PRD.
+Lifecycle states such as `Spawned`, `Initialized`, `wait_for_revive`, and `ready_for_revive` are intentionally removed from this PRD.
 
 Assumption:
 
@@ -653,7 +772,7 @@ Assumption:
 When StateEngine is called, the input state is valid to process.
 ```
 
-### 13.4 Condition Operations
+### 13.2 Condition Operations
 
 Conditions are not changed directly by effects.
 
@@ -668,7 +787,7 @@ ConditionAddRequest[]
 ConditionRemoveRequest[]
 ```
 
-### 13.6 Dead Default Blocking Rule
+### 13.3 Dead Default Blocking Rule
 
 `Dead` blocks effects by default.
 
@@ -698,15 +817,13 @@ Revive:
 CanTriggerWhileDead = true
 ```
 
-This default is safer because designers must intentionally mark revive, resurrection, corpse, or death-related effects
-as triggerable while dead.
+This default is safer because designers must intentionally mark revive, resurrection, corpse, or death-related effects as triggerable while dead.
 
-## 14. Effect-Driven Gameplay
+## 14 Effect-Driven Gameplay
 
 Gameplay is entirely driven by effects.
 
-Gameplay systems do not modify `LivingEntityState` directly. Instead, they produce `ActiveEffect` instances based on
-immutable `EffectDefinition` data.
+Gameplay systems do not modify `LivingEntityState` directly. Instead, they produce `ActiveEffect` instances based on immutable `EffectDefinition` data.
 
 Examples:
 
@@ -730,7 +847,7 @@ The StateEngine is solely responsible for determining:
 
 ---
 
-## 15. EffectDefinition
+## 15 EffectDefinition
 
 An **EffectDefinition** is immutable static data.
 
@@ -791,6 +908,7 @@ EffectDefinition:
 - IsEffectContainer
 ```
 
+
 ### 15.2 EffectDefinition Validity Rule
 
 An effect must contain at least one of the following:
@@ -807,8 +925,7 @@ OR
 ChildEffectDefinitionIds AND isEffectContainer == true (See Single Target Rule)
 ```
 
-Effects with none of these are invalid and must fail validation. EffectDefinitions are validated only once at start up
-and are only valid if all childs are also valid.
+Effects with none of these are invalid and must fail validation. EffectDefinitions are validated only once at start up and are only valid if all childs are also valid.
 
 ### 15.3 Single Target Rule
 
@@ -829,8 +946,7 @@ This keeps each effect small, explicit, reusable, and easier to validate.
 
 ### 15.4 Effect Classification
 
-Effects use `EffectClassifications`, which are flags attached to the `ActiveEffect` for identifying and matching. E. g.
-remove all `ActiveEffects` that apply `EffectClassification: Poison`, or remove all debuffs.
+Effects use `EffectClassifications`, which are flags attached to the `ActiveEffect` for identifying and matching. E. g. remove all `ActiveEffects` that apply `EffectClassification: Poison`, or remove all debuffs.
 
 Initial classifications include:
 
@@ -876,10 +992,9 @@ If StackGroupId is empty or zero:
 Then apply StackScope fields.
 ```
 
-This allows designers to make multiple definitions behave as the same stack family when required, while still keeping a
-safe default for ordinary effects.
+This allows designers to make multiple definitions behave as the same stack family when required, while still keeping a safe default for ordinary effects.
 
-## 16. Effect Target
+## 16 Effect Target
 
 Each effect may target zero or one stat.
 
@@ -928,7 +1043,7 @@ Value: 0.15
 
 ---
 
-## 17. ActiveEffect
+## 17 ActiveEffect
 
 An `ActiveEffect` is runtime effect state.
 
@@ -969,8 +1084,7 @@ ActiveEffect[] ActiveEffects
 int ActiveEffectCount
 ```
 
-Child effects are not stored as nested object collections. They are resolved on the first application and stored as
-seperat ActiveEffects.
+Child effects are not stored as nested object collections. They are resolved on the first application and stored as seperat ActiveEffects.
 
 Each child effect stores:
 
@@ -979,12 +1093,11 @@ ParentActiveEffectId
 ChildDepth
 ```
 
-This keeps iteration fast, avoids recursive traversal, avoids child collection allocation, and allows child effect
-processing to use the same deterministic queue rules as normal effects.
+This keeps iteration fast, avoids recursive traversal, avoids child collection allocation, and allows child effect processing to use the same deterministic queue rules as normal effects.
 
 ---
 
-## 18. Effect Sources
+## 18 Effect Sources
 
 Effect source information is used for causality, stacking, removal, and debug output.
 
@@ -1037,31 +1150,30 @@ It assumes that every effect that is processed was already a valid hit when proc
 
 ---
 
-## 19. Effect Trigger
+## 19 Effect Trigger
 
 The trigger defines when the effect is executed by the StateEngine.
 
-| Trigger                                               | Description                                                                                    |
-|-------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `Immediate`                                           | Executed immediately when processed by the engine. Default.                                    |
-| `OverTime(applicationIntervallInMs)`                  | Executed repeatedly for the given duration every x ms while active. Internal handled with TPS. |
-| `OnExpire`                                            | Executed once when the effect duration expires.                                                |
-| `OnRemoval`                                           | Executed once when the effect gets removed.                                                    |
-| `OnConditionsPresent(conditions, duration)`           | Executed while or when a required condition is present.                                        |
-| `OnConditionsMissing(conditions, duration)`           | Executed while or when a required condition is missing.                                        |
-| `OnClassificationsPresent(Classifications, duration)` | Executed while or when a required classification is present.                                   |
-| `OnClassificationsMissing(Classifications, duration)` | Executed while or when a required classification is missing.                                   |
-| `OnStatReduced(duration, Stat, TargetValueKind)`      | Executed when the tracked stat is actually reduced by a valid stat modification record.        |
-| `OnStatRaised(duration, Stat, TargetValueKind)`       | Executed when the tracked stat is actually raised by a valid stat modification record.         |
-| `OnStatValueBelow(tresholdPercent, Stat)`             | Executed when the tracked stats current is below or equal tresholdPercent                      |
-| `OnStatValueAbove(tresholdPercent, Stat)`             | Executed when the tracked stats current is above or equal tresholdPercent                      |
+| Trigger | Description |
+|---|---|
+| `Immediate` | Executed immediately when processed by the engine. Default. |
+| `OverTime(applicationIntervallInMs)` | Executed repeatedly for the given duration every x ms while active. Internal handled with TPS.|
+| `OnExpire` | Executed once when the effect duration expires. |
+| `OnRemoval` | Executed once when the effect gets removed. |
+| `OnConditionsPresent(conditions, duration)` | Executed while or when a required condition is present. |
+| `OnConditionsMissing(conditions, duration)` | Executed while or when a required condition is missing. |
+| `OnClassificationsPresent(Classifications, duration)` | Executed while or when a required classification is present. |
+| `OnClassificationsMissing(Classifications, duration)` | Executed while or when a required classification is missing. |
+| `OnStatReduced(duration, Stat, TargetValueKind)` | Executed when the tracked stat is actually reduced by a valid stat modification record. |
+| `OnStatRaised(duration, Stat, TargetValueKind)` | Executed when the tracked stat is actually raised by a valid stat modification record. |
+| `OnStatValueBelow(tresholdPercent, Stat)` | Executed when the tracked stats current is below or equal tresholdPercent |
+| `OnStatValueAbove(tresholdPercent, Stat)` | Executed when the tracked stats current is above or equal tresholdPercent |
 
 All trigger timing uses `NetworkTick` values at runtime.
 
 ### 19.1 OnStatRaised / OnStatReduced Rule
 
-`OnStatRaised` and `OnStatReduced` trigger from actual validated stat modification records, not from the final
-consolidated outcome.
+`OnStatRaised` and `OnStatReduced` trigger from actual validated stat modification records, not from the final consolidated outcome.
 
 Example:
 
@@ -1077,6 +1189,7 @@ In this case:
 OnStatReduced(Health) must trigger because Health was actually reduced.
 OnStatRaised(Health) must trigger because Health was actually raised.
 ```
+
 
 ### 19.2 OnStatValueBelow / OnStatValueAbove Rule
 
@@ -1116,15 +1229,15 @@ OnStatValueBelow(80, Health) must trigger because Health is finally at 80 which 
 
 ---
 
-## 20. Effect Duration
+## 20 Effect Duration
 
 The duration defines how long an effect remains active.
 
-| Duration        | Description                                                              |
-|-----------------|--------------------------------------------------------------------------|
-| `Once`          | Applied once, then consumed and removed. Default.                        |
-| `Temporary(ms)` | Remains active for a fixed number of ms. Internal handled as TPS         |
-| `Permanent`     | Remains active until explicitly removed by its source or another effect. |
+| Duration | Description |
+|---|---|
+| `Once` | Applied once, then consumed and removed. Default. |
+| `Temporary(ms)` | Remains active for a fixed number of ms. Internal handled as TPS |
+| `Permanent` | Remains active until explicitly removed by its source or another effect. |
 
 Temporary effects expire when:
 
@@ -1138,7 +1251,7 @@ Duration is in seconds and converted to runtime ticks during effect creation or 
 
 ---
 
-## 21. Blocking
+## 21 Blocking
 
 Effects may be blocked by conditions.
 
@@ -1158,6 +1271,7 @@ BlockedByClassifications:
 - ActiveEffect2 has BlockedByClassification: ImmunToPoison
 Then ActiveEffect 2 is blocked. See how to deal with Blocking in BlockPolicy 
 ```
+
 
 If the target has any blocking condition or classification, the effect cannot execute for that tick.
 
@@ -1187,14 +1301,14 @@ Manipulation: Raise
 
 ---
 
-## 22. BlockPolicy
+## 22 BlockPolicy
 
 The `BlockPolicy` defines what happens when an effect cannot execute.
 
-| Policy          | Description                                                                                          |
-|-----------------|------------------------------------------------------------------------------------------------------|
-| `ConsumeOnFail` | The effect is consumed even if execution was blocked. Default.                                       |
-| `Retry`         | The effect remains active and retries execution when it is due next time (depending on its trigger). |
+| Policy | Description |
+|---|---|
+| `ConsumeOnFail` | The effect is consumed even if execution was blocked. Default. |
+| `Retry` | The effect remains active and retries execution when it is due next time (depending on its trigger). |
 
 If an effect is blocked and its policy is `Retry`, it remains active until:
 
@@ -1205,7 +1319,7 @@ If an effect is blocked and its policy is `Retry`, it remains active until:
 
 ---
 
-## 23. Effect Removal
+## 23 Effect Removal
 
 ### 23.1 EffectRemovalRequest
 
@@ -1213,9 +1327,7 @@ Active effects may request that the StateEngine remove other active effects.
 
 Effects do not remove other effects directly.
 
-Instead, an `ActiveEffect` provides one or more removal requests. The StateEngine validates and applies it
-deterministically. The Effect has to trigger, to iniate the removal requests. The Effect can request to remove
-activeEffects identified by the following:
+Instead, an `ActiveEffect` provides one or more removal requests. The StateEngine validates and applies it deterministically. The Effect has to trigger, to iniate the removal requests. The Effect can request to remove activeEffects identified by the following:
 
 ```text
 EffectRemovalRequest:
@@ -1229,12 +1341,7 @@ EffectRemovalRequest:
   
 ```
 
-If the RemovalRequest can identify any achtive effects of the provided EffectRemovalRequest Fields, than
-EffectRemovalPolicy is from found effect is evaluated. If evaluated to true, the effect will be removed. If the request
-is poplulated with multiple fields (like EffectDefinitionIds, OriginIds) both must match. But inside OriginIds only one
-must match. Example: find all EffectDefinitionIds from Definition StackableSuperBuff from a given originId (e.g.
-Player).
-
+If the RemovalRequest can identify any achtive effects of the provided EffectRemovalRequest Fields, than EffectRemovalPolicy is from found effect is evaluated. If evaluated to true, the effect will be removed. If the request is poplulated with multiple fields (like EffectDefinitionIds, OriginIds) both must match. But inside OriginIds only one must match. Example: find all EffectDefinitionIds from Definition StackableSuperBuff from a given originId (e.g. Player).
 ```text
 EffectRemovalRequest:
 - EffectDefinitionIds: "StackableSuperBuff"
@@ -1242,10 +1349,9 @@ EffectRemovalRequest:
 Request removal of all StackableSuperBuff ActiveEffects from source 123456  
 ```
 
-### 23.2 EffectRemovalPolicy
 
-If an activeEffect requests removal of other activeEffects, the following policies decide if it is allowed or not to
-remove the effects.
+### 23.2 EffectRemovalPolicy
+If an activeEffect requests removal of other activeEffects, the following policies decide if it is allowed or not to remove the effects.
 
 ```text
 EffectRemovalPolicy:
@@ -1261,22 +1367,18 @@ Additional Infos:
   
 ```
 
-This default allows easy removal in most cases. Effects that want to be removed stricter, have to define a tighter
-EffectRemovalPolicy
+This default allows easy removal in most cases. Effects that want to be removed stricter, have to define a tighter EffectRemovalPolicy
 
-### 23.2 Removal Validation
+### 23.3 Removal Validation
 
-An Effect gets triggerd, the state engine evaluates its removal request and provides identified effects based on the
-removal request.
+An Effect gets triggerd, the state engine evaluates its removal request and provides identified effects based on the removal request.
 
-If `EffectRemovalPolicy` is ByEffectDefinitionId than the removal requester effect must have this EffectDefinitionId to
-allow the state engine to remove the for removal targeted effect.
+If `EffectRemovalPolicy` is ByEffectDefinitionId than the removal requester effect must have this EffectDefinitionId to allow the state engine to remove the for removal targeted effect.
 
 If the removed Effect has the the trigger OnRemoval (see triggers), than it must at least trigger once before consumed.
 
-If `EffectRemovalPolicy` is ByClassifications(classifications), then EffectRemovalPolicy allows removal if one of the
-provided classifications for `EffectRemovalPolicy` ByClassifications(classifications) must match with only one
-classification from EffectRemovalRequest.classifications. Analog for Conditions.
+If `EffectRemovalPolicy` is ByClassifications(classifications), then EffectRemovalPolicy allows removal if one of the provided classifications for `EffectRemovalPolicy` ByClassifications(classifications) must match with only one classification from EffectRemovalRequest.classifications. Analog for Conditions.
+
 
 Examples:
 
@@ -1325,19 +1427,19 @@ A removal request may fail if:
 
 Failure must be deterministic
 
-## 24. Visibility
+## 24 Visibility
 
 Visibility defines whether an effect is shown to the player.
 
-| Value      | Description                        |
-|------------|------------------------------------|
-| `Hud`      | Shown in the HUD and skill menu.   |
-| `Menu`     | Shown only in the skill menu.      |
+| Value | Description |
+|---|---|
+| `Hud` | Shown in the HUD and skill menu. |
+| `Menu` | Shown only in the skill menu. |
 | `Internal` | Hidden from HUD and menu. Default. |
 
 ---
 
-## 25. Stacking
+## 25 Stacking
 
 Stacking is split into four concepts:
 
@@ -1373,41 +1475,39 @@ Suggested implementation boundary:
 StackIdentityKey BuildStackIdentityKey(ActiveEffect effect, EffectDefinition definition)
 ```
 
-This lets designers decide whether different effect definitions belong to the same stack family by assigning a shared
-`StackGroupId`.
+This lets designers decide whether different effect definitions belong to the same stack family by assigning a shared `StackGroupId`.
 
 ### 25.2 StackScope
 
 `StackScope` defines which runtime source fields are used when checking for duplicate effects.
 
-| Scope                 | Description                                                                                                        |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------|
-| `SameSource`          | Effects with the same `SourceId` are considered duplicates within the selected stack base identity.                |
+| Scope | Description |
+|---|---|
+| `SameSource` | Effects with the same `SourceId` are considered duplicates within the selected stack base identity. |
 | `SameSourceAndOrigin` | Effects with the same `SourceId` and `OriginId` are considered duplicates within the selected stack base identity. |
 
 ### 25.3 StackPolicy
 
 `StackPolicy` defines whether duplicate effects are accepted.
 
-| Policy    | Description                                                |
-|-----------|------------------------------------------------------------|
-| `Stack`   | The effect stacks according to `StackBehavior`.            |
-| `Replace` | The existing effect is replaced by the new one.            |
+| Policy | Description |
+|---|---|
+| `Stack` | The effect stacks according to `StackBehavior`. |
+| `Replace` | The existing effect is replaced by the new one. |
 | `Discard` | The new effect is discarded if a duplicate already exists. |
 
 ### 25.4 StackBehavior
 
 `StackBehavior` defines how accepted stacks behave.
 
-| Behavior                     | Description                                                    | Recommended representation                  |
-|------------------------------|----------------------------------------------------------------|---------------------------------------------|
-| `IndependentStacks(default)` | Each stack has its own duration and tick timer.                | Separate `ActiveEffect` entry per stack.    |
-| `RefreshDuration`            | Value is unchanged; duration is refreshed.                     | One `ActiveEffect` entry.                   |
-| `AddStackRefreshDuration`    | Stack count increases and duration is refreshed.               | One `ActiveEffect` entry with `StackCount`. |
-| `AddStackNoRefresh`          | Stack count increases but existing duration remains unchanged. | One `ActiveEffect` entry with `StackCount`. |
+| Behavior | Description | Recommended representation |
+|---|---|---|
+| `IndependentStacks(default)` | Each stack has its own duration and tick timer. | Separate `ActiveEffect` entry per stack. |
+| `RefreshDuration` | Value is unchanged; duration is refreshed. | One `ActiveEffect` entry. |
+| `AddStackRefreshDuration` | Stack count increases and duration is refreshed. | One `ActiveEffect` entry with `StackCount`. |
+| `AddStackNoRefresh` | Stack count increases but existing duration remains unchanged. | One `ActiveEffect` entry with `StackCount`. |
 
-`IndependentStacks` is the preferred default for stackable damage-over-time effects because it is deterministic, easy to
-compute, and does not require per-stack timers inside one object.
+`IndependentStacks` is the preferred default for stackable damage-over-time effects because it is deterministic, easy to compute, and does not require per-stack timers inside one object.
 
 ### 25.5 MaxStackOverflowPolicy
 
@@ -1438,7 +1538,7 @@ Oldest is determined by:
 
 ### 25.6 Stacking Examples
 
-#### Poison Damage Over Time
+#### 25.6.1 Poison Damage Over Time
 
 ```text
 StackPolicy: Stack
@@ -1459,7 +1559,7 @@ When MaxStacks is reached, the oldest poison stack is replaced.
 
 This is deterministic and easy to compute.
 
-#### Simple Shield Buff
+#### 25.6.2 Simple Shield Buff
 
 ```text
 StackPolicy: Replace
@@ -1476,7 +1576,7 @@ The value does not multiply.
 The duration is refreshed.
 ```
 
-#### Rage Buff
+#### 25.6.3 Rage Buff
 
 ```text
 StackPolicy: Stack
@@ -1494,7 +1594,7 @@ The stat value may scale by StackCount.
 When MaxStacks is reached, the oldest accepted stack contribution is replaced or refreshed according to implementation representation.
 ```
 
-#### Permanent Passive
+#### 25.6.4 Permanent Passive
 
 ```text
 StackPolicy: Discard
@@ -1513,7 +1613,7 @@ Permanent passive modifiers recalculate only when added, removed, or dirtied by 
 Permanent periodic effects execute every slow tick or by their configured interval.
 ```
 
-## 26. Child Effects
+## 26 Child Effects
 
 Effects may trigger child effects.
 
@@ -1547,8 +1647,7 @@ Revive
 
 The StateEngine does not perform area targeting or target acquisition.
 
-If an explosion affects several entities, another system must determine affected entities and gather the applied
-effects. StateEngine is always called with valid already preselected Effects.
+If an explosion affects several entities, another system must determine affected entities and gather the applied effects. StateEngine is always called with valid already preselected Effects.
 
 ### 26.2 Child Effect Storage
 
@@ -1577,8 +1676,7 @@ If this limit is exceeded:
 2. The event is logged only when TRACE/debug diagnostics are active.
 3. The simulation continues safely.
 
-Designers are responsible for assembling valid effect chains. The engine must protect the host simulation from runaway
-graphs.
+Designers are responsible for assembling valid effect chains. The engine must protect the host simulation from runaway graphs.
 
 ### 26.4 Per-Tick Effect Budget
 
@@ -1598,17 +1696,15 @@ Continue simulation.
 
 ---
 
-## 27. Deterministic Effect Processing Order
+## 27 Deterministic Effect Processing Order
 
 Effects are processed in deterministic order.
 
 When `ProcessLivingEntities` is called:
 
-- All passed effects need to be sorted by networktick. Participating Players mave send data with different NetworkTicks
-  depending on der RTT.
+- All passed effects need to be sorted by networktick. Participating Players mave send data with different NetworkTicks depending on der RTT.
 - The StateEngine must process all of them ordered by NetworkTick for the right targeted livingentity.
-- The Process function needs to run every NetworkTick and must be work with scratch buffers and group processing, to
-  avoid any perofmance or allocation overhead.
+- The Process function needs to run every NetworkTick and must be work with scratch buffers and group processing, to avoid any perofmance or allocation overhead.
 
 Processing order:
 
@@ -1616,7 +1712,6 @@ Processing order:
 2. Apply incoming effects for each networktick.
 
 For each Tick:
-
 1. Add accepted effects to the entity effect buffer.
 2. Resolve child effects and place it in order as active effects depending on their parent effects.
 3. Process active effects in deterministic order.
@@ -1641,7 +1736,7 @@ Recommended priority:
 
 ---
 
-## 28. StateEngine
+## 28 StateEngine
 
 The `StateEngine` is responsible for processing incoming effects and producing the next valid `LivingEntityState`.
 
@@ -1666,7 +1761,7 @@ The StateEngine must:
 
 The API should remain small and explicit.
 
-#### Register Living Entity
+#### 28.2.1 Register Living Entity
 
 ```csharp
 public static void RegisterLivingEntity(LivingEntityState initialState, livingEntityId)
@@ -1674,7 +1769,7 @@ public static void RegisterLivingEntity(LivingEntityState initialState, livingEn
 
 Adds a `LivingEntityState` to the engine and starts tracking it.
 
-#### Process Living Entities
+#### 28.2.2 Process Living Entities
 
 ```csharp
 public static PackedByteArray ProcessLivingEntity(
@@ -1698,7 +1793,7 @@ If no state changed, the returned delta may be empty.
 
 ---
 
-## 29. StateEngine Tick Lifecycle
+## 29 StateEngine Tick Lifecycle
 
 Per host state tick:
 
@@ -1733,7 +1828,7 @@ Use compact-in-place removal.
 
 ---
 
-## 30. LivingEntityStateTracker
+## 30 LivingEntityStateTracker
 
 The **LivingEntityStateTracker** stores state history and effect history
 It is used for:
@@ -1751,13 +1846,11 @@ The tracker must:
 
 For any received delta tick, the receiver must still have enough data to resimulate from that tick to the current tick:
 
-This implementation must expose snapshot and effect-history retention in `StateEngineConfig`. The default value is 45
-ticks.
+This implementation must expose snapshot and effect-history retention in `StateEngineConfig`. The default value is 45 ticks.
 
 ### 30.3 Snapshot Storage Model
 
-Snapshots should use fast implementations and depend on arrays rather than objects. A Snapshot must provide everything
-for a given networktick and applied effects for that tick, to resimulate all registered states up to current tick.
+Snapshots should use fast implementations and depend on arrays rather than objects. A Snapshot must provide everything for a given networktick and applied effects for that tick, to resimulate all registered states up to current tick.
 
 ### 30.4 Target Scale
 
@@ -1773,8 +1866,7 @@ MaxChildEffectDepth: 5
 Target platform: desktop PC
 ```
 
-This scales are for information, do not entforce those limits - except as statet before MaxChildEffectDepth to prevent a
-complete disaster.
+This scales are for information, do not entforce those limits - except as statet before MaxChildEffectDepth to prevent a complete disaster.
 
 The uneven distribution is important: the engine must not assume active effects are evenly distributed across entities.
 
@@ -1791,12 +1883,11 @@ SourceId
 OriginId
 ```
 
-Client prediction or correction is not required for the first implementation, but the data model must not block later
-delta application from host to client and resimulation.
+Client prediction  or correction is not required for the first implementation, but the data model must not block later delta application from host to client and resimulation.
 
 ---
 
-## 31. Delta Format
+## 31 Delta Format
 
 The StateEngine should output the most performant packed representation possible.
 
@@ -1828,7 +1919,7 @@ Little-endian numeric encoding
 No per-field heap allocations
 ```
 
-### 32.1 Proposed Round-Trip Solution
+### 31.1 Proposed Round-Trip Solution
 
 Generation:
 
@@ -1841,7 +1932,7 @@ StateEngine returns PackedByteArray at the Godot-facing boundary.
 
 The engine should avoid converting the delta into `Godot.Collections.Array` during normal processing.
 
-### 32.2 Delta Header
+### 31.2 Delta Header
 
 Suggested delta header:
 
@@ -1858,7 +1949,7 @@ DeltaHeader:
 - FinalRecordCount
 ```
 
-### 32.3 Final State Payload
+### 31.3 Final State Payload
 
 The delta must always include final authoritative changed state.
 
@@ -1881,7 +1972,7 @@ ChangedEffects:
 - Updated remaining ticks
 ```
 
-### 32.5 Delta Versioning
+### 31.4 Delta Versioning
 
 Delta format must be versioned.
 
@@ -1891,7 +1982,7 @@ DeltaVersion: ushort or byte
 
 Versioning is required because future stat/effect changes may alter payload layout.
 
-### 32.6 Payload Flags
+### 31.5 Payload Flags
 
 Suggested payload flags:
 
@@ -1906,7 +1997,7 @@ The first implementation does not need compression, but the flag should be reser
 
 ---
 
-## 34. Logging
+## 32 Logging
 
 Logging is intended for debugging and balancing.
 
@@ -1940,7 +2031,7 @@ if (_traceEnabled)
 
 ---
 
-## 35. StateEngineConfig
+## 33 StateEngineConfig
 
 The first implementation must expose core runtime limits in `StateEngineConfig` instead of hardcoding them.
 
@@ -1955,13 +2046,13 @@ SnapshotRetentionTicks = 45
 StatComparisonPrecisionDecimals = 3
 ```
 
-## 36. Performance and Allocation Requirements
+## 34 Performance and Allocation Requirements
 
 The StateEngine runs at 30 TPS for fast state and 15 TPS for slow state.
 
 The hot tick loop must avoid avoidable heap allocation.
 
-### 36.2 Avoid in Hot Path
+### 34.1 Avoid in Hot Path
 
 The engine should avoid:
 
@@ -1978,7 +2069,7 @@ Dictionary lookups per stat mutation
 Queue<ActiveEffect> in the hot path
 ```
 
-### 36.3 Scratch Buffers
+### 34.2 Scratch Buffers
 
 Per-tick scratch buffers should be:
 
@@ -2006,7 +2097,7 @@ DeltaWriterBuffer
 
 ---
 
-## 37. Determinism Requirements
+## 35 Determinism Requirements
 
 The StateEngine must produce identical results for identical inputs.
 
@@ -2036,13 +2127,13 @@ OriginId
 
 ---
 
-## 38. Validation Requirements
+## 36 Validation Requirements
 
 The PRD requires an `EffectValidator`.
 
 `EffectValidator` checks all effect definitions at startup before normal simulation begins.
 
-### 38.1 EffectValidator Responsibilities
+### 36.1 EffectValidator Responsibilities
 
 The validator must check:
 
@@ -2050,15 +2141,14 @@ The validator must check:
 - `MaxStacks < 1` for stackable effects.
 - Child effect graph can exceed `MaxChildEffectDepth`.
 - Effect references itself in any child depth, starting from any child. Endless loops must not happen.
-- Effect graph contains cycles. Endless loops must not happen.
+- Effect graph contains cycles.  Endless loops must not happen.
 - Duration below 0.1 seconds before conversion.
 
-### 38.2 Validation Timing
+### 36.2 Validation Timing
 
-Validation occurs at StateEngine startup - not while game is already running. Logger.Error is used for invalid
-EffectDefinitions.
+Validation occurs at StateEngine startup - not while game is already running. Logger.Error is used for invalid EffectDefinitions.
 
-### 38.3 Validation Output
+### 36.3 Validation Output
 
 The validator should produce a deterministic report:
 
@@ -2067,9 +2157,9 @@ EffectDefinitionId
 ValidationViolation
 ```
 
-## 39. Example Effect Scenarios
+## 37 Example Effect Scenarios
 
-### 39.1 Normal Heal
+### 37.1 Normal Heal
 
 ```text
 Effect:
@@ -2092,7 +2182,7 @@ Fails if target is Dead or Unhealable.
 Consumed after execution.
 ```
 
-### 39.2 Revive
+### 37.2 Revive
 
 ```text
 Parent Effect:
@@ -2131,7 +2221,7 @@ Requests removal of Dead.
 If Health > 0 at end-of-tick, Dead remains removed.
 ```
 
-### 39.3 Shield Booster
+### 37.3 Shield Booster
 
 ```text
 Effect:
@@ -2152,7 +2242,7 @@ If Max Shield increases, Current Shield increases by the same absolute amount.
 When expired, Max Shield is recalculated and Current Shield is clamped if needed.
 ```
 
-### 39.4 Poison Damage Over Time
+### 37.4 Poison Damage Over Time
 
 ```text
 Effect:
@@ -2176,7 +2266,7 @@ Each stack keeps its own duration and tick interval.
 When MaxStacks is reached, the provisional behavior is ReplaceOldest.
 ```
 
-### 39.5 EMP
+### 37.5 EMP
 
 ```text
 Effect:
@@ -2192,7 +2282,7 @@ Requests EnergyDepleted while active.
 Energy-based gameplay systems may check this condition.
 ```
 
-### 39.6 Cleanse
+### 37.6 Cleanse
 
 ```text
 Effect:
@@ -2207,27 +2297,21 @@ The effect requests removal.
 StateEngine deterministically removes matching valid active effects.
 ```
 
-### Effects open for implementation/discussion how to
-
-#### Retaliation
-
+### 37.7 Effects open for implementation/discussion how to
+#### 37.7.1 Retaliation
 Everytime damage is applied, the target entity reflects a percent of the applied damage back
 
-#### Lifeleach
-
+#### 37.7.2 Lifeleach
 Everytime damage is applied, the target entity heals a percent of applied damage.
 
-#### CooldownReducer
-
+#### 37.7.3 CooldownReducer
 Everytime a target is healed, all active cooldowns get reduced
 
 ---
 
-## 40. Implementation Milestones
+## 38 Implementation Milestones
 
-Milestone 1 is done when deterministic test scenarios can process a fixed set of `SimulationSteps` for given registered
-`LivingEntityStates` and provided `ActiveEffect` inputs for given SimulationSteps, that produce expected final state and
-delta data, pass rollback/resimulation tests, and show no avoidable hot-path allocations under the selected test scale.
+Milestone 1 is done when deterministic test scenarios can process a fixed set of `SimulationSteps` for given registered `LivingEntityStates` and provided `ActiveEffect` inputs for given SimulationSteps, that produce expected final state and delta data, pass rollback/resimulation tests, and show no avoidable hot-path allocations under the selected test scale.
 
 Required implementation pieces:
 
@@ -2262,7 +2346,7 @@ At least one player-like entity with 70 active effects
 Run test with given numbers and simluate for 50 Steps. Log final Time. 
 ```
 
-### 40.2 Milestone 2 — Effect Complexity
+### 38.1 Milestone 2 — Effect Complexity
 
 Required:
 
@@ -2275,16 +2359,15 @@ StateHistory
 EffectHistory
 ```
 
-## 41. Testing and Acceptance Criteria
+## 39 Testing and Acceptance Criteria
 
 The PRD requires the following test categories.
 
-### 41.1 Deterministic Replay Tests
+### 39.1 Deterministic Replay Tests
 
-Given identical initial state and identical ordered effects, the engine must produce identical results across repeated
-runs.
+Given identical initial state and identical ordered effects, the engine must produce identical results across repeated runs.
 
-### 41.2 Stacking Tests
+### 39.2 Stacking Tests
 
 Must cover:
 
@@ -2298,7 +2381,7 @@ Discard
 Replace
 ```
 
-### 41.3 Death/Revive Tests
+### 39.3 Death/Revive Tests
 
 Must cover:
 
@@ -2310,7 +2393,7 @@ Revive removes Dead only if Health > 0
 Dead is re-applied if Health remains <= 0
 ```
 
-### 41.4 Delta Round-Trip Tests
+### 39.4 Delta Round-Trip Tests
 
 Must cover:
 
@@ -2323,7 +2406,7 @@ Read causal records
 Compare corrected result
 ```
 
-### 41.5 Rollback/Resimulation Tests
+### 39.5 Rollback/Resimulation Tests
 
 Must cover:
 
@@ -2337,11 +2420,11 @@ Use exact condition match
 Discard older snapshots
 ```
 
-### 41.6 No-Allocation Hot-Path Tests
+### 39.6 No-Allocation Hot-Path Tests
 
 Must verify that the tick loop avoids avoidable heap allocation during normal processing.
 
-### 41.7 Child-Effect Overflow Tests
+### 39.7 Child-Effect Overflow Tests
 
 Must cover:
 
@@ -2352,7 +2435,7 @@ TRACE log only when enabled
 Simulation continues safely
 ```
 
-### 41.8 Condition Rebuild Tests
+### 39.8 Condition Rebuild Tests
 
 Must cover:
 

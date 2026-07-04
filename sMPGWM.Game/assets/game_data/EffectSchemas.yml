@@ -1,10 +1,10 @@
-SchemaVersion: 6.2.1
+SchemaVersion: 6.2.3
 SchemaKind: FLU.RPG.StateEngine.Effects
 SourcePrecedence:
-  - stats.md version 6.2.1
-  - EffectSchemas.yml and EffectDefinitions.yml decisions from source YAML and clarification answers
-  - Extracted Effects section
-  - PRD 6.1 context only
+  - effects_622.md source base
+  - lifecycle_based_conditions_100.md version 1.0.0 condition lifecycle proposal
+  - EffectSchemas.yml and EffectDefinitions.yml source YAML
+  - 'Clarification answers: hard replacement, contributor-owned conditions, top-level EffectClassifications, RemoveMode support'
 DecisionsApplied:
   - Passive effects are removed from the Effects model. Passives are handled by a separate passive modifier pipeline.
   - EffectType is removed. All definitions in this schema are ActiveEffect definitions.
@@ -27,7 +27,15 @@ DecisionsApplied:
   - PoolStat.CurrentMaxValue may use unclamped intermediate values during resolution but is clamped at the end of capacity resolution.
   - Positive pool capacity compensation is based only on positive capacity delta gained this tick above EffectiveMaxValue.
   - Removing a capacity debuff back toward EffectiveMaxValue does not raise CurrentValue.
-  - ClassificationsAddRequest attaches classifications to ActiveEffect metadata only. ClassificationsRemoveRequest is invalid.
+  - ConditionAndClassificationRequests is removed and invalid in 6.2.3. There is no migration compatibility layer.
+  - EffectClassifications is a top-level static metadata field on EffectDefinition and is attached to the ActiveEffect after stack policy resolution accepts a runtime instance.
+  - Classifications are not LivingEntityState conditions and are never lifecycle-added or lifecycle-removed. They disappear automatically when the ActiveEffect is removed.
+  - ConditionRequests is a lifecycle-timed list. Supported timings are OnFirstApplication, OnFirstExecution, OnExpire, OnRemove, and OnExpireOrRemove.
+  - Condition contributions are owned by EffectRuntimeId internally. LivingEntityState exposes aggregated condition presence, while the StateEngine tracks contributors behind each condition.
+  - ConditionRequests may contain both ConditionsAddRequest and ConditionsRemoveRequest in one entry. Each entry requires at least one non-empty operation array.
+  - ConditionsRemoveRequest supports RemoveMode. RemoveOwnContribution removes only the current ActiveEffect contribution; RemoveAllContributions clears the condition from the target.
+  - 'RemoveMode defaults are lifecycle-aware: application/execution removals default to RemoveAllContributions; expiry/removal cleanup defaults to RemoveOwnContribution.'
+  - Canonical definitions should declare ConditionRequest Timing explicitly. Importers may infer default timing from TriggerType only when authoring data intentionally omits Timing.
 Enums:
   EffectProcessing:
     - Fast
@@ -100,6 +108,15 @@ Enums:
     - OnParentExpired
     - OnParentRemoved
     - OnParentExpiredOrRemoved
+  ConditionLifecycleTiming:
+    - OnFirstApplication
+    - OnFirstExecution
+    - OnExpire
+    - OnRemove
+    - OnExpireOrRemove
+  ConditionRemoveMode:
+    - RemoveOwnContribution
+    - RemoveAllContributions
 StatCategories:
   PoolStat:
     - Health
@@ -158,6 +175,10 @@ DeprecatedInvalidValues:
     - OxygenGeneration
     - FoodGeneration
     - WaterGeneration
+  Field:
+    - ConditionAndClassificationRequests
+    - ClassificationsAddRequest
+    - ClassificationsRemoveRequest
 ApplicationModeDefaults:
   - When:
       TriggerType: Immediate
@@ -304,6 +325,30 @@ EffectDefinitionSchema:
         - If DurationType is Once or UntilRemoved, DurationMS should be omitted from canonical definitions.
         - Runtime duration is converted to NetworkTick values; simulation must not use wall-clock duration at runtime.
         - UntilRemoved is an active effect lifetime, not passive behavior.
+    EffectClassifications:
+      Type: array
+      Items: EffectClassification
+      Nullable: true
+      Default: []
+      Rules:
+        - EffectClassifications is static metadata attached to the ActiveEffect after stack policy resolution accepts the runtime instance.
+        - EffectClassifications is not added to LivingEntityState and is not controlled by ConditionRequests.
+        - Classifications are used by blocking, removal matching, trigger checks, UI/debug identity, and inspection.
+        - Classifications disappear automatically when the ActiveEffect expires or is removed.
+    ConditionRequests:
+      Type: array
+      ItemsRef: ConditionRequest
+      Nullable: true
+      Default: []
+      Rules:
+        - ConditionRequests mutate target LivingEntityState conditions through the StateEngine at explicit ActiveEffect lifecycle timings.
+        - Each ConditionRequest requires Timing in canonical 6.2.3 definitions. Importers may infer Timing only when authoring data intentionally omits it.
+        - Each ConditionRequest must contain at least one non-empty ConditionsAddRequest or ConditionsRemoveRequest array. Both arrays may be present in one entry.
+        - OnFirstApplication fires only after stack policy resolution and only for an accepted runtime ActiveEffect instance.
+        - OnFirstExecution fires at most once per runtime instance, only after the first successful execution. Blocked attempts do not fire it.
+        - OnExpire fires only on natural duration expiry. OnRemove fires only on explicit removal. OnExpireOrRemove fires in both cases.
+        - Lifecycle-owned cleanup should use OnExpireOrRemove with RemoveOwnContribution.
+        - Conditions are contributor-owned internally by EffectRuntimeId; the public LivingEntityState condition flag remains present while at least one contributor remains.
     Target:
       Type: object
       Nullable: true
@@ -348,31 +393,6 @@ EffectDefinitionSchema:
         - Instant PoolStat.CurrentValue Percentage uses the pool CurrentMaxValue at execution time.
         - AccumulateWhileActive Percentage Reduce contributions are capped at -100 percent.
         - FlowStat Value is authored in the stat's canonical per-ms unit where applicable.
-    ConditionAndClassificationRequests:
-      Type: object
-      Nullable: true
-      Fields:
-        ConditionsAddRequest:
-          Type: array
-          Items: Condition
-          Nullable: true
-        ConditionsRemoveRequest:
-          Type: array
-          Items: Condition
-          Nullable: true
-        ClassificationsAddRequest:
-          Type: array
-          Items: EffectClassification
-          Nullable: true
-      Rules:
-        - If present, at least one contained array must contain at least one value.
-        - ConditionsAddRequest and ConditionsRemoveRequest target LivingEntityState conditions.
-        - Condition requests are allowed with all trigger types.
-        - For WhileActive effects, condition requests contribute while the ActiveEffect exists and are removed when the effect expires or is removed.
-        - For OverTime effects, condition contribution begins after the effect has ticked at least once and is removed when the effect expires or is removed.
-        - For Immediate, OnExpire, and OnRemoval effects, condition requests are transactional when the effect triggers.
-        - ClassificationsAddRequest attaches classifications to the ActiveEffect metadata only. It does not mutate LivingEntityState.
-        - ClassificationsRemoveRequest is invalid; classifications disappear when the ActiveEffect expires or is removed.
     Blocking:
       Type: object
       Nullable: true
@@ -504,9 +524,10 @@ EffectDefinitionSchema:
       Type: bool
       Default: false
   Rules:
-    - An effect is valid if IsEffectContainer is false and at least one of Target, ConditionAndClassificationRequests, EffectRemovalRequest, or ChildEffectDefinitions is present.
-    - A container is valid if IsEffectContainer is true, Target is omitted, ConditionAndClassificationRequests is omitted, EffectRemovalRequest is omitted, and ChildEffectDefinitions is present with at least one entry.
+    - An effect is valid if IsEffectContainer is false and at least one of Target, ConditionRequests, EffectClassifications, EffectRemovalRequest, or ChildEffectDefinitions is present.
+    - A container is valid if IsEffectContainer is true, Target is omitted, ConditionRequests is omitted, EffectClassifications is omitted or empty, EffectRemovalRequest is omitted, and ChildEffectDefinitions is present with at least one entry.
     - EffectDefinitions are validated once at startup. An EffectDefinition is valid only if all referenced child definitions are valid and the child graph is acyclic.
+    - ConditionAndClassificationRequests, ClassificationsAddRequest, and ClassificationsRemoveRequest are invalid in 6.2.3.
 ReusableSchemas:
   TriggerCondition:
     Type: object
@@ -559,6 +580,71 @@ ReusableSchemas:
       - OnParentExpired creates an independent child only when the parent expires naturally.
       - OnParentRemoved creates an independent child only when the parent is explicitly removed before natural expiry.
       - OnParentExpiredOrRemoved creates an independent child when the parent either expires naturally or is explicitly removed.
+  ConditionRequest:
+    Type: object
+    Required:
+      - Timing
+    Fields:
+      Timing:
+        Type: enum
+        ValuesRef: ConditionLifecycleTiming
+        Nullable: false
+      RemoveMode:
+        Type: enum
+        ValuesRef: ConditionRemoveMode
+        Nullable: true
+        Default: InferredByTiming
+      ConditionsAddRequest:
+        Type: array
+        Items: Condition
+        Nullable: true
+      ConditionsRemoveRequest:
+        Type: array
+        Items: Condition
+        Nullable: true
+    DefaultTimingInference:
+      - When:
+          TriggerType: Immediate
+        Default: OnFirstExecution
+      - When:
+          TriggerType: WhileActive
+        Default: OnFirstApplication
+      - When:
+          TriggerType: OverTime
+        Default: OnFirstExecution
+      - When:
+          TriggerType: OnExpire
+        Default: OnExpire
+      - When:
+          TriggerType: OnRemoval
+        Default: OnRemove
+    DefaultRemoveModeInference:
+      - When:
+          Timing: OnFirstApplication
+        Default: RemoveAllContributions
+      - When:
+          Timing: OnFirstExecution
+        Default: RemoveAllContributions
+      - When:
+          Timing: OnExpire
+        Default: RemoveOwnContribution
+      - When:
+          Timing: OnRemove
+        Default: RemoveOwnContribution
+      - When:
+          Timing: OnExpireOrRemove
+        Default: RemoveOwnContribution
+    Rules:
+      - At least one of ConditionsAddRequest or ConditionsRemoveRequest must contain at least one condition.
+      - ConditionsAddRequest records this ActiveEffect runtime instance as a contributor for each listed condition.
+      - ConditionsRemoveRequest with RemoveOwnContribution removes only this ActiveEffect runtime instance contribution for each listed condition.
+      - ConditionsRemoveRequest with RemoveAllContributions clears each listed condition from the target and removes all contributor ownership records for that condition.
+      - OnFirstApplication is invalid for discarded duplicates because no accepted runtime effect instance exists.
+      - OnFirstExecution must not refire after retry failures, refreshes, or later successful ticks.
+      - OnExpire is valid only when Duration.DurationType is Temporary.
+      - OnRemove is valid only when Duration.DurationType is Temporary or UntilRemoved.
+      - OnExpireOrRemove is valid only when Duration.DurationType is Temporary or UntilRemoved.
+      - Explicit Timing and RemoveMode values are accepted only if they satisfy these rules; otherwise the validator rejects the definition.
 EffectRuntimeSchema:
   Type: object
   Required:
@@ -621,6 +707,18 @@ EffectRuntimeSchema:
     ChildDepth:
       Type: int
       Default: 0
+    HasFiredOnFirstApplication:
+      Type: bool
+      Default: false
+      UsedBy: ConditionRequests
+    HasFiredOnFirstExecution:
+      Type: bool
+      Default: false
+      UsedBy: ConditionRequests
     RuntimeFlags:
       Type: flags
       Nullable: true
+  Rules:
+    - EffectClassifications are read from the immutable EffectDefinition and treated as static metadata on the ActiveEffect while it exists.
+    - HasFiredOnFirstApplication and HasFiredOnFirstExecution prevent lifecycle condition requests from firing more than once per runtime instance.
+    - Condition contribution ownership is stored by the StateEngine as Condition -> contributor EffectRuntimeIds. It may be stored outside the compact ActiveEffect record.

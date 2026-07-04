@@ -1,4 +1,4 @@
-version: 6.2.2
+version: 6.2.3
 # Effects
 
 ## 1 Effect Driven Gameplay
@@ -30,8 +30,8 @@ RefreshOldest overflow       -> removed; use ReplaceOldest or RejectNewest
 The StateEngine is responsible for determining whether an effect may execute and how it affects the target. An effect can describe:
 
 - stat modification intent,
-- condition requests,
-- classification metadata,
+- lifecycle condition requests,
+- static classification metadata,
 - blocking rules,
 - trigger timing,
 - duration and expiration,
@@ -67,7 +67,8 @@ A valid non-container effect definition must contain `Definition` and at least o
 
 ```text
 Target
-ConditionAndClassificationRequests
+ConditionRequests
+EffectClassifications
 EffectRemovalRequest
 ChildEffectDefinitions
 ```
@@ -80,7 +81,7 @@ ChildEffectDefinitions:
   - ChildEffectDefinitionId: effect.child.example
 ```
 
-and must not define direct `Target`, direct `ConditionAndClassificationRequests`, or direct `EffectRemovalRequest`.
+and must not define direct `Target`, direct `ConditionRequests`, direct `EffectClassifications`, or direct `EffectRemovalRequest`.
 
 Each definition is valid only if all referenced child definitions are valid, the child graph is acyclic, and the graph does not exceed the configured maximum child depth.
 
@@ -106,10 +107,14 @@ EffectDefinition:
     Calculation: Flat
     Value: 50.0
     ApplicationMode: Instant
-  ConditionAndClassificationRequests:
-    ConditionsAddRequest: []
-    ConditionsRemoveRequest: []
-    ClassificationsAddRequest: []
+  EffectClassifications:
+    - Buff
+  ConditionRequests:
+    - Timing: OnFirstApplication
+      ConditionsAddRequest: []
+    - Timing: OnExpireOrRemove
+      RemoveMode: RemoveOwnContribution
+      ConditionsRemoveRequest: []
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition: []
@@ -153,7 +158,8 @@ Field summary:
 | `Trigger` | no | `Immediate` | Defines when the effect executes or contributes. |
 | `Duration` | no | `Once` | Defines lifetime. |
 | `Target` | no | none | Optional single stat target. |
-| `ConditionAndClassificationRequests` | no | none | Optional condition requests and classification metadata. |
+| `EffectClassifications` | no | none | Static classification metadata attached to the `ActiveEffect` after acceptance. |
+| `ConditionRequests` | no | none | Optional lifecycle-timed condition add/remove requests. |
 | `Blocking` | no | none | Optional blocking rules. |
 | `EffectRemovalRequest` | no | none | Optional request to remove matching active effects. |
 | `EffectRemovalPolicy` | no | `ByAnySource` | Removal permission policy for this effect when another effect tries to remove it. |
@@ -170,6 +176,8 @@ EffectProcessing: Fast, Slow
 TriggerType: Immediate, OverTime, WhileActive, OnExpire, OnRemoval
 TriggerConditionType: OnConditionsPresent, OnConditionsMissing, OnClassificationsPresent, OnClassificationsMissing, OnStatReduced, OnStatRaised, OnStatValueBelow, OnStatValueAbove
 ConditionOperator: Any, All
+ConditionLifecycleTiming: OnFirstApplication, OnFirstExecution, OnExpire, OnRemove, OnExpireOrRemove
+ConditionRemoveMode: RemoveOwnContribution, RemoveAllContributions
 DurationType: Once, Temporary, UntilRemoved
 TargetValueKind: CurrentValue, CurrentMaxValue
 Manipulation: Raise, Reduce
@@ -193,8 +201,8 @@ General validity rules:
 
 - YAML must parse successfully.
 - `Definition.EffectDefinitionId`, `Definition.Name`, and `Definition.Description` are required and non-null.
-- A non-container effect must have at least one executable payload: `Target`, `ConditionAndClassificationRequests`, `EffectRemovalRequest`, or `ChildEffectDefinitions`.
-- A container must set `IsEffectContainer: true`, must contain at least one child effect, and must omit direct `Target`, `ConditionAndClassificationRequests`, and `EffectRemovalRequest`.
+- A non-container effect must have at least one gameplay payload: `Target`, `ConditionRequests`, `EffectClassifications`, `EffectRemovalRequest`, or `ChildEffectDefinitions`.
+- A container must set `IsEffectContainer: true`, must contain at least one child effect, and must omit direct `Target`, `ConditionRequests`, `EffectClassifications`, and `EffectRemovalRequest`.
 - Each effect may define at most one `Target`.
 - Referenced child effect IDs must exist.
 - The child graph must be acyclic and within the configured maximum depth.
@@ -209,6 +217,8 @@ DurationType: Permanent
 TriggerType: OverTimeConstant
 TargetValueKind: Current
 TargetValueKind: Max
+ConditionAndClassificationRequests
+ClassificationsAddRequest
 ClassificationsRemoveRequest
 SimulationLane
 EffectRemovalRule
@@ -258,10 +268,16 @@ Timing and duration validity rules:
 
 Condition and classification validity rules:
 
-- If `ConditionAndClassificationRequests` is present, at least one contained request array must contain at least one value.
+- `ConditionAndClassificationRequests`, `ClassificationsAddRequest`, and `ClassificationsRemoveRequest` are invalid in 6.2.3.
+- `EffectClassifications`, if present, is a top-level list of static metadata attached to accepted `ActiveEffect` instances.
+- `ConditionRequests`, if present, must contain at least one request entry.
+- Each `ConditionRequest` requires `Timing` in canonical definitions and at least one non-empty `ConditionsAddRequest` or `ConditionsRemoveRequest`.
+- A single `ConditionRequest` may contain both add and remove arrays.
 - `ConditionsAddRequest` and `ConditionsRemoveRequest` mutate target `LivingEntityState` conditions through the StateEngine.
-- `ClassificationsAddRequest` attaches metadata to the `ActiveEffect` only.
-- `ClassificationsRemoveRequest` is invalid.
+- Condition presence is contributor-owned internally by `EffectRuntimeId`; a condition remains visible while at least one contributor remains.
+- `RemoveMode: RemoveOwnContribution` removes only the current active effect's contribution.
+- `RemoveMode: RemoveAllContributions` clears the condition from the target and removes all contributor ownership records for that condition.
+- If `RemoveMode` is omitted, `OnFirstApplication` and `OnFirstExecution` default to `RemoveAllContributions`; `OnExpire`, `OnRemove`, and `OnExpireOrRemove` default to `RemoveOwnContribution`.
 
 Blocking, removal, stacking, and child validity rules:
 
@@ -294,7 +310,7 @@ A definition may have zero stat targets when it only applies conditions, classif
 
 ### 2.4 Effect Classification
 
-Effect classifications are metadata attached to active effects. They are not target-state conditions and do not execute logic by themselves.
+Effect classifications are static metadata attached to accepted `ActiveEffect` instances. They are not target-state conditions and do not execute logic by themselves.
 
 Classifications are used for:
 
@@ -302,39 +318,188 @@ Classifications are used for:
 - removal request matching,
 - debug and inspection identity,
 - trigger conditions such as `OnClassificationsPresent`,
-- grouping effects as `Poison`, `Buff`, `Debuff`, `Fire`, `Overheating`, and similar authored categories.
+- UI/debug grouping such as `Poison`, `Buff`, `Debuff`, `Fire`, `Overheating`, and similar authored categories.
 
-Classifications are added through:
+Classifications are authored with the top-level field:
 
 ```yaml
-ConditionAndClassificationRequests:
-  ClassificationsAddRequest:
-    - Poison
-    - Debuff
+EffectClassifications:
+  - Poison
+  - Debuff
 ```
 
-`ClassificationsRemoveRequest` is invalid. Classifications disappear automatically when the corresponding `ActiveEffect` expires or is removed.
+Rules:
+
+- `EffectClassifications` is attached only after stack policy resolution accepts the runtime `ActiveEffect` instance.
+- Discarded duplicate effects do not attach classifications.
+- Replacement removes the old effect first; the new accepted replacement attaches its own classifications.
+- Classifications are not added to or removed from `LivingEntityState`.
+- Classifications disappear automatically when the corresponding `ActiveEffect` expires or is removed.
+- `ClassificationsAddRequest` and `ClassificationsRemoveRequest` are invalid in 6.2.3.
 
 Conditions and classifications are deliberately separate:
 
 | Concept | Stored on | Mutates target state | Removed how |
 |---|---|---:|---|
-| Condition | `LivingEntityState` | yes | By condition rules, condition requests, or contributing effect lifetime. |
+| Condition | `LivingEntityState` aggregated flag plus StateEngine contributor ownership | yes | By lifecycle condition requests, condition rules, or explicit clear-all requests. |
 | Classification | `ActiveEffect` metadata | no | Automatically when the active effect disappears. |
 
-Condition requests are allowed with all trigger types. Trigger-specific behavior:
+Condition requests are authored separately with lifecycle timing:
 
-| TriggerType | Condition request behavior |
+```yaml
+ConditionRequests:
+  - Timing: OnFirstApplication
+    ConditionsAddRequest:
+      - PoisonExposure
+
+  - Timing: OnFirstExecution
+    ConditionsAddRequest:
+      - Poisoned
+
+  - Timing: OnExpireOrRemove
+    RemoveMode: RemoveOwnContribution
+    ConditionsRemoveRequest:
+      - PoisonExposure
+      - Poisoned
+```
+
+Supported lifecycle timings:
+
+| Timing | Fires when | Main use |
+|---|---|---|
+| `OnFirstApplication` | After stack policy resolution accepts the runtime `ActiveEffect`. | Presence, exposure, lock-on, channel start, pending poison, blocked-but-active retry state. |
+| `OnFirstExecution` | After the first successful execution for this runtime instance. | Conditions that should start only after the effect actually affects the target. |
+| `OnExpire` | When the effect expires naturally by duration. | Natural-end consequences or cleanup. |
+| `OnRemove` | When the effect is explicitly removed before natural expiry. | Interrupt, cleanse, dispel, cancellation, or removal-specific consequences. |
+| `OnExpireOrRemove` | When the effect leaves the active effect buffer for either reason. | Deterministic cleanup of lifecycle-owned conditions. |
+
+`OnFirstApplication` rules:
+
+- Fires only after stack policy resolution.
+- Fires only for an accepted runtime effect instance.
+- Discarded duplicate effects do not fire it.
+- Replacement removes the old effect first; the accepted replacement may fire its own `OnFirstApplication`.
+
+`OnFirstExecution` rules:
+
+- Fires at most once per `ActiveEffect` runtime instance.
+- Does not fire when the effect is merely accepted.
+- Does not fire on blocked execution attempts.
+- Does not fire again after retry failures, refreshes, or later successful ticks.
+- For `OverTime`, it fires after the first successful due tick.
+- For `Immediate`, it fires during the first successful execution step if not blocked.
+
+Condition contribution ownership:
+
+```text
+Condition: Poisoned
+Contributors:
+- EffectRuntimeId A
+- EffectRuntimeId B
+```
+
+`LivingEntityState` exposes only whether `Poisoned` is present. Internally, the StateEngine tracks which active effects contribute the condition. Removing `EffectRuntimeId A` removes only A's contribution. `Poisoned` remains visible while B still contributes it.
+
+Remove modes:
+
+| RemoveMode | Meaning | Default timings |
+|---|---|---|
+| `RemoveOwnContribution` | Remove only this `ActiveEffect` runtime instance's contribution for the listed conditions. | `OnExpire`, `OnRemove`, `OnExpireOrRemove` |
+| `RemoveAllContributions` | Clear the listed conditions from the target and remove all contributor ownership records for them. | `OnFirstApplication`, `OnFirstExecution` |
+
+A single lifecycle request may add and remove conditions at the same timing:
+
+```yaml
+ConditionRequests:
+  - Timing: OnFirstExecution
+    RemoveMode: RemoveAllContributions
+    ConditionsRemoveRequest:
+      - Dead
+    ConditionsAddRequest:
+      - Revived
+```
+
+Default timing inference is allowed only as an importer/authoring convenience. Canonical 6.2.3 definitions should declare `Timing` explicitly. If `Timing` is omitted, the importer may infer:
+
+| TriggerType | Default condition timing |
 |---|---|
-| `Immediate` | Applies transactionally when the effect triggers. |
-| `WhileActive` | Contributes while the `ActiveEffect` exists and is removed when the effect expires or is removed. |
-| `OverTime` | The effect is active for its lifetime. Condition contribution begins after the effect has ticked at least once and is removed when the effect expires or is removed. |
-| `OnExpire` | Applies transactionally when the effect expires naturally. |
-| `OnRemoval` | Applies transactionally when the effect is explicitly removed. |
+| `Immediate` | `OnFirstExecution` |
+| `WhileActive` | `OnFirstApplication` |
+| `OverTime` | `OnFirstExecution` |
+| `OnExpire` | `OnExpire` |
+| `OnRemoval` | `OnRemove` |
 
-If multiple active effects contribute the same condition, the condition remains present until all contributing effects are gone or until deterministic StateEngine condition rules remove it.
+For lifetime condition ownership, add an `OnExpireOrRemove` cleanup request for conditions added by `OnFirstApplication` or `OnFirstExecution`.
 
-For `WhileActive` effects, classification metadata is present while the `ActiveEffect` exists. For `OverTime` effects, the effect is active during its lifetime; if the implementation distinguishes contribution activation, trigger-gated classification contribution begins after the first due tick.
+Example poison exposure and poisoned state:
+
+```yaml
+EffectDefinitionId: effect.debuff.poison.damage_over_time
+
+EffectClassifications:
+  - Poison
+  - Debuff
+
+Trigger:
+  TriggerType: OverTime
+  TickIntervalMs: 1000
+
+Duration:
+  DurationType: Temporary
+  DurationMS: 5000
+
+Blocking:
+  BlockPolicy: Retry
+  BlockedByCondition:
+    - Invulnerable
+
+Target:
+  TargetStat: Health
+  TargetValueKind: CurrentValue
+  Manipulation: Reduce
+  Calculation: Flat
+  Value: 5
+  ApplicationMode: Instant
+
+ConditionRequests:
+  - Timing: OnFirstApplication
+    ConditionsAddRequest:
+      - PoisonExposure
+
+  - Timing: OnFirstExecution
+    ConditionsAddRequest:
+      - Poisoned
+
+  - Timing: OnExpireOrRemove
+    RemoveMode: RemoveOwnContribution
+    ConditionsRemoveRequest:
+      - PoisonExposure
+      - Poisoned
+```
+
+Runtime meaning:
+
+```text
+The poison effect is accepted:
+- EffectClassifications Poison and Debuff are attached to the ActiveEffect.
+- PoisonExposure is added immediately after acceptance.
+- The effect is visible and removable even if blocked.
+
+The poison effect is blocked with Retry:
+- It remains active.
+- PoisonExposure remains.
+- Poisoned is not added yet.
+
+The poison effect successfully ticks for the first time:
+- Health damage is applied.
+- OnFirstExecution fires.
+- Poisoned is added.
+
+The poison effect expires or is removed:
+- The effect removes its own PoisonExposure and Poisoned contributions.
+- The visible condition remains only if another contributor still owns it.
+- Classifications disappear automatically with the ActiveEffect.
+```
 
 ### 2.5 Effect Target
 
@@ -869,9 +1034,11 @@ Revive:
     Calculation: Flat
     Value: 50.0
     ApplicationMode: Instant
-  ConditionAndClassificationRequests:
-    ConditionsRemoveRequest:
-      - Dead
+  ConditionRequests:
+    - Timing: OnFirstExecution
+      RemoveMode: RemoveAllContributions
+      ConditionsRemoveRequest:
+        - Dead
   CanTriggerWhileDead: true
 ```
 
@@ -917,7 +1084,7 @@ StackGroupIds
 
 Selector rules:
 
-- Selector fields are combined with `AND`.
+- Selector fields are combined with `AND`. The `Conditions` selector matches active effects that currently own a contribution to at least one listed condition.
 - Values inside one selector list are combined with `OR`.
 - If `EffectRemovalBehaviour` is omitted, all matching active effects are requested for removal.
 - If `EffectRemovalBehaviour` is present, it limits and orders the removal request.
@@ -1143,7 +1310,7 @@ Oldest is determined by:
 3. EffectRuntimeId
 ```
 
-`RefreshOldest` is not canonical in 6.2.1 and must not be used.
+`RefreshOldest` is not canonical in 6.2.3 and must not be used.
 
 #### 2.11.5 StackGroupId
 
@@ -1344,12 +1511,17 @@ OverheatingCooldown:
   Duration:
     DurationType: Temporary
     DurationMS: 5000.0
-  ConditionAndClassificationRequests:
-    ConditionsAddRequest:
-      - Overheated
-    ClassificationsAddRequest:
-      - OverheatingCooldown
-      - Debuff
+  EffectClassifications:
+    - OverheatingCooldown
+    - Debuff
+  ConditionRequests:
+    - Timing: OnFirstApplication
+      ConditionsAddRequest:
+        - Overheated
+    - Timing: OnExpireOrRemove
+      RemoveMode: RemoveOwnContribution
+      ConditionsRemoveRequest:
+        - Overheated
 ```
 
 Result:
@@ -1405,6 +1577,8 @@ Canonical runtime fields:
 | `AccumulatedPercentageModifier` | no | `0.0` | Runtime percentage accumulator for `AccumulateWhileActive`; reduce contributions cap at `-1.0`. |
 | `ParentEffectRuntimeId` | no | `null` | Parent runtime effect ID for child effects. |
 | `ChildDepth` | no | `0` | Depth in child graph. |
+| `HasFiredOnFirstApplication` | no | `false` | Runtime guard for lifecycle condition requests. |
+| `HasFiredOnFirstExecution` | no | `false` | Runtime guard for first successful execution lifecycle condition requests. |
 | `RuntimeFlags` | no | `null` | Implementation-specific runtime flags. |
 
 Recommended C# shape:
@@ -1430,6 +1604,9 @@ public struct ActiveEffect
 
     public EffectRuntimeId? ParentEffectRuntimeId;
     public int ChildDepth;
+
+    public bool HasFiredOnFirstApplication;
+    public bool HasFiredOnFirstExecution;
     public RuntimeFlags RuntimeFlags;
 }
 ```
@@ -1458,7 +1635,7 @@ The `EffectDefinitionRegistry` provides fast lookup for the static configuration
 
 Effect source information is used for causality, stacking, removal, analytics, debugging, and deterministic replay.
 
-The canonical 6.2.1 runtime schema requires:
+The canonical 6.2.3 runtime schema requires:
 
 ```text
 SourceId
@@ -1467,7 +1644,7 @@ TargetEntityId
 AppliedNetworkTick
 ```
 
-`SourceType` can be kept as external provenance metadata or derived from the `SourceId` namespace. It is not required by the canonical 6.2.1 `ActiveEffect` runtime schema unless the implementation intentionally extends it.
+`SourceType` can be kept as external provenance metadata or derived from the `SourceId` namespace. It is not required by the canonical 6.2.3 `ActiveEffect` runtime schema unless the implementation intentionally extends it.
 
 ### 4.1 SourceType
 

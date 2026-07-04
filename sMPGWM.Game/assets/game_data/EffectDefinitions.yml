@@ -1,4 +1,4 @@
-Version: 6.2.1
+Version: 6.2.3
 Heal:
   Definition:
     EffectDefinitionId: effect.raise.heal
@@ -31,6 +31,9 @@ EnergyStorageCurse:
     TriggerType: WhileActive
   Duration:
     DurationType: UntilRemoved
+  EffectClassifications:
+    - CannotBeRegenerated
+    - Debuff
   Target:
     TargetStat: EnergyStorage
     TargetValueKind: CurrentMaxValue
@@ -38,12 +41,14 @@ EnergyStorageCurse:
     Calculation: Percentage
     Value: 0.5
     ApplicationMode: WhileActive
-  ConditionAndClassificationRequests:
-    ConditionsAddRequest:
-      - Cursed
-    ClassificationsAddRequest:
-      - CannotBeRegenerated
-      - Debuff
+  ConditionRequests:
+    - Timing: OnFirstApplication
+      ConditionsAddRequest:
+        - Cursed
+    - Timing: OnExpireOrRemove
+      RemoveMode: RemoveOwnContribution
+      ConditionsRemoveRequest:
+        - Cursed
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByClassification:
@@ -68,6 +73,10 @@ CorrodingPoison:
   Duration:
     DurationType: Temporary
     DurationMS: 1500.0
+  EffectClassifications:
+    - Corroding
+    - Poison
+    - Debuff
   Target:
     TargetStat: Armor
     TargetValueKind: CurrentValue
@@ -75,13 +84,14 @@ CorrodingPoison:
     Calculation: Percentage
     Value: 0.05
     ApplicationMode: WhileActive
-  ConditionAndClassificationRequests:
-    ConditionsAddRequest:
-      - Poisoned
-    ClassificationsAddRequest:
-      - Corroding
-      - Poison
-      - Debuff
+  ConditionRequests:
+    - Timing: OnFirstApplication
+      ConditionsAddRequest:
+        - Poisoned
+    - Timing: OnExpireOrRemove
+      RemoveMode: RemoveOwnContribution
+      ConditionsRemoveRequest:
+        - Poisoned
   Blocking:
     BlockPolicy: Retry
     BlockedByClassification:
@@ -116,19 +126,21 @@ Revive:
     Calculation: Flat
     Value: 50.0
     ApplicationMode: Instant
-  ConditionAndClassificationRequests:
-    ConditionsRemoveRequest:
-      - Dead
+  ConditionRequests:
+    - Timing: OnFirstExecution
+      RemoveMode: RemoveAllContributions
+      ConditionsRemoveRequest:
+        - Dead
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
       - Incurable
     BlockedByClassification:
       - CannotBeHealed
+  CanTriggerWhileDead: true
   Stacking:
     StackScope: ByEffectDefinitionId
     StackPolicy: Discard
-  CanTriggerWhileDead: true
   Visibility: Internal
 SuperEvilDot:
   Definition:
@@ -141,6 +153,9 @@ SuperEvilDot:
   Duration:
     DurationType: Temporary
     DurationMS: 2100.0
+  EffectClassifications:
+    - AffectedBySuperEvilDot
+    - Debuff
   Target:
     TargetStat: Health
     TargetValueKind: CurrentValue
@@ -148,10 +163,6 @@ SuperEvilDot:
     Calculation: Flat
     Value: 75.0
     ApplicationMode: Instant
-  ConditionAndClassificationRequests:
-    ClassificationsAddRequest:
-      - AffectedBySuperEvilDot
-      - Debuff
   Blocking:
     BlockPolicy: Retry
     BlockedByCondition:
@@ -175,6 +186,9 @@ MaxHealthRot:
   Duration:
     DurationType: Temporary
     DurationMS: 5000.0
+  EffectClassifications:
+    - Infection
+    - Debuff
   Target:
     TargetStat: Health
     TargetValueKind: CurrentMaxValue
@@ -182,12 +196,14 @@ MaxHealthRot:
     Calculation: Percentage
     Value: 0.05
     ApplicationMode: AccumulateWhileActive
-  ConditionAndClassificationRequests:
-    ConditionsAddRequest:
-      - Infected
-    ClassificationsAddRequest:
-      - Infection
-      - Debuff
+  ConditionRequests:
+    - Timing: OnFirstExecution
+      ConditionsAddRequest:
+        - Infected
+    - Timing: OnExpireOrRemove
+      RemoveMode: RemoveOwnContribution
+      ConditionsRemoveRequest:
+        - Infected
   Blocking:
     BlockPolicy: Retry
     BlockedByCondition:
@@ -210,6 +226,8 @@ ShieldCapacityBoost:
   Duration:
     DurationType: Temporary
     DurationMS: 3000.0
+  EffectClassifications:
+    - Buff
   Target:
     TargetStat: Shield
     TargetValueKind: CurrentMaxValue
@@ -217,9 +235,6 @@ ShieldCapacityBoost:
     Calculation: Flat
     Value: 50.0
     ApplicationMode: WhileActive
-  ConditionAndClassificationRequests:
-    ClassificationsAddRequest:
-      - Buff
   Blocking:
     BlockPolicy: RemoveOnFail
   Stacking:
@@ -239,6 +254,9 @@ Overheating:
   Duration:
     DurationType: Temporary
     DurationMS: 5000.0
+  EffectClassifications:
+    - Overheating
+    - Buff
   Target:
     TargetStat: AttackSpeed
     TargetValueKind: CurrentValue
@@ -246,23 +264,19 @@ Overheating:
     Calculation: Percentage
     Value: 0.5
     ApplicationMode: WhileActive
-  ConditionAndClassificationRequests:
-    ClassificationsAddRequest:
-      - Overheating
-      - Buff
-  ChildEffectDefinitions:
-    - ChildEffectDefinitionId: effect.buff.weapon.overheating.cooldown
-      ChildEffectTrigger: OnParentExpired
-  Stacking:
-    StackGroupId: 123
-    StackScope: ByStackGroupId
-    StackPolicy: Discard
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
       - EnergyDrained
       - Overheated
+  Stacking:
+    StackGroupId: 123
+    StackScope: ByStackGroupId
+    StackPolicy: Discard
   Visibility: Hud
+  ChildEffectDefinitions:
+    - ChildEffectDefinitionId: effect.buff.weapon.overheating.cooldown
+      ChildEffectTrigger: OnParentExpired
 OverheatingCooldown:
   Definition:
     EffectDefinitionId: effect.buff.weapon.overheating.cooldown
@@ -273,12 +287,17 @@ OverheatingCooldown:
   Duration:
     DurationType: Temporary
     DurationMS: 5000.0
-  ConditionAndClassificationRequests:
-    ConditionsAddRequest:
-      - Overheated
-    ClassificationsAddRequest:
-      - OverheatingCooldown
-      - Debuff
+  EffectClassifications:
+    - OverheatingCooldown
+    - Debuff
+  ConditionRequests:
+    - Timing: OnFirstApplication
+      ConditionsAddRequest:
+        - Overheated
+    - Timing: OnExpireOrRemove
+      RemoveMode: RemoveOwnContribution
+      ConditionsRemoveRequest:
+        - Overheated
   Stacking:
     StackGroupId: 123
     StackScope: ByStackGroupId
@@ -294,6 +313,8 @@ EnergyProductionSurge:
   Duration:
     DurationType: Temporary
     DurationMS: 2500.0
+  EffectClassifications:
+    - Buff
   Target:
     TargetStat: EnergyProduction
     TargetValueKind: CurrentValue
@@ -301,9 +322,6 @@ EnergyProductionSurge:
     Calculation: Percentage
     Value: 0.25
     ApplicationMode: WhileActive
-  ConditionAndClassificationRequests:
-    ClassificationsAddRequest:
-      - Buff
   Stacking:
     StackScope: ByEffectDefinitionId
     StackPolicy: Replace
@@ -320,6 +338,9 @@ DelayedExplosion:
   Duration:
     DurationType: Temporary
     DurationMS: 2000.0
+  EffectClassifications:
+    - Fire
+    - Debuff
   Target:
     TargetStat: Health
     TargetValueKind: CurrentValue
@@ -327,10 +348,6 @@ DelayedExplosion:
     Calculation: Flat
     Value: 100.0
     ApplicationMode: Instant
-  ConditionAndClassificationRequests:
-    ClassificationsAddRequest:
-      - Fire
-      - Debuff
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
