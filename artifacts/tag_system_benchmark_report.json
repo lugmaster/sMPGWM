@@ -1,5 +1,5 @@
 {
-  "registryHash": "16540112639998395124",
+  "registryHash": "2076597956116130801",
   "environment": {
     "runtime": ".NET 10.0.0",
     "os": "Microsoft Windows 10.0.26200",
@@ -25,11 +25,11 @@
         "queryOperations": 11520,
         "addOperations": 13440,
         "removeOperations": 13440,
-        "meanTickMs": 0.014963,
-        "medianTickMs": 0.014800,
-        "p95TickMs": 0.015800,
-        "p99TickMs": 0.019000,
-        "maxTickMs": 0.019900,
+        "meanTickMs": 0.015437,
+        "medianTickMs": 0.015000,
+        "p95TickMs": 0.016800,
+        "p99TickMs": 0.022700,
+        "maxTickMs": 0.025700,
         "allocatedBytesDuringMeasuredTicks": 0
       }
     }

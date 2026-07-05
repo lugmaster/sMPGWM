@@ -117,7 +117,7 @@ public class TagSystemIntegratedTests
             TagSystemFixtureFactory.Tag(registry, "Effect.Damage.Thermal"),
             TagSystemFixtureFactory.Tag(registry, "Effect.Debuff"),
             TagSystemFixtureFactory.Tag(registry, "Effect.Immunity.Poison"),
-            TagSystemFixtureFactory.Tag(registry, "Effect.Buff")
+            TagSystemFixtureFactory.Tag(registry, "Effect.Buff.ShieldCapacity")
         };
 
         var actionTags = new[]

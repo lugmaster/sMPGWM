@@ -444,7 +444,7 @@ A **tag assignment** means a domain-bound tag set currently has that tag:
 
 ```text
 A condition tag set has Condition.Poisoned.
-An effect classification tag set has Effect.Damage.Poison.
+An effect classification tag set has Effect.Damage.Poison.Dot.
 An action classification tag set has Action.Skill.Offensive.
 ```
 
@@ -698,7 +698,7 @@ If an object needs multiple classifications, assign multiple direct tags:
 
 ```yaml
 EffectClassifications:
-  - Effect.Damage.Poison
+  - Effect.Damage.Poison.Dot
   - Effect.Debuff
 ```
 
@@ -710,7 +710,9 @@ All canonical tags are queryable.
 
 Domain root tags are structural and not assignable by default.
 
-All non-root canonical tags are assignable by default.
+Leaf tags are assignable by default.
+
+Domain root tags and parent/category tags that have children are structural query tags in canonical gameplay data and are not directly assignable.
 
 A tag may opt out of direct assignment:
 
@@ -721,16 +723,29 @@ Effect.InternalCompilerOnly:
   Description: Internal category tag used only for query grouping.
 ```
 
-A parent/category tag may be directly assigned if it is non-root and assignable.
+If a broad parent concept needs direct assignment, author a concrete leaf tag for it.
 
-Example:
+Invalid canonical direct assignment:
 
 ```yaml
 EffectClassifications:
   - Effect.Damage
 ```
 
-This is valid when the effect intentionally represents generic damage without a more specific subtype.
+Valid canonical direct assignment:
+
+```yaml
+EffectClassifications:
+  - Effect.Damage.Poison.Dot
+```
+
+Valid broad selector or query:
+
+```yaml
+EffectRemovalRequest:
+  Classifications:
+    - Effect.Damage.Poison
+```
 
 Child assignments still imply parent tags through `ExpandedMask`.
 
@@ -750,7 +765,7 @@ Effect.Damage.Poison
 Effect.Damage.Poison.Dot
 ```
 
-Exact/direct matching can distinguish whether `Effect.Damage` was directly assigned or only implied by a child.
+Expanded matching sees the implied parents. Direct matching sees only the authored leaf assignment, so `HasDirect(Effect.Damage)` is false while `HasExpanded(Effect.Damage)` is true.
 
 ### 7.4 Fully Qualified Names and Short Names
 
@@ -1345,10 +1360,12 @@ TagQuery:
   Domain: EffectClassification
   MatchMode: Direct
   All:
-    - Effect.Damage
+    - Effect.Damage.Poison.Dot
 ```
 
-This matches only tag sets where `Effect.Damage` was directly assigned.
+This matches only tag sets where `Effect.Damage.Poison.Dot` was directly assigned.
+
+A direct query for `Effect.Damage` does not match child-implied damage classifications. Use `MatchMode: Expanded` for parent/category selectors.
 
 ### 10.4 Parent Expansion
 
@@ -1819,13 +1836,14 @@ Effect classification tags describe effects.
 Examples:
 
 ```text
-Effect.Damage
-Effect.Damage.Poison
-Effect.Damage.Poison.Dot
-Effect.Damage.Thermal
+Effect.Damage                 parent/query category
+Effect.Damage.Poison          parent/query category
+Effect.Damage.Poison.Dot      direct assignment leaf
+Effect.Damage.Thermal         direct assignment leaf
 Effect.Debuff
 Effect.Cleanse
-Effect.Buff.ShieldCapacity
+Effect.Buff                   parent/query category
+Effect.Buff.ShieldCapacity    direct assignment leaf
 Effect.Immunity.Bypass
 ```
 
@@ -2216,6 +2234,7 @@ Startup/import validation must reject:
 - queries with only `None` and no `MatchAll: true`,
 - direct assignment of `Assignable: false` tags,
 - direct assignment of domain root tags,
+- direct assignment of parent/category tags in canonical gameplay data,
 - invalid content source ordering,
 - registry hash mismatch in deterministic contexts.
 
@@ -2224,7 +2243,6 @@ Validation should warn or fail depending on policy for:
 - valid queries that match no current content,
 - unused tags,
 - tags with no description,
-- broad parent/category tags assigned directly where a more specific tag is expected,
 - alias usage outside migration mode,
 - generated parent/category tags with no description.
 
@@ -2314,10 +2332,12 @@ GameplayTagRegistry:
 
     Effect.Damage:
       Domain: EffectClassification
+      Assignable: false
       Description: Effect is damage-related.
 
     Effect.Damage.Poison:
       Domain: EffectClassification
+      Assignable: false
       Description: Effect deals or represents poison damage.
 
     Effect.Damage.Poison.Dot:
@@ -2328,9 +2348,30 @@ GameplayTagRegistry:
       Domain: EffectClassification
       Description: Effect deals or represents thermal damage.
 
+    Effect.Buff:
+      Domain: EffectClassification
+      Assignable: false
+      Description: Structural parent for beneficial effect classifications.
+
+    Effect.Buff.AttackSpeed:
+      Domain: EffectClassification
+      Description: Effect raises or modifies attack speed beneficially.
+
+    Effect.Buff.EnergyProduction:
+      Domain: EffectClassification
+      Description: Effect raises or modifies energy production beneficially.
+
+    Effect.Buff.ShieldCapacity:
+      Domain: EffectClassification
+      Description: Effect raises or modifies shield capacity beneficially.
+
     Effect.Debuff:
       Domain: EffectClassification
       Description: Effect is harmful to the target.
+
+    Effect.Corroding:
+      Domain: EffectClassification
+      Description: Effect applies corrosion or corroding poison behavior.
 
     Effect.Cleanse:
       Domain: EffectClassification
@@ -2338,7 +2379,16 @@ GameplayTagRegistry:
 
     Effect.Immunity:
       Domain: EffectClassification
+      Assignable: false
       Description: Effect grants or represents immunity behavior.
+
+    Effect.Immunity.Poison:
+      Domain: EffectClassification
+      Description: Effect grants or represents poison immunity.
+
+    Effect.Immunity.Corrosion:
+      Domain: EffectClassification
+      Description: Effect grants or represents corrosion immunity.
 
     Effect.Immunity.Bypass:
       Domain: EffectClassification
@@ -2752,7 +2802,7 @@ The small fixture must use gameplay-like tags inspired by current RPG State Engi
 | DomainKey | RootPrefix | Minimum Required Tags |
 |---|---|---|
 | `EntityCondition` | `Condition` | `Condition.Dead`, `Condition.Poisoned`, `Condition.PoisonExposure`, `Condition.Invulnerable`, `Condition.Incurable`, `Condition.EnergyDepleted`, `Condition.EnergyDrained`, `Condition.Overheated`, `Condition.Infected` |
-| `EffectClassification` | `Effect` | `Effect.Damage`, `Effect.Damage.Poison`, `Effect.Damage.Poison.Dot`, `Effect.Buff`, `Effect.Buff.ShieldCapacity`, `Effect.Debuff`, `Effect.Cleanse`, `Effect.Emp`, `Effect.Overheating`, `Effect.OverheatingCooldown`, `Effect.Immunity.Poison`, `Effect.CannotBeHealed` |
+| `EffectClassification` | `Effect` | `Effect.Damage`, `Effect.Damage.Poison`, `Effect.Damage.Poison.Dot`, `Effect.Buff`, `Effect.Buff.AttackSpeed`, `Effect.Buff.EnergyProduction`, `Effect.Buff.ShieldCapacity`, `Effect.Debuff`, `Effect.Corroding`, `Effect.Cleanse`, `Effect.Emp`, `Effect.Overheating`, `Effect.OverheatingCooldown`, `Effect.Immunity.Poison`, `Effect.Immunity.Corrosion`, `Effect.CannotBeHealed` |
 | `ActionClassification` | `Action` | `Action.Skill`, `Action.Offensive`, `Action.Defensive`, `Action.Projectile`, `Action.Item` |
 | `ItemClassification` | `Item` | `Item.Weapon`, `Item.Weapon.Laser`, `Item.Consumable`, `Item.Equipment.ShieldGenerator` |
 | `TargetClassification` | `Target` | `Target.LivingEntity`, `Target.Hostile`, `Target.Friendly`, `Target.Self` |
@@ -2786,7 +2836,7 @@ Queries:
     MatchMode: Expanded
     Any:
       - Effect.Damage.Poison
-      - Effect.Debuff
+      - Effect.Corroding
 
   query.effect.is_direct_damage_parent:
     Domain: EffectClassification
@@ -2794,13 +2844,18 @@ Queries:
     All:
       - Effect.Damage
 
+  # This query is useful as a direct-vs-expanded regression test.
+  # Under canonical leaf assignment, it should not match an effect that directly has Effect.Damage.Poison.Dot.
+
   query.effect.cleanse_poison_removal:
     Domain: EffectClassification
     MatchMode: Expanded
     Any:
       - Effect.Damage.Poison
+      - Effect.Corroding
     None:
       - Effect.Immunity.Poison
+      - Effect.Immunity.Corrosion
 
   query.action.is_offensive_skill:
     Domain: ActionClassification
@@ -2904,7 +2959,7 @@ Required test cases:
 |---|---|
 | `TagSet_CreateForDomainStartsEmpty` | Direct and expanded masks start empty. |
 | `TagSet_AddAssignableTagSetsDirectAndExpandedBits` | Adding an assignable child sets child and parent expansion bits. |
-| `TagSet_AddParentAssignableTagSetsDirectParentBit` | Assignable non-root parent tags can be directly assigned. |
+| `TagSet_AddLeafCategoryExpandsParentCategory` | Direct leaf assignments expand parent/category tags for broad matching. |
 | `TagSet_AddNonAssignableTagFails` | Non-assignable tags cannot be directly assigned. |
 | `TagSet_AddDomainRootFails` | Domain root cannot be directly assigned unless a future policy explicitly allows it. |
 | `TagSet_AddDuplicateIsIdempotent` | Adding an existing direct tag does not corrupt masks. |

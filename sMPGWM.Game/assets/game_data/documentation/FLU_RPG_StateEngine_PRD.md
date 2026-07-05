@@ -419,7 +419,7 @@ BaseValues[]
 EffectiveMaxValues[]
 CurrentMaxValues[]
 CurrentValues[]
-ConditionFlags
+EntityConditionTagSet
 ConditionContributorRecords
 ActiveEffects[]
 ActiveEffectCount
@@ -440,7 +440,7 @@ float[] BaseValues
 float[] EffectiveMaxValues
 float[] CurrentMaxValues
 float[] CurrentValues
-ulong ConditionFlags
+GameplayTagSet EntityConditionTags
 ActiveEffect[] ActiveEffects
 int ActiveEffectCount
 BitSet DirtyStats
@@ -674,7 +674,7 @@ BaseValues[]
 EffectiveMaxValues[]
 CurrentMaxValues[]
 CurrentValues[]
-ConditionFlags
+EntityConditionTagSet
 ConditionContributorRecords
 ActiveEffects[]
 ActiveEffectCount
@@ -707,7 +707,7 @@ float[] BaseValues
 float[] EffectiveMaxValues
 float[] CurrentMaxValues
 float[] CurrentValues
-ulong ConditionFlags
+GameplayTagSet EntityConditionTags
 ActiveEffect[] ActiveEffects
 int ActiveEffectCount
 BitSet DirtyStats
@@ -1719,11 +1719,20 @@ Active effects are processed every tick, but stat recalculation is scoped to the
 
 ## 10 Conditions
 
-`LivingEntityCondition` is the single condition vocabulary used by the StateEngine.
+The StateEngine uses the `EntityCondition` Gameplay Tag domain from `TagSystem.md` as its condition vocabulary.
+
+Canonical condition values are fully qualified tag names:
+
+```text
+Condition.Dead
+Condition.Invulnerable
+Condition.Poisoned
+Condition.EnergyDepleted
+```
 
 A condition can be used in different roles:
 
-- current entity state, such as `Dead`, `Invisible`, `Poisoned`, or `EnergyDepleted`,
+- current entity state, such as `Condition.Dead`, `Condition.Invisible`, `Condition.Poisoned`, or `Condition.EnergyDepleted`,
 - effect blocking input,
 - effect trigger input,
 - effect-removal matching input,
@@ -1731,18 +1740,12 @@ A condition can be used in different roles:
 
 Stats never infer conditions by themselves. The `StateEngine` may derive or remove conditions after stat resolution as a deterministic state rule.
 
-Runtime active conditions are stored as bit flags.
-
-Preferred backing type:
-
-```text
-ulong ConditionFlags
-```
+Runtime active conditions are stored as a domain-bound `GameplayTagSet` or an equivalent compiled `EntityCondition` domain mask.
 
 Condition contributor ownership is tracked internally by the StateEngine where effect-granted conditions can have multiple contributors:
 
 ```text
-Condition: Poisoned
+Condition: Condition.Poisoned
 Contributors:
 - EffectRuntimeId A
 - EffectRuntimeId B
@@ -1750,32 +1753,33 @@ Contributors:
 
 `LivingEntityState` exposes only whether the condition is present. Internally, the StateEngine tracks which active effects contribute each owned condition. Removing one contributor removes only that contribution unless a request uses `RemoveAllContributions`.
 
-The hierarchy metadata is not stored in every entity. It is static metadata owned by the condition registry.
+The hierarchy metadata is not stored in every entity. It is static metadata owned by the Gameplay Tag registry.
+
+Canonical direct condition mutations use assignable `EntityCondition` leaf tags. Blocking, trigger, and removal selectors may use parent/category tags if the registry defines them.
 
 ### 10.1 Condition List
 
-Initial `LivingEntityCondition` values:
+Initial `EntityCondition` gameplay tags:
 
 ```text
-None
-Dead
-Immobilized
-Invulnerable
-Untargetable
-EnergyDepleted
-Undetectable
-Invisible
-Poisoned
-PoisonExposure
-Burning
-Infected
-Revived
-ShieldCooldown
+Condition.Dead
+Condition.Immobilized
+Condition.Invulnerable
+Condition.Untargetable
+Condition.EnergyDepleted
+Condition.Undetectable
+Condition.Invisible
+Condition.Poisoned
+Condition.PoisonExposure
+Condition.Burning
+Condition.Infected
+Condition.Revived
+Condition.ShieldCooldown
 ```
 
-`Alive` is intentionally not a condition.
+`Condition.Alive` is intentionally not a condition.
 
-If the entity is not `Dead`, it is considered alive enough for StateEngine processing. Clean state is `None`.
+If the entity does not have `Condition.Dead`, it is considered alive enough for StateEngine processing. Clean state is an empty `EntityCondition` tag set.
 
 Lifecycle states such as `Spawned`, `Initialized`, `wait_for_revive`, and `ready_for_revive` are intentionally out of scope for this PRD.
 
@@ -1805,7 +1809,7 @@ Condition lifecycle rules are defined by `ConditionLifecycleTiming` and `Conditi
 
 ### 10.3 Dead Default Blocking Rule
 
-`Dead` blocks effects by default.
+`Condition.Dead` blocks effects by default.
 
 Effects that are allowed to trigger while the entity is dead must explicitly opt in.
 
@@ -1843,10 +1847,10 @@ Initial derived rules:
 
 | Rule | Timing | Result |
 |---|---|---|
-| `Health.CurrentValue <= 0` | After stat resolution | Add or keep `Dead`. |
-| `Health.CurrentValue > 0` and revive/condition removal permits it | After stat resolution | Remove `Dead`. |
-| `Shield.CurrentValue <= 0` and shield cooldown is not already active | After shield transaction resolution | Start shield cooldown and add `ShieldCooldown`. |
-| Shield cooldown expiry reached | At due tick | Remove `ShieldCooldown`; shield may be restored by later regeneration or boosts. |
+| `Health.CurrentValue <= 0` | After stat resolution | Add or keep `Condition.Dead`. |
+| `Health.CurrentValue > 0` and revive/condition removal permits it | After stat resolution | Remove `Condition.Dead`. |
+| `Shield.CurrentValue <= 0` and shield cooldown is not already active | After shield transaction resolution | Start shield cooldown and add `Condition.ShieldCooldown`. |
+| Shield cooldown expiry reached | At due tick | Remove `Condition.ShieldCooldown`; shield may be restored by later regeneration or boosts. |
 
 Derived condition rules must be deterministic and must not depend on wall-clock time.
 
@@ -1959,7 +1963,7 @@ EffectDefinition:
     Value: 50.0
     ApplicationMode: Instant
   EffectClassifications:
-    - Buff
+    - Effect.Buff.ShieldCapacity
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest: []
@@ -2119,12 +2123,18 @@ Timing and duration validity rules:
 
 Condition and classification validity rules:
 
-- `ConditionAndClassificationRequests`, `ClassificationsAddRequest`, and `ClassificationsRemoveRequest` are invalid in 6.2.3.
+- Conditions and classifications are Gameplay Tag references governed by `TagSystem.md`.
+- Canonical definitions must store fully qualified tag names such as `Condition.Dead`, `Condition.Poisoned`, `Effect.Damage.Poison.Dot`, and `Effect.Immunity.Poison`.
+- Short names such as `Dead`, `Poisoned`, `Poison`, `Buff`, and `CannotBeHealed` are importer migration inputs only and must not remain in canonical data.
+- `ConditionAndClassificationRequests`, `ClassificationsAddRequest`, and `ClassificationsRemoveRequest` are invalid in 6.3.0.
 - `EffectClassifications`, if present, is a top-level list of static metadata attached to accepted `ActiveEffect` instances.
+- `EffectClassifications` values are direct assignments and must resolve to assignable `EffectClassification` tags. Canonical direct classifications use leaf tags.
+- Parent/category `EffectClassification` tags may be used in selector fields such as `BlockedByClassification`, trigger `Classifications`, and `EffectRemovalRequest.Classifications`; those selectors match expanded tag masks.
 - `ConditionRequests`, if present, must contain at least one request entry.
 - Each `ConditionRequest` requires `Timing` in canonical definitions and at least one non-empty `ConditionsAddRequest` or `ConditionsRemoveRequest`.
 - A single `ConditionRequest` may contain both add and remove arrays.
 - `ConditionsAddRequest` and `ConditionsRemoveRequest` mutate target `LivingEntityState` conditions through the StateEngine.
+- `ConditionsAddRequest` and `ConditionsRemoveRequest` values must resolve to assignable `EntityCondition` tags.
 - Condition presence is contributor-owned internally by `EffectRuntimeId`; a condition remains visible while at least one contributor remains.
 - `RemoveMode: RemoveOwnContribution` removes only the current active effect's contribution.
 - `RemoveMode: RemoveAllContributions` clears the condition from the target and removes all contributor ownership records for that condition.
@@ -2169,24 +2179,27 @@ Classifications are used for:
 - removal request matching,
 - debug and inspection identity,
 - trigger conditions such as `OnClassificationsPresent`,
-- UI/debug grouping such as `Poison`, `Buff`, `Debuff`, `Fire`, `Overheating`, and similar authored categories.
+- UI/debug grouping such as `Effect.Damage.Poison`, `Effect.Buff`, `Effect.Debuff`, `Effect.Fire`, `Effect.Overheating`, and similar authored categories.
 
 Classifications are authored with the top-level field:
 
 ```yaml
 EffectClassifications:
-  - Poison
-  - Debuff
+  - Effect.Damage.Poison.Dot
+  - Effect.Debuff
 ```
 
 Rules:
 
+- Values are canonical `EffectClassification` gameplay tags from `TagSystem.md`.
+- Direct `EffectClassifications` values must be assignable tags. Canonical authoring uses leaf tags for direct metadata.
+- Parent/category tags such as `Effect.Damage.Poison`, `Effect.Buff`, and `Effect.Immunity` are for selector/query fields and match through expanded tag masks.
 - `EffectClassifications` is attached only after stack policy resolution accepts the runtime `ActiveEffect` instance.
 - Discarded duplicate effects do not attach classifications.
 - Replacement removes the old effect first; the new accepted replacement attaches its own classifications.
 - Classifications are not added to or removed from `LivingEntityState`.
 - Classifications disappear automatically when the corresponding `ActiveEffect` expires or is removed.
-- `ClassificationsAddRequest` and `ClassificationsRemoveRequest` are invalid in 6.2.3.
+- `ClassificationsAddRequest` and `ClassificationsRemoveRequest` are invalid in 6.3.0.
 
 Conditions and classifications are deliberately separate:
 
@@ -2201,17 +2214,17 @@ Condition requests are authored separately with lifecycle timing:
 ConditionRequests:
   - Timing: OnFirstApplication
     ConditionsAddRequest:
-      - PoisonExposure
+      - Condition.PoisonExposure
 
   - Timing: OnFirstExecution
     ConditionsAddRequest:
-      - Poisoned
+      - Condition.Poisoned
 
   - Timing: OnExpireOrRemove
     RemoveMode: RemoveOwnContribution
     ConditionsRemoveRequest:
-      - PoisonExposure
-      - Poisoned
+      - Condition.PoisonExposure
+      - Condition.Poisoned
 ```
 
 Supported lifecycle timings:
@@ -2243,13 +2256,13 @@ Supported lifecycle timings:
 Condition contribution ownership:
 
 ```text
-Condition: Poisoned
+Condition: Condition.Poisoned
 Contributors:
 - EffectRuntimeId A
 - EffectRuntimeId B
 ```
 
-`LivingEntityState` exposes only whether `Poisoned` is present. Internally, the StateEngine tracks which active effects contribute the condition. Removing `EffectRuntimeId A` removes only A's contribution. `Poisoned` remains visible while B still contributes it.
+`LivingEntityState` exposes only whether `Condition.Poisoned` is present. Internally, the StateEngine tracks which active effects contribute the condition. Removing `EffectRuntimeId A` removes only A's contribution. `Condition.Poisoned` remains visible while B still contributes it.
 
 Remove modes:
 
@@ -2265,12 +2278,12 @@ ConditionRequests:
   - Timing: OnFirstExecution
     RemoveMode: RemoveAllContributions
     ConditionsRemoveRequest:
-      - Dead
+      - Condition.Dead
     ConditionsAddRequest:
-      - Revived
+      - Condition.Revived
 ```
 
-Default timing inference is allowed only as an importer/authoring convenience. Canonical 6.2.3 definitions should declare `Timing` explicitly. If `Timing` is omitted, the importer may infer:
+Default timing inference is allowed only as an importer/authoring convenience. Canonical 6.3.0 definitions should declare `Timing` explicitly. If `Timing` is omitted, the importer may infer:
 
 | TriggerType | Default condition timing |
 |---|---|
@@ -2288,8 +2301,8 @@ Example poison exposure and poisoned state:
 EffectDefinitionId: effect.debuff.poison.damage_over_time
 
 EffectClassifications:
-  - Poison
-  - Debuff
+  - Effect.Damage.Poison.Dot
+  - Effect.Debuff
 
 Trigger:
   TriggerType: OverTime
@@ -2302,7 +2315,7 @@ Duration:
 Blocking:
   BlockPolicy: Retry
   BlockedByCondition:
-    - Invulnerable
+    - Condition.Invulnerable
 
 Target:
   TargetStat: Health
@@ -2315,39 +2328,39 @@ Target:
 ConditionRequests:
   - Timing: OnFirstApplication
     ConditionsAddRequest:
-      - PoisonExposure
+      - Condition.PoisonExposure
 
   - Timing: OnFirstExecution
     ConditionsAddRequest:
-      - Poisoned
+      - Condition.Poisoned
 
   - Timing: OnExpireOrRemove
     RemoveMode: RemoveOwnContribution
     ConditionsRemoveRequest:
-      - PoisonExposure
-      - Poisoned
+      - Condition.PoisonExposure
+      - Condition.Poisoned
 ```
 
 Runtime meaning:
 
 ```text
 The poison effect is accepted:
-- EffectClassifications Poison and Debuff are attached to the ActiveEffect.
-- PoisonExposure is added immediately after acceptance.
+- EffectClassifications `Effect.Damage.Poison.Dot` and `Effect.Debuff` are attached to the ActiveEffect.
+- `Condition.PoisonExposure` is added immediately after acceptance.
 - The effect is visible and removable even if blocked.
 
 The poison effect is blocked with Retry:
 - It remains active.
-- PoisonExposure remains.
-- Poisoned is not added yet.
+- `Condition.PoisonExposure` remains.
+- `Condition.Poisoned` is not added yet.
 
 The poison effect successfully ticks for the first time:
 - Health damage is applied.
 - OnFirstExecution fires.
-- Poisoned is added.
+- `Condition.Poisoned` is added.
 
 The poison effect expires or is removed:
-- The effect removes its own PoisonExposure and Poisoned contributions.
+- The effect removes its own `Condition.PoisonExposure` and `Condition.Poisoned` contributions.
 - The visible condition remains only if another contributor still owns it.
 - Classifications disappear automatically with the ActiveEffect.
 ```
@@ -2757,7 +2770,7 @@ Trigger:
   TriggerConditions:
     - Type: OnConditionsPresent
       Conditions:
-        - Dead
+        - Condition.Dead
       Operator: All
 ```
 
@@ -2848,18 +2861,18 @@ Blocking is evaluated before trigger and trigger conditions. If an effect is blo
 Blocking:
   BlockPolicy: RemoveOnFail
   BlockedByCondition:
-    - Invulnerable
+    - Condition.Invulnerable
   BlockedByClassification:
-    - CannotBeHealed
+    - Effect.CannotBeHealed
 ```
 
-`BlockedByCondition` checks conditions on the target `LivingEntityState`.
+`BlockedByCondition` checks canonical `EntityCondition` gameplay tags on the target `LivingEntityState`.
 
-`BlockedByClassification` checks classifications attached to active effects on the target.
+`BlockedByClassification` checks canonical `EffectClassification` gameplay tags attached to active effects on the target.
 
 If the target has any blocking condition or classification, the effect cannot execute for that attempt.
 
-`Dead` blocks effects by default. Effects that must execute while dead need:
+`Condition.Dead` blocks effects by default. Effects that must execute while dead need:
 
 ```yaml
 CanTriggerWhileDead: true
@@ -2874,7 +2887,7 @@ Revive:
     TriggerConditions:
       - Type: OnConditionsPresent
         Conditions:
-          - Dead
+          - Condition.Dead
         Operator: All
   Duration:
     DurationType: Once
@@ -2889,7 +2902,7 @@ Revive:
     - Timing: OnFirstExecution
       RemoveMode: RemoveAllContributions
       ConditionsRemoveRequest:
-        - Dead
+        - Condition.Dead
   CanTriggerWhileDead: true
 ```
 
@@ -2945,7 +2958,8 @@ Example: remove all poison-classified active effects that the candidate effects 
 ```yaml
 EffectRemovalRequest:
   Classifications:
-    - Poison
+    - Effect.Damage.Poison
+    - Effect.Corroding
 ```
 
 Example: remove up to three oldest matching crowd-control effects.
@@ -2953,9 +2967,9 @@ Example: remove up to three oldest matching crowd-control effects.
 ```yaml
 EffectRemovalRequest:
   Conditions:
-    - Paralyzed
-    - Stunned
-    - Entangled
+    - Condition.Paralyzed
+    - Condition.Stunned
+    - Condition.Entangled
   EffectRemovalBehaviour:
     MaxRemoveCount: 3
     RemoveOldestFirst: true
@@ -3161,7 +3175,7 @@ Oldest is determined by:
 3. EffectRuntimeId
 ```
 
-`RefreshOldest` is not canonical in 6.2.3 and must not be used.
+`RefreshOldest` is not canonical in 6.3.0 and must not be used.
 
 #### 12.11.5 StackGroupId
 
@@ -3363,16 +3377,16 @@ OverheatingCooldown:
     DurationType: Temporary
     DurationMS: 5000.0
   EffectClassifications:
-    - OverheatingCooldown
-    - Debuff
+    - Effect.OverheatingCooldown
+    - Effect.Debuff
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest:
-        - Overheated
+        - Condition.Overheated
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - Overheated
+        - Condition.Overheated
 ```
 
 Result:
@@ -3486,7 +3500,7 @@ The `EffectDefinitionRegistry` provides fast lookup for the static configuration
 
 Effect source information is used for causality, stacking, removal, analytics, debugging, and deterministic replay.
 
-The canonical 6.2.3 runtime schema requires:
+The canonical 6.3.0 runtime schema requires:
 
 ```text
 SourceId
@@ -3495,7 +3509,7 @@ TargetEntityId
 AppliedNetworkTick
 ```
 
-`SourceType` can be kept as external provenance metadata or derived from the `SourceId` namespace. It is not required by the canonical 6.2.3 `ActiveEffect` runtime schema unless the implementation intentionally extends it.
+`SourceType` can be kept as external provenance metadata or derived from the `SourceId` namespace. It is not required by the canonical 6.3.0 `ActiveEffect` runtime schema unless the implementation intentionally extends it.
 
 ### 14.1 SourceType
 
@@ -3848,7 +3862,7 @@ BaseValues[]
 EffectiveMaxValues[]
 CurrentMaxValues[]
 CurrentValues[]
-ConditionFlags
+EntityConditionTagSet
 ConditionContributorRecords
 ActiveEffects[]
 ActiveEffectCount
@@ -3970,7 +3984,7 @@ ChangedStats:
 - CurrentValue if changed or required by payload flags
 
 ChangedConditions:
-- ulong ConditionFlags
+- EntityConditionTagSet delta or serialized EntityCondition tag mask
 
 ChangedEffects:
 - Added ActiveEffect runtime ids
@@ -4210,7 +4224,7 @@ The engine must use:
 - deterministic child-effect order,
 - deterministic removal ordering,
 - deterministic overflow replacement and rejection ordering,
-- exact condition flag comparison.
+- exact EntityCondition tag-set comparison.
 
 The engine must not rely on dictionary iteration order, hash-set iteration order, unordered source iteration, object reference order, thread scheduling, or runtime-dependent collection behavior.
 
@@ -4294,7 +4308,7 @@ The validator must check:
 - `MaxStacks`, when present, is greater than zero.
 - `StackScope: ByStackGroupId` has `StackGroupId`.
 - `EffectRemovalRequest`, when present, has at least one non-empty selector.
-- Duration and tick interval values satisfy the 6.2.3 timing rules.
+- Duration and tick interval values satisfy the 6.3.0 timing rules.
 - Active effect stat targets are compatible with the Stats model.
 
 ### 24.2 Validation Timing
@@ -4342,8 +4356,8 @@ EffectDefinition:
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
-      - Dead
-      - Incurable
+      - Condition.Dead
+      - Condition.Incurable
   CanTriggerWhileDead: false
   Visibility: Hud
 ```
@@ -4410,7 +4424,7 @@ EffectDefinition:
     - Timing: OnFirstExecution
       RemoveMode: RemoveAllContributions
       ConditionsRemoveRequest:
-        - Dead
+        - Condition.Dead
   CanTriggerWhileDead: true
 ```
 
@@ -4471,8 +4485,8 @@ EffectDefinition:
     Description: Applies poison exposure and deals periodic Health damage.
   EffectProcessing: Fast
   EffectClassifications:
-    - Poison
-    - Debuff
+    - Effect.Damage.Poison.Dot
+    - Effect.Debuff
   Trigger:
     TriggerType: OverTime
     TickIntervalMs: 1000
@@ -4482,7 +4496,7 @@ EffectDefinition:
   Blocking:
     BlockPolicy: Retry
     BlockedByCondition:
-      - Invulnerable
+      - Condition.Invulnerable
   Target:
     TargetStat: Health
     TargetValueKind: CurrentValue
@@ -4493,15 +4507,15 @@ EffectDefinition:
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest:
-        - PoisonExposure
+        - Condition.PoisonExposure
     - Timing: OnFirstExecution
       ConditionsAddRequest:
-        - Poisoned
+        - Condition.Poisoned
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - PoisonExposure
-        - Poisoned
+        - Condition.PoisonExposure
+        - Condition.Poisoned
   Stacking:
     StackGroupId: poison.damage
     StackScope: ByStackGroupId
@@ -4537,16 +4551,16 @@ EffectDefinition:
     DurationType: Temporary
     DurationMS: 3000
   EffectClassifications:
-    - Debuff
-    - EMP
+    - Effect.Debuff
+    - Effect.Emp
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest:
-        - EnergyDepleted
+        - Condition.EnergyDepleted
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - EnergyDepleted
+        - Condition.EnergyDepleted
   Visibility: Hud
 ```
 
@@ -4573,7 +4587,8 @@ EffectDefinition:
     DurationType: Once
   EffectRemovalRequest:
     Classifications:
-      - Poison
+      - Effect.Damage.Poison
+      - Effect.Corroding
     EffectRemovalBehaviour:
       MaxRemoveCount: 3
       RemoveOldestFirst: true

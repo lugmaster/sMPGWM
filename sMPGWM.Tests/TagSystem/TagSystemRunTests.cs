@@ -60,14 +60,16 @@ public class TagSystemRunTests
     }
 
     [Test]
-    public void TagSet_AddParentAssignableTagSetsDirectParentBit()
+    public void TagSet_AddLeafCategoryExpandsParentCategory()
     {
         var registry = TagSystemFixtureFactory.CreateSmallGameplayRegistry();
         var set = registry.CreateTagSet(TagSystemFixtureFactory.EffectClassification);
         var buff = TagSystemFixtureFactory.Tag(registry, "Effect.Buff");
+        var shieldCapacity = TagSystemFixtureFactory.Tag(registry, "Effect.Buff.ShieldCapacity");
 
-        Assert.That(set.Add(buff), Is.True);
-        Assert.That(set.HasDirect(buff), Is.True);
+        Assert.That(set.Add(shieldCapacity), Is.True);
+        Assert.That(set.HasDirect(shieldCapacity), Is.True);
+        Assert.That(set.HasDirect(buff), Is.False);
         Assert.That(set.HasExpanded(buff), Is.True);
     }
 

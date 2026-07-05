@@ -202,19 +202,19 @@ public class TagSystemStartupTests
         var registry = TagSystemFixtureFactory.CreateSmallGameplayRegistry();
         var effectDomain = registry.GetDomain(registry.GetDomainId(TagSystemFixtureFactory.EffectClassification));
 
-        Assert.That(effectDomain.CanonicalTagCount, Is.EqualTo(20));
-        Assert.That(effectDomain.AssignableTagCount, Is.EqualTo(16));
-        Assert.That(effectDomain.NonAssignableTagCount, Is.EqualTo(4));
+        Assert.That(effectDomain.CanonicalTagCount, Is.EqualTo(23));
+        Assert.That(effectDomain.AssignableTagCount, Is.EqualTo(18));
+        Assert.That(effectDomain.NonAssignableTagCount, Is.EqualTo(5));
         Assert.That(effectDomain.CanonicalTagCount, Is.EqualTo(effectDomain.AssignableTagCount + effectDomain.NonAssignableTagCount));
     }
 
     [Test]
-    public void Registry_ParentCategoriesDefaultNonAssignableUnlessExplicit()
+    public void Registry_ParentCategoriesDefaultNonAssignable()
     {
         var registry = TagSystemFixtureFactory.CreateSmallGameplayRegistry();
 
         Assert.That(registry.GetTag(TagSystemFixtureFactory.Tag(registry, "Effect.Damage")).IsAssignable, Is.False);
-        Assert.That(registry.GetTag(TagSystemFixtureFactory.Tag(registry, "Effect.Buff")).IsAssignable, Is.True);
+        Assert.That(registry.GetTag(TagSystemFixtureFactory.Tag(registry, "Effect.Buff")).IsAssignable, Is.False);
         Assert.That(registry.GetTag(TagSystemFixtureFactory.Tag(registry, "Effect")).IsAssignable, Is.False);
     }
 

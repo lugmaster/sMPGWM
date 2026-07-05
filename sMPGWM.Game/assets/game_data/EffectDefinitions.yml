@@ -27,7 +27,8 @@ CleansePoison:
     DurationType: Once
   EffectRemovalRequest:
     Classifications:
-      - Poison
+      - Effect.Damage.Poison
+      - Effect.Corroding
     EffectRemovalBehaviour:
       MaxRemoveCount: 3
       RemoveOldestFirst: true
@@ -48,9 +49,8 @@ CorrodingPoison:
     DurationType: Temporary
     DurationMS: 1500.0
   EffectClassifications:
-    - Corroding
-    - Poison
-    - Debuff
+    - Effect.Corroding
+    - Effect.Debuff
   Target:
     TargetStat: Armor
     TargetValueKind: CurrentValue
@@ -61,16 +61,16 @@ CorrodingPoison:
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest:
-        - Poisoned
+        - Condition.Poisoned
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - Poisoned
+        - Condition.Poisoned
   Blocking:
     BlockPolicy: Retry
     BlockedByClassification:
-      - ImmuneToPoison
-      - ImmuneToCorroding
+      - Effect.Immunity.Poison
+      - Effect.Immunity.Corrosion
   EffectRemovalPolicy: ByAnySource
   Stacking:
     StackScope: ByEffectDefinitionId
@@ -90,8 +90,8 @@ DelayedExplosion:
     DurationType: Temporary
     DurationMS: 2000.0
   EffectClassifications:
-    - Fire
-    - Debuff
+    - Effect.Fire
+    - Effect.Debuff
   Target:
     TargetStat: Health
     TargetValueKind: CurrentValue
@@ -102,7 +102,7 @@ DelayedExplosion:
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
-      - Invulnerable
+      - Condition.Invulnerable
   Visibility: Hud
 EMP_Lockout:
   Definition:
@@ -116,16 +116,16 @@ EMP_Lockout:
     DurationType: Temporary
     DurationMS: 3000.0
   EffectClassifications:
-    - Debuff
-    - EMP
+    - Effect.Debuff
+    - Effect.Emp
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest:
-        - EnergyDepleted
+        - Condition.EnergyDepleted
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - EnergyDepleted
+        - Condition.EnergyDepleted
   Blocking:
     BlockPolicy: RemoveOnFail
   EffectRemovalPolicy: ByAnySource
@@ -148,7 +148,7 @@ EnergyProductionSurge:
     DurationType: Temporary
     DurationMS: 2500.0
   EffectClassifications:
-    - Buff
+    - Effect.Buff.EnergyProduction
   Target:
     TargetStat: EnergyProduction
     TargetValueKind: CurrentValue
@@ -172,8 +172,8 @@ EnergyStorageCurse:
   Duration:
     DurationType: UntilRemoved
   EffectClassifications:
-    - CannotBeRegenerated
-    - Debuff
+    - Effect.CannotBeRegenerated
+    - Effect.Debuff
   Target:
     TargetStat: EnergyStorage
     TargetValueKind: CurrentMaxValue
@@ -184,17 +184,17 @@ EnergyStorageCurse:
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest:
-        - Cursed
+        - Condition.Cursed
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - Cursed
+        - Condition.Cursed
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByClassification:
-      - CurseImmunity
+      - Effect.Immunity.Curse
     BlockedByCondition:
-      - Invulnerable
+      - Condition.Invulnerable
   EffectRemovalRequest:
     EffectsTargetingStats:
       - EnergyProduction
@@ -222,9 +222,9 @@ Heal:
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
-      - Incurable
+      - Condition.Incurable
     BlockedByClassification:
-      - CannotBeHealed
+      - Effect.CannotBeHealed
   Visibility: Internal
 MaxHealthRot:
   Definition:
@@ -238,8 +238,8 @@ MaxHealthRot:
     DurationType: Temporary
     DurationMS: 5000.0
   EffectClassifications:
-    - Infection
-    - Debuff
+    - Effect.Infection
+    - Effect.Debuff
   Target:
     TargetStat: Health
     TargetValueKind: CurrentMaxValue
@@ -250,15 +250,15 @@ MaxHealthRot:
   ConditionRequests:
     - Timing: OnFirstExecution
       ConditionsAddRequest:
-        - Infected
+        - Condition.Infected
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - Infected
+        - Condition.Infected
   Blocking:
     BlockPolicy: Retry
     BlockedByCondition:
-      - Invulnerable
+      - Condition.Invulnerable
   EffectRemovalPolicy: ByAnySource
   Stacking:
     StackScope: ByEffectDefinitionId
@@ -287,8 +287,8 @@ NormalHeal:
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
-      - Dead
-      - Incurable
+      - Condition.Dead
+      - Condition.Incurable
   EffectRemovalPolicy: ByAnySource
   CanTriggerWhileDead: false
   Stacking:
@@ -306,8 +306,8 @@ Overheating:
     DurationType: Temporary
     DurationMS: 5000.0
   EffectClassifications:
-    - Overheating
-    - Buff
+    - Effect.Overheating
+    - Effect.Buff.AttackSpeed
   Target:
     TargetStat: AttackSpeed
     TargetValueKind: CurrentValue
@@ -318,8 +318,8 @@ Overheating:
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
-      - EnergyDrained
-      - Overheated
+      - Condition.EnergyDrained
+      - Condition.Overheated
   Stacking:
     StackGroupId: 123
     StackScope: ByStackGroupId
@@ -339,16 +339,16 @@ OverheatingCooldown:
     DurationType: Temporary
     DurationMS: 5000.0
   EffectClassifications:
-    - OverheatingCooldown
-    - Debuff
+    - Effect.OverheatingCooldown
+    - Effect.Debuff
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest:
-        - Overheated
+        - Condition.Overheated
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - Overheated
+        - Condition.Overheated
   Stacking:
     StackGroupId: 123
     StackScope: ByStackGroupId
@@ -361,8 +361,8 @@ PoisonDamageOverTime:
     Description: Applies poison exposure and deals periodic Health damage.
   EffectProcessing: Fast
   EffectClassifications:
-    - Poison
-    - Debuff
+    - Effect.Damage.Poison.Dot
+    - Effect.Debuff
   Trigger:
     TriggerType: OverTime
     TickIntervalMs: 1000.0
@@ -372,7 +372,7 @@ PoisonDamageOverTime:
   Blocking:
     BlockPolicy: Retry
     BlockedByCondition:
-      - Invulnerable
+      - Condition.Invulnerable
   Target:
     TargetStat: Health
     TargetValueKind: CurrentValue
@@ -383,15 +383,15 @@ PoisonDamageOverTime:
   ConditionRequests:
     - Timing: OnFirstApplication
       ConditionsAddRequest:
-        - PoisonExposure
+        - Condition.PoisonExposure
     - Timing: OnFirstExecution
       ConditionsAddRequest:
-        - Poisoned
+        - Condition.Poisoned
     - Timing: OnExpireOrRemove
       RemoveMode: RemoveOwnContribution
       ConditionsRemoveRequest:
-        - PoisonExposure
-        - Poisoned
+        - Condition.PoisonExposure
+        - Condition.Poisoned
   EffectRemovalPolicy: ByAnySource
   Stacking:
     StackGroupId: 1001
@@ -411,7 +411,7 @@ Revive:
     TriggerConditions:
       - Type: OnConditionsPresent
         Conditions:
-          - Dead
+          - Condition.Dead
         Operator: All
   Duration:
     DurationType: Once
@@ -426,13 +426,13 @@ Revive:
     - Timing: OnFirstExecution
       RemoveMode: RemoveAllContributions
       ConditionsRemoveRequest:
-        - Dead
+        - Condition.Dead
   Blocking:
     BlockPolicy: RemoveOnFail
     BlockedByCondition:
-      - Incurable
+      - Condition.Incurable
     BlockedByClassification:
-      - CannotBeHealed
+      - Effect.CannotBeHealed
   CanTriggerWhileDead: true
   Stacking:
     StackScope: ByEffectDefinitionId
@@ -452,7 +452,7 @@ ReviveRemoveDead:
     - Timing: OnFirstExecution
       RemoveMode: RemoveAllContributions
       ConditionsRemoveRequest:
-        - Dead
+        - Condition.Dead
   Blocking:
     BlockPolicy: RemoveOnFail
   EffectRemovalPolicy: ByAnySource
@@ -497,7 +497,7 @@ ShieldCapacityBoost:
     DurationType: Temporary
     DurationMS: 3000.0
   EffectClassifications:
-    - Buff
+    - Effect.Buff.ShieldCapacity
   Target:
     TargetStat: Shield
     TargetValueKind: CurrentMaxValue
@@ -526,7 +526,7 @@ ShieldCapacityBooster:
     DurationType: Temporary
     DurationMS: 5000.0
   EffectClassifications:
-    - Buff
+    - Effect.Buff.ShieldCapacity
   Target:
     TargetStat: Shield
     TargetValueKind: CurrentMaxValue
@@ -557,8 +557,7 @@ SuperEvilDot:
     DurationType: Temporary
     DurationMS: 2100.0
   EffectClassifications:
-    - AffectedBySuperEvilDot
-    - Debuff
+    - Effect.Debuff
   Target:
     TargetStat: Health
     TargetValueKind: CurrentValue
@@ -569,7 +568,7 @@ SuperEvilDot:
   Blocking:
     BlockPolicy: Retry
     BlockedByCondition:
-      - Invulnerable
+      - Condition.Invulnerable
   EffectRemovalPolicy: ByAnySource
   Stacking:
     StackScope: ByEffectDefinitionId
