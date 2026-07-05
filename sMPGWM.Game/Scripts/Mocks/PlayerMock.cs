@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Autoload.Base;
-using sMPGWM.Scripts.Controllers.LivingEntity;
-using sMPGWM.Scripts.Enums.Game;
 using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Ui.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
@@ -12,17 +10,17 @@ namespace sMPGWM.Scripts.Mocks;
 public partial class PlayerMock: AbstractSingleton<PlayerMock>
 {
     
-    public readonly LivingEntityState LivingEntityState = new LivingEntityState(StateEngine.Config.PlayerActiveEffectCapacity)
-    {
-        Condition = LivingEntityCondition.None,
-        Health = new Stat(100,15),
-        Shield = new Stat(175,168),
-        EnergyStorage = new Stat(120, 77),
-        Speed = new Stat(0),
-        Acceleration = new Stat(0),
-        LivingEntityType = LivingEntityType.MpController,
-        LivingEntityId = 1
-    };
+    // public readonly LivingEntityState LivingEntityState = new LivingEntityState(StateEngine.Config.PlayerActiveEffectCapacity)
+    // {
+    //     Condition = LivingEntityCondition.None,
+    //     Health = new Stat(100,15),
+    //     Shield = new Stat(175,168),
+    //     EnergyStorage = new Stat(120, 77),
+    //     Speed = new Stat(0),
+    //     Acceleration = new Stat(0),
+    //     LivingEntityType = LivingEntityType.MpController,
+    //     LivingEntityId = 1
+    // };
 
     public IReadOnlyList<IconDefinition> GetHotBarSkills()
     {

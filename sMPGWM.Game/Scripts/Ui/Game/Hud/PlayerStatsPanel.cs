@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Controllers.LivingEntity;
 using sMPGWM.Scripts.Enums.Game;
-using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Provider;
 using sMPGWM.Scripts.Ui.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
@@ -15,7 +13,7 @@ public partial class PlayerStatsPanel : PanelContainer
     private readonly Dictionary<StatType, StatBar> _bars = new();
 
     private VBoxContainer _barContainer = null!;
-    private LivingEntityState _livingEntityState = null!;
+    // private LivingEntityState _livingEntityState = null!;
     private bool _isProcessingInput = true;
 
     public override void _EnterTree()
@@ -30,7 +28,8 @@ public partial class PlayerStatsPanel : PanelContainer
         Logger.Debug($"{nameof(PlayerStatsPanel)}.{nameof(_Ready)} loaded.");
     }
 
-    public void Bind(LivingEntityState state, IReadOnlyCollection<StatType> visibleStats)
+    public void Bind(Object state, //LivingEntityState 
+        IReadOnlyCollection<StatType> visibleStats)
     {
         Logger.Debug($"{nameof(PlayerStatsPanel)}.{nameof(Bind)} called.");
         if (state == null)
@@ -39,7 +38,7 @@ public partial class PlayerStatsPanel : PanelContainer
             throw new ArgumentNullException(nameof(state));
         }
 
-        _livingEntityState = state;
+        // _livingEntityState = state;
 
         if (visibleStats == null)
         {
@@ -103,8 +102,8 @@ public partial class PlayerStatsPanel : PanelContainer
 
     private void RefreshBar(StatType type)
     {
-        var stat = _livingEntityState.GetStatByType(type);
-        GetBar(type).Setup(stat.CurrentValue, stat.MaxValue);
+        // var stat = _livingEntityState.GetStatByType(type);
+        // GetBar(type).Setup(stat.CurrentValue, stat.MaxValue);
     }
 
     public void SetBarValue(StatType type, double value, double maxValue)

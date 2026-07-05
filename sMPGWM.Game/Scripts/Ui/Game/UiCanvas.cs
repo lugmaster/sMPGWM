@@ -29,12 +29,12 @@ public partial class UiCanvas : CanvasLayer
     public override void _Ready()
     {
         Logger.Trace($"{nameof(UiCanvas)}.{nameof(_Ready)} called.");
-        _playerHud.Bind(PlayerMock.Instance.LivingEntityState,
-        [
-            StatType.Health,
-                StatType.Shield,
-                StatType.EnergyStorage
-        ]);
+        // _playerHud.Bind(PlayerMock.Instance.LivingEntityState,
+        // [
+        //     StatType.Health,
+        //         StatType.Shield,
+        //         StatType.EnergyStorage
+        // ]);
         _playerHud.SetHotbarIcons(PlayerMock.Instance.GetHotBarSkills());
         _playerHud.HotbarSlotPressed += RequestHotbarAction;
         _gameOverlayController.OnMenuAction +=  RequestMenuAction;

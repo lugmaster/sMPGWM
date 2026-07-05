@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Controllers.LivingEntity;
 using sMPGWM.Scripts.Enums.Game;
 using sMPGWM.Scripts.Enums.GameState;
-using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Ui.Base;
 using Logger = sMPGWM.Scripts.Autoload.Logger;
 
@@ -13,11 +11,11 @@ namespace sMPGWM.Scripts.Ui.Game.Hud;
 public partial class PlayerHud : Control
 {
     public event Action<int>? HotbarSlotPressed;
-    
+
     private Control _statsAnchor = null!;
     private Control _radarAnchor = null!;
     private Control _hotbarAnchor = null!;
-    
+
     private PlayerStatsPanel _statsPanel = null!;
     private RadarControl _radarControl = null!;
     private HotbarControl _hotbarControl = null!;
@@ -65,22 +63,25 @@ public partial class PlayerHud : Control
 
         HotbarSlotPressed?.Invoke(slotIndex);
     }
-    
-    public void Bind(LivingEntityState state, IReadOnlyCollection<StatType> visibleStats)
+
+    public void Bind(Object state // LivingintEntitityState
+        , IReadOnlyCollection<StatType> visibleStats)
     {
         Logger.Debug($"{nameof(PlayerHud)}.{nameof(Bind)} called.");
-        _statsPanel.Bind(state, visibleStats);
+        // _statsPanel.Bind(state, visibleStats);
     }
 
     public void SetHotbarIcons(IReadOnlyList<IconDefinition> iconDefinitions)
     {
-        Logger.Debug($"{nameof(PlayerHud)}.{nameof(SetHotbarIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
+        Logger.Debug(
+            $"{nameof(PlayerHud)}.{nameof(SetHotbarIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
         _hotbarControl.SetIcons(iconDefinitions);
     }
 
     public void ApplyGameState(MainGameState mainGameState)
     {
-        Logger.Debug($"{nameof(PlayerHud)}.{nameof(ApplyGameState)} called with {nameof(mainGameState)}={mainGameState}.");
+        Logger.Debug(
+            $"{nameof(PlayerHud)}.{nameof(ApplyGameState)} called with {nameof(mainGameState)}={mainGameState}.");
         _hotbarControl?.ApplyGameState(mainGameState);
         switch (mainGameState)
         {
@@ -96,9 +97,8 @@ public partial class PlayerHud : Control
             default:
                 throw new InvalidOperationException($"Unexpected game state: {mainGameState}");
         }
-
     }
-    
+
     private void ApplyActiveState()
     {
         ProcessMode = ProcessModeEnum.Inherit;
