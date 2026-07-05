@@ -1,0 +1,37 @@
+{
+  "registryHash": "16540112639998395124",
+  "environment": {
+    "runtime": ".NET 10.0.0",
+    "os": "Microsoft Windows 10.0.26200",
+    "cpu": "unknown",
+    "configuration": "Debug"
+  },
+  "budget": {
+    "targetTicksPerSecond": 30,
+    "fullTickBudgetMs": 33.333,
+    "tagSystemBudgetPercent": 10.0,
+    "tagSystemBudgetMs": 3.333
+  },
+  "scenarios": [
+    {
+      "name": "Stress_30Tps_BaselineGameplayFixture",
+      "parameters": {
+        "ticksToRun": 120,
+        "systemsPerTick": 7,
+        "operationsPerInnerLoop": 32
+      },
+      "metrics": {
+        "totalOperations": 38400,
+        "queryOperations": 11520,
+        "addOperations": 13440,
+        "removeOperations": 13440,
+        "meanTickMs": 0.014963,
+        "medianTickMs": 0.014800,
+        "p95TickMs": 0.015800,
+        "p99TickMs": 0.019000,
+        "maxTickMs": 0.019900,
+        "allocatedBytesDuringMeasuredTicks": 0
+      }
+    }
+  ]
+}

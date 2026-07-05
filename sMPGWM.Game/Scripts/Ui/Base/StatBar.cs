@@ -7,7 +7,7 @@ namespace sMPGWM.Scripts.Ui.Base;
 
 public partial class StatBar : Control
 {
-    public StatType Type { get; private set; }
+    // public StatType Type { get; private set; }
 
     private ProgressBar _progressBar = null!;
     private Label _nameLabel = null!;
@@ -26,11 +26,11 @@ public partial class StatBar : Control
         Logger.Trace($"{nameof(StatBar)}.{nameof(_Ready)} called.");
     }
 
-    public void Configure(StatType type, string title)
-    {
-        Type = type;
-        Title = title;
-    }
+    // public void Configure(StatType type, string title)
+    // {
+    //     Type = type;
+    //     Title = title;
+    // }
 
     public string Title
     {

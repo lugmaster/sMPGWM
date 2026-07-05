@@ -1,6 +1,6 @@
 # PRD: Gameplay Tag System
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Target Engine:** Godot 4.x / C#  
 **Primary Consumers:** RPG State Engine, Action System, Targeting System, Item System, Effect System, Cooldown System, Damage System, Faction/Relation Systems  
 **Runtime Model:** Deterministic, low-memory, low-allocation, data-driven  
@@ -94,7 +94,20 @@
     - [17.3 EffectDefinition Usage Example](#173-effectdefinition-usage-example)
     - [17.4 ActionDefinition Usage Example](#174-actiondefinition-usage-example)
 - [18 Suggested Runtime Types](#18-suggested-runtime-types)
-- [19 Testing and Acceptance Criteria](#19-testing-and-acceptance-criteria)
+- [19 Testing Strategy and Acceptance Criteria](#19-testing-strategy-and-acceptance-criteria)
+    - [19.1 Test Strategy Goals](#191-test-strategy-goals)
+    - [19.2 Test Project Layout](#192-test-project-layout)
+    - [19.3 Required Test Fixtures](#193-required-test-fixtures)
+    - [19.4 Startup and Registry Tests](#194-startup-and-registry-tests)
+    - [19.5 Determinism Tests](#195-determinism-tests)
+    - [19.6 Runtime Tag Set Tests](#196-runtime-tag-set-tests)
+    - [19.7 Query Tests](#197-query-tests)
+    - [19.8 Runtime Allocation Tests](#198-runtime-allocation-tests)
+    - [19.9 Standalone Stress and Pressure Tests](#199-standalone-stress-and-pressure-tests)
+    - [19.10 Statistics and Benchmark Reporting](#1910-statistics-and-benchmark-reporting)
+    - [19.11 Content-Pack Extensibility Tests](#1911-content-pack-extensibility-tests)
+    - [19.12 StateEngine Contract Tests](#1912-stateengine-contract-tests)
+    - [19.13 Codex Implementation Checklist](#1913-codex-implementation-checklist)
 - [20 Open Future Extensions](#20-open-future-extensions)
 
 ---
@@ -2654,84 +2667,593 @@ public static class GameTags
 
 ---
 
-## 19 Testing and Acceptance Criteria
+## 19 Testing Strategy and Acceptance Criteria
 
-### 19.1 Registry Tests
+The test suite must prove that the Gameplay Tag System is deterministic, domain-safe, allocation-conscious, and fast enough to remain outside the critical path of a 30 TPS simulation.
 
-- Loads base tag file.
-- Loads multiple content sources in deterministic order.
-- Registers domains at startup.
-- Rejects duplicate domain keys.
-- Rejects duplicate root prefixes.
-- Rejects unknown domains.
-- Rejects duplicate canonical names.
-- Rejects explicit extra parents.
-- Resolves aliases before validation.
-- Rejects alias chains.
-- Rejects alias cycles.
-- Rejects cross-domain aliases.
-- Rejects ambiguous short names.
-- Freezes registry after validation and compilation.
-- Prevents mutation after freeze.
+All tests in this section are standalone Tag System tests. They must not require the `StateEngine`, Godot scene nodes, rendering, networking, physics, action execution, effect execution, inventory, cooldown timers, damage formulas, or live content loading. StateEngine-like pressure is simulated only by synthetic tag sets, domains, queries, and tick loops.
 
-### 19.2 Determinism Tests
+The tests must be suitable for agentic implementation. Each test should have a stable name, deterministic fixture setup, explicit assertions, and no hidden dependency on test execution order.
 
-- Same content set produces same `GameplayTagId`s.
-- Same content set produces same `DomainLocalIndex` values.
-- Same content set produces same domain mask sizes.
-- Same content set produces same compiled query masks.
-- Same content set produces same registry hash.
-- Different content set produces different registry hash when relevant data changes.
-- Generated runtime table is stable across repeated runs.
+### 19.1 Test Strategy Goals
 
-### 19.3 Mask and Assignment Tests
+Required goals:
 
-- Registry counts tags per domain correctly.
-- Registry assigns correct domain mask word count.
-- Startup diagnostics log domain mask size information.
-- `Add` sets direct and expanded bits.
-- `Remove` clears direct tag and rebuilds or updates expanded bits correctly.
-- Removing one child tag does not remove a parent bit still implied by another direct child tag.
-- `Clear` clears direct and expanded masks.
-- Domain-mismatched `Add` fails.
-- Domain-mismatched `Remove` fails.
-- Domain-mismatched query match fails.
+```text
+1. Validate startup/import/registry behavior before freeze.
+2. Validate deterministic ID, mask, query, and hash output.
+3. Validate runtime query, add, remove, clear, and match behavior.
+4. Validate domain safety and error handling.
+5. Validate zero-allocation hot-path behavior.
+6. Stress multiple domains and multiple synthetic consumer systems across multiple ticks.
+7. Generate statistics that identify the pressure point where the tag system can no longer sustain a 30 TPS budget.
+```
 
-### 19.4 Query Tests
+The stress tests are measurement tests, not gameplay correctness tests. They answer:
 
-- `All` query matches only when all required tags are present.
-- `Any` query matches when at least one tag is present.
-- `None` query fails when a forbidden tag is present.
-- Query with only `None` fails validation unless `MatchAll: true`.
-- Expanded query matches child tags through parent expansion.
-- Direct query matches only direct assignments.
-- Domain-mismatched query fails validation.
-- Precompiled query returns same result as validation-time interpreted query.
+```text
+At which tag count, mask size, tag-set count, query count, mutation count, and simulated system pressure does tag processing exceed the configured per-tick budget?
+```
 
-### 19.5 Runtime Allocation Tests
+The default 30 TPS tick budget is:
 
-- Hot-path `HasDirect`, `HasExpanded`, `HasAny`, `HasAll`, `HasNone`, and `Matches` allocate zero memory.
-- No string comparison occurs in hot-path query execution.
-- No hierarchy traversal occurs in hot-path query execution.
-- Dynamic query cache is not required by runtime gameplay query path.
+```text
+TargetTickRate: 30 ticks per second
+FullTickBudgetMs: 33.333 ms
+DefaultTagSystemBudgetPercent: 10%
+DefaultTagSystemBudgetMs: 3.333 ms per simulated tick
+```
 
-### 19.6 StateEngine Integration Tests
+The 10% tag-system budget is a benchmark default, not a gameplay rule. The benchmark report must include raw timings so the project can choose a stricter or looser budget later.
 
-- `Condition.Poisoned` can be added and removed through StateEngine-owned condition assignment.
-- Effect classification tags exist on active effects or effect metadata only.
-- Effect removal by classification works through compiled tag masks.
-- Blocking by condition works through compiled tag masks.
-- Conditions and classifications remain separate domains.
-- The tag system does not mutate condition contributors.
+### 19.2 Test Project Layout
 
-### 19.7 Content-Pack Extensibility Tests
+Recommended standalone test layout:
 
-- Additional content source can declare new domains before freeze.
-- Additional content source can declare new tags before freeze.
-- EffectDefinition using a new declared tag validates.
-- ActionDefinition using a new declared tag validates.
-- Definition using undeclared tag fails.
-- Registry hash changes when content source set changes.
+```text
+tests/
+  tag_system/
+    GameplayTagRegistryBuilderTests.cs
+    GameplayTagRegistryDeterminismTests.cs
+    GameplayTagSetRuntimeTests.cs
+    GameplayTagQueryTests.cs
+    GameplayTagAllocationTests.cs
+    GameplayTagStressTests.cs
+    GameplayTagBenchmarkReportTests.cs
+    fixtures/
+      TagRegistryFixtureFactory.cs
+      TagQueryFixtureFactory.cs
+      SyntheticTagPressureFactory.cs
+      SyntheticTickWorkload.cs
+      BenchmarkStats.cs
+      BenchmarkStatsWriter.cs
+```
+
+Recommended C# tooling:
+
+```text
+Unit and acceptance tests: NUnit or xUnit-compatible .NET test runner
+Microbenchmarks: BenchmarkDotNet where available
+Fallback stress harness: deterministic Stopwatch-based runner
+Allocation assertions: GC.GetAllocatedBytesForCurrentThread where available
+Report format: Markdown and JSON
+```
+
+The core tag system must be implemented so these tests can run as a normal .NET test assembly without launching a Godot scene. Godot-specific wrappers may have separate integration tests, but they are not required for this PRD.
+
+### 19.3 Required Test Fixtures
+
+The test suite must provide small, medium, large, and extreme registry fixtures.
+
+#### 19.3.1 Small Gameplay Fixture
+
+The small fixture must use gameplay-like tags inspired by current RPG State Engine effect data, while remaining standalone. It must include at least these domains:
+
+| DomainKey | RootPrefix | Minimum Required Tags |
+|---|---|---|
+| `EntityCondition` | `Condition` | `Condition.Dead`, `Condition.Poisoned`, `Condition.PoisonExposure`, `Condition.Invulnerable`, `Condition.Incurable`, `Condition.EnergyDepleted`, `Condition.EnergyDrained`, `Condition.Overheated`, `Condition.Infected` |
+| `EffectClassification` | `Effect` | `Effect.Damage`, `Effect.Damage.Poison`, `Effect.Damage.Poison.Dot`, `Effect.Buff`, `Effect.Buff.ShieldCapacity`, `Effect.Debuff`, `Effect.Cleanse`, `Effect.Emp`, `Effect.Overheating`, `Effect.OverheatingCooldown`, `Effect.Immunity.Poison`, `Effect.CannotBeHealed` |
+| `ActionClassification` | `Action` | `Action.Skill`, `Action.Offensive`, `Action.Defensive`, `Action.Projectile`, `Action.Item` |
+| `ItemClassification` | `Item` | `Item.Weapon`, `Item.Weapon.Laser`, `Item.Consumable`, `Item.Equipment.ShieldGenerator` |
+| `TargetClassification` | `Target` | `Target.LivingEntity`, `Target.Hostile`, `Target.Friendly`, `Target.Self` |
+| `CooldownGroup` | `Cooldown` | `Cooldown.Weapon`, `Cooldown.Weapon.Light`, `Cooldown.Skill`, `Cooldown.Skill.Defensive` |
+| `DamageKind` | `Damage` | `Damage.Kinetic`, `Damage.Thermal`, `Damage.Poison`, `Damage.Energy` |
+| `FactionRelation` | `Faction` | `Faction.Friendly`, `Faction.Neutral`, `Faction.Hostile`, `Faction.Self` |
+
+The fixture must define parent/category tags explicitly or generate them deterministically before validation, according to the import policy selected by the implementation.
+
+#### 19.3.2 Query Fixture
+
+The query fixture must include at least these precompiled queries:
+
+```yaml
+Queries:
+  query.condition.blocks_heal:
+    Domain: EntityCondition
+    MatchMode: Expanded
+    Any:
+      - Condition.Dead
+      - Condition.Incurable
+
+  query.condition.blocks_poison_damage:
+    Domain: EntityCondition
+    MatchMode: Expanded
+    Any:
+      - Condition.Invulnerable
+
+  query.effect.is_poison:
+    Domain: EffectClassification
+    MatchMode: Expanded
+    Any:
+      - Effect.Damage.Poison
+      - Effect.Debuff
+
+  query.effect.is_direct_damage_parent:
+    Domain: EffectClassification
+    MatchMode: Direct
+    All:
+      - Effect.Damage
+
+  query.effect.cleanse_poison_removal:
+    Domain: EffectClassification
+    MatchMode: Expanded
+    Any:
+      - Effect.Damage.Poison
+    None:
+      - Effect.Immunity.Poison
+
+  query.action.is_offensive_skill:
+    Domain: ActionClassification
+    MatchMode: Expanded
+    All:
+      - Action.Skill
+      - Action.Offensive
+```
+
+#### 19.3.3 Synthetic Pressure Fixtures
+
+Synthetic pressure fixtures must generate deterministic registries with configurable size.
+
+Required parameters:
+
+```text
+DomainCount
+TagsPerDomain
+HierarchyDepth
+AssignableRatio
+TagSetsPerDomain
+DirectTagsPerTagSet
+QueriesPerDomain
+QueryAllTagCount
+QueryAnyTagCount
+QueryNoneTagCount
+SystemsPerTick
+TicksToRun
+AddOperationsPerTick
+RemoveOperationsPerTick
+QueryOperationsPerTick
+RandomSeed
+```
+
+Synthetic fixtures must use deterministic pseudo-random generation from `RandomSeed`. The generator must not use wall-clock time, GUIDs, unordered dictionary enumeration, file-system enumeration order, or culture-dependent sorting.
+
+### 19.4 Startup and Registry Tests
+
+Startup and registry tests validate load/import/register/compile/freeze behavior.
+
+Required test cases:
+
+| Test Name | Requirement |
+|---|---|
+| `Registry_LoadsBaseTagFile` | Loads the base tag fixture. |
+| `Registry_LoadsMultipleContentSourcesInDeterministicOrder` | Content source order is deterministic and repeatable. |
+| `Registry_RegistersDomainsAtStartup` | Registered domains receive stable domain IDs after compilation. |
+| `Registry_RejectsDuplicateDomainKey` | Duplicate `DomainKey` fails validation. |
+| `Registry_RejectsDuplicateRootPrefix` | Duplicate root prefix fails validation. |
+| `Registry_RejectsUnknownDomain` | Tag or query referencing an unknown domain fails validation. |
+| `Registry_RejectsDuplicateCanonicalName` | Duplicate canonical tag name fails validation. |
+| `Registry_RejectsExplicitExtraParents` | v1.1.0 strict dot-path hierarchy remains enforced. |
+| `Registry_ResolvesAliasesBeforeValidation` | Alias input resolves to canonical tag before validation. |
+| `Registry_RejectsAliasChains` | Alias to alias fails validation. |
+| `Registry_RejectsAliasCycles` | Cyclic aliases fail validation. |
+| `Registry_RejectsCrossDomainAliases` | Alias target must stay in same domain. |
+| `Registry_RejectsAmbiguousShortNames` | Ambiguous short-name resolution fails validation. |
+| `Registry_FreezesAfterCompilation` | Successful build returns immutable registry. |
+| `Registry_PreventsMutationAfterFreeze` | Registering domains, tags, aliases, or queries after freeze fails. |
+| `Registry_ReportsDomainMaskSizes` | Startup diagnostics include deterministic domain mask sizing. |
+
+Acceptance criteria:
+
+```text
+All startup failures must produce deterministic validation codes.
+All successful builds must produce a frozen registry.
+No invalid registry may be used by runtime tag sets or queries.
+```
+
+### 19.5 Determinism Tests
+
+Determinism tests must run the same fixture repeatedly and compare all compiled outputs.
+
+Required test cases:
+
+| Test Name | Requirement |
+|---|---|
+| `Determinism_SameContentProducesSameGameplayTagIds` | `GameplayTagId` assignment is byte-for-byte stable. |
+| `Determinism_SameContentProducesSameDomainLocalIndexes` | Domain-local dense indexes are stable. |
+| `Determinism_SameContentProducesSameDomainMaskSizes` | Mask word counts are stable. |
+| `Determinism_SameContentProducesSameQueryMasks` | Compiled `All`, `Any`, and `None` masks are stable. |
+| `Determinism_SameContentProducesSameRegistryHash` | Registry hash is stable. |
+| `Determinism_DifferentContentChangesRegistryHash` | Relevant tag/query/domain changes produce a different hash. |
+| `Determinism_GeneratedRuntimeTableIsStableAcrossRuns` | Generated constants or runtime lookup tables are stable. |
+| `Determinism_RepeatedSyntheticPressureFixturesAreStable` | Synthetic large fixtures are stable for the same seed. |
+
+Acceptance criteria:
+
+```text
+The same input content and same deterministic load order must produce identical compiled output.
+The tests must compare IDs, indexes, masks, query IDs, query masks, registry hash, and generated debug tables.
+```
+
+### 19.6 Runtime Tag Set Tests
+
+Runtime tag set tests validate querying, adding, removing, and clearing assignments.
+
+Required test cases:
+
+| Test Name | Requirement |
+|---|---|
+| `TagSet_CreateForDomainStartsEmpty` | Direct and expanded masks start empty. |
+| `TagSet_AddAssignableTagSetsDirectAndExpandedBits` | Adding an assignable child sets child and parent expansion bits. |
+| `TagSet_AddParentAssignableTagSetsDirectParentBit` | Assignable non-root parent tags can be directly assigned. |
+| `TagSet_AddNonAssignableTagFails` | Non-assignable tags cannot be directly assigned. |
+| `TagSet_AddDomainRootFails` | Domain root cannot be directly assigned unless a future policy explicitly allows it. |
+| `TagSet_AddDuplicateIsIdempotent` | Adding an existing direct tag does not corrupt masks. |
+| `TagSet_RemoveDirectTagClearsDirectBit` | Removing a direct tag clears its direct bit. |
+| `TagSet_RemoveChildRebuildsExpandedParents` | Expanded parent bits are retained if another child still implies them. |
+| `TagSet_RemoveMissingTagIsDeterministicNoOp` | Removing a missing same-domain tag returns deterministic false or no-op result. |
+| `TagSet_ClearClearsDirectAndExpandedMasks` | Clear removes all assignment state. |
+| `TagSet_HasDirectIgnoresExpandedParents` | Direct match only checks direct assignment. |
+| `TagSet_HasExpandedSeesParentExpansion` | Expanded match sees implied parents. |
+| `TagSet_DomainMismatchedAddFails` | Cross-domain add fails. |
+| `TagSet_DomainMismatchedRemoveFails` | Cross-domain remove fails. |
+| `TagSet_DomainMismatchedHasFailsDeterministically` | Cross-domain has operation fails according to runtime policy. |
+
+Required example scenario:
+
+```text
+Given an EffectClassification tag set
+When Effect.Damage.Poison.Dot is added
+Then HasDirect(Effect.Damage.Poison.Dot) is true
+And HasDirect(Effect.Damage) is false
+And HasExpanded(Effect.Damage) is true
+And HasExpanded(Effect.Damage.Poison) is true
+```
+
+Required removal scenario:
+
+```text
+Given an EffectClassification tag set
+And Effect.Damage.Poison.Dot is directly assigned
+And Effect.Damage.Thermal is directly assigned
+When Effect.Damage.Poison.Dot is removed
+Then Effect.Damage remains expanded because Effect.Damage.Thermal still implies it
+```
+
+### 19.7 Query Tests
+
+Query tests validate compiled query behavior against direct and expanded masks.
+
+Required test cases:
+
+| Test Name | Requirement |
+|---|---|
+| `Query_AllMatchesOnlyWhenAllRequiredTagsPresent` | `All` requires complete containment. |
+| `Query_AnyMatchesWhenAtLeastOneTagPresent` | `Any` requires overlap when non-empty. |
+| `Query_NoneFailsWhenForbiddenTagPresent` | `None` forbids overlap. |
+| `Query_NoneOnlyRequiresMatchAllTrue` | `None`-only query fails validation unless `MatchAll: true`. |
+| `Query_ExpandedModeMatchesParentFromChild` | Expanded query sees parent expansion. |
+| `Query_DirectModeRequiresDirectAssignment` | Direct query does not see implied parents. |
+| `Query_DomainMismatchFailsValidation` | Query tags must belong to the query domain. |
+| `Query_DomainMismatchedRuntimeMatchFails` | Query domain must match tag set domain. |
+| `Query_PrecompiledEqualsInterpretedValidationResult` | Precompiled runtime result equals validation-time interpreted result for the same fixture. |
+| `Query_EmptyAllAnyNoneFailsUnlessMatchAllTrue` | Empty query cannot accidentally match everything. |
+| `Query_MatchesByIdAndByCompiledStructAreEquivalent` | `Matches(TagQueryId)` and `Matches(in CompiledTagQuery)` return the same result. |
+
+Required example scenario:
+
+```text
+Given query.effect.cleanse_poison_removal
+And an EffectClassification tag set with Effect.Damage.Poison.Dot
+When the query matches in Expanded mode
+Then it returns true
+
+Given the same query
+And the tag set also has Effect.Immunity.Poison
+When the query matches
+Then it returns false because None forbids immunity
+```
+
+### 19.8 Runtime Allocation Tests
+
+Runtime allocation tests enforce hot-path behavior.
+
+Required test cases:
+
+| Test Name | Requirement |
+|---|---|
+| `Allocation_HasDirectAllocatesZeroBytes` | `HasDirect` allocates zero bytes. |
+| `Allocation_HasExpandedAllocatesZeroBytes` | `HasExpanded` allocates zero bytes. |
+| `Allocation_HasAnyExpandedAllocatesZeroBytes` | `HasAnyExpanded` allocates zero bytes. |
+| `Allocation_HasAllExpandedAllocatesZeroBytes` | `HasAllExpanded` allocates zero bytes. |
+| `Allocation_HasNoneExpandedAllocatesZeroBytes` | `HasNoneExpanded` allocates zero bytes. |
+| `Allocation_MatchesCompiledQueryAllocatesZeroBytes` | `Matches(in CompiledTagQuery)` allocates zero bytes. |
+| `Allocation_AddSameDomainCachedIdAllocatesZeroBytesAfterCreation` | `Add` with cached IDs allocates zero bytes after tag-set construction. |
+| `Allocation_RemoveSameDomainCachedIdAllocatesZeroBytes` | `Remove` with cached IDs allocates zero bytes. |
+| `Allocation_ClearAllocatesZeroBytes` | `Clear` allocates zero bytes. |
+
+Allocation tests must warm up the registry, tag sets, and query retrieval before measuring hot-path calls. They must not include registry building, string lookup, test fixture construction, logging, or report writing in hot-path allocation assertions.
+
+Acceptance criteria:
+
+```text
+Hot-path tag-set mutation and query operations must allocate 0 bytes after setup.
+Startup/import/build paths may allocate.
+Benchmark report generation may allocate.
+```
+
+### 19.9 Standalone Stress and Pressure Tests
+
+Stress tests must simulate multiple gameplay systems firing tag queries and tag mutations across multiple ticks, without using the StateEngine.
+
+The stress harness must create synthetic systems that operate only on `GameplayTagSet`, cached `GameplayTagId`, and cached `CompiledTagQuery` values.
+
+Required synthetic systems:
+
+| Synthetic System | Domain | Required Operations |
+|---|---|---|
+| `ConditionFilterSystem` | `EntityCondition` | Query blocked conditions, add/remove condition tags. |
+| `EffectBlockingSystem` | `EffectClassification` | Query effect blocking and immunity classifications. |
+| `EffectRemovalSelectionSystem` | `EffectClassification` | Query removable effects by poison/debuff/buff classifications. |
+| `ActionEligibilitySystem` | `ActionClassification` | Query offensive/defensive/action-type classifications. |
+| `TargetFilterSystem` | `TargetClassification` | Query hostile/friendly/self/living target classifications. |
+| `CooldownGroupSystem` | `CooldownGroup` | Query direct and expanded cooldown group tags. |
+| `DamageKindFilterSystem` | `DamageKind` | Query damage taxonomy tags. |
+| `FactionRelationSystem` | `FactionRelation` | Query relation metadata tags. |
+
+The stress harness must execute deterministic simulated ticks:
+
+```text
+for tick in 1..TicksToRun:
+  for syntheticSystem in stableSystemOrder:
+    execute configured query operations
+    execute configured add operations
+    execute configured remove operations
+    update deterministic operation counters
+```
+
+Stable ordering rules:
+
+```text
+Systems are ordered by fixed test registration order.
+Domains are ordered by compiled GameplayTagDomainId.
+Tag sets are ordered by deterministic synthetic object index.
+Queries are ordered by TagQueryId.
+Mutations use deterministic pseudo-random selection from RandomSeed.
+```
+
+Required stress scenarios:
+
+| Scenario Name | Purpose | Default Parameters |
+|---|---|---|
+| `Stress_30Tps_BaselineGameplayFixture` | Prove small gameplay-like fixture stays far under budget. | 8 domains, fixture tag counts, 250 synthetic objects, 8 systems, 300 ticks. |
+| `Stress_30Tps_StateEngineScaleSynthetic` | Approximate StateEngine target pressure without using StateEngine. | 8 domains, 256 tags/domain, 250 synthetic objects, 35 tag sets/object-equivalent, 8 systems, 900 ticks. |
+| `Stress_30Tps_ManyDomains` | Detect overhead from domain count and mask size switching. | 32 domains, 128 tags/domain, 500 tag sets/domain, 900 ticks. |
+| `Stress_30Tps_LargeMasks` | Detect mask word-count pressure. | 8 domains, 4096 tags/domain, 1000 tag sets/domain, 900 ticks. |
+| `Stress_30Tps_QueryHeavy` | Detect compiled query matching saturation. | 8 domains, 1024 tags/domain, 2048 queries/domain, 100000 query ops/tick, 300 ticks. |
+| `Stress_30Tps_MutationHeavy` | Detect add/remove/expanded-mask rebuild pressure. | 8 domains, 1024 tags/domain, 50000 add/remove ops/tick, 300 ticks. |
+| `Stress_30Tps_MixedPressureSweep` | Identify first slowdown pressure point. | Runs incremental pressure levels until per-tick budget is exceeded. |
+
+The `StateEngineScaleSynthetic` scenario uses the StateEngine target scale only as pressure inspiration. It must not instantiate `LivingEntityState`, `ActiveEffect`, effect processing, stat processing, deltas, rollback, or simulation history.
+
+#### 19.9.1 Pressure Sweep Requirements
+
+The mixed pressure sweep must run increasing pressure levels.
+
+Required pressure dimensions:
+
+```text
+TagSetsPerDomain:        250, 500, 1000, 2000, 4000, 8000
+TagsPerDomain:           64, 128, 256, 512, 1024, 2048, 4096
+QueriesPerDomain:        64, 128, 256, 512, 1024, 2048
+QueryOperationsPerTick:  1000, 5000, 10000, 25000, 50000, 100000, 250000
+MutationOperationsPerTick: 0, 100, 1000, 5000, 10000, 25000, 50000
+SystemsPerTick:          1, 2, 4, 8, 16, 32
+```
+
+The harness may stop a sweep when both are true:
+
+```text
+The scenario exceeds the configured tag-system per-tick budget for 3 consecutive pressure levels.
+The report has already captured the first budget failure point.
+```
+
+#### 19.9.2 Slowdown Definition
+
+The system is considered slowed down for a pressure level when either condition is true:
+
+```text
+P95TickMs > ConfiguredTagSystemBudgetMs
+MaxTickMs > FullTickBudgetMs
+```
+
+Default values:
+
+```text
+ConfiguredTagSystemBudgetMs = 3.333 ms
+FullTickBudgetMs = 33.333 ms
+```
+
+The report must name the first pressure level that crosses each threshold.
+
+### 19.10 Statistics and Benchmark Reporting
+
+Stress and benchmark runs must generate machine-readable and human-readable statistics.
+
+Required metrics:
+
+```text
+RegistryHash
+DomainCount
+TotalTagCount
+TotalAssignableTagCount
+MaxTagsPerDomain
+MaxDomainMaskWordCount
+TotalQueryCount
+TagSetCount
+TicksRun
+SystemsPerTick
+TotalOperations
+QueryOperations
+AddOperations
+RemoveOperations
+ClearOperations
+OperationsPerSecond
+OperationsPerTick
+MeanTickMs
+MedianTickMs
+P95TickMs
+P99TickMs
+MaxTickMs
+AllocatedBytesDuringMeasuredTicks
+Gen0CollectionsDuringMeasuredTicks
+FirstBudgetFailurePressureLevel
+FirstFullTickFailurePressureLevel
+```
+
+Required output files:
+
+```text
+artifacts/tag_system_benchmark_report.md
+artifacts/tag_system_benchmark_report.json
+```
+
+Required Markdown report sections:
+
+```text
+# Gameplay Tag System Benchmark Report
+- Build/configuration summary
+- Runtime environment summary
+- Registry summary
+- Scenario summary table
+- First slowdown point
+- Per-scenario p50/p95/p99/max tick time
+- Allocation summary
+- Notes for follow-up optimization
+```
+
+Required JSON shape:
+
+```json
+{
+  "registryHash": "string",
+  "environment": {
+    "runtime": "string",
+    "os": "string",
+    "cpu": "string",
+    "configuration": "Release"
+  },
+  "budget": {
+    "targetTicksPerSecond": 30,
+    "fullTickBudgetMs": 33.333,
+    "tagSystemBudgetPercent": 10.0,
+    "tagSystemBudgetMs": 3.333
+  },
+  "scenarios": [
+    {
+      "name": "string",
+      "parameters": {},
+      "metrics": {}
+    }
+  ]
+}
+```
+
+Benchmark acceptance criteria:
+
+```text
+The benchmark suite must always report the first slowdown point if one is reached.
+If no slowdown point is reached within configured pressure limits, the report must say so explicitly and list the highest tested pressure.
+Benchmark tests must not fail merely because a slowdown point is found.
+CI may run a smaller smoke benchmark; full pressure sweeps may run manually or in scheduled performance jobs.
+```
+
+### 19.11 Content-Pack Extensibility Tests
+
+Required test cases:
+
+| Test Name | Requirement |
+|---|---|
+| `ContentPack_CanDeclareNewDomainBeforeFreeze` | Additional source can register a new domain before compilation. |
+| `ContentPack_CanDeclareNewTagsBeforeFreeze` | Additional source can register new tags before compilation. |
+| `ContentPack_EffectDefinitionUsingNewDeclaredTagValidates` | Effect-like fixture using newly declared effect tag validates. |
+| `ContentPack_ActionDefinitionUsingNewDeclaredTagValidates` | Action-like fixture using newly declared action tag validates. |
+| `ContentPack_DefinitionUsingUndeclaredTagFails` | Unknown tag reference fails validation. |
+| `ContentPack_RegistryHashChangesWhenContentChanges` | Relevant content set change changes registry hash. |
+
+### 19.12 StateEngine Contract Tests
+
+These tests remain standalone contract tests. They validate boundary assumptions needed by the StateEngine without running StateEngine logic.
+
+Required test cases:
+
+| Test Name | Requirement |
+|---|---|
+| `Contract_EntityConditionsAndEffectClassificationsRemainSeparateDomains` | `Condition.Poisoned` and `Effect.Damage.Poison` cannot be used interchangeably. |
+| `Contract_EffectClassificationsAreStaticMetadataTagSets` | Effect classification tag sets can be queried but do not mutate condition state. |
+| `Contract_BlockingByConditionUsesEntityConditionDomain` | Blocking condition query compiles only in `EntityCondition`. |
+| `Contract_RemovalByClassificationUsesEffectClassificationDomain` | Effect removal classification query compiles only in `EffectClassification`. |
+| `Contract_TagSystemDoesNotOwnConditionContributors` | No API in tag system adds, removes, counts, or resolves condition contributors. |
+| `Contract_TagSystemDoesNotOwnEffectLifetime` | No API in tag system expires, removes, stacks, or executes active effects. |
+
+Example contract scenario:
+
+```text
+Given Condition.Poisoned on an EntityCondition tag set
+And Effect.Damage.Poison.Dot on an EffectClassification tag set
+When a query for Effect.Damage.Poison runs against the condition set
+Then the query fails by domain mismatch
+```
+
+### 19.13 Codex Implementation Checklist
+
+Codex implementation tasks:
+
+```text
+1. Create deterministic fixture factories for domains, tags, aliases, and queries.
+2. Implement startup and registry tests.
+3. Implement determinism tests that compare compiled outputs across repeated builds.
+4. Implement runtime tag-set mutation tests.
+5. Implement query tests for expanded and direct matching.
+6. Implement allocation tests with warmed-up cached IDs and cached compiled queries.
+7. Implement synthetic standalone tick workload.
+8. Implement pressure sweep scenarios.
+9. Implement Markdown and JSON benchmark report generation.
+10. Ensure all hot-path tests avoid string lookup, YAML parsing, dynamic query parsing, LINQ, reflection, and enum boxing.
+11. Ensure all stress scenarios are deterministic for a fixed seed.
+12. Ensure benchmark reports include the first slowdown point or explicitly say that no slowdown was reached.
+```
+
+Done criteria for v1.1.0 tests:
+
+```text
+All required unit tests pass.
+All required deterministic tests pass across repeated runs.
+All required hot-path allocation tests report 0 allocated bytes after setup.
+Standalone stress smoke test runs in CI.
+Full pressure sweep can be run locally or in a scheduled performance job.
+Benchmark artifacts are produced in both Markdown and JSON.
+The report identifies whether the tag system remains below the 30 TPS configured tag-system budget at tested pressure levels.
+```
 
 ---
 

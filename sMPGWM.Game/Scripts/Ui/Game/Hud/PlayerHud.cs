@@ -64,12 +64,12 @@ public partial class PlayerHud : Control
         HotbarSlotPressed?.Invoke(slotIndex);
     }
 
-    public void Bind(Object state // LivingintEntitityState
-        , IReadOnlyCollection<StatType> visibleStats)
-    {
-        Logger.Debug($"{nameof(PlayerHud)}.{nameof(Bind)} called.");
-        // _statsPanel.Bind(state, visibleStats);
-    }
+    // public void Bind(Object state // LivingintEntitityState
+    //     , IReadOnlyCollection<StatType> visibleStats)
+    // {
+    //     Logger.Debug($"{nameof(PlayerHud)}.{nameof(Bind)} called.");
+    //     // _statsPanel.Bind(state, visibleStats);
+    // }
 
     public void SetHotbarIcons(IReadOnlyList<IconDefinition> iconDefinitions)
     {
