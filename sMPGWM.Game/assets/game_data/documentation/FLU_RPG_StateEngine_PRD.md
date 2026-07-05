@@ -1,6 +1,6 @@
 # PRD: RPG State Engine
 
-**Version:** 6.2.3  
+**Version:** 6.3.0  
 **Engine:** Godot 4.6.2  
 **Language:** C# / Mono  
 **Multiplayer:** Steam Multiplayer Peer integration is out of scope  
@@ -29,9 +29,18 @@
     - [4.3 Slow Simulation](#43-slow-simulation)
     - [4.4 Durations](#44-durations)
 - [5 Core Runtime Model](#5-core-runtime-model)
+    - [5.1 Required Runtime Types](#51-required-runtime-types)
+    - [5.2 LivingEntityState Runtime Shape](#52-livingentitystate-runtime-shape)
+    - [5.3 Flat ActiveEffect Storage](#53-flat-activeeffect-storage)
+    - [5.4 Scratch Buffer Model](#54-scratch-buffer-model)
+    - [5.5 Godot Boundary Rule](#55-godot-boundary-rule)
 - [6 Core Architecture](#6-core-architecture)
     - [6.1 High-Level Flow](#61-high-level-flow)
-    - [6.2 Core Rule](#62-core-rule)
+    - [6.2 Ownership and Mutation Authority](#62-ownership-and-mutation-authority)
+    - [6.3 Instance-Based StateEngine](#63-instance-based-stateengine)
+    - [6.4 Optional Static Compatibility Facade](#64-optional-static-compatibility-facade)
+    - [6.5 Required Runtime Dependencies](#65-required-runtime-dependencies)
+    - [6.6 Input Boundary](#66-input-boundary)
 - [7 Entity Model](#7-entity-model)
     - [7.1 Player Controller Composition](#71-player-controller-composition)
     - [7.2 LivingEntity](#72-livingentity)
@@ -139,9 +148,16 @@
 - [20 Logging](#20-logging)
 - [21 StateEngineConfig](#21-stateengineconfig)
 - [22 Performance and Allocation Requirements](#22-performance-and-allocation-requirements)
-    - [22.1 Avoid in Hot Path](#221-avoid-in-hot-path)
-    - [22.2 Scratch Buffers](#222-scratch-buffers)
+    - [22.1 Target Runtime Scale](#221-target-runtime-scale)
+    - [22.2 Must Avoid in Hot Path](#222-must-avoid-in-hot-path)
+    - [22.3 Required Hot-Path Practices](#223-required-hot-path-practices)
+    - [22.4 Scratch Buffers and Overflow](#224-scratch-buffers-and-overflow)
 - [23 Determinism Requirements](#23-determinism-requirements)
+    - [23.1 Core Determinism Rules](#231-core-determinism-rules)
+    - [23.2 Ordering Rules](#232-ordering-rules)
+    - [23.3 Runtime Time Rules](#233-runtime-time-rules)
+    - [23.4 Precision and State Comparison](#234-precision-and-state-comparison)
+    - [23.5 Deterministic Random Future Rule](#235-deterministic-random-future-rule)
 - [24 Validation Requirements](#24-validation-requirements)
     - [24.1 EffectValidator Responsibilities](#241-effectvalidator-responsibilities)
     - [24.2 Validation Timing](#242-validation-timing)
@@ -372,19 +388,52 @@ The runtime must not use wall-clock duration values for simulation decisions. Ru
 
 ## 5 Core Runtime Model
 
-The required runtime model is:
+The required runtime model is data-oriented, deterministic, and allocation-conscious. Runtime objects are separated into immutable definition data, normalized runtime inputs, mutable entity state, deterministic engine authority, retained history, and compact delta output.
+
+### 5.1 Required Runtime Types
 
 ```text
 EffectDefinition = immutable static data
 ActiveEffect = small pooled runtime struct
 PassiveModifierSource = external persistent source state
-LivingEntityState = mutable fixed-size arrays
+LivingEntityState = mutable fixed-size array-backed simulation state
+StateEngine = deterministic simulation authority
+LivingEntityStateTracker = snapshot and effect-history owner
 Delta = pooled binary/buffer writer with PackedByteArray public boundary
 ```
 
-The system must avoid allocation in the hot tick loop.
+`EffectDefinition` data, stat metadata, registries, runtime rules, and configuration-derived timing values must be fixed during simulation.
 
-Preferred internal layout:
+`PassiveModifierSource` state is owned outside the `StateEngine`. The `StateEngine` receives dirty passive-source information through the passive modifier pipeline and stores only resolved stat-layer results and required passive dirty/version metadata in `LivingEntityState`.
+
+### 5.2 LivingEntityState Runtime Shape
+
+`LivingEntityState` must provide array-indexed hot-path access and must remain a data-oriented simulation record.
+
+Required state sections:
+
+```text
+EntityId
+NetworkTick
+BaseValues[]
+EffectiveMaxValues[]
+CurrentMaxValues[]
+CurrentValues[]
+ConditionFlags
+ConditionContributorRecords
+ActiveEffects[]
+ActiveEffectCount
+ShieldCooldownUntilNetworkTick
+DirtyStats
+PassiveDirtyStats
+ActiveDirtyStats
+DirtyConditionState
+DirtyEffectState
+PassiveVersionMetadata
+SnapshotMetadata
+```
+
+Preferred hot-path layout:
 
 ```text
 float[] BaseValues
@@ -399,23 +448,63 @@ BitSet PassiveDirtyStats
 BitSet ActiveDirtyStats
 ```
 
-Per-tick scratch buffers are reused:
+`StatType` enum values must map directly to stat-array indices.
+
+```csharp
+var statIndex = (int)StatType.Health;
+var currentHealth = state.CurrentValues[statIndex];
+var currentMaxHealth = state.CurrentMaxValues[statIndex];
+var effectiveMaxHealth = state.EffectiveMaxValues[statIndex];
+```
+
+The hot path must not require per-stat heap objects, dictionary lookups per stat mutation, reflection, LINQ, or enum boxing.
+
+### 5.3 Flat ActiveEffect Storage
+
+Active effects must be stored in a flat buffer owned by the entity state or engine-owned pools.
+
+```csharp
+ActiveEffect[] ActiveEffects;
+int ActiveEffectCount;
+```
+
+Child effects must not be stored as nested object collections. A child effect is resolved into its own `ActiveEffect` entry and processed through the same deterministic queue rules as any other effect.
+
+Each child effect entry must store enough metadata to preserve deterministic ancestry and ordering:
 
 ```text
-PendingEffectsThisTick
-StatModificationRecords
-ActiveFlatCurrentModifiers
-ActivePercentCurrentModifiers
-ActiveFlatCurrentMaxModifiers
-ActivePercentCurrentMaxModifiers
-DirtyStatIndices
-ConditionAddRequests
-ConditionRemoveRequests
-ConditionContributorRecords
-EffectRemovalRequests
-ChildEffectQueue
-DeltaWriterBuffer
+ParentEffectRuntimeId
+ChildDepth
+ChildSequence
 ```
+
+The flat model must support:
+
+- fast iteration,
+- stable insertion ordering,
+- deterministic child ordering,
+- rollback and resimulation,
+- deterministic removals,
+- one unified effect-processing pipeline.
+
+### 5.4 Scratch Buffer Model
+
+Per-tick temporary work must use preallocated scratch buffers. Scratch buffers are reused and cleared without deallocation.
+
+The canonical scratch-buffer categories and overflow behavior are specified in [22.4 Scratch Buffers and Overflow](#224-scratch-buffers-and-overflow).
+
+### 5.5 Godot Boundary Rule
+
+Internal runtime processing should use compact arrays, spans, pooled structs, and reusable buffers.
+
+Godot-specific container allocation must stay outside the hot simulation path except for the public delta boundary.
+
+```text
+Internal delta writer = pooled deterministic buffer
+Public output boundary = PackedByteArray
+```
+
+The returned delta contains final authoritative changed state. It is not a command replay log.
 
 ---
 
@@ -426,39 +515,119 @@ DeltaWriterBuffer
 ```text
 Skill / Item Use / Weapon / Environment / Script
         ↓
-Creates one or more ActiveEffect requests.
+Creates one or more normalized ActiveEffect requests.
         ↓
 Item / Talent / Level-Up / Ship Config / Persistent Upgrade
         ↓
 Updates passive modifier source state when the passive source changes.
         ↓
-StateEngine.ProcessLivingEntities processes incoming ActiveEffects and dirty passive sources.
+StateEngine receives normalized active-effect inputs and dirty passive-source information.
         ↓
 StateEngine validates, stacks, blocks, executes, removes, and expires active effects.
         ↓
-Effects produce stat modification records, condition requests, child effects, and effect-removal requests.
+Effects produce stat transactions, active modifier records, condition requests, child effects, and effect-removal requests.
         ↓
 StateEngine resolves affected stats using deterministic stat-layer rules.
         ↓
-StateEngine derives state-level conditions and shield cooldown state.
+StateEngine updates shield cooldown state and derives StateEngine-owned conditions.
         ↓
-StateEngine emits compact delta if dirty.
+StateEngine stores history and emits a compact delta if authoritative state changed.
 ```
 
-### 6.2 Core Rule
+### 6.2 Ownership and Mutation Authority
 
-No gameplay system modifies `LivingEntityState` directly.
+No gameplay system may directly mutate `LivingEntityState` runtime values.
 
 Only the `StateEngine` may mutate:
 
-- stats,
-- conditions,
-- condition contributor ownership,
-- active effects,
-- derived state,
-- delta state.
+- stat runtime layers,
+- condition flags,
+- condition contributor ownership records,
+- active-effect buffers,
+- active-effect stack/runtime state,
+- shield cooldown state,
+- derived StateEngine-owned state,
+- dirty state,
+- snapshot state,
+- delta-relevant state.
 
-Gameplay systems may create `ActiveEffect` instances and passive modifier source updates, but those inputs are requests. The StateEngine decides whether they are valid and how they modify state.
+External systems may read state and submit requests. They must not directly write to state arrays, condition flags, active-effect buffers, contributor records, dirty metadata, snapshot metadata, or delta metadata during runtime simulation.
+
+### 6.3 Instance-Based StateEngine
+
+The primary implementation must be instance-based.
+
+```csharp
+public sealed class StateEngine
+{
+    public StateEngine(
+        StateEngineConfig config,
+        EffectDefinitionRegistry effectDefinitionRegistry,
+        StatRegistry statRegistry,
+        IPassiveModifierPipeline passiveModifierPipeline,
+        LivingEntityStateTracker stateTracker,
+        IDeltaWriter deltaWriter,
+        IStateEngineLogger logger);
+}
+```
+
+An instance-based engine is required so host simulation, prediction simulation, replay simulation, rollback tests, deterministic harnesses, and isolated unit tests can run without shared global state.
+
+### 6.4 Optional Static Compatibility Facade
+
+A static facade may exist for simple Godot integration and early test harnesses.
+
+The facade must delegate to a configured `StateEngine` instance and must not introduce hidden state mutation outside that instance.
+
+```csharp
+public static class StateEngineFacade
+{
+    public static void Initialize(StateEngine engine);
+
+    public static void RegisterLivingEntity(long livingEntityId, LivingEntityState initialState);
+
+    public static PackedByteArray ProcessLivingEntities(
+        long networkTick,
+        ReadOnlySpan<ActiveEffect> incomingActiveEffects);
+}
+```
+
+The facade is optional. Core runtime code and tests must be able to use `StateEngine` instances directly.
+
+### 6.5 Required Runtime Dependencies
+
+`StateEngine` must use runtime-fixed dependencies during processing.
+
+| Dependency | Responsibility |
+|---|---|
+| `StateEngineConfig` | Runtime limits, tick rates, retention, precision, buffer sizes, and deterministic conversion settings. |
+| `EffectDefinitionRegistry` | Immutable effect-definition lookup by `EffectDefinitionId`. |
+| `EffectValidator` | Startup validation of authored effect definitions. |
+| `StatRegistry` | Stat metadata, category, lane, bounds, and array-index validation. |
+| `IPassiveModifierPipeline` | Deterministic passive-source resolution into `EffectiveMaxValue`. |
+| `LivingEntityStateTracker` | Snapshot storage, applied-effect history, replay data, and pruning. |
+| `IDeltaWriter` | Deterministic final-state delta serialization. |
+| `IStateEngineLogger` | TRACE-only diagnostics with no disabled-path allocation. |
+
+Runtime rules, registries, and validated definition data must not change during simulation.
+
+### 6.6 Input Boundary
+
+`StateEngine` processes normalized simulation inputs, not raw player actions, raw AI decisions, weapon-hit acquisition, UI events, or transport messages.
+
+The concrete public API remains defined in [16 StateEngine](#16-stateengine). A future `StateEngineInputFrame` may wrap the same normalized data, but it must preserve the same deterministic boundary.
+
+A conceptual input frame contains:
+
+```text
+NetworkTick
+Incoming normalized ActiveEffect inputs
+Passive dirty events or passive source version changes
+Optional correction/resimulation metadata
+Deterministic ordering metadata where needed
+```
+
+The `StateEngine` may create deterministic internal effects only as consequences of accepted effects or documented StateEngine-owned rules, such as child effects, lifecycle effects, or future derived reaction effects.
 
 ---
 
@@ -494,7 +663,7 @@ The `LivingEntityState` itself must not contain complex gameplay mutation logic.
 
 ## 8 LivingEntityState
 
-A `LivingEntityState` represents the complete simulation state of a living entity for the current `NetworkTick`.
+A `LivingEntityState` represents the complete authoritative simulation state of one living entity for the current `NetworkTick`.
 
 It contains:
 
@@ -513,6 +682,10 @@ ShieldCooldownUntilNetworkTick
 DirtyStats
 PassiveDirtyStats
 ActiveDirtyStats
+DirtyConditionState
+DirtyEffectState
+PassiveVersionMetadata
+SnapshotMetadata
 ```
 
 Responsibilities:
@@ -521,6 +694,10 @@ Responsibilities:
 - Store visible active conditions for other systems to read.
 - Store StateEngine-owned condition contributor ownership.
 - Store currently active effects for StateEngine processing and inspection.
+- Store shield cooldown and other StateEngine-owned derived state.
+- Store dirty metadata needed for deterministic processing and delta generation.
+- Store passive dirty/version metadata needed at the passive-pipeline boundary.
+- Store snapshot metadata needed by retained history and rollback/resimulation.
 - Provide array-indexed hot-path access without per-stat heap objects.
 
 Preferred internal layout:
@@ -532,6 +709,10 @@ float[] CurrentMaxValues
 float[] CurrentValues
 ulong ConditionFlags
 ActiveEffect[] ActiveEffects
+int ActiveEffectCount
+BitSet DirtyStats
+BitSet PassiveDirtyStats
+BitSet ActiveDirtyStats
 ```
 
 The `StatType` enum values must map directly to array indices.
@@ -546,6 +727,8 @@ var effectiveMaxHealth = state.EffectiveMaxValues[statIndex];
 ```
 
 This avoids dictionary lookups and object allocation in the hot path.
+
+`LivingEntityState` is not a controller, AI brain, UI model, movement model, skill model, item model, weapon model, or network transport object. It must remain a compact data-oriented simulation record mutated only by the `StateEngine`.
 
 ---
 
@@ -3885,30 +4068,66 @@ Runtime simulation must not use wall-clock time for deterministic decisions.
 
 ## 22 Performance and Allocation Requirements
 
-The StateEngine runs at 30 TPS for fast state and 15 TPS for slow state.
+The `StateEngine` runs at 30 TPS for fast state and 15 TPS for slow state. The first implementation target is 250 active living entities on desktop PC.
 
-The hot tick loop must avoid avoidable heap allocation.
+The hot tick loop must avoid avoidable heap allocation and must remain array-oriented, cache-friendly, and deterministic under load.
 
-### 22.1 Avoid in Hot Path
+### 22.1 Target Runtime Scale
 
-The engine should avoid:
+Initial target scale:
+
+```text
+Max living entities active at once: 250
+Average active effects per entity: 35
+High-load player active effects: 70 or more
+Max incoming effects per entity per tick: 30
+Max child effects per entity per tick: 3
+MaxChildEffectDepth: 5
+Target platform: desktop PC
+```
+
+The implementation must not assume active effects are evenly distributed across entities.
+
+### 22.2 Must Avoid in Hot Path
+
+The engine must avoid:
 
 ```text
 Per-stat heap objects
-LINQ in the tick loop
+LINQ in tick resolution
 Per-tick Godot.Collections.Array allocation
-String logging in the hot path
+String logging when TRACE is disabled
 Allocating temporary collections every tick
 Nested ActiveEffect child collections
 Reflection
 Boxing enum values
 Dictionary lookups per stat mutation
 Queue<ActiveEffect> in the hot path
+Runtime allocation for normal effect processing
+Runtime allocation for normal stat processing
+Runtime allocation for normal condition processing
+Runtime allocation for normal delta writing except public PackedByteArray boundary
 ```
 
-### 22.2 Scratch Buffers
+### 22.3 Required Hot-Path Practices
 
-Per-tick scratch buffers should be:
+The engine must:
+
+- use array-indexed stat access,
+- use flat active-effect buffers,
+- use reusable scratch buffers,
+- clear scratch buffers without deallocation,
+- use deterministic compact-in-place removal,
+- process only dirty, affected, or due stats where possible,
+- avoid inverse-effect cleanup for expired modifiers,
+- recalculate temporary active modifiers from the remaining active effect set,
+- keep logging disabled-path allocation-free,
+- size buffers through `StateEngineConfig`,
+- reject configured overflow deterministically.
+
+### 22.4 Scratch Buffers and Overflow
+
+Per-tick scratch buffers must be:
 
 - preallocated,
 - reused,
@@ -3917,46 +4136,127 @@ Per-tick scratch buffers should be:
 - protected by deterministic overflow behavior,
 - used wherever possible.
 
-Examples:
+Required scratch-buffer categories:
 
 ```text
 PendingEffectsThisTick
+IncomingEffectsByTick
+IncomingEffectsByEntity
 StatModificationRecords
+CurrentValueTransactions
 ActiveFlatCurrentModifiers
 ActivePercentCurrentModifiers
 ActiveFlatCurrentMaxModifiers
 ActivePercentCurrentMaxModifiers
 DirtyStatIndices
-ConditionRequestBuffers
-ConditionContributorBuffers
-EffectRemovalRequestBuffers
+DirtyPoolStats
+DirtyFlowStats
+DirtyAttributeStats
+ConditionAddRequests
+ConditionRemoveRequests
+ConditionContributorRecords
+EffectRemovalRequests
 ChildEffectQueue
+RejectedEffectRecords
 DeltaWriterBuffer
+PassiveFlatModifiers
+PassivePercentModifiers
 ```
+
+Configured overflow must not throw during normal simulation. Overflow handling must sort by documented stable ordering keys, accept up to the configured limit, reject remaining records deterministically, and retain enough rejection metadata for diagnostics or deterministic replay when required.
 
 ---
 
 ## 23 Determinism Requirements
 
-The StateEngine must produce identical results for identical inputs.
+The `StateEngine` must produce identical results for identical inputs.
 
-To achieve this:
+### 23.1 Core Determinism Rules
 
-- Use `long NetworkTick` values.
+Required deterministic practices:
+
+- Use `long NetworkTick` values for runtime simulation time.
+- Avoid wall-clock time in simulation decisions.
+- Convert authored milliseconds to deterministic tick values once during startup or validation.
 - Avoid unordered collection iteration in simulation.
-- Avoid random values unless seeded deterministically.
-- Avoid wall-clock time.
-- Use stable insertion order for active effects.
-- Use deterministic child effect order.
-- Use deterministic overflow behavior.
+- Keep runtime rulesets fixed during processing.
+- Keep registries and validated definition data immutable during simulation.
 - Use additive percentage modifiers.
-- Resolve stats in a documented order.
-- Compare corrected states using 3-decimal precision.
-- Compare conditions by exact flag match.
-- Sort removals and overflow replacement by documented keys.
-- Convert authored milliseconds to ticks once before runtime simulation.
+- Resolve stats in the documented order.
+- Reject overflow deterministically.
+- Keep logging and diagnostics from affecting simulation results.
 
-If random behavior is required later, it must be based on deterministic seeds derived from:
+### 23.2 Ordering Rules
+
+All ordering that can affect simulation state must use documented stable keys only.
+
+Stable ordering keys include:
+
+```text
+AppliedNetworkTick
+TargetEntityId
+InsertionSequence
+ParentRuntimeEffectId
+ParentEffectRuntimeId
+ChildSequence
+EffectRuntimeId
+SourceId
+OriginId
+```
+
+The engine must use:
+
+- stable insertion order for active effects,
+- deterministic child-effect order,
+- deterministic removal ordering,
+- deterministic overflow replacement and rejection ordering,
+- exact condition flag comparison.
+
+The engine must not rely on dictionary iteration order, hash-set iteration order, unordered source iteration, object reference order, thread scheduling, or runtime-dependent collection behavior.
+
+### 23.3 Runtime Time Rules
+
+Unless explicitly stated otherwise, `NetworkTick` means the fast 30 TPS StateEngine tick.
+
+Runtime simulation must use tick values for:
+
+- effect application tick,
+- effect duration,
+- effect execution interval,
+- effect expiry,
+- regeneration interval,
+- shield recharge cooldown expiry,
+- snapshot retention,
+- resimulation windows,
+- active-effect history.
+
+The slow 15 TPS simulation lane must be derived from the fast tick timeline.
+
+```csharp
+var isSlowTick = networkTick % config.SlowSimulationDivisor == 0;
+```
+
+`LivingEntityState` must not store or depend on a separate slow-lane time base.
+
+### 23.4 Precision and State Comparison
+
+Corrected-state numeric comparison must use configured precision.
+
+Default:
+
+```text
+StatComparisonPrecisionDecimals = 3
+```
+
+Conditions must be compared by exact flag match.
+
+Active-effect state comparison must use stable runtime identifiers and deterministic fields such as stack count, expiry tick, insertion sequence, parent/child metadata, and accumulated modifier state where applicable.
+
+### 23.5 Deterministic Random Future Rule
+
+Random behavior is out of scope for the first implementation.
+
+If random behavior is required later, it must use deterministic seeds derived from stable simulation fields.
 
 ```text
 NetworkTick
@@ -3965,6 +4265,8 @@ EffectRuntimeId
 SourceId
 OriginId
 ```
+
+Random state must be replayable, rollback-safe, and independent from frame rate, wall-clock time, collection order, and platform-specific object identity.
 
 ---
 
