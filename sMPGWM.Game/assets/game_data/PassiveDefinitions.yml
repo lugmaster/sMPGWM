@@ -1,0 +1,209 @@
+Version: 1.0.0
+Bloodsucker:
+  Definition:
+    PassiveDefinitionId: passive.reactive.bloodsucker
+    Name: Bloodsucker
+    Description: Gains a temporary stack whenever the owner deals final applied damage. Each stack heals the owner for 3% of that damage, up to 10 stacks and 30%.
+  PassiveProcessing: Fast
+  PassiveClassifications:
+    - Passive.Reactive.DamageDealt.LifeLeech
+    - Passive.Stacking.Bloodsucker
+    - Passive.Source.Talent
+  EvaluationPolicies:
+    - EvaluationPolicy: OnEvent
+      EventType: DamageDealt
+    - EvaluationPolicy: OnTickWhileRuntimeActive
+  Stacking:
+    StackScope: ByPassiveDefinitionId
+    StackPolicy: Discard
+    StackBehavior: IndependentStacks
+    MaxStacks: 1
+    MaxStackOverflowPolicy: RejectNewest
+  RuntimeStacking:
+    MaxStacks: 10
+    ValuePerStack: 0.03
+    MaxOutputMultiplier: 0.30
+    ExpirationPolicy: RefreshAllOnGain
+    StackDurationMs: 5000.0
+    ApplyNewStackBeforeOutput: true
+    RefreshAtMaxStacks: true
+    MaxStackOverflowPolicy: RejectNewest
+  ReactiveTriggers:
+    - ReactiveTriggerId: bloodsucker.on_damage_dealt
+      EventType: DamageDealt
+      TriggerFilters:
+        OwnerMatch: OriginId
+        ExcludeSelfDamage: true
+        AllowReflectedDamage: true
+        EventValueKind: AppliedDamage
+        MinimumEventValue: 0.001
+      RuntimeStackOperation: GainStackAndRefresh
+      Outputs:
+        - OutputKind: ActiveEffectSpec
+          OutputTiming: SameTick
+          ActiveEffectSpec:
+            EffectDefinitionId: effect.raise.heal
+            TargetEntity: PassiveOwner
+            SetByCaller:
+              Field: Target.Value
+              Formula:
+                EventValue: AppliedDamage
+                MultiplierPerRuntimeStack: 0.03
+                MaxMultiplier: 0.30
+                ClampMin: 0.0
+  Visibility: Hud
+
+FairyRevival:
+  Definition:
+    PassiveDefinitionId: passive.talent.fairy_revival
+    Name: Fairy Revival
+    Description: Revives the owner on death for 50% passive-adjusted max Health, then enters a 5 minute cooldown.
+  PassiveProcessing: Fast
+  PassiveClassifications:
+    - Passive.Reactive.Death
+    - Passive.Cooldown.Revive
+    - Passive.Source.Talent
+  EvaluationPolicies:
+    - EvaluationPolicy: OnEvent
+      EventType: ConditionAdded
+  Stacking:
+    StackScope: ByPassiveDefinitionId
+    StackPolicy: Discard
+    StackBehavior: IndependentStacks
+    MaxStacks: 1
+    MaxStackOverflowPolicy: RejectNewest
+  ReactiveTriggers:
+    - ReactiveTriggerId: fairy_revival.on_dead
+      EventType: ConditionAdded
+      TriggerFilters:
+        OwnerMatch: TargetEntityId
+        EventCondition: Condition.Dead
+      RuntimeCooldown:
+        CooldownMs: 300000.0
+        StartCooldownOn: OutputSuccess
+      Outputs:
+        - OutputKind: ActiveEffectSpec
+          OutputTiming: SameTick
+          ActiveEffectSpec:
+            EffectDefinitionId: effect.health.revive
+            TargetEntity: PassiveOwner
+            SetByCaller:
+              Field: Target.Value
+              Formula:
+                Stat: Health
+                StatValueKind: EffectiveMaxValue
+                Multiplier: 0.50
+                ClampMin: 0.0
+  Visibility: Hud
+
+ChestArmorOfVigor:
+  Definition:
+    PassiveDefinitionId: passive.item.chest_armor_of_vigor.equipped_stats
+    Name: Chest Armor of Vigor
+    Description: Equipped chest armor grants Armor, Health, and HealthRegeneration while equipped.
+  PassiveProcessing: Fast
+  PassiveClassifications:
+    - Passive.Source.Item
+    - Passive.Stat.Armor
+    - Passive.Stat.Health
+    - Passive.Stat.HealthRegeneration
+  EvaluationPolicies:
+    - EvaluationPolicy: OnSourceDirty
+  StatModifiers:
+    - TargetStat: Armor
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Flat
+      Value: 30.0
+    - TargetStat: Health
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Flat
+      Value: 30.0
+    - TargetStat: HealthRegeneration
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Flat
+      Value: 5.0
+  Stacking:
+    StackScope: SameSource
+    StackPolicy: Discard
+    StackBehavior: IndependentStacks
+  Visibility: Menu
+
+EnergyStorageCalibration:
+  Definition:
+    PassiveDefinitionId: passive.stat.energy_storage_calibration
+    Name: Energy Storage Calibration
+    Description: Raises EnergyStorage EffectiveMaxValue by 20% while the source is active.
+  PassiveProcessing: Fast
+  PassiveClassifications:
+    - Passive.Stat.EnergyStorage
+    - Passive.Source.ShipSystem
+  EvaluationPolicies:
+    - EvaluationPolicy: OnSourceDirty
+  StatModifiers:
+    - TargetStat: EnergyStorage
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Percentage
+      Value: 0.20
+  Stacking:
+    StackScope: SameSource
+    StackPolicy: Stack
+    StackBehavior: IndependentStacks
+  Visibility: Menu
+
+ArmorTraining:
+  Definition:
+    PassiveDefinitionId: passive.stat.armor_training
+    Name: Armor Training
+    Description: Raises Armor EffectiveMaxValue by a flat amount while the learned talent source is active.
+  PassiveProcessing: Fast
+  PassiveClassifications:
+    - Passive.Stat.Armor
+    - Passive.Source.Talent
+  EvaluationPolicies:
+    - EvaluationPolicy: OnSourceDirty
+  StatModifiers:
+    - TargetStat: Armor
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Flat
+      Value: 15.0
+  Stacking:
+    StackScope: ByPassiveDefinitionId
+    StackPolicy: Discard
+    StackBehavior: IndependentStacks
+    MaxStacks: 1
+    MaxStackOverflowPolicy: RejectNewest
+  Visibility: Menu
+
+EfficientReactor:
+  Definition:
+    PassiveDefinitionId: passive.stat.efficient_reactor
+    Name: Efficient Reactor
+    Description: Raises EnergyProduction and reduces EnergyConsumption while the reactor source is active.
+  PassiveProcessing: Fast
+  PassiveClassifications:
+    - Passive.Stat.EnergyProduction
+    - Passive.Stat.EnergyConsumption
+    - Passive.Source.ShipSystem
+  EvaluationPolicies:
+    - EvaluationPolicy: OnSourceDirty
+  StatModifiers:
+    - TargetStat: EnergyProduction
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Percentage
+      Value: 0.15
+    - TargetStat: EnergyConsumption
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Reduce
+      Calculation: Percentage
+      Value: 0.10
+  Stacking:
+    StackScope: SameSource
+    StackPolicy: Stack
+    StackBehavior: IndependentStacks
+  Visibility: Menu

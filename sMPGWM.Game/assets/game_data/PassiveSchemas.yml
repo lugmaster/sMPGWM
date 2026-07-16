@@ -1,0 +1,714 @@
+SchemaVersion: 1.0.0
+SchemaKind: FLU.RPG.StateEngine.Passives
+SourcePrecedence:
+  - TagSystem.md version 1.1.0
+  - FLU_RPG_StateEngine_PRD.md version 6.3.0
+  - Effects.md active-effect boundary
+  - Stats.md passive stat layer
+  - LivingEntityState.md passive result storage and snapshot requirements
+  - LivingEntityRegistry.md lifecycle and cleanup boundaries
+  - Passives.md version 1.0.0
+DecisionsApplied:
+  - Passives are not EffectDefinition entries and are not ActiveEffect runtime records.
+  - PassiveDefinition supports stat modifiers and reactive triggers.
+  - Passive sources generate source-bound PassiveEffect runtime records processed by the StateEngine passive path.
+  - PassiveEffect lifetime is bound to its source. Removing or replacing the source removes the PassiveEffect and clears its runtime state.
+  - PassiveRuntime state is stored in StateEngine-owned passive runtime buffers keyed by TargetEntityId.
+  - PassiveRuntime state is included in StateEngine snapshots for rollback and resimulation.
+  - Passive stat modifiers target EffectiveMaxValue only.
+  - Passive stat modifiers use flat modifiers first, then additive percentage modifiers.
+  - Passives are evaluated through explicit EvaluationPolicies.
+  - Stable permanent passives should use OnSourceDirty, not per-tick evaluation.
+  - Reactive passives may use OnEvent and OnTickWhileRuntimeActive.
+  - Reactive passive outputs emit ActiveEffectSpec records instead of mutating LivingEntityState directly.
+  - ActiveEffectSpec supports deterministic set-by-caller runtime magnitude override for allowed fields.
+  - Same-tick passive reactions are processed through a bounded deterministic result-event queue.
+  - Same-event passive ordering is TargetEntityId, PassiveInsertionSequence, PassiveRuntimeId.
+  - Passive source stacking uses passive-adapted active stacking concepts.
+  - Event-driven runtime stacks use RuntimeStacking and are separate from source-level Stacking.
+  - Reactive passives may own runtime cooldown state such as CooldownUntilNetworkTick.
+  - Passive metadata uses Gameplay Tag domain PassiveClassification with root Passive.
+  - Passive tags are not EntityCondition tags and are not EffectClassification tags.
+  - Bloodsucker is modeled as a reactive passive with 10 stacks, 3 percent heal per stack, 30 percent maximum, and 5000 ms shared stack duration.
+
+Enums:
+  PassiveProcessing:
+    - Fast
+    - Slow
+  PassiveEvaluationPolicy:
+    - OnSourceDirty
+    - OnEvent
+    - OnTickWhileRuntimeActive
+    - EveryMs
+  PassiveEventType:
+    - DamageDealt
+    - DamageTaken
+    - HealthRaised
+    - HealthReduced
+    - ConditionAdded
+    - ConditionRemoved
+    - ActiveEffectAccepted
+    - ActiveEffectRemoved
+  PassiveEventValueKind:
+    - RawDamage
+    - MitigatedDamage
+    - AppliedDamage
+    - HealthDamage
+    - RaisedAmount
+    - ReducedAmount
+  PassiveOwnerMatchPolicy:
+    - OriginId
+    - SourceId
+    - TargetEntityId
+    - Any
+  PassiveOutputKind:
+    - ActiveEffectSpec
+  PassiveOutputTarget:
+    - PassiveOwner
+    - EventSource
+    - EventOrigin
+    - EventTarget
+  PassiveOutputTiming:
+    - SameTick
+  PassiveSetByCallerField:
+    - Target.Value
+  PassiveStatTargetValueKind:
+    - EffectiveMaxValue
+  PassiveFormulaStatValueKind:
+    - EffectiveMaxValue
+    - CurrentMaxValue
+    - CurrentValue
+  PassiveCooldownStartPolicy:
+    - TriggerAccepted
+    - OutputQueued
+    - OutputSuccess
+  Manipulation:
+    - Raise
+    - Reduce
+  Calculation:
+    - Flat
+    - Percentage
+  PassiveStackScope:
+    - ByPassiveDefinitionId
+    - SameSource
+    - SameSourceAndOrigin
+    - ByStackGroupId
+  PassiveStackPolicy:
+    - Stack
+    - Replace
+    - Discard
+  PassiveStackBehavior:
+    - IndependentStacks
+    - RefreshDuration
+    - AddStackRefreshDuration
+    - AddStackNoRefresh
+  PassiveMaxStackOverflowPolicy:
+    - ReplaceOldest
+    - RejectNewest
+  RuntimeStackOperation:
+    - None
+    - GainStack
+    - GainStackAndRefresh
+    - Refresh
+    - Clear
+  RuntimeStackExpirationPolicy:
+    - None
+    - RefreshAllOnGain
+    - IndependentStackDurations
+  Visibility:
+    - Internal
+    - Hud
+    - Menu
+
+StatCategories:
+  PoolStat:
+    - Health
+    - Shield
+    - EnergyStorage
+    - OxygenStorage
+    - FoodStorage
+    - WaterStorage
+  FlowStat:
+    - HealthRegeneration
+    - ShieldRegeneration
+    - EnergyProduction
+    - EnergyConsumption
+    - OxygenProduction
+    - OxygenConsumption
+    - FoodProduction
+    - FoodConsumption
+    - WaterProduction
+    - WaterConsumption
+  AttributeStat:
+    - Armor
+    - Speed
+    - Acceleration
+    - AfterburnerSpeed
+    - AfterburnerAcceleration
+    - AttackSpeed
+    - CriticalHitChance
+    - CriticalHitBonusDamage
+    - BonusCriticalHitChance
+    - CooldownReduction
+    - LifeLeech
+    - RetaliationDamage
+    - ShieldRechargeDuration
+    - BonusDamageKinetic
+    - BonusDamageThermal
+    - BonusDamageExplosive
+    - ResistanceKinetic
+    - ResistanceThermal
+    - ResistanceExplosive
+
+DeprecatedInvalidValues:
+  Field:
+    - EffectType
+    - Duration
+    - Trigger
+    - EffectClassifications
+    - ConditionRequests
+    - EffectRemovalRequest
+    - TargetValueKind.CurrentValue
+    - TargetValueKind.CurrentMaxValue
+  PassiveStackScope:
+    - ByEffectDefinitionId
+  PassiveClassificationRoot:
+    - Effect
+    - Condition
+
+GameplayTagTypes:
+  PassiveClassification:
+    DomainKey: PassiveClassification
+    RootPrefix: Passive
+    ValueForm: CanonicalFullName
+    DirectAssignmentFields:
+      - PassiveClassifications
+    SelectorFields:
+      - ReactiveTriggers[].TriggerFilters.RequiredPassiveClassifications
+      - ReactiveTriggers[].TriggerFilters.BlockedPassiveClassifications
+  EffectClassification:
+    DomainKey: EffectClassification
+    RootPrefix: Effect
+    ValueForm: CanonicalFullName
+    SelectorFields:
+      - ReactiveTriggers[].TriggerFilters.RequiredEffectClassifications
+      - ReactiveTriggers[].TriggerFilters.BlockedEffectClassifications
+  EntityCondition:
+    DomainKey: EntityCondition
+    RootPrefix: Condition
+    ValueForm: CanonicalFullName
+    SelectorFields:
+      - ReactiveTriggers[].TriggerFilters.RequiredOwnerConditions
+      - ReactiveTriggers[].TriggerFilters.BlockedOwnerConditions
+      - ReactiveTriggers[].TriggerFilters.RequiredTargetConditions
+      - ReactiveTriggers[].TriggerFilters.BlockedTargetConditions
+      - ReactiveTriggers[].TriggerFilters.EventCondition
+  DamageKind:
+    DomainKey: DamageKind
+    RootPrefix: Damage
+    ValueForm: CanonicalFullName
+    SelectorFields:
+      - ReactiveTriggers[].TriggerFilters.RequiredDamageKinds
+      - ReactiveTriggers[].TriggerFilters.BlockedDamageKinds
+  Rules:
+    - Canonical values must begin with the domain root prefix and must resolve through the frozen GameplayTagRegistry.
+    - PassiveClassifications is a direct assignment field and requires assignable PassiveClassification tags.
+    - Selector fields may reference any queryable tag in the declared domain, including parent/category tags.
+    - Selector fields match expanded tag masks by default.
+    - Passive tags must not be used as EntityCondition or EffectClassification values.
+    - Effect classifications on active effects must not imply passive metadata.
+    - Entity conditions must not imply passive metadata.
+
+PassiveDefinitionSchema:
+  Type: object
+  Required:
+    - Definition
+  Fields:
+    Definition:
+      Type: object
+      Required:
+        - PassiveDefinitionId
+        - Name
+        - Description
+      Fields:
+        PassiveDefinitionId:
+          Type: string
+          Nullable: false
+          Example: passive.reactive.bloodsucker
+        Name:
+          Type: string
+          Nullable: false
+        Description:
+          Type: string
+          Nullable: false
+    PassiveProcessing:
+      Type: enum
+      ValuesRef: PassiveProcessing
+      Default: Fast
+    PassiveClassifications:
+      Type: array
+      Items: PassiveClassification
+      Nullable: true
+      Default: []
+      Rules:
+        - Passive classifications are static metadata on PassiveDefinition and generated PassiveEffect records.
+        - Values must be fully qualified PassiveClassification gameplay tags.
+        - Values must be assignable direct tags. Parent/category tags are reserved for selector and query fields.
+        - PassiveClassifications are not LivingEntityState conditions.
+        - PassiveClassifications are not active effect classifications.
+    EvaluationPolicies:
+      Type: array
+      ItemsRef: PassiveEvaluationPolicyDefinition
+      Nullable: true
+      Default:
+        - EvaluationPolicy: OnSourceDirty
+      Rules:
+        - Stat-only passives should use OnSourceDirty.
+        - Reactive passives with event triggers require at least one OnEvent policy for each event type they consume.
+        - RuntimeStacking with finite duration requires OnTickWhileRuntimeActive unless expiry is guaranteed by another deterministic scheduler.
+        - EveryMs requires TickIntervalMs greater than 100.
+    StatModifiers:
+      Type: array
+      ItemsRef: PassiveStatModifier
+      Nullable: true
+      Default: []
+      Rules:
+        - Passive stat modifiers target EffectiveMaxValue only.
+        - Passive stat modifiers must not target BaseValue, CurrentValue, or CurrentMaxValue.
+        - Flat modifiers are applied before additive percentage modifiers.
+        - Percentage values are decimal fractions.
+    ReactiveTriggers:
+      Type: array
+      ItemsRef: PassiveReactiveTrigger
+      Nullable: true
+      Default: []
+      Rules:
+        - Reactive triggers consume deterministic StateEngine result events.
+        - Reactive triggers must not mutate LivingEntityState directly.
+        - Reactive triggers may update PassiveRuntime state and emit ActiveEffectSpec outputs.
+        - Reactive trigger outputs use the bounded same-tick result-event queue when OutputTiming is SameTick.
+    Stacking:
+      Type: object
+      Nullable: true
+      Fields:
+        StackGroupId:
+          Type: int
+          Nullable: true
+        StackScope:
+          Type: enum
+          ValuesRef: PassiveStackScope
+          Default: ByPassiveDefinitionId
+        StackPolicy:
+          Type: enum
+          ValuesRef: PassiveStackPolicy
+          Default: Stack
+        StackBehavior:
+          Type: enum
+          ValuesRef: PassiveStackBehavior
+          Default: IndependentStacks
+        MaxStacks:
+          Type: int
+          Nullable: true
+        MaxStackOverflowPolicy:
+          Type: enum
+          ValuesRef: PassiveMaxStackOverflowPolicy
+          Default: ReplaceOldest
+          Nullable: true
+      Rules:
+        - Stacking controls source-level PassiveEffect stacking.
+        - StackScope ByStackGroupId requires StackGroupId.
+        - MaxStacks, when present, must be greater than zero.
+        - Stacking does not represent event-driven runtime stacks such as Bloodsucker stacks.
+    RuntimeStacking:
+      Type: object
+      Nullable: true
+      Fields:
+        MaxStacks:
+          Type: int
+          Nullable: false
+        ValuePerStack:
+          Type: float
+          Nullable: true
+        MaxOutputMultiplier:
+          Type: float
+          Nullable: true
+        ExpirationPolicy:
+          Type: enum
+          ValuesRef: RuntimeStackExpirationPolicy
+          Default: None
+        StackDurationMs:
+          Type: float
+          Nullable: true
+        ApplyNewStackBeforeOutput:
+          Type: bool
+          Default: true
+        RefreshAtMaxStacks:
+          Type: bool
+          Default: true
+        MaxStackOverflowPolicy:
+          Type: enum
+          ValuesRef: PassiveMaxStackOverflowPolicy
+          Default: RejectNewest
+      Rules:
+        - RuntimeStacking controls mutable event-driven runtime stacks owned by one PassiveEffect.
+        - RuntimeStacking is separate from source-level Stacking.
+        - MaxStacks must be greater than zero.
+        - StackDurationMs is required when ExpirationPolicy is RefreshAllOnGain or IndependentStackDurations.
+        - StackDurationMs must be greater than 100 when present.
+        - ValuePerStack and MaxOutputMultiplier use decimal fractions when used as percentages.
+    Visibility:
+      Type: enum
+      ValuesRef: Visibility
+      Default: Internal
+  Rules:
+    - A passive definition is valid only if at least one of StatModifiers, ReactiveTriggers, PassiveClassifications, or future gameplay payloads is present.
+    - Classification-only passives are valid only as queryable gameplay metadata that generate a source-bound PassiveEffect.
+    - Pure UI-only metadata definitions are out of scope.
+    - PassiveDefinition is immutable after validation.
+    - PassiveDefinition must not contain active effect lifetime, condition lifecycle, or effect removal fields.
+    - PassiveDefinition references to emitted EffectDefinitionId values must resolve through the EffectDefinitionRegistry at startup.
+    - Passive definitions are validated before normal gameplay simulation.
+
+ReusableSchemas:
+  PassiveEvaluationPolicyDefinition:
+    Type: object
+    Required:
+      - EvaluationPolicy
+    Fields:
+      EvaluationPolicy:
+        Type: enum
+        ValuesRef: PassiveEvaluationPolicy
+      EventType:
+        Type: enum
+        ValuesRef: PassiveEventType
+        Nullable: true
+        OnlyWithEvaluationPolicy: OnEvent
+      TickIntervalMs:
+        Type: float
+        Nullable: true
+        OnlyWithEvaluationPolicy: EveryMs
+    Rules:
+      - OnEvent requires EventType.
+      - EveryMs requires TickIntervalMs greater than 100.
+      - OnSourceDirty, OnTickWhileRuntimeActive, and OnEvent should omit TickIntervalMs in canonical definitions.
+  PassiveStatModifier:
+    Type: object
+    Required:
+      - TargetStat
+      - TargetValueKind
+      - Manipulation
+      - Calculation
+      - Value
+    Fields:
+      TargetStat:
+        Type: Stat
+        Nullable: false
+      TargetValueKind:
+        Type: enum
+        ValuesRef: PassiveStatTargetValueKind
+      Manipulation:
+        Type: enum
+        ValuesRef: Manipulation
+      Calculation:
+        Type: enum
+        ValuesRef: Calculation
+      Value:
+        Type: float
+    Rules:
+      - TargetValueKind must be EffectiveMaxValue.
+      - Passive modifiers must not target CurrentValue or CurrentMaxValue.
+      - Calculation Percentage values are decimal fractions.
+      - FlowStat Value is authored in the stat's canonical per-ms unit where applicable.
+  PassiveReactiveTrigger:
+    Type: object
+    Required:
+      - ReactiveTriggerId
+      - EventType
+    Fields:
+      ReactiveTriggerId:
+        Type: string
+        Nullable: false
+      EventType:
+        Type: enum
+        ValuesRef: PassiveEventType
+      TriggerFilters:
+        Type: object
+        Nullable: true
+        Fields:
+          OwnerMatch:
+            Type: enum
+            ValuesRef: PassiveOwnerMatchPolicy
+            Default: Any
+          ExcludeSelfDamage:
+            Type: bool
+            Default: false
+          AllowReflectedDamage:
+            Type: bool
+            Default: false
+          EventValueKind:
+            Type: enum
+            ValuesRef: PassiveEventValueKind
+            Nullable: true
+          MinimumEventValue:
+            Type: float
+            Nullable: true
+          EventCondition:
+            Type: EntityCondition
+            Nullable: true
+          RequiredDamageKinds:
+            Type: array
+            Items: DamageKind
+            Nullable: true
+          BlockedDamageKinds:
+            Type: array
+            Items: DamageKind
+            Nullable: true
+          RequiredOwnerConditions:
+            Type: array
+            Items: EntityCondition
+            Nullable: true
+          BlockedOwnerConditions:
+            Type: array
+            Items: EntityCondition
+            Nullable: true
+          RequiredTargetConditions:
+            Type: array
+            Items: EntityCondition
+            Nullable: true
+          BlockedTargetConditions:
+            Type: array
+            Items: EntityCondition
+            Nullable: true
+          RequiredEffectClassifications:
+            Type: array
+            Items: EffectClassification
+            Nullable: true
+          BlockedEffectClassifications:
+            Type: array
+            Items: EffectClassification
+            Nullable: true
+          RequiredPassiveClassifications:
+            Type: array
+            Items: PassiveClassification
+            Nullable: true
+          BlockedPassiveClassifications:
+            Type: array
+            Items: PassiveClassification
+            Nullable: true
+      RuntimeStackOperation:
+        Type: enum
+        ValuesRef: RuntimeStackOperation
+        Default: None
+      RuntimeCooldown:
+        Type: object
+        Nullable: true
+        Fields:
+          CooldownMs:
+            Type: float
+            Nullable: false
+          StartCooldownOn:
+            Type: enum
+            ValuesRef: PassiveCooldownStartPolicy
+            Default: OutputSuccess
+      Outputs:
+        Type: array
+        ItemsRef: PassiveReactiveOutput
+        Nullable: true
+        Default: []
+    Rules:
+      - EventType DamageDealt should use EventValueKind AppliedDamage when reactive output scales from final dealt damage.
+      - EventType ConditionAdded and ConditionRemoved should use EventCondition when filtering a specific condition such as Condition.Dead.
+      - MinimumEventValue excludes zero or negative event values when specified.
+      - OwnerMatch OriginId means the passive owner must match the event OriginId.
+      - OwnerMatch TargetEntityId means the passive owner must match the event TargetEntityId.
+      - ExcludeSelfDamage rejects events where the passive owner is both origin and target.
+      - AllowReflectedDamage allows events credited to the owner even if the immediate source differs.
+      - RuntimeStackOperation GainStackAndRefresh requires RuntimeStacking.
+      - RuntimeCooldown.CooldownMs must be greater than 100 and is converted to NetworkTick values before simulation.
+      - RuntimeCooldown state is stored on PassiveRuntime, not as an ActiveEffect.
+      - At least one of RuntimeStackOperation or Outputs must produce gameplay work.
+  PassiveReactiveOutput:
+    Type: object
+    Required:
+      - OutputKind
+    Fields:
+      OutputKind:
+        Type: enum
+        ValuesRef: PassiveOutputKind
+      OutputTiming:
+        Type: enum
+        ValuesRef: PassiveOutputTiming
+        Default: SameTick
+      ActiveEffectSpec:
+        Type: object
+        Nullable: true
+        Required:
+          - EffectDefinitionId
+          - TargetEntity
+        Fields:
+          EffectDefinitionId:
+            Type: EffectDefinitionId
+          TargetEntity:
+            Type: enum
+            ValuesRef: PassiveOutputTarget
+          SetByCaller:
+            Type: object
+            Nullable: true
+            Fields:
+              Field:
+                Type: enum
+                ValuesRef: PassiveSetByCallerField
+              Formula:
+                Type: object
+                Nullable: true
+                Fields:
+                  EventValue:
+                    Type: enum
+                    ValuesRef: PassiveEventValueKind
+                    Nullable: true
+                  Stat:
+                    Type: Stat
+                    Nullable: true
+                  StatValueKind:
+                    Type: enum
+                    ValuesRef: PassiveFormulaStatValueKind
+                    Nullable: true
+                  Multiplier:
+                    Type: float
+                    Nullable: true
+                  MultiplierPerRuntimeStack:
+                    Type: float
+                    Nullable: true
+                  MaxMultiplier:
+                    Type: float
+                    Nullable: true
+                  ClampMin:
+                    Type: float
+                    Nullable: true
+                  ClampMax:
+                    Type: float
+                    Nullable: true
+    Rules:
+      - OutputKind ActiveEffectSpec requires ActiveEffectSpec.
+      - ActiveEffectSpec.EffectDefinitionId must exist in the EffectDefinitionRegistry.
+      - SetByCaller.Field values are limited to explicitly allowed mutable input override fields.
+      - SetByCaller must not mutate immutable EffectDefinition data.
+      - Formula may use EventValue for event-scaled outputs such as Bloodsucker healing.
+      - Formula may use Stat and StatValueKind for stat-scaled outputs such as Fairy Revival healing.
+      - If StatValueKind is CurrentMaxValue, the referenced stat must be a PoolStat.
+      - OutputTiming SameTick uses the bounded result-event queue.
+      - Emitted ActiveEffectSpec records use normal StateEngine active-effect validation and ordering after passive reaction ordering.
+
+PassiveRuntimeSchema:
+  Type: object
+  Required:
+    - PassiveRuntimeId
+    - PassiveDefinitionId
+    - SourceId
+    - OriginId
+    - TargetEntityId
+    - AppliedNetworkTick
+    - PassiveInsertionSequence
+  Fields:
+    PassiveRuntimeId:
+      Type: id
+    PassiveDefinitionId:
+      Type: PassiveDefinitionId
+      Readonly: true
+    SourceId:
+      Type: SourceId
+      Readonly: true
+    OriginId:
+      Type: OriginId
+      Readonly: true
+    TargetEntityId:
+      Type: EntityId
+      Readonly: true
+    AppliedNetworkTick:
+      Type: long
+    RemovedNetworkTick:
+      Type: long
+      Nullable: true
+    PassiveInsertionSequence:
+      Type: long
+    StackCount:
+      Type: int
+      Default: 1
+      UsedBy: SourceLevelStacking
+    RuntimeStackCount:
+      Type: int
+      Default: 0
+      UsedBy: RuntimeStacking
+    RuntimeStackExpiresNetworkTick:
+      Type: long
+      Nullable: true
+      UsedBy: RuntimeStacking
+    CooldownUntilNetworkTick:
+      Type: long
+      Nullable: true
+      UsedBy: RuntimeCooldown
+    LastEvaluatedNetworkTick:
+      Type: long
+      Default: -1
+    LastTriggeredNetworkTick:
+      Type: long
+      Default: -1
+    LastConsumedEventSequence:
+      Type: long
+      Default: -1
+    PassiveInputVersion:
+      Type: long
+      Default: 0
+    PassiveResolvedVersion:
+      Type: long
+      Default: 0
+    RuntimeFlags:
+      Type: flags
+      Nullable: true
+  Rules:
+    - PassiveRuntime is mutable StateEngine-owned runtime state.
+    - PassiveRuntimeId values must be unique within the active passive runtime set.
+    - PassiveClassifications are read from immutable PassiveDefinition and treated as static metadata on the generated PassiveEffect.
+    - RuntimeStackExpiresNetworkTick uses NetworkTick values, not wall-clock time.
+    - CooldownUntilNetworkTick uses NetworkTick values, not wall-clock time.
+    - Runtime cooldowns must survive snapshots and rollback/resimulation.
+    - PassiveRuntime state must be included in snapshots when active or needed for rollback/resimulation.
+    - PassiveRuntime must not store external passive source object graphs.
+    - Removing or replacing the source removes the PassiveRuntime record and clears its runtime stacks.
+
+ResultEventQueueRules:
+  Ordering:
+    - OriginalResultEventSequence
+    - TargetEntityId
+    - PassiveInsertionSequence
+    - PassiveRuntimeId
+    - EmittedActiveEffectNormalOrdering
+  Limits:
+    - MaxReactiveEventsPerTick
+    - MaxReactiveDepth
+    - MaxPassiveOutputsPerEvent
+  Rules:
+    - Overflow handling must be deterministic.
+    - Same-tick reaction processing must not rely on dictionary, hash-set, object reference, thread, or scene-tree order.
+    - Rejected passive outputs must retain deterministic rejection metadata when diagnostics or replay require it.
+
+ValidationRequirements:
+  - PassiveDefinitions YAML must parse successfully.
+  - Definition.PassiveDefinitionId, Definition.Name, and Definition.Description are required.
+  - Each PassiveDefinition requires at least one gameplay payload.
+  - Classification-only PassiveDefinitions are valid only when they create queryable passive gameplay metadata.
+  - PassiveClassifications must use canonical Passive.* gameplay tags.
+  - Passive tags must resolve through the frozen GameplayTagRegistry.
+  - StatModifiers target EffectiveMaxValue only.
+  - StatModifiers reference valid stats.
+  - Percentage values are decimal fractions.
+  - EvaluationPolicies must be compatible with StatModifiers, ReactiveTriggers, and RuntimeStacking.
+  - ReactiveTriggers with EventType require matching OnEvent EvaluationPolicy.
+  - RuntimeStacking with StackDurationMs requires OnTickWhileRuntimeActive or equivalent deterministic expiry scheduling.
+  - RuntimeCooldown.CooldownMs values must be greater than 100 and converted to NetworkTick values.
+  - Reactive output EffectDefinitionId values must exist.
+  - ActiveEffectSpec set-by-caller fields must be allowed and deterministic.
+  - Passive stack fields must be valid and passive-specific.
+  - ByStackGroupId requires StackGroupId.
+  - MaxStacks values must be greater than zero.
+  - PassiveRuntime snapshots must include enough data to restore and resimulate.
