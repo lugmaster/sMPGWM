@@ -1,10 +1,10 @@
 # StateEngine.md
 
-**Version:** 6.2.3  
+**Version:** 6.4.0
 **Engine:** Godot 4.6.2  
 **Language:** C# / Mono  
 **Genre:** 2D Space RPG  
-**Network Model:** Client-server model with host-authoritative state simulation, rewind, rollback, client-side prediction compatibility, and reconciliation support  
+**Network Model:** Client-server model with host-authoritative state simulation, rewind, rollback, client-side prediction, and reconciliation support
 **Network Tick Rate:** 30 TPS  
 **Slow Simulation Rate:** 15 TPS  
 **Primary Output:** Compact final-state delta using `PackedByteArray` at the Godot-facing boundary  
@@ -17,7 +17,7 @@
 
 `StateEngine` is the deterministic runtime authority for RPG living-entity state.
 
-It processes registered `LivingEntityState` instances per `NetworkTick`, validates and applies incoming `ActiveEffect` requests, resolves dirty passive stat changes, executes active effects, maintains conditions and condition contributor ownership, derives StateEngine-owned conditions, updates active-effect lifetime, supports rollback/resimulation, and emits compact final-state deltas.
+It processes registered `LivingEntityState` instances per `NetworkTick`, validates and applies incoming `ActiveEffect` requests, resolves dirty passive stat changes, executes active effects, maintains conditions and condition contributor ownership, derives StateEngine-owned conditions, updates active-effect lifetime, supports rollback/resimulation, emits compact final-state deltas, applies received host deltas on clients, and supports client-side prediction and reconciliation for locally owned entities.
 
 The engine must be:
 
@@ -31,7 +31,7 @@ The engine must be:
 - independent from rendering,
 - independent from gameplay presentation logic.
 
-The first implementation target is a deterministic host-side simulation harness. The data model must not block later client prediction, host correction, delta application, or reconciliation.
+The host implementation remains the canonical simulation path. Version 6.4.0 additionally defines the client path for host delta application, local prediction, host correction, rollback/replay, remote entity interpolation, and baseline/resync.
 
 ---
 
@@ -61,6 +61,11 @@ The first implementation target is a deterministic host-side simulation harness.
 - regeneration and net-flow application,
 - shield cooldown state,
 - compact delta generation,
+- host-to-client delta application,
+- client-side prediction for locally owned living entities,
+- authoritative correction and replay from retained client snapshots,
+- remote living-entity interpolation from host deltas,
+- baseline and resync handling,
 - snapshot and applied-effect history storage,
 - rollback and resimulation from retained past ticks,
 - deterministic validation reports,
@@ -78,12 +83,14 @@ The first implementation target is a deterministic host-side simulation harness.
 - passive source authoring systems,
 - hit acquisition,
 - damage target selection,
-- transport-level network synchronization,
+- transport-level network synchronization, packet delivery, reliability, ordering, encryption, and Steam Multiplayer Peer integration,
 - UI rendering,
 - gameplay presentation logic,
 - direct controller ownership logic.
 
 External systems may create active-effect inputs or dirty passive-source updates. Those inputs are requests. `StateEngine` decides whether each request is valid and how it mutates state.
+
+Network transport is out of scope. The runtime contract still includes host packet record shape, delta application, acknowledgement handling, local submission result handling, and full baseline/resync application.
 
 ---
 
@@ -120,6 +127,10 @@ LivingEntityState = mutable fixed-size arrays
 StateEngine = deterministic simulation authority
 LivingEntityStateTracker = snapshot and effect-history owner
 Delta = pooled binary/buffer writer with PackedByteArray public boundary
+DeltaReader = pooled binary/buffer reader for host packet records
+ClientPredictionHistory = retained local request and predicted-effect history
+ClientInterpolationBuffer = ring buffer of host-authoritative remote entity states
+ClientEffectIdMap = local request identity to authoritative EffectRuntimeId map
 ```
 
 ### 4.2 LivingEntityState Layout
@@ -226,6 +237,12 @@ EffectRemovalRequests
 ChildEffectQueue
 RejectedEffectRecords
 DeltaWriterBuffer
+DeltaReaderBuffer
+ClientPredictionHistoryBuffer
+ClientInterpolationStateBuffer
+ClientSubmissionResultBuffer
+ClientAckRecordBuffer
+ClientEffectIdMapBuffer
 ```
 
 Scratch buffers must be sized by `StateEngineConfig` and protected by deterministic overflow behavior.
@@ -333,6 +350,7 @@ public sealed class StateEngine
         IPassiveModifierPipeline passiveModifierPipeline,
         LivingEntityStateTracker stateTracker,
         IDeltaWriter deltaWriter,
+        IDeltaReader deltaReader,
         IStateEngineLogger logger);
 }
 ```
@@ -353,6 +371,14 @@ public static class StateEngineFacade
     public static PackedByteArray ProcessLivingEntities(
         long networkTick,
         ReadOnlySpan<ActiveEffect> incomingActiveEffects);
+
+    public static ClientPacketApplyResult ApplyHostStatePacket(
+        long localCurrentNetworkTick,
+        ReadOnlySpan<byte> hostPacket);
+
+    public static ClientBaselineApplyResult ApplyAuthoritativeBaseline(
+        long baselineNetworkTick,
+        ReadOnlySpan<byte> baselinePayload);
 }
 ```
 
@@ -371,6 +397,9 @@ The facade must be optional. Core runtime and tests must be able to use `StateEn
 | `IPassiveModifierPipeline` | Deterministic passive-source resolution into `EffectiveMaxValue`. |
 | `LivingEntityStateTracker` | Snapshot storage, applied-effect history, replay data, pruning. |
 | `IDeltaWriter` | Deterministic final-state delta serialization. |
+| `IDeltaReader` | Deterministic host packet and delta record parsing. |
+| `ClientPredictionHistory` | Retained local request and predicted-effect history for replay. |
+| `ClientInterpolationBuffer` | Remote entity authoritative state buffering for presentation. |
 | `IStateEngineLogger` | TRACE-only diagnostics with no disabled-path allocation. |
 
 Runtime rules and registries must not change during simulation.
@@ -472,6 +501,78 @@ public bool TryGetSnapshot(long livingEntityId, long networkTick, out LivingEnti
 ```
 
 Snapshot access is intended for deterministic replay tests, rollback tests, delta round-trip tests, and diagnostics.
+
+### 7.6 Apply Host State Packet
+
+```csharp
+public ClientPacketApplyResult ApplyHostStatePacket(
+    long localCurrentNetworkTick,
+    ReadOnlySpan<byte> hostPacket);
+```
+
+Applies one received host packet on a client `StateEngine` instance.
+
+The packet may contain:
+
+```text
+StateDeltaRecords
+AckRecords
+LocalSubmissionResultRecords
+BaselineRecords
+```
+
+Application rules:
+
+```text
+Validate packet and delta versions.
+Apply BaselineRecords before delta records.
+Apply AckRecords before replay.
+Apply LocalSubmissionResultRecords before replay.
+Apply StateDeltaRecords at their authoritative NetworkTick.
+Correct locally owned entities and replay unacknowledged local predictions.
+Push remote entity state into interpolation buffers.
+Request a full baseline when required retained state is missing.
+```
+
+The method must not make the client authoritative. Host state always wins.
+
+Suggested `ClientPacketApplyResult` fields:
+
+```text
+AppliedHostNetworkTick
+AppliedStateDeltaCount
+AppliedAckCount
+AppliedSubmissionResultCount
+AppliedBaselineCount
+DidCorrectPrediction
+ReplayStartTick
+ReplayEndTick
+RequiresFullBaseline
+RejectedReason when packet cannot be applied
+```
+
+### 7.7 Apply Authoritative Baseline
+
+```csharp
+public ClientBaselineApplyResult ApplyAuthoritativeBaseline(
+    long baselineNetworkTick,
+    ReadOnlySpan<byte> baselinePayload);
+```
+
+Applies a full authoritative baseline received from the host.
+
+Baseline application must replace authoritative client gameplay state for included living entities, reset retained snapshots to the baseline tick, rebuild interpolation buffers, and replay valid unacknowledged local predictions when permitted by acknowledgement metadata.
+
+Suggested `ClientBaselineApplyResult` fields:
+
+```text
+BaselineNetworkTick
+AppliedEntityCount
+DidReplayLocalPredictions
+ReplayStartTick
+ReplayEndTick
+RejectedReason when baseline cannot be applied
+```
 
 ---
 
@@ -1347,15 +1448,15 @@ Suggested header:
 ```text
 DeltaHeader:
 - DeltaVersion
-- EntityId
-- NetworkTick
+- PacketNetworkTick
 - StateTickKind: Fast or SlowDue
 - PayloadFlags
-- DirtyMaskStats
-- DirtyMaskConditions
-- DirtyMaskEffects
 - FinalRecordCount
 ```
+
+For a single-entity delta record, `EntityId`, dirty masks, and changed payload fields may live directly in that record.
+
+For a combined host packet, the packet header must be shared and entity identity must be stored per `StateDeltaRecord`. A combined host packet may contain state records for many living entities.
 
 ### 15.4 Final State Payload
 
@@ -1363,6 +1464,9 @@ Suggested final-state payload:
 
 ```text
 ChangedStats:
+- EntityId
+- NetworkTick
+- DirtyMaskStats
 - StatIndex
 - BaseValue only if ever supported later
 - EffectiveMaxValue if changed or required by payload flags
@@ -1370,13 +1474,18 @@ ChangedStats:
 - CurrentValue if changed or required by payload flags
 
 ChangedConditions:
+- EntityId
+- DirtyMaskConditions
 - ulong ConditionFlags
 
 ChangedEffects:
+- EntityId
+- DirtyMaskEffects
 - Added ActiveEffect runtime ids
 - Removed ActiveEffect runtime ids
 - Updated StackCount
 - Updated ExpiresNetworkTick or RemainingTicks
+- Authoritative AppliedNetworkTick when needed for reconciliation
 - Updated accumulated modifiers for AccumulateWhileActive when required
 ```
 
@@ -1400,10 +1509,278 @@ HasFinalConditions
 HasFinalEffects
 HasPassiveLayerChanges
 HasActiveLayerChanges
+HasAckRecords
+HasLocalSubmissionResults
+HasBaselineRecords
 CompressedPayload
 ```
 
 The first implementation does not need compression, but the flag must be reserved.
+
+### 15.7 Host and Client Runtime Paths
+
+The host path is the authoritative simulation path and follows the tick lifecycle in section 10.
+
+The client path is a consumer of host-authoritative state. It may run local prediction for the locally owned entity, but it must always correct to host deltas and replay retained local prediction history after correction.
+
+The host always wins.
+
+#### 15.7.1 Host Path
+
+Per host network tick:
+
+1. Receive player input and effect requests from connected clients.
+2. Normalize each client request into candidate `ActiveEffect` inputs with stable metadata.
+3. Assign or validate the authoritative `NetworkTick`.
+4. Validate, reject, accept, stack, execute, remove, and expire effects through `StateEngine.ProcessLivingEntities`.
+5. Restore retained snapshots and resimulate if a valid past tick changes current authoritative state.
+6. Generate final-state delta records for all changed living entities.
+7. Add acknowledgement records for the latest processed local input/effect tick per client or owned entity.
+8. Add local submission result records for client-submitted effects.
+9. Add full baseline records when a client joins, resyncs, or cannot apply the delta stream.
+10. Send one host packet containing co-scheduled records to every connected client.
+11. Store host snapshots, applied-effect history, rejection metadata, and delta comparison metadata.
+
+Host deltas contain final authoritative state for living entities. They are not command replay logs.
+
+The host must send changed state for all active living entities to all players unless a later transport or interest-management layer explicitly narrows delivery. Interest management is out of scope for this file.
+
+#### 15.7.2 Host Packet Records
+
+The recommended host packet shape is a record envelope. Records are separate for parsing and versioning, but they may be co-scheduled in one network send.
+
+```text
+HostStatePacket:
+- PacketVersion
+- DeltaVersion
+- HostNetworkTick
+- RecordCounts
+- StateDeltaRecords[]
+- AckRecords[]
+- LocalSubmissionResultRecords[]
+- BaselineRecords[] when required
+```
+
+Required record kinds:
+
+```text
+StateDeltaRecord
+AckRecord
+LocalSubmissionResultRecord
+BaselineRecord
+```
+
+`StateDeltaRecord` contains final authoritative state for one changed living entity at one host tick.
+
+```text
+StateDeltaRecord:
+- EntityId
+- NetworkTick
+- StateTickKind
+- PayloadFlags
+- DirtyMaskStats
+- DirtyMaskConditions
+- DirtyMaskEffects
+- ChangedStats
+- ChangedConditions
+- ChangedEffects
+```
+
+`AckRecord` lets the client discard local prediction history already processed by the host.
+
+```text
+AckRecord:
+- ClientId or ConnectionId
+- OwnedEntityId
+- LastProcessedInputTick
+- LastProcessedClientRequestSequence
+```
+
+`LocalSubmissionResultRecord` reports the authoritative result of locally submitted effects.
+
+```text
+LocalSubmissionResultRecord:
+- ClientRequestId or ClientEffectSequence
+- SourceEntityId
+- TargetEntityId
+- EffectDefinitionId
+- SubmittedInputTick
+- AuthoritativeAppliedNetworkTick
+- AcceptedOrRejected
+- RejectionReason when rejected
+- AuthoritativeEffectRuntimeId when accepted
+```
+
+The client uses `ClientRequestId` or `ClientEffectSequence` to map predicted local effects to authoritative host effect runtime IDs.
+
+`BaselineRecord` contains a full authoritative state baseline.
+
+```text
+BaselineRecord:
+- BaselineNetworkTick
+- Full LivingEntityState records for all active living entities
+- Full active-effect buffers
+- Full condition state and contributor records
+- LastProcessedInputTick for the receiving client when available
+- DeltaVersion
+```
+
+#### 15.7.3 Client Path
+
+The client path uses a local `StateEngine` instance and client-side support buffers.
+
+Required client-side runtime components:
+
+```text
+ClientStateEngine = local prediction and reconciliation simulation instance
+DeltaReader = pooled host packet reader
+ClientPredictionHistory = local submitted input/effect history
+ClientEffectIdMap = ClientRequestId to authoritative EffectRuntimeId map
+ClientInterpolationBuffer = host-authoritative remote entity state ring buffer
+ClientBaselineState = latest full authoritative baseline
+PresentationCorrectionQueue = non-authoritative visual correction events
+```
+
+Per received host packet:
+
+1. Validate packet version, delta version, host tick, record counts, and monotonicity.
+2. Apply `BaselineRecord`s first when present.
+3. Apply `AckRecord`s and discard acknowledged local prediction history.
+4. Apply `LocalSubmissionResultRecord`s and map or reject predicted effects.
+5. Apply `StateDeltaRecord`s for the packet tick.
+6. For locally owned entities, correct local prediction state and replay unacknowledged local predictions.
+7. For remote entities, push host-authoritative state into the interpolation buffer.
+8. Emit presentation correction events after gameplay state is corrected.
+9. Prune client snapshots, prediction history, and interpolation history older than configured retention.
+
+Client gameplay state correction happens immediately and deterministically. Presentation may smooth, fade, cancel, or interpolate visuals separately.
+
+#### 15.7.4 Client Correction and Replay
+
+For a received authoritative delta at tick `T`:
+
+1. Find the retained client snapshot for tick `T`.
+2. If no snapshot or baseline exists for `T`, reject the delta for gameplay application and request a full baseline.
+3. Apply the authoritative final state from the host delta to tick `T`.
+4. Compare predicted state against authoritative state using configured precision.
+5. Remove predicted local effects that were rejected, omitted, or superseded by host results.
+6. Map confirmed predicted effects from `ClientRequestId` to authoritative `EffectRuntimeId`.
+7. Restore corrected state at tick `T`.
+8. Replay ticks `T + 1` through current local tick using only unacknowledged local predictions and retained deterministic history.
+9. Preserve host-authoritative state for every field included in the delta.
+10. Emit correction metadata for presentation and diagnostics.
+
+Numeric stat comparison must use `StatComparisonPrecisionDecimals`.
+
+Conditions must compare by exact condition mask match.
+
+Active-effect comparison must use authoritative runtime identifiers plus deterministic fields such as stack count, expiry tick, insertion sequence, parent/child metadata, accumulated state, and applied tick.
+
+If the correction tick is older than the client retention window, the client must request a full baseline instead of attempting replay.
+
+#### 15.7.5 Local Prediction Policy
+
+The client should run local gameplay simulation only for locally owned entities.
+
+Local prediction is allowed only for effects that pass deterministic local pre-validation using:
+
+```text
+same EffectDefinition registry
+same StatRegistry
+same StateEngineConfig
+same deterministic timing conversion
+known local LivingEntityState
+known cooldown, resource, range, target, and blocking facts when available
+```
+
+Effects that depend on unknown host-only facts must use visual-only anticipation until the host confirms them.
+
+The client must send a stable request identity with local submissions:
+
+```text
+ClientRequestId
+ClientEffectSequence
+SubmittedInputTick
+SourceEntityId
+TargetEntityId
+EffectDefinitionId
+```
+
+The host returns authoritative effect identity in `LocalSubmissionResultRecord`.
+
+If the host rejects or omits a predicted effect, the client removes that effect from gameplay state during reconciliation and replays the remaining unacknowledged predictions.
+
+Presentation may cancel or fade the visual for a rejected predicted effect. Gameplay state must not keep the rejected effect.
+
+#### 15.7.6 Remote Entity Presentation
+
+Remote living entities must be driven by host deltas, not full local gameplay prediction.
+
+The client should store remote authoritative states in an interpolation buffer and render remote entities behind the latest received host tick.
+
+Recommended default:
+
+```text
+RemoteInterpolationDelayTicks = 2
+Allowed practical range = 2 to 3 ticks
+At 30 TPS, 2 ticks = about 66.7 ms
+At 30 TPS, 3 ticks = 100 ms
+```
+
+This delay is normally negligible because it applies to remote entities. The local owned entity remains responsive through client-side prediction.
+
+Remote active effects must be present and synchronized from host `ChangedEffects` records. Gameplay state for remote entities should snap to authoritative buffer states. Presentation may interpolate numeric display values, smooth movement/attachment visuals, start or stop effect visuals from host effect records, and fade removed effect visuals.
+
+The client must not preserve remote gameplay state that conflicts with the host.
+
+#### 15.7.7 Baseline and Resync
+
+The client must receive a full authoritative baseline:
+
+- on initial join,
+- after reconnect,
+- after version mismatch,
+- after missing required delta history,
+- after receiving a correction older than retained snapshots,
+- when local state cannot be reconciled deterministically.
+
+After a baseline is applied:
+
+1. Clear obsolete prediction state except local submissions not yet covered by host acknowledgement.
+2. Reset authoritative snapshots to the baseline tick.
+3. Rebuild interpolation buffers from the baseline.
+4. Resume delta application only for deltas newer than the baseline tick.
+5. Re-run local prediction from the baseline tick when valid unacknowledged local inputs remain.
+
+The baseline must include all active living entities and enough active-effect, condition, contributor, stat, and timing state to continue deterministic client prediction and remote interpolation.
+
+#### 15.7.8 Client Performance Requirements
+
+The client path must remain allocation-conscious and data-oriented.
+
+Required practices:
+
+- parse host packets through a pooled `DeltaReader`,
+- apply only dirty fields from each `StateDeltaRecord`,
+- use ring buffers for prediction snapshots and remote interpolation states,
+- keep local replay windows bounded by `SnapshotRetentionTicks`,
+- predict only locally owned entities by default,
+- avoid full remote entity simulation,
+- avoid per-record heap allocation during normal packet application,
+- sort correction and replay records only by documented stable keys,
+- prune acknowledged prediction history immediately after `AckRecord` application,
+- store effect identity mapping in preallocated or pooled structures sized by config.
+
+Client replay cost should scale with:
+
+```text
+owned predicted entities
+unacknowledged local request count
+correction window length
+dirty fields in host delta records
+```
+
+It should not scale with full simulation of every remote living entity.
 
 ---
 
@@ -1424,6 +1801,12 @@ MaxEffectsProcessedPerEntityPerTick = configured
 MaxIncomingEffectsPerEntityPerTick = 30
 MaxChildEffectsPerEntityPerTick = 3
 SnapshotRetentionTicks = 45
+ClientPredictionRetentionTicks = 45
+RemoteInterpolationDelayTicks = 2
+MaxClientReplayTicks = 45
+MaxUnacknowledgedClientRequests = configured
+RequireBaselineOnJoin = true
+RequireBaselineOnResync = true
 StatComparisonPrecisionDecimals = 3
 ShieldRechargeDuration default = content-defined stat value
 TraceEnabled = configured/build dependent
@@ -1505,6 +1888,7 @@ Runtime allocation for normal effect processing
 Runtime allocation for normal stat processing
 Runtime allocation for normal condition processing
 Runtime allocation for normal delta writing except public PackedByteArray boundary
+Runtime allocation for normal host packet reading and delta application
 ```
 
 ### 18.2 Required Hot-Path Practices
@@ -1521,7 +1905,10 @@ The engine must:
 - recalculate temporary active modifiers from remaining active effect set,
 - keep logging disabled-path allocation-free,
 - size buffers through configuration,
-- reject overflow deterministically.
+- reject overflow deterministically,
+- parse host packets through pooled readers,
+- keep client prediction and interpolation history in bounded ring buffers,
+- prune acknowledged prediction history immediately after acknowledgement records are applied.
 
 ---
 
@@ -1543,6 +1930,7 @@ Required deterministic practices:
 - Compare corrected states using configured precision.
 - Compare conditions by exact flag match.
 - Sort removals and overflow replacement by documented keys.
+- Use deterministic client request identity mapping when reconciling predicted effects.
 - Convert authored milliseconds to ticks once before runtime simulation.
 - Keep runtime rulesets fixed during processing.
 - Keep registries immutable during simulation.
@@ -1561,6 +1949,14 @@ EntityId
 EffectRuntimeId
 SourceId
 OriginId
+```
+
+Client reconciliation must use stable local request identity fields:
+
+```text
+ClientRequestId
+ClientEffectSequence
+SubmittedInputTick
 ```
 
 ---
@@ -1725,6 +2121,24 @@ Tests must prove invalid startup data fails deterministically, including:
 - invalid removal requests,
 - invalid timing values.
 
+### 21.10 Client Path Tests
+
+Tests must prove:
+
+- full baseline applies all living entity state, active effects, conditions, contributor records, and tick metadata,
+- host packet record envelope parses `StateDeltaRecords`, `AckRecords`, `LocalSubmissionResultRecords`, and `BaselineRecords`,
+- client discards prediction history up to `LastProcessedInputTick`,
+- client maps `ClientRequestId` or `ClientEffectSequence` to authoritative `EffectRuntimeId`,
+- accepted predicted local effect reconciles without duplicate active effects,
+- rejected predicted local effect is removed during reconciliation,
+- omitted unconfirmed predicted effect is removed when host acknowledgement proves it was not accepted,
+- correction at a past tick restores retained snapshot and replays unacknowledged local predictions,
+- correction older than retained snapshots requests a full baseline,
+- remote living entities use interpolation buffer and do not run full gameplay prediction,
+- remote active effects appear from host `ChangedEffects` records,
+- gameplay state correction is immediate while presentation receives separate correction events,
+- delta application avoids avoidable allocation during normal packet processing.
+
 ---
 
 ## 22. Implementation Notes
@@ -1742,7 +2156,20 @@ scripts/
     Delta/
       IDeltaWriter.cs
       PackedDeltaWriter.cs
+      DeltaReader.cs
       DeltaPayloadFlags.cs
+      HostStatePacket.cs
+      StateDeltaRecord.cs
+      AckRecord.cs
+      LocalSubmissionResultRecord.cs
+      BaselineRecord.cs
+    Client/
+      ClientPredictionHistory.cs
+      ClientEffectIdMap.cs
+      ClientInterpolationBuffer.cs
+      ClientPacketApplyResult.cs
+      ClientBaselineApplyResult.cs
+      PresentationCorrectionQueue.cs
     Definitions/
       EffectDefinition.cs
       EffectDefinitionRegistry.cs
