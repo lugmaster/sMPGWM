@@ -1,6 +1,6 @@
 # PRD: RPG State Engine
 
-**Version:** 6.4.0
+**Version:** 6.4.1
 **Engine:** Godot 4.6.2  
 **Language:** C# / Mono  
 **Multiplayer:** Steam Multiplayer Peer integration is out of scope  
@@ -196,6 +196,27 @@
     - [27.8 Condition Rebuild Tests](#278-condition-rebuild-tests)
     - [27.9 Stat Layer Tests](#279-stat-layer-tests)
     - [27.10 Client Path Tests](#2710-client-path-tests)
+    - [27.11 Passive Runtime Tests](#2711-passive-runtime-tests)
+- [28 Version 6.4.1 Passive Runtime Contract](#28-version-641-passive-runtime-contract)
+    - [28.1 Purpose](#281-purpose)
+    - [28.2 Existing Passive Requirements Preserved](#282-existing-passive-requirements-preserved)
+    - [28.3 Design Decisions](#283-design-decisions)
+    - [28.4 Passive Tags](#284-passive-tags)
+    - [28.5 Core Passive Runtime Model](#285-core-passive-runtime-model)
+    - [28.6 Evaluation Policies](#286-evaluation-policies)
+    - [28.7 Stat Passives](#287-stat-passives)
+    - [28.8 Reactive Passives](#288-reactive-passives)
+    - [28.9 ActiveEffectSpec Output](#289-activeeffectspec-output)
+    - [28.10 Passive Stacking](#2810-passive-stacking)
+    - [28.11 Bloodsucker Example](#2811-bloodsucker-example)
+    - [28.12 Fairy Revival Example](#2812-fairy-revival-example)
+    - [28.13 Result Event Queue](#2813-result-event-queue)
+    - [28.14 Snapshot and Replay](#2814-snapshot-and-replay)
+    - [28.15 Passive Validation](#2815-passive-validation)
+    - [28.16 Passive Acceptance Tests](#2816-passive-acceptance-tests)
+    - [28.17 Questionnaire Outcome](#2817-questionnaire-outcome)
+    - [28.18 Open Follow-Up Questions](#2818-open-follow-up-questions)
+    - [28.19 Final Passive Contract](#2819-final-passive-contract)
 
 ---
 
@@ -209,8 +230,9 @@ The system is effect-driven:
 
 ```text
 Gameplay systems create ActiveEffect inputs from immutable EffectDefinition data.
-Passive source systems update passive modifier inputs through a separate passive pipeline.
+Passive source systems update passive modifier inputs and source-bound passive runtime records through a separate passive pipeline.
 The StateEngine validates and processes ActiveEffects.
+The StateEngine processes generated PassiveEffects through the passive runtime path.
 The StateEngine mutates LivingEntityStates.
 The StateEngine emits compact deltas if states changed.
 The host sends authoritative deltas for all changed living entities.
@@ -241,6 +263,9 @@ This PRD covers:
 - slow 15 TPS state simulation,
 - stat storage and mutation,
 - passive modifier resolution into `EffectiveMaxValue`,
+- generated source-bound passive runtime effects,
+- reactive passive result-event processing,
+- passive runtime cooldowns and runtime stacks,
 - active effect processing into `CurrentValue` and `CurrentMaxValue`,
 - condition storage, contributor ownership, hierarchy metadata, and mutation,
 - active effect lifetime,
@@ -414,6 +439,9 @@ The required runtime model is data-oriented, deterministic, and allocation-consc
 ```text
 EffectDefinition = immutable static data
 ActiveEffect = small pooled runtime struct
+PassiveDefinition = immutable authored passive data
+PassiveEffect = source-bound runtime passive record generated from PassiveDefinition
+PassiveRuntime = mutable runtime state owned by the generated PassiveEffect
 PassiveModifierSource = external persistent source state
 LivingEntityState = mutable fixed-size array-backed simulation state
 StateEngine = deterministic simulation authority
@@ -426,7 +454,7 @@ ClientInterpolationBuffer = ring buffer of host-authoritative remote entity stat
 
 `EffectDefinition` data, stat metadata, registries, runtime rules, and configuration-derived timing values must be fixed during simulation.
 
-`PassiveModifierSource` state is owned outside the `StateEngine`. The `StateEngine` receives dirty passive-source information through the passive modifier pipeline and stores only resolved stat-layer results and required passive dirty/version metadata in `LivingEntityState`.
+`PassiveModifierSource` state is owned outside the `StateEngine`. The `StateEngine` receives dirty passive-source information through the passive modifier pipeline, stores resolved stat-layer results and required passive dirty/version metadata in `LivingEntityState`, and owns generated `PassiveEffect` records plus `PassiveRuntime` state needed for deterministic reactive passive behavior.
 
 ### 5.2 LivingEntityState Runtime Shape
 
@@ -452,6 +480,9 @@ ActiveDirtyStats
 DirtyConditionState
 DirtyEffectState
 PassiveVersionMetadata
+PassiveInputVersion
+PassiveResolvedVersion
+PassiveLayerDirtyMetadata
 SnapshotMetadata
 ```
 
@@ -541,9 +572,11 @@ Creates one or more normalized ActiveEffect requests.
         ↓
 Item / Talent / Level-Up / Ship Config / Persistent Upgrade
         ↓
-Updates passive modifier source state when the passive source changes.
+Updates passive modifier source state and generated passive source records when the passive source changes.
         ↓
-StateEngine receives normalized active-effect inputs and dirty passive-source information.
+StateEngine receives normalized active-effect inputs, dirty passive-source information, and generated passive runtime changes.
+        ↓
+StateEngine evaluates due passive runtime records and queues reactive passive outputs.
         ↓
 StateEngine validates, stacks, blocks, executes, removes, and expires active effects.
         ↓
@@ -567,6 +600,9 @@ Only the `StateEngine` may mutate:
 - condition contributor ownership records,
 - active-effect buffers,
 - active-effect stack/runtime state,
+- generated passive-effect buffers,
+- passive runtime state,
+- passive result-event queue state,
 - shield cooldown state,
 - derived StateEngine-owned state,
 - dirty state,
@@ -585,7 +621,9 @@ public sealed class StateEngine
     public StateEngine(
         StateEngineConfig config,
         EffectDefinitionRegistry effectDefinitionRegistry,
+        PassiveDefinitionRegistry passiveDefinitionRegistry,
         StatRegistry statRegistry,
+        PassiveValidator passiveValidator,
         IPassiveModifierPipeline passiveModifierPipeline,
         LivingEntityStateTracker stateTracker,
         IDeltaWriter deltaWriter,
@@ -625,6 +663,8 @@ The facade is optional. Core runtime code and tests must be able to use `StateEn
 | `StateEngineConfig` | Runtime limits, tick rates, retention, precision, buffer sizes, and deterministic conversion settings. |
 | `EffectDefinitionRegistry` | Immutable effect-definition lookup by `EffectDefinitionId`. |
 | `EffectValidator` | Startup validation of authored effect definitions. |
+| `PassiveDefinitionRegistry` | Immutable passive-definition lookup by `PassiveDefinitionId`. |
+| `PassiveValidator` | Startup validation of authored passive definitions and passive schemas. |
 | `StatRegistry` | Stat metadata, category, lane, bounds, and array-index validation. |
 | `IPassiveModifierPipeline` | Deterministic passive-source resolution into `EffectiveMaxValue`. |
 | `LivingEntityStateTracker` | Snapshot storage, applied-effect history, replay data, and pruning. |
@@ -645,6 +685,8 @@ A conceptual input frame contains:
 NetworkTick
 Incoming normalized ActiveEffect inputs
 Passive dirty events or passive source version changes
+Generated PassiveEffect source lifecycle changes
+Passive result-event history required for resimulation
 Optional correction/resimulation metadata
 Deterministic ordering metadata where needed
 ```
@@ -846,7 +888,7 @@ After registration, `BaseValues[]` are treated as valid, stable input values.
 
 ### 9.4 Passive Modifiers
 
-Passives are permanent stat sources.
+Stat passives are persistent source-bound stat sources. Version 6.4.1 also defines generated `PassiveEffect` runtime records for reactive passives, but passive stat modifiers still resolve only through the passive stat layer.
 
 Examples:
 
@@ -859,9 +901,11 @@ Examples:
 
 Passives are not `ActiveEffect`s.
 
-Passives must be processed by a separate passive modifier pipeline. They are recalculated only when a passive source is added, removed, replaced, or dirtied by its source state.
+Generated `PassiveEffect` records are StateEngine-owned passive runtime records, not active-effect records.
 
-Passives must not be recalculated every tick.
+Stat passives must be processed by a separate passive modifier pipeline. They are recalculated only when a passive source is added, removed, replaced, or dirtied by its source state.
+
+Passives must not be recalculated every tick unless a generated passive runtime record explicitly requires evaluation through `EvaluationPolicies`.
 
 Passive modifiers write into `EffectiveMaxValue`.
 
@@ -3721,6 +3765,8 @@ The StateEngine must:
 - track condition contributor ownership,
 - process active effects,
 - process dirty passive modifier changes through the passive pipeline,
+- process generated source-bound passive runtime effects,
+- process deterministic passive result events and passive active-effect outputs,
 - resimulate past ticks,
 - calculate new `LivingEntityState` values,
 - generate compact deltas,
@@ -3792,16 +3838,19 @@ Per host state tick:
 3. Take registered mutable entity states.
 4. Clear per-tick scratch buffers without deallocation.
 5. Apply dirty passive source changes and resolve affected `EffectiveMaxValue` values.
-6. Add incoming `ActiveEffect` instances to entity effect buffers in deterministic order.
-7. Resolve stack policies without allocation.
-8. Fire `OnFirstApplication` condition requests for accepted active effects.
-9. Evaluate blocking conditions and classifications.
-10. Evaluate triggers and due intervals.
-11. Execute due active effects in deterministic order.
-12. Fire `OnFirstExecution` condition requests after each first successful execution.
-13. Queue child effects into the same tick buffer in deterministic list order.
-14. Collect stat transactions, active modifier contributions, condition requests, and effect-removal requests.
-15. Resolve active modifiers using the stat model:
+6. Add, remove, replace, or restack generated source-bound `PassiveEffect` records when passive source state changes.
+7. Evaluate generated passive runtime records only when their `EvaluationPolicies` require it.
+8. Queue reactive passive outputs into bounded same-tick passive result/output buffers.
+9. Add incoming `ActiveEffect` instances and passive-emitted `ActiveEffectSpec` outputs to entity effect buffers in deterministic order.
+10. Resolve stack policies without allocation.
+11. Fire `OnFirstApplication` condition requests for accepted active effects.
+12. Evaluate blocking conditions and classifications.
+13. Evaluate triggers and due intervals.
+14. Execute due active effects in deterministic order.
+15. Fire `OnFirstExecution` condition requests after each first successful execution.
+16. Queue child effects into the same tick buffer in deterministic list order.
+17. Collect stat transactions, active modifier contributions, condition requests, effect-removal requests, and result events.
+18. Resolve active modifiers using the stat model:
     1. passive baseline into `EffectiveMaxValue`,
     2. active flat `CurrentMaxValue` modifiers,
     3. active percentage `CurrentMaxValue` modifiers,
@@ -3809,15 +3858,16 @@ Per host state tick:
     5. `CurrentValue` transactions in deterministic order,
     6. active FlowStat and AttributeStat `CurrentValue` modifiers,
     7. clamp according to stat category.
-16. Apply regeneration and net-flow application when due.
-17. Update shield cooldown state.
-18. Derive StateEngine-owned conditions such as `Dead` after stat resolution.
-19. Expire or retain active effects using deterministic removal.
-20. Fire `OnExpire`, `OnRemove`, and `OnExpireOrRemove` condition requests as applicable.
-21. Remove expired active effect classifications automatically.
-22. Mark dirty stats, conditions, and effects.
-23. Emit delta only if state is dirty.
-24. Store snapshot and applied effect history for rollback/resimulation.
+19. Apply regeneration and net-flow application when due.
+20. Update shield cooldown state.
+21. Derive StateEngine-owned conditions such as `Dead` after stat resolution.
+22. Feed produced deterministic result events to reactive passive evaluation within configured same-tick limits.
+23. Expire or retain active effects and generated passive runtime windows using deterministic removal or runtime-state clearing.
+24. Fire `OnExpire`, `OnRemove`, and `OnExpireOrRemove` condition requests as applicable.
+25. Remove expired active effect classifications automatically.
+26. Mark dirty stats, conditions, effects, and passive layer changes.
+27. Emit delta only if state is dirty.
+28. Store snapshot, applied effect history, result-event history, generated passive-effect state, and passive runtime state for rollback/resimulation.
 
 ### 17.1 Removal Strategy
 
@@ -3854,6 +3904,8 @@ Required data:
 LivingEntityState snapshot
 Applied ActiveEffects for the tick
 Accepted/rejected effect history where needed for deterministic replay
+Generated PassiveEffects and PassiveRuntime state
+Passive result-event history where needed for deterministic replay
 Delta comparison metadata
 ```
 
@@ -3888,6 +3940,12 @@ EntityConditionTagSet
 ConditionContributorRecords
 ActiveEffects[]
 ActiveEffectCount
+GeneratedPassiveEffects[]
+PassiveRuntimeState[]
+PassiveInsertionSequence
+PassiveDirtyStats
+PassiveInputVersion
+PassiveResolvedVersion
 ShieldCooldownUntilNetworkTick
 Dirty state metadata required for replay
 ```
@@ -4369,6 +4427,10 @@ MaxChildEffectDepth = 5
 MaxEffectsProcessedPerEntityPerTick = configured
 MaxIncomingEffectsPerEntityPerTick = 30
 MaxChildEffectsPerEntityPerTick = 3
+MaxPassiveEffectsPerEntity = configured
+MaxReactiveEventsPerTick = configured
+MaxReactiveDepth = configured
+MaxPassiveOutputsPerEvent = configured
 SnapshotRetentionTicks = 45
 ClientPredictionRetentionTicks = 45
 RemoteInterpolationDelayTicks = 2
@@ -4486,6 +4548,11 @@ ClientInterpolationStateBuffer
 ClientSubmissionResultBuffer
 ClientAckRecordBuffer
 ClientEffectIdMapBuffer
+GeneratedPassiveEffects
+PassiveRuntimeState
+PassiveResultEvents
+PassiveOutputEffects
+RejectedPassiveRecords
 PassiveFlatModifiers
 PassivePercentModifiers
 ```
@@ -4532,6 +4599,10 @@ OriginId
 ClientRequestId
 ClientEffectSequence
 SubmittedInputTick
+PassiveInsertionSequence
+PassiveRuntimeId
+PassiveDefinitionId
+PassiveResultEventSequence
 ```
 
 The engine must use:
@@ -4542,6 +4613,7 @@ The engine must use:
 - deterministic overflow replacement and rejection ordering,
 - exact EntityCondition tag-set comparison.
 - deterministic client request identity mapping when reconciling predicted effects.
+- deterministic passive result-event ordering and emitted active-effect ordering.
 
 The engine must not rely on dictionary iteration order, hash-set iteration order, unordered source iteration, object reference order, thread scheduling, or runtime-dependent collection behavior.
 
@@ -4560,6 +4632,9 @@ Runtime simulation must use tick values for:
 - snapshot retention,
 - resimulation windows,
 - active-effect history.
+- passive runtime cooldown expiry,
+- passive runtime stack expiry,
+- passive result-event history.
 
 The slow 15 TPS simulation lane must be derived from the fast tick timeline.
 
@@ -4583,6 +4658,8 @@ Conditions must be compared by exact flag match.
 
 Active-effect state comparison must use stable runtime identifiers and deterministic fields such as stack count, expiry tick, insertion sequence, parent/child metadata, and accumulated modifier state where applicable.
 
+Passive runtime state comparison must use stable passive runtime identifiers and deterministic fields such as source-level stack count, runtime stack count, runtime stack expiry tick, cooldown expiry tick, passive insertion sequence, last evaluated tick, and last triggered tick.
+
 ### 23.5 Deterministic Random Future Rule
 
 Random behavior is out of scope for the first implementation.
@@ -4603,11 +4680,13 @@ Random state must be replayable, rollback-safe, and independent from frame rate,
 
 ## 24 Validation Requirements
 
-The PRD requires an `EffectValidator` and stat-definition validation during startup.
+The PRD requires an `EffectValidator`, `PassiveValidator`, and stat-definition validation during startup.
 
 `EffectValidator` checks all effect definitions before normal simulation begins.
 
 Stat validation checks all stat names, categories, bounds, lanes, and target compatibility.
+
+Passive validation checks authored passive definitions, passive schemas, passive tags, evaluation policies, stat modifier targets, reactive outputs, runtime stacking, cooldowns, and snapshot requirements.
 
 ### 24.1 EffectValidator Responsibilities
 
@@ -4627,6 +4706,7 @@ The validator must check:
 - `EffectRemovalRequest`, when present, has at least one non-empty selector.
 - Duration and tick interval values satisfy the 6.4.0 timing rules.
 - Active effect stat targets are compatible with the Stats model.
+- Active effect removal selectors cannot target passive modifiers or passive classification tags.
 
 ### 24.2 Validation Timing
 
@@ -4640,6 +4720,7 @@ The validator should produce a deterministic report:
 
 ```text
 EffectDefinitionId
+PassiveDefinitionId
 ValidationViolation
 FieldPath
 InvalidValue
@@ -5181,4 +5262,840 @@ Gameplay state correction is immediate while presentation receives separate corr
 Delta application avoids avoidable allocation during normal packet processing
 ```
 
+### 27.11 Passive Runtime Tests
+
+Must cover:
+
+```text
+Generated PassiveEffect records are not ActiveEffect records
+Passive classifications remain separate from EffectClassification and EntityCondition
+Passive tags cannot be used in active-effect removal selectors
+Stat passives update EffectiveMaxValue only when passive source state changes
+Passive flat modifiers apply before additive passive percentage modifiers
+Generated PassiveEffect lifetime is source-bound
+Removing or replacing a source clears PassiveRuntime state
+Reactive passives do not directly mutate LivingEntityState
+Bloodsucker gains a stack before calculating same-event healing
+Bloodsucker caps at 10 stacks and 30 percent healing
+Bloodsucker uses final applied damage after mitigation and clamping
+Fairy Revival emits a same-tick revive spec when Condition.Dead is added and cooldown is ready
+Fairy Revival cooldown is 9000 NetworkTicks at 30 TPS for a 300000 ms authoring value
+Passive result-event queue ordering is deterministic
+Passive output overflow is deterministic
+Passive snapshots restore and resimulate passive runtime state
+Passive validation fails fast for invalid definitions and schemas
+```
+
 ---
+
+## 28 Version 6.4.1 Passive Runtime Contract
+
+This section incorporates the current `Passives.md` contract into the StateEngine PRD as Version 6.4.1.
+
+Source documents:
+
+```text
+FLU_RPG_StateEngine_PRD.md
+Passives.md
+Effects.md
+Stats.md
+LivingEntityState.md
+LivingEntityRegistry.md
+TagSystem.md
+```
+
+Primary concern:
+
+```text
+Passive definitions
+Generated passive runtime effects
+Stat-passive resolution
+Reactive passive behavior
+Passive tags
+Deterministic validation
+Snapshot and replay safety
+```
+
+### 28.1 Purpose
+
+This section defines the passive system for the RPG State Engine.
+
+The existing StateEngine PRD establishes that passives are not `ActiveEffect` records and are not stored in `EffectDefinitions.yml`. It also establishes that passive stat modifiers resolve into `EffectiveMaxValue`, are recalculated only when their source changes, and must not be recalculated every tick by default.
+
+Version 6.4.1 extends that base contract with a runtime model for reactive passives such as Bloodsucker:
+
+```text
+PassiveDefinition = immutable authored passive data
+PassiveEffect = source-bound runtime passive record generated from PassiveDefinition
+PassiveRuntime = mutable runtime state owned by the generated PassiveEffect
+PassiveSchemas.yml = validation and runtime schema contract
+PassiveDefinitions.yml = authored passive definition data
+```
+
+`PassiveEffect` is processed by the StateEngine passive path. It is not an `ActiveEffect`.
+
+### 28.2 Existing Passive Requirements Preserved
+
+Current PRD and documentation requirements that constrain passives:
+
+```text
+Passives are not EffectDefinition entries.
+Passives are not ActiveEffect runtime records.
+Active effects may last UntilRemoved, but that is still active lifetime behavior, not passive behavior.
+Passive source systems are external and may include items, talents, level-ups, ship configuration, permanent upgrades, and other persistent source state.
+Passive source systems are out of scope for the StateEngine, but their normalized passive inputs are in scope.
+Passive modifier resolution writes into EffectiveMaxValue.
+Passive modifiers must not target CurrentValue.
+Passive modifiers must not target CurrentMaxValue.
+Passive modifiers must not target BaseValue.
+Passive modifiers are recalculated only when a passive source is added, removed, replaced, or dirtied by source state.
+Passives must not be recalculated every tick unless their definition explicitly needs runtime evaluation.
+Passive flat modifiers are added before passive percentage modifiers.
+Passive percentage modifiers are additive with each other.
+If no passive modifier exists for a stat, EffectiveMaxValue = BaseValue.
+LivingEntityState stores resolved passive results and passive dirty/version metadata.
+LivingEntityState must not own the full passive source graph.
+StateEngine snapshots and replay must preserve enough passive data to resimulate deterministically.
+Delta output may need to report passive layer changes.
+LivingEntityRegistry owns presence and lifecycle, but not passive source data or passive cleanup internals.
+```
+
+Passive stat resolution:
+
+```text
+BaseValue
++ passive flat modifiers
+then additive passive percentage modifiers
+= EffectiveMaxValue
+```
+
+Example:
+
+```text
+BaseValue: 100
+Passive flat modifier: +20
+Passive percentage modifiers: +10% and +15%
+EffectiveMaxValue: (100 + 20) * 1.25 = 150
+```
+
+### 28.3 Design Decisions
+
+The passive model uses these decisions:
+
+```text
+PassiveDefinition supports both stat modifiers and reactive triggers.
+A generated PassiveEffect runtime record is processed by the StateEngine.
+PassiveEffect is not an ActiveEffect.
+Passive metadata uses a separate gameplay tag domain.
+Passive tags use DomainKey: PassiveClassification and RootPrefix: Passive.
+Passive tags are not EffectClassification tags and are not EntityCondition tags.
+PassiveDefinition declares explicit EvaluationPolicies.
+PassiveEffect lifetime is source-bound.
+Removing or replacing the passive source removes the generated PassiveEffect and clears its runtime state.
+Generated PassiveEffect records are stored in StateEngine-owned passive runtime buffers keyed by TargetEntityId.
+Passive runtime state is included in StateEngine snapshots.
+Passive source stacking uses a passive-adapted stacking block.
+Event-driven runtime stacks use a separate RuntimeStacking block.
+Reactive passives may own runtime cooldowns stored on PassiveRuntime.
+Reactive passive outputs are processed in the same deterministic tick through a bounded result-event queue.
+Same-event passive reactions are ordered by TargetEntityId, PassiveInsertionSequence, PassiveRuntimeId, then emitted active effects use normal effect ordering.
+Reactive passives may emit normal ActiveEffectSpec records with deterministic runtime magnitude overrides.
+Emitted active effects may trigger later reactive systems through the normal result-event pipeline, constrained by recursion depth and same-tick event limits.
+```
+
+### 28.4 Passive Tags
+
+Passive tags must be separate from effect classifications and living entity conditions.
+
+Required domain:
+
+```text
+DomainKey: PassiveClassification
+RootPrefix: Passive
+```
+
+Examples:
+
+```text
+Passive.Reactive.DamageDealt.LifeLeech
+Passive.Stacking.Bloodsucker
+Passive.Stat.EnergyStorage
+Passive.Source.Talent
+Passive.Source.Item
+Passive.Source.ShipSystem
+Passive.Reactive.Death
+Passive.Cooldown.Revive
+```
+
+Domain comparison:
+
+| Domain | Stored on | Meaning | Why not use it for passives |
+|---|---|---|---|
+| `EntityCondition` / `Condition.*` | `LivingEntityState` condition tag set | Mutable resolved entity state | Passive metadata is not a condition and should not imply condition contributor ownership. |
+| `EffectClassification` / `Effect.*` | Accepted `ActiveEffect` metadata | Active effect blocking, trigger, removal, and inspection metadata | Passives are not active effects and must not be removed or blocked through active-effect classification rules. |
+| `PassiveClassification` / `Passive.*` | `PassiveDefinition` and generated `PassiveEffect` metadata | Passive filtering, UI/debug grouping, validation, event subscription filtering | Matches passive lifetime and passive runtime ownership. |
+
+The tag system remains context-free. It provides domain-safe tag sets and queries only. The passive pipeline and StateEngine define what passive tags mean.
+
+Required contract tests:
+
+```text
+Passive classifications remain separate from EntityCondition.
+Passive classifications remain separate from EffectClassification.
+Passive classifications do not own passive lifetime.
+Passive classifications do not mutate LivingEntityState.
+Passive tags cannot be used in active effect removal selectors.
+```
+
+### 28.5 Core Passive Runtime Model
+
+#### 28.5.1 PassiveDefinition
+
+`PassiveDefinition` is immutable static data loaded from `PassiveDefinitions.yml`.
+
+It may define:
+
+```text
+Passive identity
+Passive classification tags
+Evaluation policies
+Stat modifiers
+Reactive triggers
+Source-level stacking rules
+Event-driven runtime stacking rules
+Emitted active-effect specs
+Visibility metadata
+Child passive definitions or future passive payloads
+```
+
+A `PassiveDefinition` is valid only if it has at least one gameplay payload:
+
+```text
+StatModifiers
+ReactiveTriggers
+PassiveClassifications
+ChildPassiveDefinitions or future payloads
+```
+
+Classification-only passive definitions are valid only as queryable gameplay metadata that generate a source-bound `PassiveEffect`. Pure UI-only metadata definitions are out of scope unless a future document explicitly introduces them.
+
+#### 28.5.2 PassiveEffect
+
+`PassiveEffect` is a StateEngine-owned runtime record generated from a `PassiveDefinition` and a source.
+
+It stores:
+
+```text
+PassiveRuntimeId
+PassiveDefinitionId
+SourceId
+OriginId
+TargetEntityId
+AppliedNetworkTick
+PassiveInsertionSequence
+StackCount
+RuntimeStackCount
+RuntimeStackExpiresNetworkTick
+CooldownUntilNetworkTick
+LastEvaluatedNetworkTick
+LastTriggeredNetworkTick
+RuntimeFlags
+```
+
+`PassiveEffect` exists while its source is active.
+
+Source examples:
+
+```text
+Equipped item
+Learned talent
+Installed ship system
+Permanent upgrade
+Runtime granted passive source
+```
+
+When the source is removed or replaced, the generated `PassiveEffect` is removed and its runtime state is cleared.
+
+#### 28.5.3 PassiveRuntime
+
+`PassiveRuntime` is the mutable state inside or alongside a `PassiveEffect`.
+
+Examples:
+
+```text
+Current Bloodsucker stack count
+Bloodsucker stack expiry tick
+Fairy Revival cooldown expiry tick
+Last event consumed by a passive
+Compiled evaluation flags
+Source-level stack count
+Dirty stat mask contributed by this passive
+```
+
+The implementation may store this as fields directly on `PassiveEffect`, or as a compact parallel runtime-state array keyed by `PassiveRuntimeId`. The behavior must remain deterministic, allocation-conscious, and snapshot-friendly.
+
+#### 28.5.4 LivingEntityState Relationship
+
+`LivingEntityState` stores:
+
+```text
+EffectiveMaxValues[]
+PassiveDirtyStats
+PassiveInputVersion
+PassiveResolvedVersion
+Passive layer dirty metadata
+```
+
+`LivingEntityState` does not own external passive source graphs.
+
+Generated `PassiveEffect` records are StateEngine-owned runtime data. StateEngine snapshots must include enough passive runtime data to restore and resimulate:
+
+```text
+Active PassiveEffects[]
+PassiveRuntime state
+Passive insertion sequence
+Runtime stack counts
+Runtime stack expiry ticks
+CooldownUntilNetworkTick
+LastEvaluatedNetworkTick
+LastTriggeredNetworkTick
+Passive dirty/version metadata
+```
+
+This preserves the original `LivingEntityState` boundary while allowing reactive passives to be deterministic.
+
+### 28.6 Evaluation Policies
+
+Each passive definition declares when its generated runtime passive effect is evaluated.
+
+Supported initial policies:
+
+| Policy | Meaning | Typical use |
+|---|---|---|
+| `OnSourceDirty` | Evaluate when the source is added, removed, replaced, or dirtied. | Permanent stat passives such as +20% EnergyStorage. |
+| `OnEvent` | Evaluate when a subscribed deterministic result event is produced. | Bloodsucker reacting to `DamageDealt`. |
+| `OnTickWhileRuntimeActive` | Evaluate while the runtime has active internal state. | Expiring Bloodsucker runtime stacks. |
+| `EveryMs` | Evaluate periodically at a deterministic interval. | Rare passive maintenance. |
+
+Passives must not be evaluated every tick unless their `EvaluationPolicies` require it.
+
+Bloodsucker uses:
+
+```yaml
+EvaluationPolicies:
+  - EvaluationPolicy: OnEvent
+    EventType: DamageDealt
+  - EvaluationPolicy: OnTickWhileRuntimeActive
+```
+
+### 28.7 Stat Passives
+
+Stat passives contribute only to `EffectiveMaxValue`.
+
+Valid stat passive target:
+
+```text
+TargetValueKind: EffectiveMaxValue
+```
+
+Invalid passive stat targets:
+
+```text
+BaseValue
+CurrentValue
+CurrentMaxValue
+```
+
+Valid calculation modes:
+
+```text
+Flat
+Percentage
+```
+
+Percentages use decimal fractions:
+
+```text
+0.20 = 20 percent
+```
+
+Passive percentages are additive with each other.
+
+#### 28.7.1 Equipment Stat Passive Example
+
+Equipment stats are source-bound passives.
+
+Example item:
+
+```text
+Chest Armor of Vigor
+Slot: ChestArmor
+Stats:
+- Armor +30
+- Health +30
+- HealthRegeneration +5
+```
+
+This should generate a passive source when equipped, not a permanent active effect.
+
+```yaml
+ChestArmorOfVigorPassive:
+  Definition:
+    PassiveDefinitionId: passive.item.chest_armor_of_vigor.equipped_stats
+    Name: Chest Armor of Vigor
+    Description: Equipped chest armor stat bonuses.
+  PassiveProcessing: Fast
+  PassiveClassifications:
+    - Passive.Source.Item
+    - Passive.Stat.Armor
+    - Passive.Stat.Health
+    - Passive.Stat.HealthRegeneration
+  EvaluationPolicies:
+    - EvaluationPolicy: OnSourceDirty
+  StatModifiers:
+    - TargetStat: Armor
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Flat
+      Value: 30.0
+    - TargetStat: Health
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Flat
+      Value: 30.0
+    - TargetStat: HealthRegeneration
+      TargetValueKind: EffectiveMaxValue
+      Manipulation: Raise
+      Calculation: Flat
+      Value: 5.0
+  Stacking:
+    StackScope: SameSource
+    StackPolicy: Discard
+    StackBehavior: IndependentStacks
+  Visibility: Menu
+```
+
+The item/equipment system owns slot rules and source lifecycle:
+
+```text
+Equip Chest Armor of Vigor
+-> remove or replace the old ChestArmor passive source, if present
+-> add passive source passive.item.chest_armor_of_vigor.equipped_stats
+-> mark Armor, Health, and HealthRegeneration passive layers dirty
+-> StateEngine recalculates affected EffectiveMaxValue values
+```
+
+Unequipping the item removes the passive source. The generated `PassiveEffect` is removed, its runtime state is cleared, and affected `EffectiveMaxValue` values are recalculated from the remaining passive sources.
+
+This is not `DurationType: UntilRemoved` active-effect behavior. Equipment stats do not need active-effect triggering, blocking, condition lifecycle, active-effect removal requests, or active effect classifications.
+
+`HealthRegeneration` must use the stat registry's canonical unit. If designers author regeneration in a friendlier unit such as per second, import validation should convert it to the canonical runtime unit before simulation.
+
+### 28.8 Reactive Passives
+
+Reactive passives listen to deterministic StateEngine result events.
+
+Initial event types:
+
+```text
+DamageDealt
+DamageTaken
+HealthRaised
+HealthReduced
+ConditionAdded
+ConditionRemoved
+ActiveEffectAccepted
+ActiveEffectRemoved
+```
+
+The first implementation should include only the events required by actual passive definitions. Bloodsucker requires `DamageDealt`. Fairy Revival requires `ConditionAdded`.
+
+Reactive passives may:
+
+```text
+Check event fields
+Update PassiveRuntime
+Gain or refresh runtime stacks
+Start or check runtime cooldowns
+Emit ActiveEffectSpec outputs
+Mark passive state dirty
+Schedule same-tick bounded reaction work
+```
+
+Reactive passives must not directly mutate `LivingEntityState`.
+
+### 28.9 ActiveEffectSpec Output
+
+Reactive passives emit normal `ActiveEffectSpec` records when they need to mutate RPG state.
+
+Bloodsucker emits a heal spec:
+
+```text
+EffectDefinitionId: effect.raise.heal
+TargetEntityId: Passive owner
+SetByCaller Target.Value: AppliedDamage * RuntimeStackCount * 0.03
+```
+
+The referenced `EffectDefinition` remains immutable. The runtime spec carries the deterministic magnitude override.
+
+Fairy Revival emits a revive spec:
+
+```text
+EffectDefinitionId: effect.health.revive
+TargetEntityId: Passive owner
+SetByCaller Target.Value: Health.EffectiveMaxValue * 0.50
+```
+
+`Health.EffectiveMaxValue` means the revive amount includes base Health and passive Health bonuses. It does not include temporary active max-health effects. If a future item or talent should revive from the final active capacity, use `Health.CurrentMaxValue` instead.
+
+The StateEngine processes the emitted spec through normal active-effect validation, blocking, stat transaction, dirty-state, and result-event rules.
+
+### 28.10 Passive Stacking
+
+The passive system has two stack layers.
+
+#### 28.10.1 Source-Level Stacking
+
+`Stacking` controls how multiple sources generating the same passive combine.
+
+Supported passive stack scopes:
+
+```text
+ByPassiveDefinitionId
+SameSource
+SameSourceAndOrigin
+ByStackGroupId
+```
+
+Supported policies and behaviors mirror active effects:
+
+```text
+StackPolicy: Stack, Replace, Discard
+StackBehavior: IndependentStacks, RefreshDuration, AddStackRefreshDuration, AddStackNoRefresh
+MaxStackOverflowPolicy: ReplaceOldest, RejectNewest
+```
+
+The names are passive-specific where needed. Use `ByPassiveDefinitionId`, not `ByEffectDefinitionId`.
+
+#### 28.10.2 Runtime Stacking
+
+`RuntimeStacking` controls event-driven stacks owned by one generated `PassiveEffect`.
+
+Bloodsucker uses runtime stacks:
+
+```text
+MaxStacks: 10
+ValuePerStack: 0.03
+MaxOutputMultiplier: 0.30
+StackDurationMs: 5000
+ExpirationPolicy: RefreshAllOnGain
+ApplyNewStackBeforeOutput: true
+```
+
+This separates "two sources grant Bloodsucker" from "Bloodsucker currently has 7 combat stacks".
+
+### 28.11 Bloodsucker Example
+
+Bloodsucker is player-facing passive gameplay, but mechanically it is not a stat-only passive.
+
+It is a reactive passive:
+
+```text
+When the owner deals final applied damage:
+1. Ignore self-damage.
+2. Allow reflected or retaliation damage if OriginId is the passive owner.
+3. Gain one runtime stack, up to 10.
+4. Refresh the shared stack window to 5000 ms.
+5. Calculate heal percentage after the new stack is gained.
+6. Heal owner for AppliedDamage * RuntimeStackCount * 0.03.
+7. Maximum heal multiplier is 0.30.
+8. Emit a same-tick ActiveEffectSpec for effect.raise.heal with a set-by-caller value.
+```
+
+Examples:
+
+```text
+First qualifying hit:
+Stack count becomes 1.
+Heal = AppliedDamage * 0.03.
+
+Tenth qualifying hit:
+Stack count becomes 10.
+Heal = AppliedDamage * 0.30.
+
+Later hit while capped:
+Stack count remains 10.
+Stack expiry is refreshed.
+Heal = AppliedDamage * 0.30.
+```
+
+Bloodsucker uses final applied damage after mitigation and clamping. It does not heal from theoretical raw damage.
+
+### 28.12 Fairy Revival Example
+
+Fairy Revival is a talent passive that reacts to death.
+
+It is modeled as a source-bound reactive `PassiveEffect` with runtime cooldown:
+
+```text
+When Condition.Dead is added to the owner:
+1. Check whether CooldownUntilNetworkTick is absent or <= current NetworkTick.
+2. If on cooldown, do nothing.
+3. If ready, emit effect.health.revive in the same deterministic tick.
+4. Override Target.Value to Health.EffectiveMaxValue * 0.50.
+5. Start cooldown for 300000 ms.
+```
+
+At 30 TPS:
+
+```text
+300000 ms = 5 minutes = 9000 NetworkTicks
+```
+
+Recommended authored form:
+
+```yaml
+FairyRevival:
+  Definition:
+    PassiveDefinitionId: passive.talent.fairy_revival
+    Name: Fairy Revival
+    Description: Revives the owner on death for 50% passive-adjusted max Health, then enters a 5 minute cooldown.
+  PassiveProcessing: Fast
+  PassiveClassifications:
+    - Passive.Reactive.Death
+    - Passive.Cooldown.Revive
+    - Passive.Source.Talent
+  EvaluationPolicies:
+    - EvaluationPolicy: OnEvent
+      EventType: ConditionAdded
+  Stacking:
+    StackScope: ByPassiveDefinitionId
+    StackPolicy: Discard
+    StackBehavior: IndependentStacks
+    MaxStacks: 1
+    MaxStackOverflowPolicy: RejectNewest
+  ReactiveTriggers:
+    - ReactiveTriggerId: fairy_revival.on_dead
+      EventType: ConditionAdded
+      TriggerFilters:
+        OwnerMatch: TargetEntityId
+        EventCondition: Condition.Dead
+      RuntimeCooldown:
+        CooldownMs: 300000.0
+        StartCooldownOn: OutputSuccess
+      Outputs:
+        - OutputKind: ActiveEffectSpec
+          OutputTiming: SameTick
+          ActiveEffectSpec:
+            EffectDefinitionId: effect.health.revive
+            TargetEntity: PassiveOwner
+            SetByCaller:
+              Field: Target.Value
+              Formula:
+                Stat: Health
+                StatValueKind: EffectiveMaxValue
+                Multiplier: 0.50
+                ClampMin: 0.0
+  Visibility: Hud
+```
+
+The StateEngine must process the emitted revive effect through the normal active-effect path. The revive effect is responsible for restoring Health and requesting removal of `Condition.Dead` according to active-effect rules.
+
+If Health remains `<= 0` after same-tick revive processing, the existing StateEngine derived-condition rule may reapply `Condition.Dead`.
+
+Fairy Revival cooldown is not an active effect. It is passive runtime state:
+
+```text
+CooldownUntilNetworkTick
+LastTriggeredNetworkTick
+```
+
+This cooldown must be included in snapshots and rollback/resimulation.
+
+### 28.13 Result Event Queue
+
+Reactive passive processing uses a bounded same-tick result-event queue.
+
+Ordering:
+
+```text
+1. Original event production order from StateEngine resolution
+2. TargetEntityId
+3. PassiveInsertionSequence
+4. PassiveRuntimeId
+5. Emitted ActiveEffectSpec normal effect ordering
+```
+
+The StateEngine must define limits:
+
+```text
+MaxReactiveEventsPerTick
+MaxReactiveDepth
+MaxPassiveOutputsPerEvent
+```
+
+Overflow is deterministic:
+
+```text
+Accept up to configured capacity.
+Reject or defer remaining records according to config.
+Record deterministic rejection metadata when diagnostics are enabled.
+Do not depend on collection iteration order.
+```
+
+Same-event passive reactions are ordered by `TargetEntityId`, `PassiveInsertionSequence`, and `PassiveRuntimeId`; emitted active effects then use normal active-effect ordering.
+
+Emitted active effects may trigger later reactive systems through the normal result-event pipeline, constrained by recursion depth and same-tick event limits.
+
+### 28.14 Snapshot and Replay
+
+Passive runtime state must be snapshot-backed.
+
+Snapshots must include:
+
+```text
+Generated PassiveEffects[]
+PassiveRuntimeId
+PassiveDefinitionId
+SourceId
+OriginId
+TargetEntityId
+PassiveInsertionSequence
+Source-level StackCount
+RuntimeStackCount
+RuntimeStackExpiresNetworkTick
+CooldownUntilNetworkTick
+LastEvaluatedNetworkTick
+LastTriggeredNetworkTick
+Passive dirty/version metadata
+```
+
+Given identical:
+
+```text
+Initial state
+Passive definitions
+Passive source events
+Active effect inputs
+Result event history
+NetworkTick range
+Config
+Tag registry hash
+```
+
+the StateEngine must produce identical passive runtime state, final stats, conditions, active effects, and deltas.
+
+### 28.15 Passive Validation
+
+Passive validation happens at startup.
+
+The validator must check:
+
+```text
+YAML parses successfully.
+Definition.PassiveDefinitionId, Definition.Name, and Definition.Description are present.
+A passive has at least one gameplay payload.
+Classification-only passives are queryable gameplay metadata, not UI-only metadata.
+Passive tags use PassiveClassification and canonical Passive.* names.
+Passive direct assignment fields use assignable passive tags.
+Passive selector fields may use queryable parent/category passive tags.
+Stat modifiers target EffectiveMaxValue only.
+Stat modifier target stats exist in the stat registry.
+Percentage values use decimal fractions.
+EvaluationPolicies are present and compatible with the passive payload.
+OnEvent policies specify an event type.
+EveryMs policies specify an interval greater than 100 ms.
+Runtime stack durations are greater than 100 ms when present.
+Runtime cooldown durations are greater than 100 ms when present.
+Source-level stacking fields are valid.
+ByStackGroupId requires StackGroupId.
+MaxStacks, when present, is greater than zero.
+Reactive outputs reference existing EffectDefinitionId values.
+Runtime set-by-caller fields target explicitly allowed override fields.
+Set-by-caller formulas reference valid event values or valid stat layer values.
+Event filters use valid tag domains.
+Generated runtime records have unique PassiveRuntimeId values.
+Passive runtime snapshots contain enough state to restore and resimulate.
+```
+
+Invalid passive definitions must fail fast before normal simulation.
+
+### 28.16 Passive Acceptance Tests
+
+Passive tests must prove:
+
+```text
+Passive classifications remain separate from EntityCondition and EffectClassification.
+Passive tags cannot be used in active effect removal selectors.
+Stat passives update EffectiveMaxValue only when source state changes.
+Passive flat modifiers apply before additive passive percentages.
+Generated PassiveEffect lifetime is source-bound.
+Removing or replacing a source clears PassiveRuntime state.
+Reactive passives do not directly mutate LivingEntityState.
+Bloodsucker gains a stack before calculating same-event healing.
+Bloodsucker caps at 10 stacks and 30 percent healing.
+Bloodsucker uses final applied damage after mitigation and clamping.
+Fairy Revival emits a same-tick revive spec when Condition.Dead is added and cooldown is ready.
+Fairy Revival cooldown is snapshot-backed and rollback-safe.
+Passive result-event ordering is deterministic.
+Passive output overflow is deterministic.
+Passive snapshots restore and resimulate passive runtime state.
+Passive validation fails fast for invalid definitions and schemas.
+```
+
+### 28.17 Questionnaire Outcome
+
+The following design questions were resolved:
+
+| Question | Decision |
+|---|---|
+| Should passives support reactive behavior? | Yes. `PassiveDefinition` supports stat modifiers and reactive triggers. |
+| Should passive tags share domains with effects or conditions? | No. Add `PassiveClassification` with root `Passive`. |
+| Bloodsucker stack math? | 10 stacks, 3 percent per stack, 30 percent maximum. |
+| Bloodsucker same-event stack timing? | Gain stack first, then calculate heal for that same event. |
+| Bloodsucker stack lifetime? | Temporary shared stack window. |
+| Bloodsucker stack duration? | 5000 ms. |
+| Reactive passive output path? | Emit normal `ActiveEffectSpec`, not direct mutation. |
+| Dynamic heal amount? | Use set-by-caller runtime magnitude override. |
+| Damage value used? | Final applied damage after mitigation and clamping. |
+| Self/reflected damage? | Exclude self-damage; allow reflected/retaliation damage if credited to owner. |
+| Heal feedback loop? | Allowed through normal result-event pipeline with limits. |
+| Runtime ownership? | Generate `PassiveEffect` processed by StateEngine. |
+| Evaluation cadence? | Explicit `EvaluationPolicy`. |
+| Runtime storage? | StateEngine-owned passive runtime buffers keyed by target. |
+| Passive lifetime? | Source-bound. |
+| Duplicate passive sources? | Use existing stack mechanic concepts adapted to passives. |
+| Passive stack scopes? | `ByPassiveDefinitionId`, `SameSource`, `SameSourceAndOrigin`, `ByStackGroupId`. |
+| Passive stack policies? | Same concepts as active effects. |
+| Two stack layers? | Yes. `Stacking` for source stacking, `RuntimeStacking` for event-driven stacks. |
+| Definition validity? | Require at least one payload and validate all static data at startup. |
+| Reactive output timing? | Same deterministic tick through bounded result-event queue. |
+| Same-event reaction ordering? | `TargetEntityId`, `PassiveInsertionSequence`, `PassiveRuntimeId`, then normal effect ordering. |
+| Passive runtime snapshots? | Include active passive runtime state in snapshots. |
+| Fairy Revival modeling? | Reactive passive with runtime cooldown that emits a same-tick revive `ActiveEffectSpec`. |
+| Fairy Revival max-health basis? | `Health.EffectiveMaxValue` for passive-adjusted max Health. Use `CurrentMaxValue` only if active capacity buffs should count. |
+
+### 28.18 Open Follow-Up Questions
+
+These are intentionally left for future implementation passes:
+
+```text
+Should passive output overflow reject or defer when the same-tick reaction queue is full?
+Should passive event subscriptions be precompiled per event type for cache locality?
+Should stat-only passives use a smaller runtime record than reactive passives?
+Should passive source systems provide source slot ordering, and should that ordering participate in tie-breakers?
+Should UI expose source-level stacks and runtime stacks separately?
+Should PassiveDefinition support child passive definitions in v1 or keep them future-only?
+Should emitted ActiveEffectSpec support a general set-by-caller payload map or only Target.Value in v1?
+Should passive runtime IDs be globally unique or entity-local plus insertion sequence?
+```
+
+### 28.19 Final Passive Contract
+
+Passives are immutable definitions that generate source-bound `PassiveEffect` runtime records processed by the StateEngine passive path.
+
+Stat passives resolve into `EffectiveMaxValue`. Reactive passives consume deterministic result events, update `PassiveRuntime`, and emit normal active effect specs when they need state mutation.
+
+Passive metadata uses the separate `PassiveClassification` gameplay tag domain. Passive tags are not living entity conditions and are not active effect classifications.
+
+The system must be deterministic, startup validated, source-bound, snapshot-backed, rollback-safe, and allocation-conscious.
