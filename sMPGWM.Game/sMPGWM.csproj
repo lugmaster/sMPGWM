@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
+    <PackageReference Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="assets\ui\backgrounds\" />
@@ -14,7 +15,6 @@
     <Folder Include="assets\ui\icons\" />
     <Folder Include="scenes\ui\controls\" />
     <Folder Include="scenes\ui\screens\" />
-    <Folder Include="Scripts\Autoload\Base\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\game_data\EffectDefinitions.yml" />
