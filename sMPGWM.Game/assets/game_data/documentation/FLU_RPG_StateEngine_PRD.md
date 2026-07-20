@@ -1438,8 +1438,11 @@ Attribute stats include:
 | `AttackSpeed` | Fast 30 TPS | Attack frequency modifier input. Effective attack scheduling is outside this Stats section. |
 | `CriticalHitChance` | Fast 30 TPS | Critical hit chance input. Effective combat roll use is outside this Stats section. |
 | `CriticalHitBonusDamage` | Fast 30 TPS | Bonus damage applied on critical hits. Effective combat use is outside this Stats section. |
-| `BonusCriticalHitChance` | Fast 30 TPS | Additional critical hit chance modifier input. |
 | `CooldownReduction` | Fast 30 TPS | Cooldown reduction input. Effective cooldown system use is outside this Stats section. |
+| `EnergyCostReduction` | Fast 30 TPS | Energy cost reduction input. Effective action cost use is outside this Stats section. |
+| `OxygenCostReduction` | Fast 30 TPS | Oxygen cost reduction input. Effective action cost use is outside this Stats section. |
+| `FoodCostReduction` | Fast 30 TPS | Food cost reduction input. Effective action cost use is outside this Stats section. |
+| `WaterCostReduction` | Fast 30 TPS | Water cost reduction input. Effective action cost use is outside this Stats section. |
 | `LifeLeech` | Fast 30 TPS | Life leech input. Effective healing behavior is outside this Stats section. |
 | `RetaliationDamage` | Fast 30 TPS | Retaliation damage input. Effective retaliation behavior is outside this Stats section. |
 | `ShieldRechargeDuration` | Fast 30 TPS | Shield cooldown duration in milliseconds before shield can regenerate again. |
@@ -1659,8 +1662,11 @@ The initial stat list is:
 | `AttackSpeed` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
 | `CriticalHitChance` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
 | `CriticalHitBonusDamage` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
-| `BonusCriticalHitChance` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
 | `CooldownReduction` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
+| `EnergyCostReduction` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
+| `OxygenCostReduction` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
+| `FoodCostReduction` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
+| `WaterCostReduction` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
 | `LifeLeech` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
 | `RetaliationDamage` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
 | `ShieldRechargeDuration` | AttributeStat | Fast 30 TPS | Base, EffectiveMax, Current |
@@ -1694,7 +1700,10 @@ AfterburnerAcceleration
 CooldownReduction
 CriticalHitChance
 CriticalHitBonusDamage
-BonusCriticalHitChance
+EnergyCostReduction
+OxygenCostReduction
+FoodCostReduction
+WaterCostReduction
 LifeLeech
 RetaliationDamage
 OxygenProduction
@@ -2156,7 +2165,7 @@ Deprecated stat spellings that must be replaced by canonical names:
 AfterBurnerSpeed        -> AfterburnerSpeed
 AfterBurnerAcceleration -> AfterburnerAcceleration
 CoolDownReduction       -> CooldownReduction
-BonusCriticalHitChange  -> BonusCriticalHitChance
+BonusCriticalHitChange  -> CriticalHitBonusDamage
 Lifeleech               -> LifeLeech
 OxygenGeneration        -> OxygenProduction
 FoodGeneration          -> FoodProduction
@@ -2495,8 +2504,11 @@ AttributeStat:
 - AttackSpeed
 - CriticalHitChance
 - CriticalHitBonusDamage
-- BonusCriticalHitChance
 - CooldownReduction
+- EnergyCostReduction
+- OxygenCostReduction
+- FoodCostReduction
+- WaterCostReduction
 - LifeLeech
 - RetaliationDamage
 - ShieldRechargeDuration

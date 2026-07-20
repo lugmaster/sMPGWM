@@ -6,8 +6,8 @@
 **Genre:** 2D Space RPG
 **Network Model:** Host-authoritative action simulation with client prediction and reconciliation support
 **Network Tick Rate:** 30 TPS
-**Primary Output:** Deterministic `EffectIntent`, resolved cost `ActiveEffectSpec`, projectile runtime state, action result records, and host acknowledgement data
-**Compatible With:** `FLU_RPG_StateEngine_PRD.md` version 6.4.1, `StateEngine.md` version 6.4.1, `TagSystem.md` version 1.1.0
+**Primary Output:** Deterministic damage `EffectIntent`, resolved cost `ActiveEffectSpec`, projectile runtime state, action result records, and host acknowledgement data
+**Compatible With:** `FLU_RPG_StateEngine_PRD.md` version 6.4.1, `StateEngine.md` version 6.4.1, `TagSystem.md` version 1.1.0, `CombatResolver.md` version 1.0.0
 **Definition Type:** Initial action, cooldown, targeting, and projectile PRD
 
 ---
@@ -27,7 +27,7 @@ It owns:
 - action commit and refund policy,
 - action request history,
 - action prediction and reconciliation metadata,
-- `EffectIntent` output for the future `CombatResolver`,
+- damage `EffectIntent` output for `CombatResolver`,
 - resolved internal cost effects for the `StateEngine`.
 
 `ActionSystem` does not mutate `LivingEntityState` directly. It reads tick-start state, commits action runtime state, and emits normalized records that are later applied by the authoritative simulation pipeline.
@@ -38,7 +38,7 @@ The core boundary is:
 Skill / Active Item / Weapon / AI / Environment / Script
 -> ActionSystem
 -> TargetSystem / ProjectileSystem / CooldownLedger / ResourceReservationLedger
--> EffectIntent records
+-> damage EffectIntent records
 -> CombatResolver
 -> resolved ActiveEffectSpec records
 -> StateEngine
@@ -120,7 +120,7 @@ The first implementation must support projectiles from the beginning because roc
 - final state deltas,
 - transport-level packet delivery.
 
-Damage and other resolved gameplay math belongs to `CombatResolver`. This document defines the boundary and v1 contract only. `CombatResolver.md` captures the next-spec seed.
+Damage resolving belongs to `CombatResolver`. Already resolved costs, buffs, heals, cleanses, revives, and other known mutations may be emitted as `ActiveEffectSpec` records directly.
 
 ---
 
@@ -223,27 +223,45 @@ A grenade can validly target an empty point. Its impact target set may later be 
 
 ### 5.5 EffectIntent
 
-`EffectIntent` is a deterministic pre-resolution gameplay output produced by `ActionSystem`.
+`EffectIntent` is a deterministic runtime delivery envelope for an unresolved effect.
 
-It is more general than damage:
+V1 uses `EffectIntent` narrowly for unresolved damage:
 
 ```text
-DamageIntent
-HealIntent
-ResourceIntent
-ApplyEffectIntent
-CleanseIntent
-ReviveIntent
-InterruptIntent
+ActionSystem proves delivery.
+ActionSystem emits EffectIntent with EffectDefinitionId and runtime hit facts.
+CombatResolver looks up the referenced EffectKind: Damage definition.
+CombatResolver emits resolved Shield/Health ActiveEffectSpec records.
 ```
 
-`CombatResolver` consumes `EffectIntent` records and emits resolved `ActiveEffectSpec` records for `StateEngine`.
+Do not use `EffectIntent` for already resolved gameplay mutations. Use `ActiveEffectSpec` directly when the final mutation is already known.
 
 ### 5.6 ActiveEffectSpec
 
 `ActiveEffectSpec` is the resolved effect input consumed by `StateEngine`.
 
-`ActionSystem` may emit internal cost specs directly because resource cost is already resolved at action commit. Combat and gameplay impact specs should flow through `CombatResolver` when they depend on target state, crits, mitigation, resistance, shields, or final applied values.
+`ActionSystem` emits internal cost specs directly because resource cost is resolved at action commit.
+
+Clean rule:
+
+```text
+Use ActiveEffectSpec when the final mutation is already known.
+Use EffectIntent when unresolved damage must be resolved by CombatResolver.
+```
+
+Examples that should usually go directly to `StateEngine` as `ActiveEffectSpec`:
+
+```text
+Energy cost
+fixed heal
+fixed shield boost
+revive with already resolved amount
+cleanse or effect-removal request
+buff/debuff application
+condition-only effect
+```
+
+Damage with crits, resistance, armor, Shield routing, bypass fractions, or final applied damage events should flow through `CombatResolver`.
 
 ---
 
@@ -254,15 +272,15 @@ Per authoritative `NetworkTick`:
 1. Build a tick-start read view from already-resolved state.
 2. Receive and sort `ActionRequest` records.
 3. Validate source entity, action definition, slot, ownership, cooldowns, resource availability, target requirement, and range.
-4. Reserve resources in the per-tick reservation ledger.
+4. Resolve final action costs and reserve resources in the per-tick reservation ledger.
 5. Commit accepted actions according to `CommitPolicy`.
 6. Start action and group cooldowns.
 7. Emit internal cost `ActiveEffectSpec` records.
 8. Resolve hitscan target queries immediately.
 9. Spawn or advance authoritative projectile runtime records.
 10. Resolve projectile hit queries using swept shape or ray tests.
-11. Emit `EffectIntent` records from hits, impacts, areas, chains, and direct actions.
-12. Pass `EffectIntent` records to `CombatResolver`.
+11. Emit damage `EffectIntent` records from hits, impacts, areas, chains, and direct actions when delivered effects require combat resolving.
+12. Pass damage `EffectIntent` records to `CombatResolver`.
 13. Pass resolved `ActiveEffectSpec` records to `StateEngine`.
 14. Store action, cooldown, projectile, request, hit, result, and rejection history for rollback/resimulation.
 15. Emit host acknowledgement and action result records.
@@ -284,9 +302,10 @@ The recommended authoritative simulation phase order is:
 2. ActionSystem phase
    - validate actions
    - check cooldowns and resources
+   - resolve final action costs from tick-start cost-reduction stats
    - perform target acquisition and hit detection
    - update cooldown and projectile runtime state
-   - emit EffectIntent and internal cost specs
+   - emit damage EffectIntent records and internal cost specs
 
 3. CombatResolver phase
    - read tick-start combat view only
@@ -339,6 +358,7 @@ ActionDefinition:
 
   Costs:
     - CostStat: EnergyStorage
+      CostReductionStat: EnergyCostReduction
       TargetValueKind: CurrentValue
       Value: 20.0
       SpendEffectDefinitionId: effect.internal.cost.energy
@@ -355,9 +375,8 @@ ActionDefinition:
     AllowUntargetable: false
 
   Payload:
-    EffectIntents:
-      - IntentKind: Damage
-        DamagePayloadId: damage.explosive.grenade
+    Effects:
+      - EffectDefinitionId: effect.damage.explosive.grenade
 ```
 
 ### 8.2 Skill and Active Item Binding
@@ -545,20 +564,50 @@ The ledger must support deterministic lookup by owner plus cooldown track, witho
 
 `ActionSystem` checks resources but does not mutate stats directly.
 
-Resource commit uses a per-tick reservation ledger:
+Resource commit uses tick-start state, per-resource cost-reduction stats, and a per-tick reservation ledger.
+
+Supported v1 cost-reduction stats:
+
+```text
+EnergyCostReduction
+OxygenCostReduction
+FoodCostReduction
+WaterCostReduction
+```
+
+Cost-reduction stats are `AttributeStat` values maintained by the StateEngine stat pipeline. They use decimal fractions.
+
+Final cost:
+
+```text
+costMultiplier = max(0.0, 1.0 - CostReductionStat.CurrentValue)
+finalCost = authoredCost * costMultiplier
+```
+
+Examples:
+
+```text
+EnergyCostReduction =  0.20 -> finalCost = 80 percent
+EnergyCostReduction =  1.00 -> finalCost = 0 percent
+EnergyCostReduction = -0.25 -> finalCost = 125 percent
+```
+
+Resource availability:
 
 ```text
 availableForAction = tickStartCurrentValue - alreadyReservedThisTick
 ```
 
-If enough resource remains:
+If enough resource remains after cost reduction:
 
-1. Reserve the amount.
+1. Reserve the final amount.
 2. Commit the action.
 3. Emit an internal cost `ActiveEffectSpec`.
 4. `StateEngine` applies the cost during the apply phase.
 
 Internal cost specs must be unblockable except for hard validation failure. Gameplay blocking should be checked before action commit, not by blocking the cost effect.
+
+Cost effect definitions are resolved `EffectKind: StatChange` effects, not damage intents.
 
 Suggested cost spec:
 
@@ -569,7 +618,7 @@ TargetStat: EnergyStorage
 TargetValueKind: CurrentValue
 Manipulation: Reduce
 Calculation: Flat
-Value: reserved cost
+Value: reserved final cost
 SourceId: action source
 OriginId: source entity
 ```
@@ -920,7 +969,7 @@ The projectile carries an immutable payload snapshot:
 ```text
 target filters
 impact behavior
-effect intent payload references
+effect definition references
 source and origin identity
 friendly-fire policy
 line-of-sight policy
@@ -937,7 +986,7 @@ SweptCircle or SweptCapsule query
 Sort hits deterministically
 Apply penetration policy
 Resolve impact target shape
-Emit EffectIntent records
+Emit damage EffectIntent records for unresolved damage effects
 ```
 
 Fast projectiles should not rely on discrete overlap at the final position. Swept queries prevent tunneling.
@@ -1033,13 +1082,13 @@ ImpactTargetShape: ImpactRadius
 
 ## 21. EffectIntent Output
 
-Actions emit intents, not direct mutations.
+Actions emit damage intents only when the delivered effect requires combat resolving.
 
 Suggested base fields:
 
 ```text
 EffectIntentId
-IntentKind
+EffectDefinitionId
 ActionRuntimeId
 ActionDefinitionId
 SourceEntityId
@@ -1051,46 +1100,51 @@ HitSequence
 TargetSequence
 PayloadId
 SetByCallerValues
+IsReactiveDamage
+ReactiveDepth
+RootActionRuntimeId
+RootEffectDefinitionId
 IntentFlags
 ```
 
-`DamageIntent` extends this with:
+The referenced `EffectDefinitionId` must resolve to:
 
 ```text
-DamagePayloadId
-BaseDamage
+EffectKind: Damage
+```
+
+Damage formulas and defense policy live on the referenced `EffectDefinition`, not on the action intent:
+
+```text
 DamageKind
+BaseDamage
 CanCrit
-ShieldRoutingPolicy
-ArmorPolicy
-ResistancePolicy
-CriticalPolicy
+CriticalRollScope
+ShieldBypassFraction
+ArmorBypassFraction
+ResistanceBypassFraction
 ```
 
-`HealIntent` may include:
+Already resolved effects should be emitted as `ActiveEffectSpec` records instead of `EffectIntent` records.
+
+Examples:
 
 ```text
-BaseHeal
-CanCritHeal
-HealScalingPolicy
-BlockedByIncurable
+Action cost -> ActiveEffectSpec
+Fixed heal -> ActiveEffectSpec
+Shield boost -> ActiveEffectSpec
+Cleanse -> ActiveEffectSpec
+Revive with resolved amount -> ActiveEffectSpec
+Damage with crit/resistance/armor/Shield routing -> EffectIntent
 ```
 
-`ApplyEffectIntent` may include:
-
-```text
-EffectDefinitionId
-TargetEntityId
-SetByCaller payload
-```
-
-The exact resolver math is specified later in `CombatResolver.md`.
+Resolver math is specified in `CombatResolver.md` version 1.0.0.
 
 ---
 
 ## 22. Combat Result and Combat Log
 
-`CombatResolver` emits gameplay-authoritative `CombatResultEvent` records.
+`CombatResolver` creates pending combat result records and resolved damage specs. Gameplay-authoritative `CombatResultEvent` records are emitted after `StateEngine` confirms the actual applied Shield and Health changes.
 
 These records may drive:
 
@@ -1108,16 +1162,25 @@ NetworkTick
 ActionRuntimeId
 SourceEntityId
 TargetEntityId
-IntentKind
+EffectIntentId
+EffectDefinitionId
 DamageKind
-RawAmount
+BaseDamage
 CriticalApplied
-MitigatedAmount
-ShieldDamage
-HealthDamage
+CriticalMultiplier
+ShieldDamageResolved
+ShieldDamageApplied
+HealthDamageResolved
+HealthDamageApplied
+OverkillAmount
 FinalAppliedAmount
 RejectedReason
+IsReactiveDamage
+ReactiveDepth
+RootActionRuntimeId
+RootEffectDefinitionId
 HitSequence
+TargetSequence
 ```
 
 The full detailed combat log should be optional and ring-buffered. Minimal deterministic events required by gameplay must remain in the authoritative simulation history.
@@ -1341,7 +1404,11 @@ Action validation checks:
 - cooldown durations convert deterministically to ticks.
 - `CooldownReductionPolicy` is valid.
 - cost stats are valid pool stats when costs mutate pool values.
+- cost reduction stats, when present, are valid cost-reduction attribute stats for the spent pool.
 - cost effect definitions exist and are internal/unblockable.
+- cost effect definitions use `EffectKind: StatChange`.
+- payload effect definitions exist.
+- payload effects delivered as `EffectIntent` use `EffectKind: Damage`.
 - target requirement is compatible with delivery type.
 - `MinTargetsInShape` includes a positive `MinTargetCount`.
 - line-of-sight policy is valid.
@@ -1349,7 +1416,7 @@ Action validation checks:
 - penetration policy is valid for hitscan/projectile delivery.
 - impact target shape is valid for projectile delivery.
 - chain settings have positive max jumps and range.
-- referenced intent payloads exist.
+- referenced damage effects validate under `CombatResolver.md`.
 - definitions do not require runtime string parsing in the hot path.
 
 Invalid definitions must fail before simulation.
@@ -1426,7 +1493,7 @@ Result:
 - enemy target or empty space fails before commit,
 - no cost,
 - no cooldown,
-- valid friendly target commits and emits HealIntent or ApplyEffectIntent.
+- valid friendly target commits and emits an already resolved healing `ActiveEffectSpec`.
 ```
 
 ### 30.3 Railgun
@@ -1441,7 +1508,7 @@ LineOfSightPolicy: BlockedByWorldAndEntities.
 Result:
 - host performs deterministic line query,
 - hits are ordered by distance and EntityId,
-- every valid hostile along the line emits a DamageIntent.
+- every valid hostile along the line emits a damage `EffectIntent`.
 ```
 
 ### 30.4 Chain Lightning
@@ -1457,7 +1524,7 @@ TargetRelationshipMask: Hostile.
 Result:
 - first target is direct hit or nearest valid impact target,
 - each next target is selected by distance then EntityId,
-- each jump emits a separate DamageIntent with JumpIndex.
+- each jump emits a separate damage `EffectIntent` with `HitSequence` and `TargetSequence`.
 ```
 
 ---
@@ -1482,8 +1549,13 @@ The v1 implementation is accepted when tests prove:
 - line-of-sight policy is applied per action.
 - cooldown groups block shared actions.
 - `CooldownReduction` is snapshotted at commit.
+- per-pool cost-reduction stats affect final reserved cost.
+- cost reduction can reduce final cost to zero.
+- negative cost reduction increases final cost.
 - cost reservation prevents same-tick double-spending.
 - internal cost effects are applied by StateEngine.
+- unresolved delivered damage effects emit damage `EffectIntent` records.
+- already resolved effects emit `ActiveEffectSpec` records directly.
 - action runtime state restores and resimulates after rollback.
 - client prediction removes rejected predicted actions during reconciliation.
 - deterministic ordering is stable across replay.
@@ -1516,13 +1588,13 @@ Resolved design decisions:
 | Friendly fire | Per action with project default. |
 | Runtime snapshots | Action runtime state is separate from `LivingEntityState` but snapshot-backed. |
 | Randomness | Delivery/hit randomness in ActionSystem; combat-result randomness in CombatResolver. |
-| Combat boundary | `EffectIntent` into CombatResolver; resolved specs into StateEngine. |
+| Combat boundary | Damage `EffectIntent` into CombatResolver; resolved specs into StateEngine. |
 | Same-tick combat reads | CombatResolver reads tick-start state. Same-tick effects affect next tick. |
-| Combat log | `CombatResultEvent` is gameplay-authoritative and can also feed presentation. |
-| Resource costs | ActionSystem reserves, StateEngine applies internal cost effects. |
+| Combat log | Final `CombatResultEvent` records are gameplay-authoritative after StateEngine confirms applied values. |
+| Resource costs | ActionSystem resolves and reserves final costs, StateEngine applies internal cost effects. |
 | Blocked costs | Internal committed costs are unblockable except hard validation failure. |
 | Client prediction | Predict selectively when facts are known; host result wins. |
-| CombatResolver documentation | Add `CombatResolver.md` seed for the next spec round. |
+| CombatResolver documentation | `CombatResolver.md` version 1.0.0 defines damage resolving. |
 
 ---
 
@@ -1548,7 +1620,6 @@ Should client prediction simulate projectile impacts when target facts are known
 
 `ActionSystem` is the authoritative upstream action resolver for skills, active items, weapons, projectiles, and targeting.
 
-It validates action use, commits cooldown and cost state, acquires targets, simulates projectiles, and emits deterministic `EffectIntent` records. It never directly mutates `LivingEntityState`.
+It validates action use, commits cooldown and cost state, acquires targets, simulates projectiles, and emits deterministic damage `EffectIntent` records when delivered effects require combat resolving. It never directly mutates `LivingEntityState`.
 
-`CombatResolver` consumes intents and produces resolved authoritative result events and `ActiveEffectSpec` records. `StateEngine` remains the only system that mutates RPG entity state through effects, conditions, stats, passives, deltas, and snapshots.
-
+`CombatResolver` consumes damage intents and produces pending combat results plus resolved `ActiveEffectSpec` records. `StateEngine` applies those specs, confirms actual applied values, and remains the only system that mutates RPG entity state through effects, conditions, stats, passives, deltas, and snapshots.
