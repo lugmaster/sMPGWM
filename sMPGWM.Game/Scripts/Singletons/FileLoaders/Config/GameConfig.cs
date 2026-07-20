@@ -20,9 +20,9 @@ public static class GameConfig
     public static string GameDataChecksum { get; private set; }
     public static string ConfigDataChecksum { get; private set; }
     
-    private static void LoadConfigValues()
+    public static void Load()
     {
-        Logger.Info("Loading LoadConfigValues");
+        Logger.Info("Loading game config values.");
         try
         {
             LobbyName = GetConfigValue("general", "lobby_name").AsString();
@@ -46,7 +46,7 @@ public static class GameConfig
     
     private static Variant GetConfigValue(string section, string key)
     {
-        return ConfigLoader.Instance.GetValue(section, key);
+        return Autoload.ConfigLoader.Instance.GetValue(section, key);
     }
 }
 

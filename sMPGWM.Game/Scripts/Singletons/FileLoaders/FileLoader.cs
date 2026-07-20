@@ -1,14 +1,13 @@
-﻿using System;
-using Godot;
+﻿using Godot;
 using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.Singletons.Autoload;
 using sMPGWM.Scripts.Singletons.Base;
+using sMPGWM.Scripts.Singletons.FileLoaders.Config;
 
 namespace sMPGWM.Scripts.Singletons.FileLoaders;
 
 public partial class FileLoader : AbstractSingleton<FileLoader>
 {
-    
     protected static LoadResult<JToken> LoadJsonAndValidate(
         string userPath,
         string defaultPath,
@@ -89,8 +88,7 @@ public partial class FileLoader : AbstractSingleton<FileLoader>
         string dataFormat,
         string schemaFormat)
     {
-        // TODO replace with proper config!
-        var reloadConfig = true;
+        var reloadConfig = GameConfig.ReloadConfigOnStart;
 
         if (reloadConfig || !FileAccess.FileExists(userPath))
         {

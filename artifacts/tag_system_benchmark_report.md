@@ -7,7 +7,7 @@
 
 | Scenario | Ticks | Operations | Mean ms | P95 ms | P99 ms | Max ms | Allocated bytes |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Stress_30Tps_BaselineGameplayFixture | 120 | 38400 | 0.0157 | 0.0171 | 0.0262 | 0.0310 | 0 |
+| Stress_30Tps_BaselineGameplayFixture | 120 | 38400 | 0.0151 | 0.0153 | 0.0199 | 0.0210 | 0 |
 
 - First slowdown point: not evaluated by smoke benchmark
 - Allocation summary: measured tick allocation is reported above
