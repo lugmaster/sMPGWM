@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Enums.Game.Collision;
-using sMPGWM.Scripts.Singletons.Autoload.Base;
+using sMPGWM.Scripts.Singletons.Base;
 
 namespace sMPGWM.Scripts.Gameplay.Collision;
 

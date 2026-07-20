@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Provider;
-using sMPGWM.Scripts.Singletons.Autoload.Base;
+using sMPGWM.Scripts.Singletons.Base;
 
 namespace sMPGWM.Scripts.Singletons.Autoload;
 

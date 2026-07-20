@@ -3,7 +3,7 @@ using Godot;
 using sMPGWM.Scripts.Enums.GameState;
 using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Mocks;
-using sMPGWM.Scripts.Singletons.Autoload.Base;
+using sMPGWM.Scripts.Singletons.Base;
 using sMPGWM.Scripts.Ui.Game;
 
 namespace sMPGWM.Scripts.Singletons.Autoload;

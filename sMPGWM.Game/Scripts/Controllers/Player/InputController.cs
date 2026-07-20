@@ -3,7 +3,7 @@ using Godot;
 using sMPGWM.Scripts.Enums.GameState;
 using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Singletons.Autoload;
-using sMPGWM.Scripts.Singletons.Autoload.Base;
+using sMPGWM.Scripts.Singletons.Base;
 using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Controllers.Player;
