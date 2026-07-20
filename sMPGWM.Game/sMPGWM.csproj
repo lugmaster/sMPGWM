@@ -21,6 +21,7 @@
     <Content Include="assets\game_data\EffectSchemas.yml" />
     <Content Include="assets\ui\mocks\ship_fighter_reference.png" />
     <Content Include="assets\ui\mocks\ship_fighter_reference.png.import" />
+    <Content Include="config\config.cfg" />
     <Content Include="credits" />
   </ItemGroup>
 </Project>

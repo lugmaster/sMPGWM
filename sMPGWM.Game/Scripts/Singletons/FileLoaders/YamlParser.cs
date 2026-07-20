@@ -168,7 +168,9 @@ public static class YamlParser
         if (value is null)
             return JValue.CreateNull();
 
-        var tag = scalar.Tag.Value;
+        var tag = scalar.Tag.IsEmpty || scalar.Tag.IsNonSpecific
+            ? string.Empty
+            : scalar.Tag.Value;
         switch (tag)
         {
             case "tag:yaml.org,2002:null":

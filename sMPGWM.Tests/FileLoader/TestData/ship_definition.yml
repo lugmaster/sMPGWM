@@ -1,0 +1,16 @@
+id: ship.fighter
+name: Interceptor
+tier: 2
+active: true
+mass: 12.5
+description: null
+hardpoints:
+  - slot: nose
+    type: laser
+    optional: false
+  - slot: wing
+    type: missile
+    optional: true
+stats:
+  hull: 120
+  shield: 75

@@ -57,11 +57,10 @@ public static class JsonParser
 
         try
         {
-            using var reader = new JsonTextReader(new StringReader(text))
-            {
-                DateParseHandling = DateParseHandling.None,
-                FloatParseHandling = FloatParseHandling.Double
-            };
+            using var reader = new JsonTextReader(new StringReader(text));
+            reader.DateParseHandling = DateParseHandling.None;
+            reader.FloatParseHandling = FloatParseHandling.Double;
+            reader.SupportMultipleContent = true;
 
             var token = JToken.ReadFrom(reader);
 
