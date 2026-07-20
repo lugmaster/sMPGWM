@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Autoload;
-using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Enums.GameState;
 using sMPGWM.Scripts.Enums.Ui;
-using Logger = sMPGWM.Scripts.Autoload.Logger;
+using sMPGWM.Scripts.Singletons.Autoload;
+using sMPGWM.Scripts.Singletons.Autoload.Base;
+using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Controllers.Player;
 

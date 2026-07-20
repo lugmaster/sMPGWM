@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
 using Godot;
-using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Provider;
+using sMPGWM.Scripts.Singletons.Autoload.Base;
 
-namespace sMPGWM.Scripts.Autoload;
+namespace sMPGWM.Scripts.Singletons.Autoload;
 
 public partial class GameHandler : AbstractSingleton<GameHandler>
 {
@@ -43,7 +43,7 @@ public partial class GameHandler : AbstractSingleton<GameHandler>
     public void QuitGame(string reason)
     {
         Logger.Debug($"{nameof(GameHandler)}.{nameof(QuitGame)} requested with {nameof(reason)}={reason}.");
-        SteamworksHelper.ShutdownSteam();
+        Singletons.Autoload.SteamworksHelper.ShutdownSteam();
         Logger.Debug($"{nameof(GameHandler)}.{nameof(QuitGame)} completed Steam shutdown.");
         Instance.CallDeferred(nameof(QuitGameInternal));
     }

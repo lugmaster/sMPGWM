@@ -1,6 +1,6 @@
 using Godot;
 using sMPGWM.Scripts.Enums.Ui;
-using Logger = sMPGWM.Scripts.Autoload.Logger;
+using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Ui.Base;
 

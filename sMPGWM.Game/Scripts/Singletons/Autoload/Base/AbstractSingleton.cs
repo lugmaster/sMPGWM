@@ -1,8 +1,7 @@
 using System;
 using Godot;
-using Logger = sMPGWM.Scripts.Autoload.Logger;
 
-namespace sMPGWM.Scripts.Autoload.Base;
+namespace sMPGWM.Scripts.Singletons.Autoload.Base;
 
 public abstract partial class AbstractSingleton<TSelf> : Node
     where TSelf : AbstractSingleton<TSelf>

@@ -1,9 +1,9 @@
 ﻿using System;
 using Godot;
 using GodotSteam;
-using sMPGWM.Scripts.Autoload.Base;
+using sMPGWM.Scripts.Singletons.Autoload.Base;
 
-namespace sMPGWM.Scripts.Autoload;
+namespace sMPGWM.Scripts.Singletons.Autoload;
 
 public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 {

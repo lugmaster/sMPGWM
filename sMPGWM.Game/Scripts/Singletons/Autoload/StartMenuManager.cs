@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Provider;
+using sMPGWM.Scripts.Singletons.Autoload.Base;
 
-namespace sMPGWM.Scripts.Autoload;
+namespace sMPGWM.Scripts.Singletons.Autoload;
 
 public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
 {

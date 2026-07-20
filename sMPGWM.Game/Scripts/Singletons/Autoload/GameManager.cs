@@ -1,12 +1,12 @@
 using System;
 using Godot;
-using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Enums.GameState;
 using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Mocks;
+using sMPGWM.Scripts.Singletons.Autoload.Base;
 using sMPGWM.Scripts.Ui.Game;
 
-namespace sMPGWM.Scripts.Autoload;
+namespace sMPGWM.Scripts.Singletons.Autoload;
 
 public partial class GameManager : AbstractSingleton<GameManager>
 {

@@ -1,9 +1,8 @@
 ﻿using System;
 using Godot;
-using sMPGWM.Scripts.Autoload.Base;
 using sMPGWM.Scripts.Enums;
 
-namespace sMPGWM.Scripts.Autoload;
+namespace sMPGWM.Scripts.Singletons.Autoload;
 
 public static class Logger
 {

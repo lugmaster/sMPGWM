@@ -5,7 +5,7 @@ using sMPGWM.Scripts.Enums.GameState;
 using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Provider;
 using sMPGWM.Scripts.Ui.Base;
-using Logger = sMPGWM.Scripts.Autoload.Logger;
+using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Ui.Game;
 
