@@ -3,7 +3,7 @@ using Godot;
 using sMPGWM.Scripts.Enums.Ui;
 using sMPGWM.Scripts.Singletons.Base;
 using sMPGWM.Scripts.Ui.Base;
-using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
+using Logger = sMPGWM.Scripts.Singletons.Logger;
 
 namespace sMPGWM.Scripts.Mocks;
 

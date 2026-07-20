@@ -2,7 +2,7 @@
 using Godot;
 using sMPGWM.Scripts.Enums;
 
-namespace sMPGWM.Scripts.Singletons.Autoload;
+namespace sMPGWM.Scripts.Singletons;
 
 public static class Logger
 {

@@ -1,7 +1,8 @@
 ﻿using Godot;
+using sMPGWM.Scripts.Singletons;
 using sMPGWM.Scripts.Singletons.Autoload;
 using sMPGWM.Scripts.Ui.Base;
-using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
+using Logger = sMPGWM.Scripts.Singletons.Logger;
 
 namespace sMPGWM.Scripts.Ui.StartMenu;
 

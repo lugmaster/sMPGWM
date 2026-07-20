@@ -1,7 +1,7 @@
 using Godot;
+using sMPGWM.Scripts.Singletons.Autoload;
 using sMPGWM.Scripts.Ui.Base;
-using GameHandler = sMPGWM.Scripts.Singletons.Autoload.GameHandler;
-using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
+using Logger = sMPGWM.Scripts.Singletons.Logger;
 
 namespace sMPGWM.Scripts.Ui.Game.GameOverlayMenus;
 

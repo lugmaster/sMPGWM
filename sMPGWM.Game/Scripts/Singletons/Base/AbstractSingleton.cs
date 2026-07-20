@@ -1,6 +1,5 @@
 using System;
 using Godot;
-using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
 
 namespace sMPGWM.Scripts.Singletons.Base;
 

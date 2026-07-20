@@ -15,7 +15,6 @@
     <Folder Include="scenes\ui\controls\" />
     <Folder Include="scenes\ui\screens\" />
     <Folder Include="Scripts\Autoload\Base\" />
-    <Folder Include="Scripts\Singletons\Autoload\Base\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\game_data\EffectDefinitions.yml" />

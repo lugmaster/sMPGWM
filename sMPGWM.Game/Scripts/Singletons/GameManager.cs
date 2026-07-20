@@ -6,7 +6,7 @@ using sMPGWM.Scripts.Mocks;
 using sMPGWM.Scripts.Singletons.Base;
 using sMPGWM.Scripts.Ui.Game;
 
-namespace sMPGWM.Scripts.Singletons.Autoload;
+namespace sMPGWM.Scripts.Singletons;
 
 public partial class GameManager : AbstractSingleton<GameManager>
 {

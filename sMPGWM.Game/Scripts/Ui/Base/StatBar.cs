@@ -1,7 +1,7 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.Enums.Game;
-using Logger = sMPGWM.Scripts.Singletons.Autoload.Logger;
+using Logger = sMPGWM.Scripts.Singletons.Logger;
 
 namespace sMPGWM.Scripts.Ui.Base;
 

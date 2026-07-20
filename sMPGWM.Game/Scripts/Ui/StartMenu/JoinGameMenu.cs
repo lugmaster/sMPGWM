@@ -1,5 +1,5 @@
 ﻿using Godot;
-using sMPGWM.Scripts.Singletons.Autoload;
+using sMPGWM.Scripts.Singletons;
 using sMPGWM.Scripts.Ui.Base;
 
 
