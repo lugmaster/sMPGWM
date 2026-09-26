@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Enums.Ui;
-using sMPGWM.Scripts.Singletons.Base;
-using sMPGWM.Scripts.Ui.Base;
-using Logger = sMPGWM.Scripts.Singletons.Logger;
+using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.Util.UiComponents;
+using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.Mocks;
 

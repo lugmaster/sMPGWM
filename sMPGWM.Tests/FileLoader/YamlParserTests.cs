@@ -1,5 +1,5 @@
 using Newtonsoft.Json.Linq;
-using sMPGWM.Scripts.Singletons.FileLoaders;
+using sMPGWM.Scripts.FileLoadingSystem;
 
 namespace sMPGWM.Tests.FileLoader;
 

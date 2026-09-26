@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
-using sMPGWM.Scripts.Gameplay.Tags;
+using sMPGWM.Scripts.TagSystem;
 
 namespace sMPGWM.Tests.TagSystem;
 

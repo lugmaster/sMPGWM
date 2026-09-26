@@ -1,6 +1,7 @@
+using System.Reflection;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
-using sMPGWM.Scripts.Singletons.FileLoaders;
+using sMPGWM.Scripts.FileLoadingSystem;
 
 namespace sMPGWM.Tests.FileLoader;
 
@@ -246,7 +247,7 @@ public sealed class JsonParserTests
     {
         var method = typeof(JsonParser).GetMethod(
             "Validate",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            BindingFlags.NonPublic | BindingFlags.Static);
 
         Assert.That(method, Is.Not.Null);
         return (LoadResult<JToken>)method!.Invoke(

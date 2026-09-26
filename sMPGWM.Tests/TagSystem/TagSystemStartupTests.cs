@@ -1,4 +1,4 @@
-using sMPGWM.Scripts.Gameplay.Tags;
+using sMPGWM.Scripts.TagSystem;
 
 namespace sMPGWM.Tests.TagSystem;
 
