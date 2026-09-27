@@ -1,10 +1,10 @@
 using System;
 using Godot;
-using sMPGWM.Scripts.Mocks;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+using PlayerMock = sMPGWM.Scripts.Util.Mocks.PlayerMock;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 

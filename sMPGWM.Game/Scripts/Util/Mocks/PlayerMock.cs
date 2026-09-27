@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
-namespace sMPGWM.Scripts.Mocks;
+namespace sMPGWM.Scripts.Util.Mocks;
 
 public partial class PlayerMock: AbstractSingleton<PlayerMock>
 {

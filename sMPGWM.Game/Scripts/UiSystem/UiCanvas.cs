@@ -1,18 +1,18 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.Mocks;
-using sMPGWM.Scripts.UiSystem.Hud;
+using sMPGWM.Scripts.UiSystem.GameOverlaySystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 using PlayerHud = sMPGWM.Scripts.UiSystem.HudSystem.PlayerHud;
+using PlayerMock = sMPGWM.Scripts.Util.Mocks.PlayerMock;
 
 namespace sMPGWM.Scripts.UiSystem;
 
 public partial class UiCanvas : CanvasLayer
 {
     private PlayerHud _playerHud = null!;
-    private GameOverlaySystem.OverlayMenuManager _overlayMenuManager = null!;
+    private OverlayMenuManager _overlayMenuManager = null!;
     public event Action<MenuActionType>? OnRequestMenuAction;
     public event Action<int>? OnRequestHotbarAction;
 
@@ -20,7 +20,7 @@ public partial class UiCanvas : CanvasLayer
     {
         Logger.Trace($"{nameof(UiCanvas)}.{nameof(_EnterTree)} called.");
         _playerHud = GetNode<PlayerHud>("%PlayerHud");
-        _overlayMenuManager = GetNode<GameOverlaySystem.OverlayMenuManager>("%MenuHost");
+        _overlayMenuManager = GetNode<OverlayMenuManager>("%MenuHost");
     }
 
     public override void _Ready()

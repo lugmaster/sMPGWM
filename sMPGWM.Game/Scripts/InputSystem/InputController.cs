@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Godot;
+using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.Singletons;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 

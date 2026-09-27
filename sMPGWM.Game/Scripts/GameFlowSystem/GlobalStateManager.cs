@@ -1,7 +1,7 @@
 using Godot;
 using sMPGWM.Scripts.Util;
 
-namespace sMPGWM.Scripts.Singletons;
+namespace sMPGWM.Scripts.GameFlowSystem;
 
 public partial class GlobalStateManager : AbstractSingleton<GlobalStateManager>
 {
