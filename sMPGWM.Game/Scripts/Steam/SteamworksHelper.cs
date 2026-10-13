@@ -1,10 +1,11 @@
 ﻿using System;
 using Godot;
 using GodotSteam;
+using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
-namespace sMPGWM.Scripts.GameFlowSystem;
+namespace sMPGWM.Scripts.Steam;
 
 public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 {
@@ -23,7 +24,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
     {
         try
         {
-            Logger.Debug(Steam.IsSteamRunning() ? "Steam is running" : "Steam is not running");
+            Logger.Debug(GodotSteam.Steam.IsSteamRunning() ? "Steam is running" : "Steam is not running");
 
             if (_runSteamEx)
             {
@@ -44,7 +45,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     public override void _Process(double delta)
     {
-        Steam.RunCallbacks();
+        GodotSteam.Steam.RunCallbacks();
     }
 
     public static void ShutdownSteam()
@@ -53,7 +54,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
         try
         {
-            Steam.SteamShutdown();
+            GodotSteam.Steam.SteamShutdown();
         }
         catch (Exception e)
         {
@@ -63,7 +64,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     private static void InitializeSteamEx()
     {
-        var initializeResponse = Steam.SteamInitEx(SteamAppId, true);
+        var initializeResponse = GodotSteam.Steam.SteamInitEx(SteamAppId, true);
 
         Logger.Debug($"SteamAPI.InitEx() response: {initializeResponse.Status} - {initializeResponse.Verbal}");
 
@@ -75,7 +76,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     private static void InitializeSteam()
     {
-        var initializeResponse = Steam.SteamInit(SteamAppId, true);
+        var initializeResponse = GodotSteam.Steam.SteamInit(SteamAppId, true);
 
         Logger.Debug($"SteamAPI.InitEx() response: {initializeResponse.Status} - {initializeResponse.Verbal}");
 

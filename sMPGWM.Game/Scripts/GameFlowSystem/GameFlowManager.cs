@@ -43,7 +43,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     public void QuitGame(string reason)
     {
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitGame)} requested with {nameof(reason)}={reason}.");
-        SteamworksHelper.ShutdownSteam();
+        Steam.SteamworksHelper.ShutdownSteam();
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitGame)} completed Steam shutdown.");
         Instance.CallDeferred(nameof(QuitGameInternal));
     }
@@ -62,13 +62,13 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     private void QuitToStartMenuInternal()
     {
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuInternal)} returning to main menu.");
-        GetTree().ChangeSceneToPacked(GameFlowSceneProvider.GetStartMenuScene());
+        GetTree().ChangeSceneToPacked(GameFlowSceneProvider.StartMenuScene);
     }
 
     public void StartGame()
     {
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(StartGame)} starting up game.");
-        GetTree().ChangeSceneToPacked(GameFlowSceneProvider.GetMainGameScene());
+        GetTree().ChangeSceneToPacked(GameFlowSceneProvider.MainGameScene);
     }
 
     public void QuitWithOsError(string reason)

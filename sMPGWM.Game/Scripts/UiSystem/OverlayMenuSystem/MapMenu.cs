@@ -1,8 +1,8 @@
-using GameOverlayMenu = sMPGWM.Scripts.Util.UiComponents.GameOverlayMenu;
+using sMPGWM.Scripts.Util.UiComponents;
 
-namespace sMPGWM.Scripts.UiSystem.GameOverlaySystem;
+namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 
-public partial class MapMenu: Util.UiComponents.GameOverlayMenu
+public partial class MapMenu : GameOverlayMenu
 {
     protected override string ScreenTitle => "Navigation MapMenu";
 }

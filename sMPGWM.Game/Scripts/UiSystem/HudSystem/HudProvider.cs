@@ -1,8 +1,7 @@
 using sMPGWM.Scripts.Util;
-using ClickableIcon = sMPGWM.Scripts.Util.UiComponents.ClickableIcon;
-using StatBar = sMPGWM.Scripts.Util.UiComponents.StatBar;
+using sMPGWM.Scripts.Util.UiComponents;
 
-namespace sMPGWM.Scripts.UiSystem.Hud;
+namespace sMPGWM.Scripts.UiSystem.HudSystem;
 
 public static class HudProvider
 {

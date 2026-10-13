@@ -1,5 +1,5 @@
 using sMPGWM.Scripts.Util;
-using GameOverlayMenu = sMPGWM.Scripts.Util.UiComponents.GameOverlayMenu;
+using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 

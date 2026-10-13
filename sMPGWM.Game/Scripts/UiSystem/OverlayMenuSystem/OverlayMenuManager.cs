@@ -1,11 +1,10 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
-using GameOverlayMenu = sMPGWM.Scripts.Util.UiComponents.GameOverlayMenu;
+using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
-namespace sMPGWM.Scripts.UiSystem.GameOverlaySystem;
+namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 
 public partial class OverlayMenuManager : CenterContainer
 {

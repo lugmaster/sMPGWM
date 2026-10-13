@@ -1,11 +1,12 @@
 using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
-using GameOverlayMenu = sMPGWM.Scripts.Util.UiComponents.GameOverlayMenu;
+using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
-namespace sMPGWM.Scripts.UiSystem.GameOverlaySystem;
 
-public partial class MainMenu : Util.UiComponents.GameOverlayMenu
+namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
+
+public partial class MainMenu : GameOverlayMenu
 {
     protected override string ScreenTitle => "Main Menu";
     

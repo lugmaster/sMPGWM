@@ -1,4 +1,4 @@
-﻿namespace sMPGWM.Scripts.FileLoadingSystem;
+﻿namespace sMPGWM.Scripts.GameConfigSystem;
 
 public enum ConfigSource
 {

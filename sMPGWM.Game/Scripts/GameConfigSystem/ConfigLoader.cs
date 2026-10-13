@@ -1,11 +1,11 @@
 using System;
 using Godot;
-using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.FileLoadingSystem.Config;
+using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.GameFlowSystem;
+using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
-namespace sMPGWM.Scripts.FileLoadingSystem;
+namespace sMPGWM.Scripts.GameConfigSystem;
 
 public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
 {

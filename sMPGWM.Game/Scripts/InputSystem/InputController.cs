@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
@@ -58,7 +57,7 @@ public partial class InputController : AbstractSingleton<InputController>
     public override void _Process(double delta)
     {
         // skip all inputs if not inside game window
-        if (GlobalStateManager.IsWindowFocused)
+        if (IsWindowFocused)
         {
             // leave this as it is. will be later enabled for stable builds
             // Input.MouseMode = Input.MouseModeEnum.Confined;
@@ -130,5 +129,19 @@ public partial class InputController : AbstractSingleton<InputController>
         TargetNearestSwitchJustReleased = false;
         UpdateInputs();
         _resetApplied = true;
+    }
+    
+    public static bool IsWindowFocused { get; private set; } = true;
+
+
+    public override void _Notification(int what)
+    {
+        const int notificationWmFocusIn = 1004;
+        const int notificationWmFocusOut = 1005;
+
+        if (what is notificationWmFocusIn or notificationWmFocusOut)
+        {
+            IsWindowFocused = DisplayServer.WindowIsFocused();
+        }
     }
 }

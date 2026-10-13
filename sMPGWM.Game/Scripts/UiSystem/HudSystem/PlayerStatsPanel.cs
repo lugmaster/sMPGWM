@@ -1,7 +1,7 @@
 using Godot;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
-namespace sMPGWM.Scripts.UiSystem.Hud;
+namespace sMPGWM.Scripts.UiSystem.HudSystem;
 
 public partial class PlayerStatsPanel : PanelContainer
 {

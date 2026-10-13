@@ -1,7 +1,6 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.UiSystem.GameOverlaySystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 using PlayerHud = sMPGWM.Scripts.UiSystem.HudSystem.PlayerHud;

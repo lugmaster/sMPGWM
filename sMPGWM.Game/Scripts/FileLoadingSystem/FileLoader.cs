@@ -1,7 +1,7 @@
 ﻿using Godot;
 using Newtonsoft.Json.Linq;
+using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.FileLoadingSystem.Config;
 using sMPGWM.Scripts.GameFlowSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 

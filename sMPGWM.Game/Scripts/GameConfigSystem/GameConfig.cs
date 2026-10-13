@@ -3,7 +3,7 @@ using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
-namespace sMPGWM.Scripts.FileLoadingSystem.Config;
+namespace sMPGWM.Scripts.GameConfigSystem;
 
 public static class GameConfig
 {

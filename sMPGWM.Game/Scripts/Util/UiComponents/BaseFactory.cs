@@ -1,5 +1,5 @@
 using System;
-using sMPGWM.Scripts.UiSystem.Hud;
+using sMPGWM.Scripts.UiSystem.HudSystem;
 
 namespace sMPGWM.Scripts.Util.UiComponents;
 

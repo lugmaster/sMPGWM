@@ -1,8 +1,9 @@
-using GameOverlayMenu = sMPGWM.Scripts.Util.UiComponents.GameOverlayMenu;
 
-namespace sMPGWM.Scripts.UiSystem.GameOverlaySystem;
+using sMPGWM.Scripts.Util.UiComponents;
 
-public partial class InventoryMenu: Util.UiComponents.GameOverlayMenu
+namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
+
+public partial class InventoryMenu: GameOverlayMenu
 {
     protected override string ScreenTitle => "InventoryMenu";
 }
