@@ -17,7 +17,7 @@ public partial class PlayerHud : Control
 
     private PlayerStatsPanel _statsPanel = null!;
     private RadarControl _radarControl = null!;
-    private HudSystem.HotbarControl _hotbarControl = null!;
+    private HotbarControl _hotbarControl = null!;
     private bool _isProcessingInput = true;
 
     public override void _EnterTree()
@@ -28,7 +28,7 @@ public partial class PlayerHud : Control
         _hotbarAnchor = GetNode<Control>("%HotbarAnchor");
         _statsPanel = GetNode<PlayerStatsPanel>("%PlayerStatsPanel");
         _radarControl = GetNode<RadarControl>("%RadarControl");
-        _hotbarControl = GetNode<HudSystem.HotbarControl>("%HotbarControl");
+        _hotbarControl = GetNode<HotbarControl>("%HotbarControl");
     }
 
     public override void _Ready()
