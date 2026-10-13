@@ -714,7 +714,7 @@ public sealed class GameplayTagRegistryBuilder
         CompiledTagQuery[] queriesByIndex)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("GameplayTagRegistry:v1.1.0");
+        builder.Append("GameplayTagRegistry:v1.1.0:hash-v2\n");
 
         for (var i = 0; i < domainsByIndex.Length; i++)
         {
@@ -726,7 +726,7 @@ public sealed class GameplayTagRegistryBuilder
                 .Append('|').Append(domain.CanonicalTagCount.ToString(CultureInfo.InvariantCulture))
                 .Append('|').Append(domain.AssignableTagCount.ToString(CultureInfo.InvariantCulture))
                 .Append('|').Append(domain.DomainMaskWordCount.ToString(CultureInfo.InvariantCulture))
-                .AppendLine();
+                .Append('\n');
         }
 
         for (var i = 0; i < tagsByIndex.Length; i++)
@@ -739,7 +739,7 @@ public sealed class GameplayTagRegistryBuilder
                 .Append('|').Append(tag.CanonicalName)
                 .Append('|').Append(tag.IsAssignable ? '1' : '0')
                 .Append('|').Append(tag.ParentId.Value.ToString(CultureInfo.InvariantCulture))
-                .AppendLine();
+                .Append('\n');
         }
 
         var aliases = new List<AliasRegistration>(aliasByName.Values);
@@ -749,7 +749,7 @@ public sealed class GameplayTagRegistryBuilder
             builder
                 .Append("A|").Append(aliases[i].AliasName)
                 .Append('|').Append(aliases[i].CanonicalTargetName)
-                .AppendLine();
+                .Append('\n');
         }
 
         for (var i = 0; i < queriesByIndex.Length; i++)
@@ -764,10 +764,24 @@ public sealed class GameplayTagRegistryBuilder
                 .Append('|').Append(query.AllTagCount.ToString(CultureInfo.InvariantCulture))
                 .Append('|').Append(query.AnyTagCount.ToString(CultureInfo.InvariantCulture))
                 .Append('|').Append(query.NoneTagCount.ToString(CultureInfo.InvariantCulture))
-                .AppendLine();
+                .Append('\n');
+            AppendQueryMask(builder, "All", query.AllMask);
+            AppendQueryMask(builder, "Any", query.AnyMask);
+            AppendQueryMask(builder, "None", query.NoneMask);
         }
 
         return ComputeFnv1A64(builder.ToString());
+    }
+
+    private static void AppendQueryMask(StringBuilder builder, string label, ulong[] mask)
+    {
+        builder.Append(label).Append('|').Append(mask.Length.ToString(CultureInfo.InvariantCulture));
+        foreach (var word in mask)
+        {
+            builder.Append('|').Append(word.ToString(CultureInfo.InvariantCulture));
+        }
+
+        builder.Append('\n');
     }
 
     private static ulong ComputeFnv1A64(string value)

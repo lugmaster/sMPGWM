@@ -1059,6 +1059,8 @@ Runtime systems may mutate only their own `GameplayTagSet` assignments.
 
 ### 8.8 Registry Hash
 
+The hash input format `GameplayTagRegistry:v1.1.0:hash-v2` uses explicit LF separators and includes every word of the compiled `All`, `Any`, and `None` query masks, with section labels and lengths. Hashes from the previous format are incompatible and compatibility metadata must be rebuilt.
+
 The compiled registry must provide a deterministic hash:
 
 ```text
@@ -1228,6 +1230,8 @@ Large domains must still use the same public `GameplayTagMask` and `GameplayTagS
 ### 9.5 Runtime Immutability
 
 The tag registry is immutable after freeze.
+
+Public domain, tag, and query collections are cached read-only views; callers cannot replace compiled entries. Compiled query objects belong to the exact registry instance that created them. `GameplayTagSet.Matches(CompiledTagQuery)` rejects foreign objects with `GameplayTagException`; `TryMatches` returns `false` and sets `matches` to `false`, even if the foreign registry has identical content and the same hash. Numeric IDs remain relative to their registry and carry no ownership information.
 
 Runtime must not:
 

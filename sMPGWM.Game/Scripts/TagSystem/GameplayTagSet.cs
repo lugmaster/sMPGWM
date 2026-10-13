@@ -138,6 +138,11 @@ public sealed class GameplayTagSet
 
     public bool Matches(CompiledTagQuery query)
     {
+        if (!_registry.TryGetQuery(query.Id, out var registeredQuery) || !ReferenceEquals(query, registeredQuery))
+        {
+            throw new GameplayTagException($"Query '{query.QueryKey}' does not belong to this tag set's registry.");
+        }
+
         if (query.DomainId != DomainId)
         {
             throw new GameplayTagException(
@@ -149,6 +154,12 @@ public sealed class GameplayTagSet
 
     public bool TryMatches(CompiledTagQuery query, out bool matches)
     {
+        if (!_registry.TryGetQuery(query.Id, out var registeredQuery) || !ReferenceEquals(query, registeredQuery))
+        {
+            matches = false;
+            return false;
+        }
+
         if (query.DomainId != DomainId)
         {
             matches = false;

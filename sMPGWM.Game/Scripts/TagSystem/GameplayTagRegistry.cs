@@ -1,5 +1,6 @@
 
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -24,6 +25,9 @@ public sealed class GameplayTagRegistry
         _tagsByDomainLocalIndex = tagsByDomainLocalIndex;
         _expansionMasksByTagIndex = expansionMasksByTagIndex;
         _queriesByIndex = queriesByIndex;
+        Domains = Array.AsReadOnly(domainsByIndex);
+        Tags = Array.AsReadOnly(tagsByIndex);
+        Queries = Array.AsReadOnly(queriesByIndex);
         _domainIdsByKey = domainIdsByKey;
         _domainIdsByRootPrefix = domainIdsByRootPrefix;
         _tagIdsByCanonicalName = tagIdsByCanonicalName;
@@ -42,9 +46,9 @@ public sealed class GameplayTagRegistry
     private readonly Dictionary<string, TagQueryId> _queryIdsByKey;
 
     public ulong RegistryHash { get; }
-    public IReadOnlyList<GameplayTagDomain> Domains => _domainsByIndex;
-    public IReadOnlyList<GameplayTagDefinition> Tags => _tagsByIndex;
-    public IReadOnlyList<CompiledTagQuery> Queries => _queriesByIndex;
+    public IReadOnlyList<GameplayTagDomain> Domains { get; }
+    public IReadOnlyList<GameplayTagDefinition> Tags { get; }
+    public IReadOnlyList<CompiledTagQuery> Queries { get; }
 
     public GameplayTagDomainId GetDomainId(string domainKey)
     {
