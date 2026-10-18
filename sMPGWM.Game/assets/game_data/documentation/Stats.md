@@ -917,7 +917,7 @@ FoodGeneration
 WaterGeneration
 ```
 
-If migration from older content is required, aliases may be handled by import tooling, but runtime stat enum names must use canonical spelling.
+Runtime stat enum names must use canonical spelling.
 
 ---
 
