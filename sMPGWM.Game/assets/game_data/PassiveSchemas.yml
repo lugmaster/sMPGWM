@@ -211,7 +211,7 @@ GameplayTagTypes:
       - ReactiveTriggers[].TriggerFilters.RequiredDamageKinds
       - ReactiveTriggers[].TriggerFilters.BlockedDamageKinds
   Rules:
-    - Canonical values must begin with the domain root prefix and must resolve through the frozen GameplayTagRegistry.
+    - Canonical values must begin with the domain root prefix and must resolve through the frozen TagRegistry.
     - PassiveClassifications is a direct assignment field and requires assignable PassiveClassification tags.
     - Selector fields may reference any queryable tag in the declared domain, including parent/category tags.
     - Selector fields match expanded tag masks by default.
@@ -698,7 +698,7 @@ ValidationRequirements:
   - Each PassiveDefinition requires at least one gameplay payload.
   - Classification-only PassiveDefinitions are valid only when they create queryable passive gameplay metadata.
   - PassiveClassifications must use canonical Passive.* gameplay tags.
-  - Passive tags must resolve through the frozen GameplayTagRegistry.
+  - Passive tags must resolve through the frozen TagRegistry.
   - StatModifiers target EffectiveMaxValue only.
   - StatModifiers reference valid stats.
   - Percentage values are decimal fractions.

@@ -493,7 +493,7 @@ float[] BaseValues
 float[] EffectiveMaxValues
 float[] CurrentMaxValues
 float[] CurrentValues
-GameplayTagSet EntityConditionTags
+TagSet EntityConditionTags
 ActiveEffect[] ActiveEffects
 int ActiveEffectCount
 BitSet DirtyStats
@@ -771,7 +771,7 @@ float[] BaseValues
 float[] EffectiveMaxValues
 float[] CurrentMaxValues
 float[] CurrentValues
-GameplayTagSet EntityConditionTags
+TagSet EntityConditionTags
 ActiveEffect[] ActiveEffects
 int ActiveEffectCount
 BitSet DirtyStats
@@ -1815,7 +1815,7 @@ A condition can be used in different roles:
 
 Stats never infer conditions by themselves. The `StateEngine` may derive or remove conditions after stat resolution as a deterministic state rule.
 
-Runtime active conditions are stored as a domain-bound `GameplayTagSet` or an equivalent compiled `EntityCondition` domain mask.
+Runtime active conditions are stored as a domain-bound `TagSet` or an equivalent compiled `EntityCondition` domain mask.
 
 Condition contributor ownership is tracked internally by the StateEngine where effect-granted conditions can have multiple contributors:
 

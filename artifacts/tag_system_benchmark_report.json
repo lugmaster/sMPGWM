@@ -25,11 +25,11 @@
         "queryOperations": 11520,
         "addOperations": 13440,
         "removeOperations": 13440,
-        "meanTickMs": 0.022531,
-        "medianTickMs": 0.021200,
-        "p95TickMs": 0.029000,
-        "p99TickMs": 0.047300,
-        "maxTickMs": 0.051500,
+        "meanTickMs": 0.017741,
+        "medianTickMs": 0.016100,
+        "p95TickMs": 0.025400,
+        "p99TickMs": 0.043000,
+        "maxTickMs": 0.065600,
         "allocatedBytesDuringMeasuredTicks": 0
       }
     }

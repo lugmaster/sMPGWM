@@ -23,7 +23,7 @@
     - [5.1 Gameplay Tag](#51-gameplay-tag)
     - [5.2 Gameplay Tag Domain](#52-gameplay-tag-domain)
     - [5.3 Root Prefix](#53-root-prefix)
-    - [5.4 GameplayTagId](#54-gameplaytagid)
+    - [5.4 TagId](#54-tagid)
     - [5.5 DomainLocalIndex](#55-domainlocalindex)
     - [5.6 Tag Definition vs Tag Assignment](#56-tag-definition-vs-tag-assignment)
     - [5.7 Primary Registry IDs](#57-primary-registry-ids)
@@ -50,7 +50,7 @@
     - [8.8 Registry Hash](#88-registry-hash)
 - [9 Runtime Representation](#9-runtime-representation)
     - [9.1 Flat Runtime Structure](#91-flat-runtime-structure)
-    - [9.2 GameplayTagSet](#92-gameplaytagset)
+    - [9.2 TagSet](#92-tagset)
     - [9.3 DirectMask and ExpandedMask](#93-directmask-and-expandedmask)
     - [9.4 Dynamic Dense Domain Masks](#94-dynamic-dense-domain-masks)
     - [9.5 Runtime Immutability](#95-runtime-immutability)
@@ -157,7 +157,7 @@ This PRD covers:
 - hierarchical canonical tag names,
 - strict dot-path hierarchy,
 - flat runtime representation,
-- registry-wide deterministic `GameplayTagId` assignment,
+- registry-wide deterministic `TagId` assignment,
 - domain-local dense bit indexes,
 - dynamic per-domain mask sizing during compilation,
 - direct and expanded masks,
@@ -200,7 +200,7 @@ Recommended architecture:
 
 ```text
 Startup / import:
-  GameplayTagRegistryBuilder
+  TagRegistryBuilder
   RegisterDomain
   RegisterTag
   RegisterAlias
@@ -208,13 +208,13 @@ Startup / import:
   CompileAndFreeze
 
 Frozen runtime:
-  GameplayTagRegistry
-  GameplayTagId
-  GameplayTagDomainId
+  TagRegistry
+  TagId
+  TagDomainId
   TagQueryId
-  GameplayTagSet
+  TagSet
   CompiledTagQuery
-  GameplayTagRegistryHash
+  TagRegistryHash
 ```
 
 Tags are authored as readable hierarchical names:
@@ -233,12 +233,12 @@ At runtime, tags are represented through stable numeric IDs and flat domain-loca
 
 ```text
 Effect.Damage.Poison.Dot
-  GameplayTagId:      registry-wide ushort
+  TagId:      registry-wide ushort
   Domain:             EffectClassification
   DomainLocalIndex:   dense bit index inside EffectClassification
 ```
 
-`GameplayTagId` is a registry-wide tag identity. `DomainLocalIndex` is a bit index used only by compiled domain-local masks.
+`TagId` is a registry-wide tag identity. `DomainLocalIndex` is a bit index used only by compiled domain-local masks.
 
 Runtime simulation must not compare strings, allocate tag collections, parse YAML, construct dynamic queries, or perform hierarchy traversal in the hot path.
 
@@ -263,10 +263,10 @@ The system must follow these rules:
 13. Direct/exact matching is available through `MatchMode: Direct`.
 14. Runtime masks are domain-local dense bitsets sized by the registry during compilation.
 15. No public fixed-size type such as `TagMask64`, `TagMask128`, or `TagMask256` is required by consumers.
-16. `GameplayTagId` is not a bit index.
+16. `TagId` is not a bit index.
 17. Aliases are import/migration-only and do not exist at runtime.
 18. Runtime systems must use cached IDs, tag sets, and compiled queries in hot paths.
-19. Peers must use the same `GameplayTagRegistryHash` for deterministic simulation.
+19. Peers must use the same `TagRegistryHash` for deterministic simulation.
 20. A content set cannot introduce unknown tags after registry freeze.
 
 ---
@@ -275,7 +275,7 @@ The system must follow these rules:
 
 ### 5.1 Gameplay Tag
 
-A `GameplayTag` is a named gameplay metadata label.
+A `Tag` is a named gameplay metadata label.
 
 Examples:
 
@@ -311,7 +311,7 @@ A tag is identity metadata only. Gameplay meaning belongs to the consuming syste
 
 ### 5.2 Gameplay Tag Domain
 
-A `GameplayTagDomain` defines the semantic area in which a tag may be used.
+A `TagDomain` defines the semantic area in which a tag may be used.
 
 Examples:
 
@@ -366,22 +366,22 @@ RegisterDomain("EffectRemovalCategory", rootPrefix: "Effect");
 
 A canonical tag name must resolve to exactly one registered domain.
 
-### 5.4 GameplayTagId
+### 5.4 TagId
 
-`GameplayTagId` is a registry-wide stable numeric identifier for one canonical tag definition inside one compiled `GameplayTagRegistry`.
+`TagId` is a registry-wide stable numeric identifier for one canonical tag definition inside one compiled `TagRegistry`.
 
 Required type:
 
 ```text
-GameplayTagId: ushort
+TagId: ushort
 Maximum tag IDs: 65,535
 Reserved invalid ID: 0 or explicit Invalid value, depending on implementation policy
 ```
 
-`GameplayTagId` scope:
+`TagId` scope:
 
 ```text
-Scope: one compiled GameplayTagRegistry
+Scope: one compiled TagRegistry
 Identifies: one canonical tag definition
 Not a bit index
 Not domain-local
@@ -393,11 +393,11 @@ Example:
 ```text
 Canonical tag:       Effect.Damage.Poison
 Domain:              EffectClassification
-GameplayTagId:        0351
+TagId:        0351
 DomainLocalIndex:     27
 ```
 
-`GameplayTagId` is used for:
+`TagId` is used for:
 
 - registry lookup,
 - serialization,
@@ -407,7 +407,7 @@ DomainLocalIndex:     27
 - save/replay/network metadata,
 - resolving tag definitions.
 
-`GameplayTagId` values are deterministic and stable only for the same resolved content set and the same `GameplayTagRegistryHash`, unless a future stable ID manifest is introduced.
+`TagId` values are deterministic and stable only for the same resolved content set and the same `TagRegistryHash`, unless a future stable ID manifest is introduced.
 
 ### 5.5 DomainLocalIndex
 
@@ -417,7 +417,7 @@ Example:
 
 ```text
 Effect.Damage.Poison
-  GameplayTagId:      0351
+  TagId:      0351
   DomainLocalIndex:   27
 ```
 
@@ -466,7 +466,7 @@ EffectDefinition       -> EffectDefinitionId
 ItemDefinition         -> ItemDefinitionId
 TargetingDefinition    -> TargetingDefinitionId
 CooldownDefinition     -> CooldownId
-GameplayTagDefinition  -> GameplayTagId
+TagDefinition  -> TagId
 ```
 
 Example:
@@ -503,7 +503,7 @@ Description
 Compiled domain fields:
 
 ```text
-GameplayTagDomainId
+TagDomainId
 DomainKey
 RootPrefix
 CanonicalTagCount
@@ -522,7 +522,7 @@ builder.RegisterDomain(
     description: "Metadata on effects used for blocking, removal, triggers, and filtering.");
 ```
 
-`GameplayTagDomainId` is assigned by the registry during compilation and is immutable after freeze.
+`TagDomainId` is assigned by the registry during compilation and is immutable after freeze.
 
 ### 6.2 Initial Domains
 
@@ -574,7 +574,7 @@ A generic debug/editor view may display a combined read-only tag list, but canon
 
 ### 6.4 Domain Safety
 
-A `GameplayTagSet` belongs to exactly one domain.
+A `TagSet` belongs to exactly one domain.
 
 The following must fail validation or throw/assert according to build policy:
 
@@ -896,7 +896,7 @@ All content sources are loaded before validation and freeze.
 
 Content sources must have deterministic ordering.
 
-Given the same base game version and same loaded content sources in the same resolved load order, the generated registry must produce the same canonical `GameplayTagId`s, domain-local indexes, compiled queries, and registry hash.
+Given the same base game version and same loaded content sources in the same resolved load order, the generated registry must produce the same canonical `TagId`s, domain-local indexes, compiled queries, and registry hash.
 
 ### 8.2 Canonicalization
 
@@ -943,12 +943,12 @@ Generated parent tags must appear in deterministic registry output.
 Compilation produces:
 
 ```text
-GameplayTagDomainId table
-GameplayTagId table
-CanonicalName -> GameplayTagId lookup
-GameplayTagId -> TagDefinition lookup
-GameplayTagId -> Domain lookup
-GameplayTagId -> DomainLocalIndex lookup
+TagDomainId table
+TagId table
+CanonicalName -> TagId lookup
+TagId -> TagDefinition lookup
+TagId -> Domain lookup
+TagId -> DomainLocalIndex lookup
 DomainLocalIndex tables
 Parent expansion data
 Domain mask word counts
@@ -965,9 +965,9 @@ Recommended deterministic assignment:
 3. Resolve aliases.
 4. Validate domains, root prefixes, tags, aliases, and queries.
 5. Sort domains by stable `DomainKey` or explicit deterministic domain order.
-6. Assign `GameplayTagDomainId` values.
+6. Assign `TagDomainId` values.
 7. Sort canonical tags by canonical full name.
-8. Assign registry-wide `GameplayTagId` values.
+8. Assign registry-wide `TagId` values.
 9. Group canonical tags by domain.
 10. Sort domain tags by canonical full name.
 11. Assign dense `DomainLocalIndex` values.
@@ -980,7 +980,7 @@ Recommended deterministic assignment:
 
 ### 8.5 Domain Mask Size Assignment
 
-All domains use the same `GameplayTagMask` infrastructure.
+All domains use the same `TagMask` infrastructure.
 
 There is no public `TagMask64`, `TagMask128`, `TagMask256`, or entity-condition-only storage type.
 
@@ -1004,12 +1004,12 @@ Runtime systems may mutate assignments, but they may not change tag definitions,
 
 The registry must log domain mask sizing information during startup compilation.
 
-Logs must be deterministic and ordered by compiled `GameplayTagDomainId`.
+Logs must be deterministic and ordered by compiled `TagDomainId`.
 
 Example:
 
 ```text
-[GameplayTagRegistry] Domain compiled:
+[TagRegistry] Domain compiled:
   DomainId: 2
   DomainKey: EntityCondition
   RootPrefix: Condition
@@ -1026,7 +1026,7 @@ Example:
 After all domains compile:
 
 ```text
-[GameplayTagRegistry] Registry frozen:
+[TagRegistry] Registry frozen:
   DomainCount: 8
   TotalCanonicalTagCount: 1264
   TotalCompiledQueryCount: 96
@@ -1048,14 +1048,14 @@ No deleted tag definitions.
 No renamed tag definitions.
 No changed root prefixes.
 No changed parent hierarchy.
-No changed GameplayTagIds.
+No changed TagIds.
 No changed DomainLocalIndexes.
 No changed mask word counts.
 No changed alias resolution.
 No changed compiled query masks.
 ```
 
-Runtime systems may mutate only their own `GameplayTagSet` assignments.
+Runtime systems may mutate only their own `TagSet` assignments.
 
 ### 8.8 Registry Hash
 
@@ -1064,7 +1064,7 @@ The hash input format `GameplayTagRegistry:v1.1.0:hash-v2` uses explicit LF sepa
 The compiled registry must provide a deterministic hash:
 
 ```text
-GameplayTagRegistryHash
+TagRegistryHash
 ```
 
 Uses:
@@ -1087,7 +1087,7 @@ domain assignments
 assignability flags
 dot-path parent relationships
 alias resolution policy and alias inputs
-stable GameplayTagId assignments
+stable TagId assignments
 DomainLocalIndex assignments
 domain mask word counts
 compiled query definitions
@@ -1099,7 +1099,7 @@ registry version
 Compatibility rule:
 
 ```text
-GameplayTagId values are stable only inside the same compiled GameplayTagRegistryHash.
+TagId values are stable only inside the same compiled TagRegistryHash.
 ```
 
 If the content set changes and generated IDs shift, the registry hash changes.
@@ -1119,23 +1119,23 @@ The runtime must not perform string hierarchy traversal in gameplay simulation.
 Preferred runtime representation:
 
 ```text
-GameplayTagId: ushort
-GameplayTagDomainId: byte or ushort
+TagId: ushort
+TagDomainId: byte or ushort
 DomainLocalIndex: ushort or int internal index
-GameplayTagMask: ulong[] / fixed pooled word span, domain-sized
+TagMask: ulong[] / fixed pooled word span, domain-sized
 TagQueryId: ushort or int
-GameplayTagRegistryHash: ulong or wider deterministic hash
+TagRegistryHash: ulong or wider deterministic hash
 ```
 
 Hot-path gameplay should use cached IDs and compiled query handles.
 
-### 9.2 GameplayTagSet
+### 9.2 TagSet
 
-`GameplayTagSet` is the context-free runtime assignment container.
+`TagSet` is the context-free runtime assignment container.
 
 It represents a mutable set of assigned tags for exactly one domain.
 
-A `GameplayTagSet` may be used by any gameplay system:
+A `TagSet` may be used by any gameplay system:
 
 ```text
 StateEngine condition state
@@ -1225,13 +1225,13 @@ This avoids forcing every tag set to use a full 65,536-bit mask.
 
 A full 65,536-bit mask is not the default runtime representation.
 
-Large domains must still use the same public `GameplayTagMask` and `GameplayTagSet` API. Internal storage may evolve to pooled dense words, sparse fixed chunks, or other deterministic allocation-free representations if a future domain becomes too large for dense masks.
+Large domains must still use the same public `TagMask` and `TagSet` API. Internal storage may evolve to pooled dense words, sparse fixed chunks, or other deterministic allocation-free representations if a future domain becomes too large for dense masks.
 
 ### 9.5 Runtime Immutability
 
 The tag registry is immutable after freeze.
 
-Public domain, tag, and query collections are cached read-only views; callers cannot replace compiled entries. Compiled query objects belong to the exact registry instance that created them. `GameplayTagSet.Matches(CompiledTagQuery)` rejects foreign objects with `GameplayTagException`; `TryMatches` returns `false` and sets `matches` to `false`, even if the foreign registry has identical content and the same hash. Numeric IDs remain relative to their registry and carry no ownership information.
+Public domain, tag, and query collections are cached read-only views; callers cannot replace compiled entries. Compiled query objects belong to the exact registry instance that created them. `TagSet.Matches(CompiledTagQuery)` rejects foreign objects with `TagException`; `TryMatches` returns `false` and sets `matches` to `false`, even if the foreign registry has identical content and the same hash. Numeric IDs remain relative to their registry and carry no ownership information.
 
 Runtime must not:
 
@@ -1247,7 +1247,7 @@ Runtime must not:
 - change mask word counts,
 - recompile queries.
 
-Runtime systems may mutate tag assignments only on `GameplayTagSet` instances they own.
+Runtime systems may mutate tag assignments only on `TagSet` instances they own.
 
 ---
 
@@ -1475,10 +1475,10 @@ Register aliases for migration.
 Register queries.
 Compile and freeze the registry.
 Create a tag set for a domain.
-Add a GameplayTagId to a tag set.
-Remove a GameplayTagId from a tag set.
+Add a TagId to a tag set.
+Remove a TagId from a tag set.
 Clear a tag set.
-Check whether a tag set has or does not have a GameplayTagId.
+Check whether a tag set has or does not have a TagId.
 Check whether a tag set matches a compiled query.
 Check whether a tag set satisfies All/Any/None requirements.
 ```
@@ -1504,7 +1504,7 @@ Those belong to consuming gameplay systems.
 Suggested builder API:
 
 ```csharp
-public sealed class GameplayTagRegistryBuilder
+public sealed class TagRegistryBuilder
 {
     public void RegisterDomain(
         string domainKey,
@@ -1527,8 +1527,8 @@ public sealed class GameplayTagRegistryBuilder
         string domainKey,
         TagQueryDefinition definition);
 
-    public GameplayTagRegistry CompileAndFreeze(
-        IGameplayTagRegistryLogger logger);
+    public TagRegistry CompileAndFreeze(
+        ITagRegistryLogger logger);
 }
 ```
 
@@ -1540,7 +1540,7 @@ alias resolution
 domain validation
 root prefix validation
 dot-path parent validation
-GameplayTagId assignment
+TagId assignment
 DomainLocalIndex assignment
 mask-size calculation
 parent expansion compilation
@@ -1555,23 +1555,23 @@ freeze
 Suggested registry API:
 
 ```csharp
-public sealed class GameplayTagRegistry
+public sealed class TagRegistry
 {
     public bool IsFrozen { get; }
     public ulong RegistryHash { get; }
 
     public bool TryGetDomainId(
         string domainKey,
-        out GameplayTagDomainId domainId);
+        out TagDomainId domainId);
 
-    public GameplayTagDomainId GetDomainId(
+    public TagDomainId GetDomainId(
         string domainKey);
 
     public bool TryGetTagId(
         string canonicalName,
-        out GameplayTagId tagId);
+        out TagId tagId);
 
-    public GameplayTagId GetTagId(
+    public TagId GetTagId(
         string canonicalName);
 
     public bool TryGetQueryId(
@@ -1581,17 +1581,17 @@ public sealed class GameplayTagRegistry
     public TagQueryId GetQueryId(
         string queryKey);
 
-    public GameplayTagDomainId GetDomain(GameplayTagId tagId);
+    public TagDomainId GetDomain(TagId tagId);
 
-    public string GetDebugName(GameplayTagId tagId);
+    public string GetDebugName(TagId tagId);
 
-    public string GetCanonicalName(GameplayTagId tagId);
+    public string GetCanonicalName(TagId tagId);
 
-    public bool IsAssignable(GameplayTagId tagId);
+    public bool IsAssignable(TagId tagId);
 
-    public GameplayTagSet CreateTagSet(GameplayTagDomainId domainId);
+    public TagSet CreateTagSet(TagDomainId domainId);
 
-    public GameplayTagSet CreateTagSet(string domainKey);
+    public TagSet CreateTagSet(string domainKey);
 
     public CompiledTagQuery GetQuery(TagQueryId queryId);
 }
@@ -1599,52 +1599,52 @@ public sealed class GameplayTagRegistry
 
 String lookup is allowed at startup/import/debug boundaries.
 
-Hot-path gameplay should cache `GameplayTagId`, `GameplayTagDomainId`, and `TagQueryId` values.
+Hot-path gameplay should cache `TagId`, `TagDomainId`, and `TagQueryId` values.
 
 ### 11.4 Runtime Tag Set API
 
-`GameplayTagId` is immutable identity and cannot be mutated.
+`TagId` is immutable identity and cannot be mutated.
 
-Tags are added to or removed from a `GameplayTagSet`.
+Tags are added to or removed from a `TagSet`.
 
 Suggested runtime API:
 
 ```csharp
-public sealed class GameplayTagSet
+public sealed class TagSet
 {
-    public GameplayTagDomainId Domain { get; }
+    public TagDomainId Domain { get; }
 
     public void Clear();
 
-    public bool Add(GameplayTagId tagId);
+    public bool Add(TagId tagId);
 
-    public bool Remove(GameplayTagId tagId);
+    public bool Remove(TagId tagId);
 
-    public bool HasDirect(GameplayTagId tagId);
+    public bool HasDirect(TagId tagId);
 
-    public bool HasExpanded(GameplayTagId tagId);
+    public bool HasExpanded(TagId tagId);
 
-    public bool DoesNotHaveDirect(GameplayTagId tagId);
+    public bool DoesNotHaveDirect(TagId tagId);
 
-    public bool DoesNotHaveExpanded(GameplayTagId tagId);
+    public bool DoesNotHaveExpanded(TagId tagId);
 
-    public bool HasAllDirect(ReadOnlySpan<GameplayTagId> tagIds);
+    public bool HasAllDirect(ReadOnlySpan<TagId> tagIds);
 
-    public bool HasAllExpanded(ReadOnlySpan<GameplayTagId> tagIds);
+    public bool HasAllExpanded(ReadOnlySpan<TagId> tagIds);
 
-    public bool HasAnyDirect(ReadOnlySpan<GameplayTagId> tagIds);
+    public bool HasAnyDirect(ReadOnlySpan<TagId> tagIds);
 
-    public bool HasAnyExpanded(ReadOnlySpan<GameplayTagId> tagIds);
+    public bool HasAnyExpanded(ReadOnlySpan<TagId> tagIds);
 
-    public bool HasNoneDirect(ReadOnlySpan<GameplayTagId> tagIds);
+    public bool HasNoneDirect(ReadOnlySpan<TagId> tagIds);
 
-    public bool HasNoneExpanded(ReadOnlySpan<GameplayTagId> tagIds);
+    public bool HasNoneExpanded(ReadOnlySpan<TagId> tagIds);
 
     public bool Matches(TagQueryId queryId);
 
     public bool Matches(in CompiledTagQuery query);
 
-    public void CopyFrom(in GameplayTagSet other);
+    public void CopyFrom(in TagSet other);
 }
 ```
 
@@ -1675,7 +1675,7 @@ Suggested query-definition API:
 ```csharp
 public readonly struct TagQueryDefinition
 {
-    public GameplayTagQueryMatchMode MatchMode { get; }
+    public TagQueryMatchMode MatchMode { get; }
     public bool MatchAll { get; }
     public IReadOnlyList<string> All { get; }
     public IReadOnlyList<string> Any { get; }
@@ -1701,14 +1701,14 @@ Suggested compiled query shape:
 public readonly struct CompiledTagQuery
 {
     public readonly TagQueryId QueryId;
-    public readonly GameplayTagDomainId Domain;
-    public readonly GameplayTagQueryMatchMode MatchMode;
+    public readonly TagDomainId Domain;
+    public readonly TagQueryMatchMode MatchMode;
     public readonly bool MatchAll;
 
     // Internal domain-local masks, not exposed to normal consumers.
-    internal readonly GameplayTagMask AllMask;
-    internal readonly GameplayTagMask AnyMask;
-    internal readonly GameplayTagMask NoneMask;
+    internal readonly TagMask AllMask;
+    internal readonly TagMask AnyMask;
+    internal readonly TagMask NoneMask;
 }
 ```
 
@@ -1728,20 +1728,20 @@ If no All and no Any are present, MatchAll must be true.
 Suggested import result shape:
 
 ```csharp
-public readonly struct GameplayTagRegistryBuildResult
+public readonly struct TagRegistryBuildResult
 {
     public readonly bool Success;
-    public readonly GameplayTagRegistry? Registry;
-    public readonly IReadOnlyList<GameplayTagValidationMessage> Messages;
+    public readonly TagRegistry? Registry;
+    public readonly IReadOnlyList<TagValidationMessage> Messages;
 }
 ```
 
 Validation message shape:
 
 ```csharp
-public readonly struct GameplayTagValidationMessage
+public readonly struct TagValidationMessage
 {
-    public readonly GameplayTagValidationSeverity Severity;
+    public readonly TagValidationSeverity Severity;
     public readonly string Code;
     public readonly string Message;
     public readonly string SourceId;
@@ -1831,7 +1831,7 @@ The tag system does not own condition contributors.
 
 Condition contributor ownership remains a StateEngine concern.
 
-The StateEngine may store a `GameplayTagSet` for entity conditions, but the tag system does not know the owning entity.
+The StateEngine may store a `TagSet` for entity conditions, but the tag system does not know the owning entity.
 
 ### 12.3 Effect Classifications
 
@@ -2130,23 +2130,23 @@ Do not serialize canonical tag strings in hot-path network deltas.
 Recommended serialization:
 
 ```text
-GameplayTagRegistryHash
-GameplayTagId
-GameplayTagDomainId
+TagRegistryHash
+TagId
+TagDomainId
 TagQueryId
-GameplayTagSet masks
+TagSet masks
 ```
 
 Network compatibility rule:
 
 ```text
-Peers must use the same compiled GameplayTagRegistryHash for deterministic gameplay simulation.
+Peers must use the same compiled TagRegistryHash for deterministic gameplay simulation.
 ```
 
 Save compatibility rule:
 
 ```text
-A save file should store GameplayTagRegistryHash or compatible registry version metadata.
+A save file should store TagRegistryHash or compatible registry version metadata.
 ```
 
 If a saved tag ID no longer exists in the current registry, migration must be handled before simulation.
@@ -2190,8 +2190,8 @@ Matches(compiledQuery)
 Preferred storage:
 
 ```text
-ushort GameplayTagId
-small numeric GameplayTagDomainId
+ushort TagId
+small numeric TagDomainId
 domain-local dense ulong masks
 array-backed registries
 precompiled query masks
@@ -2271,7 +2271,7 @@ Missing description: warning
 ### 17.1 Tag Registry Example
 
 ```yaml
-GameplayTagRegistry:
+TagRegistry:
   Version: 1.0.0
 
   Domains:
@@ -2453,7 +2453,7 @@ GameplayTagRegistry:
 ### 17.2 Query Registry Example
 
 ```yaml
-GameplayTagQueries:
+TagQueries:
   Version: 1.0.0
 
   Queries:
@@ -2586,12 +2586,12 @@ ActionDefinition:
 Suggested C# primitive wrappers:
 
 ```csharp
-public readonly struct GameplayTagId
+public readonly struct TagId
 {
     public readonly ushort Value;
 }
 
-public readonly struct GameplayTagDomainId
+public readonly struct TagDomainId
 {
     public readonly ushort Value;
 }
@@ -2605,7 +2605,7 @@ public readonly struct TagQueryId
 Suggested match mode:
 
 ```csharp
-public enum GameplayTagQueryMatchMode : byte
+public enum TagQueryMatchMode : byte
 {
     Expanded = 0,
     Direct = 1
@@ -2615,15 +2615,15 @@ public enum GameplayTagQueryMatchMode : byte
 Internal mask concept:
 
 ```csharp
-internal struct GameplayTagMask
+internal struct TagMask
 {
     // Domain-sized dense ulong words.
     // Storage may be fixed, pooled, array-backed, or owner-backed.
 
     public bool Has(int domainLocalIndex);
-    public bool HasAny(in GameplayTagMask mask);
-    public bool HasAll(in GameplayTagMask mask);
-    public bool HasNone(in GameplayTagMask mask);
+    public bool HasAny(in TagMask mask);
+    public bool HasAll(in TagMask mask);
+    public bool HasNone(in TagMask mask);
     public void Set(int domainLocalIndex);
     public void Clear(int domainLocalIndex);
     public void ClearAll();
@@ -2633,24 +2633,24 @@ internal struct GameplayTagMask
 Runtime tag set:
 
 ```csharp
-public sealed class GameplayTagSet
+public sealed class TagSet
 {
-    public GameplayTagDomainId Domain { get; }
+    public TagDomainId Domain { get; }
 
-    public bool Add(GameplayTagId tagId);
-    public bool Remove(GameplayTagId tagId);
+    public bool Add(TagId tagId);
+    public bool Remove(TagId tagId);
     public void Clear();
 
-    public bool HasDirect(GameplayTagId tagId);
-    public bool HasExpanded(GameplayTagId tagId);
+    public bool HasDirect(TagId tagId);
+    public bool HasExpanded(TagId tagId);
 
-    public bool HasAllExpanded(ReadOnlySpan<GameplayTagId> tagIds);
-    public bool HasAnyExpanded(ReadOnlySpan<GameplayTagId> tagIds);
-    public bool HasNoneExpanded(ReadOnlySpan<GameplayTagId> tagIds);
+    public bool HasAllExpanded(ReadOnlySpan<TagId> tagIds);
+    public bool HasAnyExpanded(ReadOnlySpan<TagId> tagIds);
+    public bool HasNoneExpanded(ReadOnlySpan<TagId> tagIds);
 
-    public bool HasAllDirect(ReadOnlySpan<GameplayTagId> tagIds);
-    public bool HasAnyDirect(ReadOnlySpan<GameplayTagId> tagIds);
-    public bool HasNoneDirect(ReadOnlySpan<GameplayTagId> tagIds);
+    public bool HasAllDirect(ReadOnlySpan<TagId> tagIds);
+    public bool HasAnyDirect(ReadOnlySpan<TagId> tagIds);
+    public bool HasNoneDirect(ReadOnlySpan<TagId> tagIds);
 
     public bool Matches(TagQueryId queryId);
     public bool Matches(in CompiledTagQuery query);
@@ -2665,34 +2665,34 @@ Compiled query:
 public readonly struct CompiledTagQuery
 {
     public readonly TagQueryId QueryId;
-    public readonly GameplayTagDomainId Domain;
-    public readonly GameplayTagQueryMatchMode MatchMode;
+    public readonly TagDomainId Domain;
+    public readonly TagQueryMatchMode MatchMode;
     public readonly bool MatchAll;
 
-    internal readonly GameplayTagMask AllMask;
-    internal readonly GameplayTagMask AnyMask;
-    internal readonly GameplayTagMask NoneMask;
+    internal readonly TagMask AllMask;
+    internal readonly TagMask AnyMask;
+    internal readonly TagMask NoneMask;
 }
 ```
 
 Registry:
 
 ```csharp
-public sealed class GameplayTagRegistry
+public sealed class TagRegistry
 {
     public bool IsFrozen { get; }
     public ulong RegistryHash { get; }
 
-    public GameplayTagDomainId GetDomainId(string domainKey);
-    public GameplayTagId GetTagId(string canonicalName);
+    public TagDomainId GetDomainId(string domainKey);
+    public TagId GetTagId(string canonicalName);
     public TagQueryId GetQueryId(string queryKey);
 
-    public GameplayTagDomainId GetDomain(GameplayTagId tagId);
-    public string GetCanonicalName(GameplayTagId tagId);
-    public string GetDebugName(GameplayTagId tagId);
-    public bool IsAssignable(GameplayTagId tagId);
+    public TagDomainId GetDomain(TagId tagId);
+    public string GetCanonicalName(TagId tagId);
+    public string GetDebugName(TagId tagId);
+    public bool IsAssignable(TagId tagId);
 
-    public GameplayTagSet CreateTagSet(GameplayTagDomainId domainId);
+    public TagSet CreateTagSet(TagDomainId domainId);
     public CompiledTagQuery GetQuery(TagQueryId queryId);
 }
 ```
@@ -2704,12 +2704,12 @@ Example cached constants:
 ```csharp
 public static class GameTags
 {
-    public static GameplayTagId EffectDamagePoisonDot;
-    public static GameplayTagId EffectDamage;
-    public static GameplayTagId ConditionPoisoned;
+    public static TagId EffectDamagePoisonDot;
+    public static TagId EffectDamage;
+    public static TagId ConditionPoisoned;
     public static TagQueryId QueryEffectIsDamage;
 
-    public static void Initialize(GameplayTagRegistry registry)
+    public static void Initialize(TagRegistry registry)
     {
         EffectDamagePoisonDot = registry.GetTagId("Effect.Damage.Poison.Dot");
         EffectDamage = registry.GetTagId("Effect.Damage");
@@ -2767,13 +2767,13 @@ Recommended standalone test layout:
 ```text
 tests/
   tag_system/
-    GameplayTagRegistryBuilderTests.cs
-    GameplayTagRegistryDeterminismTests.cs
-    GameplayTagSetRuntimeTests.cs
-    GameplayTagQueryTests.cs
-    GameplayTagAllocationTests.cs
-    GameplayTagStressTests.cs
-    GameplayTagBenchmarkReportTests.cs
+    TagRegistryBuilderTests.cs
+    TagRegistryDeterminismTests.cs
+    TagSetRuntimeTests.cs
+    TagQueryTests.cs
+    TagAllocationTests.cs
+    TagStressTests.cs
+    TagBenchmarkReportTests.cs
     fixtures/
       TagRegistryFixtureFactory.cs
       TagQueryFixtureFactory.cs
@@ -2937,7 +2937,7 @@ Required test cases:
 
 | Test Name | Requirement |
 |---|---|
-| `Determinism_SameContentProducesSameGameplayTagIds` | `GameplayTagId` assignment is byte-for-byte stable. |
+| `Determinism_SameContentProducesSameGameplayTagIds` | `TagId` assignment is byte-for-byte stable. |
 | `Determinism_SameContentProducesSameDomainLocalIndexes` | Domain-local dense indexes are stable. |
 | `Determinism_SameContentProducesSameDomainMaskSizes` | Mask word counts are stable. |
 | `Determinism_SameContentProducesSameQueryMasks` | Compiled `All`, `Any`, and `None` masks are stable. |
@@ -3064,7 +3064,7 @@ Benchmark report generation may allocate.
 
 Stress tests must simulate multiple gameplay systems firing tag queries and tag mutations across multiple ticks, without using the StateEngine.
 
-The stress harness must create synthetic systems that operate only on `GameplayTagSet`, cached `GameplayTagId`, and cached `CompiledTagQuery` values.
+The stress harness must create synthetic systems that operate only on `TagSet`, cached `TagId`, and cached `CompiledTagQuery` values.
 
 Required synthetic systems:
 
@@ -3094,7 +3094,7 @@ Stable ordering rules:
 
 ```text
 Systems are ordered by fixed test registration order.
-Domains are ordered by compiled GameplayTagDomainId.
+Domains are ordered by compiled TagDomainId.
 Tag sets are ordered by deterministic synthetic object index.
 Queries are ordered by TagQueryId.
 Mutations use deterministic pseudo-random selection from RandomSeed.

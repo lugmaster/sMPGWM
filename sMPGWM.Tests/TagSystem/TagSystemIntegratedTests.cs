@@ -3,6 +3,9 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using sMPGWM.Scripts.TagSystem;
+using sMPGWM.Scripts.TagSystem.Exceptions;
+using sMPGWM.Scripts.TagSystem.Ids;
+using sMPGWM.Scripts.TagSystem.Queries;
 
 namespace sMPGWM.Tests.TagSystem;
 
@@ -19,7 +22,7 @@ public class TagSystemIntegratedTests
         conditionSet.Add(TagSystemFixtureFactory.Tag(registry, "Condition.Poisoned"));
         effectSet.Add(TagSystemFixtureFactory.Tag(registry, "Effect.Damage.Poison.Dot"));
 
-        Assert.Throws<GameplayTagException>(() =>
+        Assert.Throws<TagException>(() =>
             conditionSet.Matches(TagSystemFixtureFactory.Query(registry, "query.effect.cleanse_poison_removal")));
     }
 
@@ -65,7 +68,7 @@ public class TagSystemIntegratedTests
     [Test]
     public void Contract_TagSystemDoesNotOwnConditionContributorsOrEffectLifetime()
     {
-        var publicMethods = typeof(GameplayTagSet).GetMethods();
+        var publicMethods = typeof(TagSet).GetMethods();
 
         Assert.That(publicMethods.Select(m => m.Name), Does.Not.Contain("AddContributor"));
         Assert.That(publicMethods.Select(m => m.Name), Does.Not.Contain("RemoveContributor"));
@@ -93,7 +96,7 @@ public class TagSystemIntegratedTests
         Assert.That(result.AllocatedBytesDuringMeasuredTicks, Is.GreaterThanOrEqualTo(0));
     }
 
-    private static StressResult RunBaselineStress(GameplayTagRegistry registry)
+    private static StressResult RunBaselineStress(TagRegistry registry)
     {
         var conditionSet = registry.CreateTagSet(TagSystemFixtureFactory.EntityCondition);
         var effectSet = registry.CreateTagSet(TagSystemFixtureFactory.EffectClassification);
@@ -219,20 +222,20 @@ public class TagSystemIntegratedTests
     }
 
     private static void WarmStressTick(
-        GameplayTagSet conditionSet,
-        GameplayTagSet effectSet,
-        GameplayTagSet actionSet,
-        GameplayTagSet targetSet,
-        GameplayTagSet cooldownSet,
-        GameplayTagSet damageSet,
-        GameplayTagSet factionSet,
-        GameplayTagId[] conditionTags,
-        GameplayTagId[] effectTags,
-        GameplayTagId[] actionTags,
-        GameplayTagId[] targetTags,
-        GameplayTagId[] cooldownTags,
-        GameplayTagId[] damageTags,
-        GameplayTagId[] factionTags,
+        TagSet conditionSet,
+        TagSet effectSet,
+        TagSet actionSet,
+        TagSet targetSet,
+        TagSet cooldownSet,
+        TagSet damageSet,
+        TagSet factionSet,
+        TagId[] conditionTags,
+        TagId[] effectTags,
+        TagId[] actionTags,
+        TagId[] targetTags,
+        TagId[] cooldownTags,
+        TagId[] damageTags,
+        TagId[] factionTags,
         CompiledTagQuery poisonRemoval,
         CompiledTagQuery deadOrIncurable,
         CompiledTagQuery isDamage,
@@ -252,7 +255,7 @@ public class TagSystemIntegratedTests
         Mutate(factionSet, factionTags[tick % factionTags.Length], tick + 6, ref addOperations, ref removeOperations);
     }
 
-    private static void Mutate(GameplayTagSet set, GameplayTagId tag, int selector, ref long addOperations, ref long removeOperations)
+    private static void Mutate(TagSet set, TagId tag, int selector, ref long addOperations, ref long removeOperations)
     {
         if ((selector & 1) == 0)
         {
@@ -298,7 +301,7 @@ public class TagSystemIntegratedTests
         throw new DirectoryNotFoundException("Could not locate repository root from test directory.");
     }
 
-    private static string CreateMarkdownReport(GameplayTagRegistry registry, StressResult result)
+    private static string CreateMarkdownReport(TagRegistry registry, StressResult result)
     {
         var builder = new StringBuilder();
         builder.AppendLine("# Gameplay Tag System Benchmark Report");
@@ -318,7 +321,7 @@ public class TagSystemIntegratedTests
         return builder.ToString();
     }
 
-    private static string CreateJsonReport(GameplayTagRegistry registry, StressResult result)
+    private static string CreateJsonReport(TagRegistry registry, StressResult result)
     {
         return $$"""
         {

@@ -1,4 +1,6 @@
 using sMPGWM.Scripts.TagSystem;
+using sMPGWM.Scripts.TagSystem.Ids;
+using sMPGWM.Scripts.TagSystem.Queries;
 
 namespace sMPGWM.Tests.TagSystem;
 
@@ -13,12 +15,12 @@ internal static class TagSystemFixtureFactory
     public const string DamageKind = "DamageKind";
     public const string FactionRelation = "FactionRelation";
 
-    public static GameplayTagRegistry CreateSmallGameplayRegistry()
+    public static TagRegistry CreateSmallGameplayRegistry()
     {
         return CreateSmallGameplayBuilder().CompileAndFreeze();
     }
 
-    public static GameplayTagRegistryBuilder CreateSmallGameplayBuilder()
+    public static TagRegistryBuilder CreateSmallGameplayBuilder()
     {
         var builder = CreateDomainOnlyBuilder();
 
@@ -35,9 +37,9 @@ internal static class TagSystemFixtureFactory
         return builder;
     }
 
-    public static GameplayTagRegistryBuilder CreateDomainOnlyBuilder()
+    public static TagRegistryBuilder CreateDomainOnlyBuilder()
     {
-        return new GameplayTagRegistryBuilder()
+        return new TagRegistryBuilder()
             .RegisterDomain(EntityCondition, "Condition", "Mutable state metadata on living entities.")
             .RegisterDomain(EffectClassification, "Effect", "Metadata on effects used for blocking, removal, triggers, and filtering.")
             .RegisterDomain(ActionClassification, "Action", "Metadata on usable actions.")
@@ -48,17 +50,17 @@ internal static class TagSystemFixtureFactory
             .RegisterDomain(FactionRelation, "Faction", "Relationship or disposition metadata.");
     }
 
-    public static GameplayTagId Tag(GameplayTagRegistry registry, string canonicalName)
+    public static TagId Tag(TagRegistry registry, string canonicalName)
     {
         return registry.GetTagId(canonicalName);
     }
 
-    public static TagQueryId Query(GameplayTagRegistry registry, string queryKey)
+    public static TagQueryId Query(TagRegistry registry, string queryKey)
     {
         return registry.GetQueryId(queryKey);
     }
 
-    private static void RegisterEntityConditions(GameplayTagRegistryBuilder builder)
+    private static void RegisterEntityConditions(TagRegistryBuilder builder)
     {
         builder
             .RegisterTag(EntityCondition, "Condition.Dead")
@@ -74,7 +76,7 @@ internal static class TagSystemFixtureFactory
             .RegisterTag(EntityCondition, "Condition.Untargetable");
     }
 
-    private static void RegisterEffectClassifications(GameplayTagRegistryBuilder builder)
+    private static void RegisterEffectClassifications(TagRegistryBuilder builder)
     {
         builder
             .RegisterTag(EffectClassification, "Effect.Damage")
@@ -101,7 +103,7 @@ internal static class TagSystemFixtureFactory
             .RegisterTag(EffectClassification, "Effect.Infection");
     }
 
-    private static void RegisterActionClassifications(GameplayTagRegistryBuilder builder)
+    private static void RegisterActionClassifications(TagRegistryBuilder builder)
     {
         builder
             .RegisterTag(ActionClassification, "Action.Skill")
@@ -111,7 +113,7 @@ internal static class TagSystemFixtureFactory
             .RegisterTag(ActionClassification, "Action.Item");
     }
 
-    private static void RegisterItemClassifications(GameplayTagRegistryBuilder builder)
+    private static void RegisterItemClassifications(TagRegistryBuilder builder)
     {
         builder
             .RegisterTag(ItemClassification, "Item.Weapon")
@@ -121,7 +123,7 @@ internal static class TagSystemFixtureFactory
             .RegisterTag(ItemClassification, "Item.Equipment.ShieldGenerator");
     }
 
-    private static void RegisterTargetClassifications(GameplayTagRegistryBuilder builder)
+    private static void RegisterTargetClassifications(TagRegistryBuilder builder)
     {
         builder
             .RegisterTag(TargetClassification, "Target.LivingEntity")
@@ -130,7 +132,7 @@ internal static class TagSystemFixtureFactory
             .RegisterTag(TargetClassification, "Target.Self");
     }
 
-    private static void RegisterCooldownGroups(GameplayTagRegistryBuilder builder)
+    private static void RegisterCooldownGroups(TagRegistryBuilder builder)
     {
         builder
             .RegisterTag(CooldownGroup, "Cooldown.Weapon")
@@ -138,7 +140,7 @@ internal static class TagSystemFixtureFactory
             .RegisterTag(CooldownGroup, "Cooldown.Weapon.Heavy");
     }
 
-    private static void RegisterDamageKinds(GameplayTagRegistryBuilder builder)
+    private static void RegisterDamageKinds(TagRegistryBuilder builder)
     {
         builder
             .RegisterTag(DamageKind, "Damage.Kinetic")
@@ -147,7 +149,7 @@ internal static class TagSystemFixtureFactory
             .RegisterTag(DamageKind, "Damage.Poison");
     }
 
-    private static void RegisterFactionRelations(GameplayTagRegistryBuilder builder)
+    private static void RegisterFactionRelations(TagRegistryBuilder builder)
     {
         builder
             .RegisterTag(FactionRelation, "Faction.Hostile")
@@ -155,7 +157,7 @@ internal static class TagSystemFixtureFactory
             .RegisterTag(FactionRelation, "Faction.Neutral");
     }
 
-    private static void RegisterQueries(GameplayTagRegistryBuilder builder)
+    private static void RegisterQueries(TagRegistryBuilder builder)
     {
         builder
             .RegisterQuery(

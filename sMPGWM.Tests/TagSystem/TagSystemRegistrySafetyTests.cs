@@ -1,4 +1,5 @@
 using sMPGWM.Scripts.TagSystem;
+using sMPGWM.Scripts.TagSystem.Exceptions;
 
 namespace sMPGWM.Tests.TagSystem;
 
@@ -13,7 +14,7 @@ public class TagSystemRegistrySafetyTests
     [TestCase("None", 65)]
     public void RegistryHash_ChangesWhenQueryTagChanges(string clause, int tagIndex)
     {
-        GameplayTagRegistry Build(int selectedIndex)
+        TagRegistry Build(int selectedIndex)
         {
             var builder = CreateBuilder(70);
             string[] tags = [$"Condition.Tag{selectedIndex:D3}"];
@@ -33,9 +34,9 @@ public class TagSystemRegistrySafetyTests
     [Test]
     public void RegistryHash_AndIdsIgnoreRegistrationOrder()
     {
-        GameplayTagRegistry Build(bool reverse)
+        TagRegistry Build(bool reverse)
         {
-            var builder = new GameplayTagRegistryBuilder();
+            var builder = new TagRegistryBuilder();
             string[] domains = reverse ? ["Effects", "Conditions"] : ["Conditions", "Effects"];
             foreach (var domain in domains)
             {
@@ -90,7 +91,7 @@ public class TagSystemRegistrySafetyTests
             Assert.That(foreign.RegistryHash, Is.EqualTo(local.RegistryHash));
         }
 
-        Assert.Throws<GameplayTagException>(() => set.Matches(query));
+        Assert.Throws<TagException>(() => set.Matches(query));
         Assert.That(set.TryMatches(query, out var matches), Is.False);
         Assert.That(matches, Is.False);
         var localQueryId = local.GetQueryId("query.test");
@@ -133,9 +134,9 @@ public class TagSystemRegistrySafetyTests
         Assert.That(items, Is.EqualTo(original));
     }
 
-    private static GameplayTagRegistryBuilder CreateBuilder(int tagCount)
+    private static TagRegistryBuilder CreateBuilder(int tagCount)
     {
-        var builder = new GameplayTagRegistryBuilder()
+        var builder = new TagRegistryBuilder()
             .RegisterDomain("Conditions", "Condition", "Test conditions.");
         for (var i = 0; i < tagCount; i++)
         {

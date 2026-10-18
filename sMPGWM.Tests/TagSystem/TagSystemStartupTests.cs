@@ -1,4 +1,6 @@
 using sMPGWM.Scripts.TagSystem;
+using sMPGWM.Scripts.TagSystem.Exceptions;
+using sMPGWM.Scripts.TagSystem.Ids;
 
 namespace sMPGWM.Tests.TagSystem;
 
@@ -43,7 +45,7 @@ public class TagSystemStartupTests
         Assert.That(
             registry.GetDomainIdByRootPrefix("Condition"),
             Is.EqualTo(registry.GetDomainId(TagSystemFixtureFactory.EntityCondition)));
-        Assert.Throws<GameplayTagException>(() => registry.GetDomainIdByRootPrefix("Unknown"));
+        Assert.Throws<TagException>(() => registry.GetDomainIdByRootPrefix("Unknown"));
     }
 
     [Test]
@@ -61,7 +63,7 @@ public class TagSystemStartupTests
         var builder = TagSystemFixtureFactory.CreateDomainOnlyBuilder()
             .RegisterDomain(TagSystemFixtureFactory.EntityCondition, "Condition2", "Duplicate key.");
 
-        var exception = Assert.Throws<GameplayTagValidationException>(() => builder.CompileAndFreeze());
+        var exception = Assert.Throws<TagValidationException>(() => builder.CompileAndFreeze());
 
         Assert.That(exception!.Message, Does.Contain("Gameplay tag validation failed"));
         Assert.That(exception.Message, Does.Contain("DuplicateDomainKey"));
@@ -102,7 +104,7 @@ public class TagSystemStartupTests
         var builder = TagSystemFixtureFactory.CreateDomainOnlyBuilder()
             .RegisterTag(TagSystemFixtureFactory.EffectClassification, "Effect.Damage.Poison.Dot");
 
-        var exception = Assert.Throws<GameplayTagValidationException>(() => builder.CompileAndFreeze());
+        var exception = Assert.Throws<TagValidationException>(() => builder.CompileAndFreeze());
 
         Assert.That(exception!.Diagnostics.Select(d => d.Code), Does.Contain("MissingParentTag"));
         Assert.That(exception.Diagnostics.Select(d => d.InvalidValue), Does.Contain("Effect.Damage"));
@@ -179,7 +181,7 @@ public class TagSystemStartupTests
         var builder = TagSystemFixtureFactory.CreateSmallGameplayBuilder();
         builder.CompileAndFreeze();
 
-        Assert.Throws<GameplayTagException>(() =>
+        Assert.Throws<TagException>(() =>
             builder.RegisterTag(TagSystemFixtureFactory.EntityCondition, "Condition.New"));
     }
 
@@ -228,14 +230,14 @@ public class TagSystemStartupTests
         var effectLeaf = registry.GetTag(TagSystemFixtureFactory.Tag(registry, "Effect.Damage.Poison.Dot"));
 
         Assert.That(effectRoot.IsRoot, Is.True);
-        Assert.That(effectRoot.ParentId, Is.EqualTo(GameplayTagId.Invalid));
+        Assert.That(effectRoot.ParentId, Is.EqualTo(TagId.Invalid));
         Assert.That(effectParent.IsRoot, Is.False);
         Assert.That(effectLeaf.IsRoot, Is.False);
     }
 
-    private static void AssertValidationCode(GameplayTagRegistryBuilder builder, string expectedCode)
+    private static void AssertValidationCode(TagRegistryBuilder builder, string expectedCode)
     {
-        var exception = Assert.Throws<GameplayTagValidationException>(() => builder.CompileAndFreeze());
+        var exception = Assert.Throws<TagValidationException>(() => builder.CompileAndFreeze());
         Assert.That(exception!.Diagnostics.Select(d => d.Code), Does.Contain(expectedCode));
     }
 }

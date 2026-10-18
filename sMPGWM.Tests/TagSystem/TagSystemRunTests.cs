@@ -1,4 +1,6 @@
 using sMPGWM.Scripts.TagSystem;
+using sMPGWM.Scripts.TagSystem.Exceptions;
+using sMPGWM.Scripts.TagSystem.Ids;
 
 namespace sMPGWM.Tests.TagSystem;
 
@@ -80,7 +82,7 @@ public class TagSystemRunTests
         var set = registry.CreateTagSet(TagSystemFixtureFactory.EffectClassification);
         var damage = TagSystemFixtureFactory.Tag(registry, "Effect.Damage");
 
-        Assert.Throws<GameplayTagException>(() => set.Add(damage));
+        Assert.Throws<TagException>(() => set.Add(damage));
         Assert.That(set.TryAdd(damage), Is.False);
     }
 
@@ -91,7 +93,7 @@ public class TagSystemRunTests
         var set = registry.CreateTagSet(TagSystemFixtureFactory.EffectClassification);
         var root = TagSystemFixtureFactory.Tag(registry, "Effect");
 
-        Assert.Throws<GameplayTagException>(() => set.Add(root));
+        Assert.Throws<TagException>(() => set.Add(root));
         Assert.That(set.TryAdd(root), Is.False);
     }
 
@@ -159,8 +161,8 @@ public class TagSystemRunTests
         var conditionSet = registry.CreateTagSet(TagSystemFixtureFactory.EntityCondition);
         var poisonEffect = TagSystemFixtureFactory.Tag(registry, "Effect.Damage.Poison.Dot");
 
-        Assert.Throws<GameplayTagException>(() => conditionSet.Add(poisonEffect));
-        Assert.Throws<GameplayTagException>(() => conditionSet.HasExpanded(poisonEffect));
+        Assert.Throws<TagException>(() => conditionSet.Add(poisonEffect));
+        Assert.Throws<TagException>(() => conditionSet.HasExpanded(poisonEffect));
         Assert.That(conditionSet.TryAdd(poisonEffect), Is.False);
         Assert.That(conditionSet.TryHasExpanded(poisonEffect, out var hasTag), Is.False);
         Assert.That(hasTag, Is.False);
@@ -275,7 +277,7 @@ public class TagSystemRunTests
                 TagSystemFixtureFactory.EffectClassification,
                 none: ["Effect.Immunity.Poison"]);
 
-        var exception = Assert.Throws<GameplayTagValidationException>(() => builder.CompileAndFreeze());
+        var exception = Assert.Throws<TagValidationException>(() => builder.CompileAndFreeze());
         Assert.That(exception!.Diagnostics.Select(d => d.Code), Does.Contain("EmptyQueryRequiresMatchAll"));
     }
 
@@ -286,7 +288,7 @@ public class TagSystemRunTests
         var conditionSet = registry.CreateTagSet(TagSystemFixtureFactory.EntityCondition);
         var effectQuery = registry.GetQuery(TagSystemFixtureFactory.Query(registry, "query.effect.is_damage"));
 
-        Assert.Throws<GameplayTagException>(() => conditionSet.Matches(effectQuery));
+        Assert.Throws<TagException>(() => conditionSet.Matches(effectQuery));
         Assert.That(conditionSet.TryMatches(effectQuery, out var matches), Is.False);
         Assert.That(matches, Is.False);
     }
@@ -310,7 +312,7 @@ public class TagSystemRunTests
         var set = registry.CreateTagSet(TagSystemFixtureFactory.EffectClassification);
 
         Assert.That(TagQueryId.Invalid.IsValid, Is.False);
-        Assert.Throws<GameplayTagException>(() => set.Matches(TagQueryId.Invalid));
+        Assert.Throws<TagException>(() => set.Matches(TagQueryId.Invalid));
         Assert.That(set.TryMatches(TagQueryId.Invalid, out var matches), Is.False);
         Assert.That(matches, Is.False);
         Assert.That(registry.TryGetQuery(TagQueryId.Invalid, out _), Is.False);

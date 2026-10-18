@@ -210,7 +210,7 @@ GameplayTagTypes:
       - Blocking.BlockedByClassification
       - EffectRemovalRequest.Classifications
   Rules:
-    - Canonical values must begin with the domain root prefix and must resolve through the frozen GameplayTagRegistry.
+    - Canonical values must begin with the domain root prefix and must resolve through the frozen TagRegistry.
     - DirectAssignmentFields require assignable tags. Canonical gameplay data uses leaf tags for direct assignments.
     - SelectorFields may reference any queryable tag in the declared domain, including parent/category tags.
     - SelectorFields match expanded tag masks by default, so a selector for Effect.Damage.Poison matches a direct Effect.Damage.Poison.Dot classification.

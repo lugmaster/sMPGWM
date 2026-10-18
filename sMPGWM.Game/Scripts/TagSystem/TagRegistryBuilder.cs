@@ -2,10 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using sMPGWM.Scripts.TagSystem.Definitions;
+using sMPGWM.Scripts.TagSystem.Exceptions;
+using sMPGWM.Scripts.TagSystem.Ids;
+using sMPGWM.Scripts.TagSystem.Internal;
+using sMPGWM.Scripts.TagSystem.Queries;
 
 namespace sMPGWM.Scripts.TagSystem;
 
-public sealed class GameplayTagRegistryBuilder
+/// <summary>
+/// Collects tag registrations and freezes after a successful deterministic compilation.
+/// </summary>
+public sealed class TagRegistryBuilder
 {
     private readonly List<DomainRegistration> _domains = [];
     private readonly List<TagRegistration> _tags = [];
@@ -13,28 +21,63 @@ public sealed class GameplayTagRegistryBuilder
     private readonly List<QueryRegistration> _queries = [];
     private bool _isFrozen;
 
-    public GameplayTagRegistryBuilder RegisterDomain(string domainKey, string rootPrefix, string description)
+    /// <summary>
+    /// Registers a domain for validation during compilation.
+    /// </summary>
+    /// <param name="domainKey">The registered domain key.</param>
+    /// <param name="rootPrefix">The canonical root prefix for the domain.</param>
+    /// <param name="description">The human-readable domain description.</param>
+    /// <returns>This builder for chained registration.</returns>
+    /// <exception cref="TagException">The builder has already compiled successfully.</exception>
+    public TagRegistryBuilder RegisterDomain(string domainKey, string rootPrefix, string description)
     {
         EnsureMutable();
         _domains.Add(new DomainRegistration(domainKey, rootPrefix, description, _domains.Count));
         return this;
     }
 
-    public GameplayTagRegistryBuilder RegisterTag(string domainKey, string canonicalName, bool? isAssignable = null)
+    /// <summary>
+    /// Registers a fully qualified canonical tag with an optional assignment override.
+    /// </summary>
+    /// <param name="domainKey">The registered domain key.</param>
+    /// <param name="canonicalName">The fully qualified canonical tag name.</param>
+    /// <param name="isAssignable">Whether assignment is allowed; null uses the leaf-tag default.</param>
+    /// <returns>This builder for chained registration.</returns>
+    /// <exception cref="TagException">The builder has already compiled successfully.</exception>
+    public TagRegistryBuilder RegisterTag(string domainKey, string canonicalName, bool? isAssignable = null)
     {
         EnsureMutable();
         _tags.Add(new TagRegistration(domainKey, canonicalName, isAssignable, _tags.Count));
         return this;
     }
 
-    public GameplayTagRegistryBuilder RegisterAlias(string aliasName, string canonicalTargetName)
+    /// <summary>
+    /// Registers an alias that resolves to a canonical tag in the same domain.
+    /// </summary>
+    /// <param name="aliasName">The fully qualified alias name.</param>
+    /// <param name="canonicalTargetName">The canonical tag targeted by the alias.</param>
+    /// <returns>This builder for chained registration.</returns>
+    /// <exception cref="TagException">The builder has already compiled successfully.</exception>
+    public TagRegistryBuilder RegisterAlias(string aliasName, string canonicalTargetName)
     {
         EnsureMutable();
         _aliases.Add(new AliasRegistration(aliasName, canonicalTargetName, _aliases.Count));
         return this;
     }
 
-    public GameplayTagRegistryBuilder RegisterQuery(
+    /// <summary>
+    /// Copies and registers query selectors for compilation.
+    /// </summary>
+    /// <param name="queryKey">The unique query key.</param>
+    /// <param name="domainKey">The registered domain key.</param>
+    /// <param name="all">Tags that must all match.</param>
+    /// <param name="any">Tags of which at least one must match.</param>
+    /// <param name="none">Tags that must not match.</param>
+    /// <param name="matchMode">Whether to examine direct or expanded membership.</param>
+    /// <param name="matchAll">Whether to allow a query without All or Any selectors.</param>
+    /// <returns>This builder for chained registration.</returns>
+    /// <exception cref="TagException">The builder has already compiled successfully.</exception>
+    public TagRegistryBuilder RegisterQuery(
         string queryKey,
         string domainKey,
         IEnumerable<string>? all = null,
@@ -55,14 +98,20 @@ public sealed class GameplayTagRegistryBuilder
         return this;
     }
 
-    public GameplayTagRegistry CompileAndFreeze()
+    /// <summary>
+    /// Validates registrations, compiles deterministic identifiers and masks, and freezes this builder on success.
+    /// </summary>
+    /// <returns>The immutable compiled registry.</returns>
+    /// <exception cref="TagException">The builder has already compiled successfully.</exception>
+    /// <exception cref="TagValidationException">The registrations fail validation or exceed supported capacities.</exception>
+    public TagRegistry CompileAndFreeze()
     {
         EnsureMutable();
 
-        var diagnostics = new List<GameplayTagValidationDiagnostic>();
+        var diagnostics = new List<TagValidationDiagnostic>();
         if (_domains.Count == 0)
         {
-            diagnostics.Add(new GameplayTagValidationDiagnostic(
+            diagnostics.Add(new TagValidationDiagnostic(
                 "NoDomainsRegistered",
                 "Domains",
                 "At least one gameplay tag domain must be registered."));
@@ -79,17 +128,17 @@ public sealed class GameplayTagRegistryBuilder
 
         if (diagnostics.Count > 0)
         {
-            throw new GameplayTagValidationException(diagnostics);
+            throw new TagValidationException(diagnostics);
         }
 
         var orderedDomains = new List<DomainRegistration>(domainByKey.Values);
         orderedDomains.Sort((left, right) => string.CompareOrdinal(left.DomainKey, right.DomainKey));
 
-        var domainIdsByKey = new Dictionary<string, GameplayTagDomainId>(StringComparer.Ordinal);
-        var domainIdsByRoot = new Dictionary<string, GameplayTagDomainId>(StringComparer.Ordinal);
+        var domainIdsByKey = new Dictionary<string, TagDomainId>(StringComparer.Ordinal);
+        var domainIdsByRoot = new Dictionary<string, TagDomainId>(StringComparer.Ordinal);
         for (var i = 0; i < orderedDomains.Count; i++)
         {
-            var domainId = new GameplayTagDomainId(checked((ushort)(i + 1)));
+            var domainId = new TagDomainId(checked((ushort)(i + 1)));
             domainIdsByKey.Add(orderedDomains[i].DomainKey, domainId);
             domainIdsByRoot.Add(orderedDomains[i].RootPrefix, domainId);
         }
@@ -99,8 +148,8 @@ public sealed class GameplayTagRegistryBuilder
 
         if (orderedTagInputs.Count > ushort.MaxValue)
         {
-            throw new GameplayTagValidationException([
-                new GameplayTagValidationDiagnostic(
+            throw new TagValidationException([
+                new TagValidationDiagnostic(
                     "TooManyTags",
                     "Tags",
                     "A compiled gameplay tag registry cannot exceed 65,535 tags.",
@@ -109,10 +158,10 @@ public sealed class GameplayTagRegistryBuilder
         }
 
         var childrenByParent = CountChildren(orderedTagInputs);
-        var tagIdsByName = new Dictionary<string, GameplayTagId>(StringComparer.Ordinal);
+        var tagIdsByName = new Dictionary<string, TagId>(StringComparer.Ordinal);
         for (var i = 0; i < orderedTagInputs.Count; i++)
         {
-            tagIdsByName.Add(orderedTagInputs[i].CanonicalName, new GameplayTagId(checked((ushort)(i + 1))));
+            tagIdsByName.Add(orderedTagInputs[i].CanonicalName, new TagId(checked((ushort)(i + 1))));
         }
 
         var definitionsByName = BuildTagDefinitions(
@@ -131,7 +180,7 @@ public sealed class GameplayTagRegistryBuilder
         var registryHash = ComputeRegistryHash(domainsByIndex, tagsByIndex, aliasByName, queriesByIndex);
 
         _isFrozen = true;
-        return new GameplayTagRegistry(
+        return new TagRegistry(
             domainsByIndex,
             tagsByIndex,
             tagsByDomainLocalIndex,
@@ -144,7 +193,10 @@ public sealed class GameplayTagRegistryBuilder
             registryHash);
     }
 
-    private Dictionary<string, DomainRegistration> BuildDomainLookup(List<GameplayTagValidationDiagnostic> diagnostics)
+    /// <summary>
+    /// Builds a domain-key lookup and records invalid or duplicate domain registrations.
+    /// </summary>
+    private Dictionary<string, DomainRegistration> BuildDomainLookup(List<TagValidationDiagnostic> diagnostics)
     {
         var result = new Dictionary<string, DomainRegistration>(StringComparer.Ordinal);
         for (var i = 0; i < _domains.Count; i++)
@@ -154,7 +206,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!IsValidIdentifierSegment(domain.DomainKey))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "InvalidDomainKey",
                     $"{path}.DomainKey",
                     "DomainKey must be a non-empty identifier segment.",
@@ -164,7 +216,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!IsValidIdentifierSegment(domain.RootPrefix))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "InvalidRootPrefix",
                     $"{path}.RootPrefix",
                     "RootPrefix must be a non-empty identifier segment.",
@@ -174,7 +226,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!result.TryAdd(domain.DomainKey, domain))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "DuplicateDomainKey",
                     $"{path}.DomainKey",
                     "DomainKey values must be unique.",
@@ -185,16 +237,19 @@ public sealed class GameplayTagRegistryBuilder
         return result;
     }
 
+    /// <summary>
+    /// Builds a root-prefix lookup and records duplicate root prefixes.
+    /// </summary>
     private static Dictionary<string, DomainRegistration> BuildRootLookup(
         IEnumerable<DomainRegistration> domains,
-        List<GameplayTagValidationDiagnostic> diagnostics)
+        List<TagValidationDiagnostic> diagnostics)
     {
         var result = new Dictionary<string, DomainRegistration>(StringComparer.Ordinal);
         foreach (var domain in domains)
         {
             if (!result.TryAdd(domain.RootPrefix, domain))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "DuplicateRootPrefix",
                     $"Domains[{domain.Sequence}].RootPrefix",
                     "RootPrefix values must be globally unique.",
@@ -205,9 +260,12 @@ public sealed class GameplayTagRegistryBuilder
         return result;
     }
 
+    /// <summary>
+    /// Builds an alias lookup and records malformed names or duplicate aliases.
+    /// </summary>
     private Dictionary<string, AliasRegistration> BuildAliasLookup(
         Dictionary<string, DomainRegistration> domainByRoot,
-        List<GameplayTagValidationDiagnostic> diagnostics)
+        List<TagValidationDiagnostic> diagnostics)
     {
         var result = new Dictionary<string, AliasRegistration>(StringComparer.Ordinal);
         for (var i = 0; i < _aliases.Count; i++)
@@ -220,7 +278,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!result.TryAdd(alias.AliasName, alias))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "DuplicateAlias",
                     $"{path}.AliasName",
                     "Alias names must be unique.",
@@ -231,10 +289,13 @@ public sealed class GameplayTagRegistryBuilder
         return result;
     }
 
+    /// <summary>
+    /// Creates domain roots and collects validated canonical tag inputs.
+    /// </summary>
     private Dictionary<string, TagCompileInput> BuildTagInputs(
         Dictionary<string, DomainRegistration> domainByKey,
         Dictionary<string, DomainRegistration> domainByRoot,
-        List<GameplayTagValidationDiagnostic> diagnostics)
+        List<TagValidationDiagnostic> diagnostics)
     {
         var result = new Dictionary<string, TagCompileInput>(StringComparer.Ordinal);
 
@@ -249,7 +310,7 @@ public sealed class GameplayTagRegistryBuilder
             var path = $"Tags[{i}]";
             if (!domainByKey.TryGetValue(tag.DomainKey, out var domain))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "UnknownDomain",
                     $"{path}.DomainKey",
                     "Tag references an unknown domain.",
@@ -271,7 +332,7 @@ public sealed class GameplayTagRegistryBuilder
             {
                 if (tag.IsAssignable == true)
                 {
-                    diagnostics.Add(new GameplayTagValidationDiagnostic(
+                    diagnostics.Add(new TagValidationDiagnostic(
                         "DomainRootCannotBeAssignable",
                         $"{path}.IsAssignable",
                         "Domain root tags are not assignable.",
@@ -287,7 +348,7 @@ public sealed class GameplayTagRegistryBuilder
                     tag.IsAssignable,
                     false)))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "DuplicateCanonicalName",
                     $"{path}.CanonicalName",
                     "Canonical gameplay tag names must be unique.",
@@ -298,18 +359,21 @@ public sealed class GameplayTagRegistryBuilder
         return result;
     }
 
+    /// <summary>
+    /// Records aliases with chained, missing, or cross-domain targets.
+    /// </summary>
     private void ValidateAliases(
         Dictionary<string, AliasRegistration> aliasByName,
         Dictionary<string, TagCompileInput> tagInputs,
         Dictionary<string, DomainRegistration> domainByRoot,
-        List<GameplayTagValidationDiagnostic> diagnostics)
+        List<TagValidationDiagnostic> diagnostics)
     {
         foreach (var alias in aliasByName.Values)
         {
             var path = $"Aliases[{alias.Sequence}]";
             if (aliasByName.ContainsKey(alias.CanonicalTargetName))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "AliasChainOrCycle",
                     $"{path}.CanonicalTargetName",
                     "Alias targets must be canonical tag names, not another alias.",
@@ -319,7 +383,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!tagInputs.ContainsKey(alias.CanonicalTargetName))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "UnknownAliasTarget",
                     $"{path}.CanonicalTargetName",
                     "Alias target must be a declared canonical tag.",
@@ -338,7 +402,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (aliasDomain.DomainKey != targetDomain.DomainKey)
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "CrossDomainAlias",
                     $"{path}.CanonicalTargetName",
                     "Alias target must stay within the alias domain.",
@@ -347,9 +411,12 @@ public sealed class GameplayTagRegistryBuilder
         }
     }
 
+    /// <summary>
+    /// Records missing ancestors required by the strict canonical tag hierarchy.
+    /// </summary>
     private static void ValidateTagParents(
         Dictionary<string, TagCompileInput> tagInputs,
-        List<GameplayTagValidationDiagnostic> diagnostics)
+        List<TagValidationDiagnostic> diagnostics)
     {
         foreach (var tag in tagInputs.Values)
         {
@@ -363,7 +430,7 @@ public sealed class GameplayTagRegistryBuilder
             {
                 if (!tagInputs.ContainsKey(parent))
                 {
-                    diagnostics.Add(new GameplayTagValidationDiagnostic(
+                    diagnostics.Add(new TagValidationDiagnostic(
                         "MissingParentTag",
                         $"Tags.{tag.CanonicalName}",
                         "Strict dot-path hierarchy requires every parent tag to be explicitly declared.",
@@ -375,12 +442,15 @@ public sealed class GameplayTagRegistryBuilder
         }
     }
 
+    /// <summary>
+    /// Records invalid query keys, domains, selectors, and missing match-all opt-ins.
+    /// </summary>
     private void ValidateQueryRegistrations(
         Dictionary<string, DomainRegistration> domainByKey,
         Dictionary<string, DomainRegistration> domainByRoot,
         Dictionary<string, AliasRegistration> aliasByName,
         Dictionary<string, TagCompileInput> tagInputs,
-        List<GameplayTagValidationDiagnostic> diagnostics)
+        List<TagValidationDiagnostic> diagnostics)
     {
         var queryKeys = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < _queries.Count; i++)
@@ -390,7 +460,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!IsValidQueryKey(query.QueryKey))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "InvalidQueryKey",
                     $"{path}.QueryKey",
                     "QueryKey must be non-empty and may not contain whitespace.",
@@ -399,7 +469,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!queryKeys.Add(query.QueryKey))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "DuplicateQueryKey",
                     $"{path}.QueryKey",
                     "QueryKey values must be unique.",
@@ -408,7 +478,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!domainByKey.TryGetValue(query.DomainKey, out var domain))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "UnknownDomain",
                     $"{path}.DomainKey",
                     "Query references an unknown domain.",
@@ -424,7 +494,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (allCount == 0 && anyCount == 0 && !query.MatchAll)
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "EmptyQueryRequiresMatchAll",
                     path,
                     "A query with no All and no Any tags must set MatchAll to true.",
@@ -433,6 +503,9 @@ public sealed class GameplayTagRegistryBuilder
         }
     }
 
+    /// <summary>
+    /// Validates query selector names after resolving aliases and counts valid references.
+    /// </summary>
     private static int ValidateQueryTags(
         IReadOnlyList<string> tagNames,
         string fieldPath,
@@ -440,7 +513,7 @@ public sealed class GameplayTagRegistryBuilder
         Dictionary<string, DomainRegistration> domainByRoot,
         Dictionary<string, AliasRegistration> aliasByName,
         Dictionary<string, TagCompileInput> tagInputs,
-        List<GameplayTagValidationDiagnostic> diagnostics)
+        List<TagValidationDiagnostic> diagnostics)
     {
         var validCount = 0;
         for (var i = 0; i < tagNames.Count; i++)
@@ -459,7 +532,7 @@ public sealed class GameplayTagRegistryBuilder
 
             if (!tagInputs.ContainsKey(resolvedName))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "UnknownTag",
                     $"{fieldPath}[{i}]",
                     "Query references an unknown tag.",
@@ -473,6 +546,9 @@ public sealed class GameplayTagRegistryBuilder
         return validCount;
     }
 
+    /// <summary>
+    /// Counts immediate children of each canonical parent tag.
+    /// </summary>
     private static Dictionary<string, int> CountChildren(List<TagCompileInput> orderedTagInputs)
     {
         var result = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -491,16 +567,19 @@ public sealed class GameplayTagRegistryBuilder
         return result;
     }
 
-    private static Dictionary<string, GameplayTagDefinition> BuildTagDefinitions(
+    /// <summary>
+    /// Builds immutable tag definitions with deterministic registry IDs and domain-local indexes.
+    /// </summary>
+    private static Dictionary<string, TagDefinition> BuildTagDefinitions(
         List<TagCompileInput> orderedTagInputs,
         Dictionary<string, int> childrenByParent,
-        Dictionary<string, GameplayTagDomainId> domainIdsByKey,
-        Dictionary<string, GameplayTagId> tagIdsByName,
-        out GameplayTagDefinition[] tagsByIndex,
-        out GameplayTagDefinition[][] tagsByDomainLocalIndex)
+        Dictionary<string, TagDomainId> domainIdsByKey,
+        Dictionary<string, TagId> tagIdsByName,
+        out TagDefinition[] tagsByIndex,
+        out TagDefinition[][] tagsByDomainLocalIndex)
     {
-        var definitionsByName = new Dictionary<string, GameplayTagDefinition>(StringComparer.Ordinal);
-        var domainGroups = new Dictionary<GameplayTagDomainId, List<TagCompileInput>>();
+        var definitionsByName = new Dictionary<string, TagDefinition>(StringComparer.Ordinal);
+        var domainGroups = new Dictionary<TagDomainId, List<TagCompileInput>>();
 
         for (var i = 0; i < orderedTagInputs.Count; i++)
         {
@@ -528,18 +607,18 @@ public sealed class GameplayTagRegistryBuilder
             }
         }
 
-        tagsByIndex = new GameplayTagDefinition[orderedTagInputs.Count];
+        tagsByIndex = new TagDefinition[orderedTagInputs.Count];
         for (var i = 0; i < orderedTagInputs.Count; i++)
         {
             var tagInput = orderedTagInputs[i];
             var id = tagIdsByName[tagInput.CanonicalName];
             var domainId = domainIdsByKey[tagInput.DomainKey];
             var parentName = GetParentName(tagInput.CanonicalName);
-            var parentId = parentName is null ? GameplayTagId.Invalid : tagIdsByName[parentName];
+            var parentId = parentName is null ? TagId.Invalid : tagIdsByName[parentName];
             var hasChildren = childrenByParent.ContainsKey(tagInput.CanonicalName);
             var isAssignable = tagInput.IsAssignable ?? (!tagInput.IsRoot && !hasChildren);
 
-            var definition = new GameplayTagDefinition(
+            var definition = new TagDefinition(
                 id,
                 domainId,
                 tagInput.CanonicalName,
@@ -552,10 +631,10 @@ public sealed class GameplayTagRegistryBuilder
             definitionsByName.Add(tagInput.CanonicalName, definition);
         }
 
-        tagsByDomainLocalIndex = new GameplayTagDefinition[domainGroups.Count][];
+        tagsByDomainLocalIndex = new TagDefinition[domainGroups.Count][];
         foreach (var (domainId, group) in domainGroups)
         {
-            var domainTags = new GameplayTagDefinition[group.Count];
+            var domainTags = new TagDefinition[group.Count];
             for (var i = 0; i < group.Count; i++)
             {
                 domainTags[i] = definitionsByName[group[i].CanonicalName];
@@ -567,12 +646,15 @@ public sealed class GameplayTagRegistryBuilder
         return definitionsByName;
     }
 
-    private static GameplayTagDomain[] BuildDomains(
+    /// <summary>
+    /// Builds domain metadata and calculates domain-local mask capacities.
+    /// </summary>
+    private static TagDomain[] BuildDomains(
         List<DomainRegistration> orderedDomains,
-        GameplayTagDefinition[][] tagsByDomainLocalIndex,
-        Dictionary<string, GameplayTagDomainId> domainIdsByKey)
+        TagDefinition[][] tagsByDomainLocalIndex,
+        Dictionary<string, TagDomainId> domainIdsByKey)
     {
-        var domainsByIndex = new GameplayTagDomain[orderedDomains.Count];
+        var domainsByIndex = new TagDomain[orderedDomains.Count];
         for (var i = 0; i < orderedDomains.Count; i++)
         {
             var registration = orderedDomains[i];
@@ -588,7 +670,7 @@ public sealed class GameplayTagRegistryBuilder
             }
 
             var wordCount = Math.Max(1, (tags.Length + 63) / 64);
-            domainsByIndex[domainId.Value - 1] = new GameplayTagDomain(
+            domainsByIndex[domainId.Value - 1] = new TagDomain(
                 domainId,
                 registration.DomainKey,
                 registration.RootPrefix,
@@ -601,10 +683,13 @@ public sealed class GameplayTagRegistryBuilder
         return domainsByIndex;
     }
 
+    /// <summary>
+    /// Builds each tag's mask containing itself and all canonical ancestors.
+    /// </summary>
     private static ulong[][] BuildExpansionMasks(
-        GameplayTagDefinition[] tagsByIndex,
-        Dictionary<string, GameplayTagDefinition> definitionsByName,
-        GameplayTagDomain[] domainsByIndex)
+        TagDefinition[] tagsByIndex,
+        Dictionary<string, TagDefinition> definitionsByName,
+        TagDomain[] domainsByIndex)
     {
         var expansionMasks = new ulong[tagsByIndex.Length][];
         for (var i = 0; i < tagsByIndex.Length; i++)
@@ -626,14 +711,17 @@ public sealed class GameplayTagRegistryBuilder
         return expansionMasks;
     }
 
+    /// <summary>
+    /// Compiles query selectors into domain-local masks in deterministic query-key order.
+    /// </summary>
     private CompiledTagQuery[] BuildQueries(
-        Dictionary<string, GameplayTagDomainId> domainIdsByKey,
+        Dictionary<string, TagDomainId> domainIdsByKey,
         Dictionary<string, DomainRegistration> domainByKey,
         Dictionary<string, DomainRegistration> domainByRoot,
         Dictionary<string, AliasRegistration> aliasByName,
-        Dictionary<string, GameplayTagId> tagIdsByName,
-        Dictionary<string, GameplayTagDefinition> definitionsByName,
-        GameplayTagDomain[] domainsByIndex)
+        Dictionary<string, TagId> tagIdsByName,
+        Dictionary<string, TagDefinition> definitionsByName,
+        TagDomain[] domainsByIndex)
     {
         var orderedQueries = new List<QueryRegistration>(_queries);
         orderedQueries.Sort((left, right) => string.CompareOrdinal(left.QueryKey, right.QueryKey));
@@ -673,13 +761,16 @@ public sealed class GameplayTagRegistryBuilder
         return result;
     }
 
+    /// <summary>
+    /// Sets selector bits after resolving aliases and counts valid references.
+    /// </summary>
     private static int CompileQueryMask(
         IReadOnlyList<string> tagNames,
         DomainRegistration queryDomain,
         Dictionary<string, DomainRegistration> domainByRoot,
         Dictionary<string, AliasRegistration> aliasByName,
-        Dictionary<string, GameplayTagId> tagIdsByName,
-        Dictionary<string, GameplayTagDefinition> definitionsByName,
+        Dictionary<string, TagId> tagIdsByName,
+        Dictionary<string, TagDefinition> definitionsByName,
         ulong[] mask)
     {
         var count = 0;
@@ -700,6 +791,9 @@ public sealed class GameplayTagRegistryBuilder
         return count;
     }
 
+    /// <summary>
+    /// Maps compiled query keys to their registry-relative identifiers.
+    /// </summary>
     private static Dictionary<string, TagQueryId> BuildQueryIdLookup(CompiledTagQuery[] queriesByIndex)
     {
         var result = new Dictionary<string, TagQueryId>(StringComparer.Ordinal);
@@ -711,9 +805,12 @@ public sealed class GameplayTagRegistryBuilder
         return result;
     }
 
+    /// <summary>
+    /// Hashes deterministic domain, tag, alias, and query data using the established format.
+    /// </summary>
     private static ulong ComputeRegistryHash(
-        GameplayTagDomain[] domainsByIndex,
-        GameplayTagDefinition[] tagsByIndex,
+        TagDomain[] domainsByIndex,
+        TagDefinition[] tagsByIndex,
         Dictionary<string, AliasRegistration> aliasByName,
         CompiledTagQuery[] queriesByIndex)
     {
@@ -777,6 +874,9 @@ public sealed class GameplayTagRegistryBuilder
         return ComputeFnv1A64(builder.ToString());
     }
 
+    /// <summary>
+    /// Appends a labeled query mask with invariant word values and an LF terminator.
+    /// </summary>
     private static void AppendQueryMask(StringBuilder builder, string label, ulong[] mask)
     {
         builder.Append(label).Append('|').Append(mask.Length.ToString(CultureInfo.InvariantCulture));
@@ -788,6 +888,9 @@ public sealed class GameplayTagRegistryBuilder
         builder.Append('\n');
     }
 
+    /// <summary>
+    /// Computes the established 64-bit FNV-1a hash over both bytes of each UTF-16 character.
+    /// </summary>
     private static ulong ComputeFnv1A64(string value)
     {
         const ulong offset = 14695981039346656037UL;
@@ -806,24 +909,33 @@ public sealed class GameplayTagRegistryBuilder
         return hash;
     }
 
+    /// <summary>
+    /// Copies selector values so later caller mutations cannot change registrations.
+    /// </summary>
     private static List<string> CopyList(IEnumerable<string>? values)
     {
         return values is null ? [] : new List<string>(values);
     }
 
+    /// <summary>
+    /// Throws if this builder has already compiled successfully.
+    /// </summary>
     private void EnsureMutable()
     {
         if (_isFrozen)
         {
-            throw new GameplayTagException("GameplayTagRegistryBuilder is frozen after successful compilation.");
+            throw new TagException("TagRegistryBuilder is frozen after successful compilation.");
         }
     }
 
+    /// <summary>
+    /// Validates a fully qualified tag name and records shape or domain errors.
+    /// </summary>
     private static bool TryValidateCanonicalNameForDomain(
         string candidate,
         DomainRegistration domain,
         Dictionary<string, DomainRegistration> domainByRoot,
-        List<GameplayTagValidationDiagnostic> diagnostics,
+        List<TagValidationDiagnostic> diagnostics,
         string fieldPath)
     {
         if (!ValidateFullNameShape(candidate, fieldPath, domainByRoot, diagnostics))
@@ -838,7 +950,7 @@ public sealed class GameplayTagRegistryBuilder
                 ? "ShortNamesDisabled"
                 : "DomainMismatch";
 
-            diagnostics.Add(new GameplayTagValidationDiagnostic(
+            diagnostics.Add(new TagValidationDiagnostic(
                 code,
                 fieldPath,
                 "Gameplay tag references must be fully qualified and belong to the field domain.",
@@ -849,15 +961,18 @@ public sealed class GameplayTagRegistryBuilder
         return true;
     }
 
+    /// <summary>
+    /// Validates canonical dot-path segments and the registered root prefix.
+    /// </summary>
     private static bool ValidateFullNameShape(
         string candidate,
         string fieldPath,
         Dictionary<string, DomainRegistration> domainByRoot,
-        List<GameplayTagValidationDiagnostic> diagnostics)
+        List<TagValidationDiagnostic> diagnostics)
     {
         if (string.IsNullOrWhiteSpace(candidate))
         {
-            diagnostics.Add(new GameplayTagValidationDiagnostic(
+            diagnostics.Add(new TagValidationDiagnostic(
                 "InvalidTagName",
                 fieldPath,
                 "Gameplay tag names must be non-empty.",
@@ -868,7 +983,7 @@ public sealed class GameplayTagRegistryBuilder
         var segments = candidate.Split('.');
         if (segments.Length == 1)
         {
-            diagnostics.Add(new GameplayTagValidationDiagnostic(
+            diagnostics.Add(new TagValidationDiagnostic(
                 "ShortNamesDisabled",
                 fieldPath,
                 "Short gameplay tag names are disabled; use canonical fully qualified names.",
@@ -880,7 +995,7 @@ public sealed class GameplayTagRegistryBuilder
         {
             if (!IsValidIdentifierSegment(segments[i]))
             {
-                diagnostics.Add(new GameplayTagValidationDiagnostic(
+                diagnostics.Add(new TagValidationDiagnostic(
                     "InvalidTagName",
                     fieldPath,
                     "Gameplay tag names must use strict dot-path identifier segments.",
@@ -891,7 +1006,7 @@ public sealed class GameplayTagRegistryBuilder
 
         if (!domainByRoot.ContainsKey(segments[0]))
         {
-            diagnostics.Add(new GameplayTagValidationDiagnostic(
+            diagnostics.Add(new TagValidationDiagnostic(
                 "UnknownRootPrefix",
                 fieldPath,
                 "Gameplay tag root prefix is not registered.",
@@ -902,6 +1017,9 @@ public sealed class GameplayTagRegistryBuilder
         return true;
     }
 
+    /// <summary>
+    /// Determines whether a canonical name belongs to the specified registered domain.
+    /// </summary>
     private static bool IsCanonicalNameForDomain(
         string candidate,
         DomainRegistration domain,
@@ -915,6 +1033,9 @@ public sealed class GameplayTagRegistryBuilder
                 candidate.StartsWith(domain.RootPrefix + ".", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Returns an alias's canonical target, or the original name when no alias exists.
+    /// </summary>
     private static string ResolveAlias(string inputName, Dictionary<string, AliasRegistration> aliasByName)
     {
         return aliasByName.TryGetValue(inputName, out var alias)
@@ -922,6 +1043,9 @@ public sealed class GameplayTagRegistryBuilder
             : inputName;
     }
 
+    /// <summary>
+    /// Returns the first canonical name segment, or null for an empty name.
+    /// </summary>
     private static string? GetRootPrefix(string canonicalName)
     {
         if (string.IsNullOrEmpty(canonicalName))
@@ -933,12 +1057,18 @@ public sealed class GameplayTagRegistryBuilder
         return dotIndex < 0 ? canonicalName : canonicalName[..dotIndex];
     }
 
+    /// <summary>
+    /// Returns the immediate canonical parent name, or null for a root.
+    /// </summary>
     private static string? GetParentName(string canonicalName)
     {
         var dotIndex = canonicalName.LastIndexOf('.');
         return dotIndex < 0 ? null : canonicalName[..dotIndex];
     }
 
+    /// <summary>
+    /// Checks for a leading letter followed by letters, digits, or underscores.
+    /// </summary>
     private static bool IsValidIdentifierSegment(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -963,6 +1093,9 @@ public sealed class GameplayTagRegistryBuilder
         return true;
     }
 
+    /// <summary>
+    /// Checks that a query key is nonempty and contains no whitespace.
+    /// </summary>
     private static bool IsValidQueryKey(string queryKey)
     {
         if (string.IsNullOrWhiteSpace(queryKey))
@@ -981,26 +1114,12 @@ public sealed class GameplayTagRegistryBuilder
         return true;
     }
 
+    /// <summary>
+    /// Sets the bit at a domain-local tag index.
+    /// </summary>
     private static void SetBit(ulong[] mask, int domainLocalIndex)
     {
         var wordIndex = domainLocalIndex >> 6;
         mask[wordIndex] |= 1UL << (domainLocalIndex & 63);
     }
-
-    private sealed record DomainRegistration(string DomainKey, string RootPrefix, string Description, int Sequence);
-
-    private sealed record TagRegistration(string DomainKey, string CanonicalName, bool? IsAssignable, int Sequence);
-
-    private sealed record AliasRegistration(string AliasName, string CanonicalTargetName, int Sequence);
-
-    private sealed record QueryRegistration(
-        string QueryKey,
-        string DomainKey,
-        IReadOnlyList<string> All,
-        IReadOnlyList<string> Any,
-        IReadOnlyList<string> None,
-        TagQueryMatchMode MatchMode,
-        bool MatchAll);
-
-    private sealed record TagCompileInput(string DomainKey, string CanonicalName, bool? IsAssignable, bool IsRoot);
 }

@@ -6,7 +6,7 @@ This tutorial shows the basic flow:
 2. Register tags for that domain.
 3. Register a query.
 4. Compile and freeze the registry.
-5. Assign a `GameplayTagSet` to another object.
+5. Assign a `TagSet` to another object.
 6. Query that object with precompiled queries.
 
 The tag system uses canonical, fully qualified names. Short names like `Poison` or `Dead` are intentionally not supported in runtime fixtures.
@@ -18,7 +18,7 @@ A domain defines where tags are valid. For effect metadata, use an `EffectClassi
 ```csharp
 using sMPGWM.Scripts.Gameplay.Tags;
 
-var builder = new GameplayTagRegistryBuilder();
+var builder = new TagRegistryBuilder();
 
 builder.RegisterDomain(
     domainKey: "EffectClassification",
@@ -83,12 +83,12 @@ The tag system is context-free. The owner can be an effect definition, an active
 ```csharp
 public sealed class EffectMetadata
 {
-    public EffectMetadata(GameplayTagSet classifications)
+    public EffectMetadata(TagSet classifications)
     {
         Classifications = classifications;
     }
 
-    public GameplayTagSet Classifications { get; }
+    public TagSet Classifications { get; }
 }
 
 var effectClassificationDomain = registry.GetDomainId("EffectClassification");
