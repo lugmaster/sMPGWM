@@ -38,6 +38,7 @@ CleansePoison:
     StackScope: ByEffectDefinitionId
     StackPolicy: Discard
   Visibility: Hud
+  
 CorrodingPoison:
   Definition:
     EffectDefinitionId: effect.while_active.corroding_poison
@@ -79,6 +80,7 @@ CorrodingPoison:
     MaxStacks: 5
     MaxStackOverflowPolicy: ReplaceOldest
   Visibility: Hud
+
 DelayedExplosion:
   Definition:
     EffectDefinitionId: effect.delayed.explosion
@@ -104,6 +106,7 @@ DelayedExplosion:
     BlockedByCondition:
       - Condition.Invulnerable
   Visibility: Hud
+
 EMP_Lockout:
   Definition:
     EffectDefinitionId: effect.emp.energy_lockout
@@ -137,6 +140,7 @@ EMP_Lockout:
     MaxStacks: 1
     MaxStackOverflowPolicy: ReplaceOldest
   Visibility: Hud
+
 EnergyProductionSurge:
   Definition:
     EffectDefinitionId: effect.buff.energy_production_surge
@@ -162,6 +166,7 @@ EnergyProductionSurge:
     StackBehavior: RefreshDuration
     MaxStacks: 1
   Visibility: Hud
+
 EnergyStorageCurse:
   Definition:
     EffectDefinitionId: effect.curse.energy_storage_capacity
@@ -203,6 +208,7 @@ EnergyStorageCurse:
     StackScope: ByEffectDefinitionId
     StackPolicy: Discard
   Visibility: Hud
+
 Heal:
   Definition:
     EffectDefinitionId: effect.raise.heal
@@ -226,6 +232,7 @@ Heal:
     BlockedByClassification:
       - Effect.CannotBeHealed
   Visibility: Internal
+
 MaxHealthRot:
   Definition:
     EffectDefinitionId: effect.rot.max_health
@@ -267,6 +274,7 @@ MaxHealthRot:
     MaxStacks: 5
     MaxStackOverflowPolicy: ReplaceOldest
   Visibility: Hud
+
 NormalHeal:
   Definition:
     EffectDefinitionId: effect.health.heal.normal
@@ -295,6 +303,7 @@ NormalHeal:
     StackScope: ByEffectDefinitionId
     StackPolicy: Discard
   Visibility: Hud
+
 Overheating:
   Definition:
     EffectDefinitionId: effect.buff.weapon.overheating
@@ -328,6 +337,7 @@ Overheating:
   ChildEffectDefinitions:
     - ChildEffectDefinitionId: effect.buff.weapon.overheating.cooldown
       ChildEffectTrigger: OnParentExpired
+
 OverheatingCooldown:
   Definition:
     EffectDefinitionId: effect.buff.weapon.overheating.cooldown
@@ -354,6 +364,7 @@ OverheatingCooldown:
     StackScope: ByStackGroupId
     StackPolicy: Discard
   Visibility: Hud
+
 PoisonDamageOverTime:
   Definition:
     EffectDefinitionId: effect.debuff.poison.damage_over_time
@@ -401,6 +412,7 @@ PoisonDamageOverTime:
     MaxStacks: 5
     MaxStackOverflowPolicy: ReplaceOldest
   Visibility: Hud
+
 Revive:
   Definition:
     EffectDefinitionId: effect.health.revive
@@ -438,6 +450,7 @@ Revive:
     StackScope: ByEffectDefinitionId
     StackPolicy: Discard
   Visibility: Internal
+
 ReviveRemoveDead:
   Definition:
     EffectDefinitionId: effect.revive.remove_dead
@@ -461,6 +474,7 @@ ReviveRemoveDead:
     StackScope: ByEffectDefinitionId
     StackPolicy: Discard
   Visibility: Internal
+
 ReviveRestoreHealth:
   Definition:
     EffectDefinitionId: effect.revive.restore_health
@@ -486,6 +500,7 @@ ReviveRestoreHealth:
     StackScope: ByEffectDefinitionId
     StackPolicy: Discard
   Visibility: Internal
+
 ShieldCapacityBoost:
   Definition:
     EffectDefinitionId: effect.buff.shield_capacity
@@ -514,6 +529,7 @@ ShieldCapacityBoost:
     MaxStacks: 1
     MaxStackOverflowPolicy: ReplaceOldest
   Visibility: Hud
+
 ShieldCapacityBooster:
   Definition:
     EffectDefinitionId: effect.shield.capacity_boost
@@ -545,6 +561,7 @@ ShieldCapacityBooster:
     MaxStacks: 1
     MaxStackOverflowPolicy: ReplaceOldest
   Visibility: Hud
+
 SuperEvilDot:
   Definition:
     EffectDefinitionId: effect.dot.super_evil_dot

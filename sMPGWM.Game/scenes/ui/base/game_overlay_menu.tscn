@@ -1,10 +1,9 @@
 [gd_scene format=3 uid="uid://bli57o43qurcm"]
 
 [ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/base/base_menu.tscn" id="1_u3tyy"]
-[ext_resource type="Script" uid="uid://xdhj3fyro68e" path="res://Scripts/Ui/Base/GameOverlayMenu.cs" id="2_u7kbo"]
+[ext_resource type="Script" uid="uid://xdhj3fyro68e" path="res://Scripts/Util/UiComponents/GameOverlayMenu.cs" id="2_u7kbo"]
 
 [node name="GameOverlayMenu" unique_id=1431156458 instance=ExtResource("1_u3tyy")]
-mouse_filter = 2
 script = ExtResource("2_u7kbo")
 
 [node name="CloseButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="1" unique_id=334895891]

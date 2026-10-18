@@ -1,5 +1,3 @@
-
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,23 +10,12 @@ public sealed record GameplayTagValidationDiagnostic(
     string Message,
     string? InvalidValue = null);
 
-public class GameplayTagException : InvalidOperationException
-{
-    public GameplayTagException(string message)
-        : base(message)
-    {
-    }
-}
+public class GameplayTagException(string message) : InvalidOperationException(message);
 
-public sealed class GameplayTagValidationException : GameplayTagException
+public sealed class GameplayTagValidationException(IReadOnlyList<GameplayTagValidationDiagnostic> diagnostics)
+    : GameplayTagException(CreateMessage(diagnostics))
 {
-    public GameplayTagValidationException(IReadOnlyList<GameplayTagValidationDiagnostic> diagnostics)
-        : base(CreateMessage(diagnostics))
-    {
-        Diagnostics = diagnostics;
-    }
-
-    public IReadOnlyList<GameplayTagValidationDiagnostic> Diagnostics { get; }
+    public IReadOnlyList<GameplayTagValidationDiagnostic> Diagnostics { get; } = diagnostics;
 
     private static string CreateMessage(IReadOnlyList<GameplayTagValidationDiagnostic> diagnostics)
     {

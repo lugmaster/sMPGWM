@@ -135,12 +135,13 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
 
         try
         {
-            if (GodotObject.IsInstanceValid(screen) && !screen.IsQueuedForDeletion())
+            if (IsInstanceValid(screen) && !screen.IsQueuedForDeletion())
                 screen.QueueFree();
         }
-        catch (ObjectDisposedException)
+        catch (ObjectDisposedException e)
         {
             // Scene transitions can dispose nodes before the manager clears stale wrappers.
+            Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ObjectDisposedException)}: {e}");
         }
     }
 }

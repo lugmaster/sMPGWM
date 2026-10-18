@@ -1,5 +1,3 @@
-
-
 namespace sMPGWM.Scripts.TagSystem;
 
 public sealed class GameplayTagDomain

@@ -1,5 +1,3 @@
-
-
 using System.Globalization;
 
 namespace sMPGWM.Scripts.TagSystem;

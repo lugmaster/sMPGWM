@@ -1,5 +1,3 @@
-
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -127,7 +125,8 @@ public sealed class GameplayTagRegistryBuilder
 
         var domainsByIndex = BuildDomains(orderedDomains, tagsByDomainLocalIndex, domainIdsByKey);
         var expansionMasks = BuildExpansionMasks(tagsByIndex, definitionsByName, domainsByIndex);
-        var queriesByIndex = BuildQueries(domainIdsByKey, domainByKey, domainByRoot, aliasByName, tagIdsByName, definitionsByName, domainsByIndex);
+        var queriesByIndex = BuildQueries(domainIdsByKey, domainByKey, domainByRoot, aliasByName, tagIdsByName,
+            definitionsByName, domainsByIndex);
         var queryIdsByKey = BuildQueryIdLookup(queriesByIndex);
         var registryHash = ComputeRegistryHash(domainsByIndex, tagsByIndex, aliasByName, queriesByIndex);
 
@@ -417,8 +416,10 @@ public sealed class GameplayTagRegistryBuilder
                 continue;
             }
 
-            var allCount = ValidateQueryTags(query.All, $"{path}.All", domain, domainByRoot, aliasByName, tagInputs, diagnostics);
-            var anyCount = ValidateQueryTags(query.Any, $"{path}.Any", domain, domainByRoot, aliasByName, tagInputs, diagnostics);
+            var allCount = ValidateQueryTags(query.All, $"{path}.All", domain, domainByRoot, aliasByName, tagInputs,
+                diagnostics);
+            var anyCount = ValidateQueryTags(query.Any, $"{path}.Any", domain, domainByRoot, aliasByName, tagInputs,
+                diagnostics);
             ValidateQueryTags(query.None, $"{path}.None", domain, domainByRoot, aliasByName, tagInputs, diagnostics);
 
             if (allCount == 0 && anyCount == 0 && !query.MatchAll)
@@ -648,9 +649,12 @@ public sealed class GameplayTagRegistryBuilder
             var noneMask = new ulong[domain.DomainMaskWordCount];
             var queryDomain = domainByKey[query.DomainKey];
 
-            var allCount = CompileQueryMask(query.All, queryDomain, domainByRoot, aliasByName, tagIdsByName, definitionsByName, allMask);
-            var anyCount = CompileQueryMask(query.Any, queryDomain, domainByRoot, aliasByName, tagIdsByName, definitionsByName, anyMask);
-            var noneCount = CompileQueryMask(query.None, queryDomain, domainByRoot, aliasByName, tagIdsByName, definitionsByName, noneMask);
+            var allCount = CompileQueryMask(query.All, queryDomain, domainByRoot, aliasByName, tagIdsByName,
+                definitionsByName, allMask);
+            var anyCount = CompileQueryMask(query.Any, queryDomain, domainByRoot, aliasByName, tagIdsByName,
+                definitionsByName, anyMask);
+            var noneCount = CompileQueryMask(query.None, queryDomain, domainByRoot, aliasByName, tagIdsByName,
+                definitionsByName, noneMask);
 
             result[i] = new CompiledTagQuery(
                 new TagQueryId(checked((ushort)(i + 1))),
@@ -907,7 +911,8 @@ public sealed class GameplayTagRegistryBuilder
         return root is not null &&
                domainByRoot.TryGetValue(root, out var candidateDomain) &&
                candidateDomain.DomainKey == domain.DomainKey &&
-               (candidate == domain.RootPrefix || candidate.StartsWith(domain.RootPrefix + ".", StringComparison.Ordinal));
+               (candidate == domain.RootPrefix ||
+                candidate.StartsWith(domain.RootPrefix + ".", StringComparison.Ordinal));
     }
 
     private static string ResolveAlias(string inputName, Dictionary<string, AliasRegistration> aliasByName)
@@ -983,8 +988,11 @@ public sealed class GameplayTagRegistryBuilder
     }
 
     private sealed record DomainRegistration(string DomainKey, string RootPrefix, string Description, int Sequence);
+
     private sealed record TagRegistration(string DomainKey, string CanonicalName, bool? IsAssignable, int Sequence);
+
     private sealed record AliasRegistration(string AliasName, string CanonicalTargetName, int Sequence);
+
     private sealed record QueryRegistration(
         string QueryKey,
         string DomainKey,
