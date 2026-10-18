@@ -7,11 +7,30 @@ namespace sMPGWM.Scripts.GameFlowSystem;
 
 public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 {
+    private GameFlowState _gameFlowState = GameFlowState.StartMenu;
+    private GameFlowState _pendingGameFlowState = GameFlowState.StartMenu;
+    
+    public GameFlowState GameFlowState => _gameFlowState;
+
+    protected override void OnEnterTree()
+    {
+        GetTree().SceneChanged += OnSceneChanged;
+    }
+
+    protected override void OnExitTree()
+    {
+        GetTree().SceneChanged -= OnSceneChanged;
+    }
+
+
     public void QuitToStartMenu(string reason = null, int delayMs = 35)
     {
+        _gameFlowState = GameFlowState.Disconnecting;
+        
         if (!string.IsNullOrEmpty(reason))
         {
-            Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitToStartMenu)} quit triggered with {nameof(reason)}={reason}.");
+            Logger.Debug(
+                $"{nameof(GameFlowManager)}.{nameof(QuitToStartMenu)} quit triggered with {nameof(reason)}={reason}.");
         }
 
         Instance.CallDeferred(nameof(Instance.StartQuitAsync), delayMs);
@@ -19,7 +38,9 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void QuitToStartMenuBlocking(string reason, bool showAsError = true)
     {
-        Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuBlocking)} graceful quit triggered with {nameof(reason)}={reason}.");
+        _gameFlowState = GameFlowState.Disconnecting;
+        Logger.Debug(
+            $"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuBlocking)} graceful quit triggered with {nameof(reason)}={reason}.");
 
         var combinedReason = showAsError
             ? $"Error: {reason}\nClick to return to Main Menu."
@@ -34,7 +55,8 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         }
         else
         {
-            Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuBlocking)} completed with {nameof(combinedReason)}={combinedReason}.");
+            Logger.Debug(
+                $"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuBlocking)} completed with {nameof(combinedReason)}={combinedReason}.");
         }
 
         Instance.CallDeferred(nameof(QuitToStartMenuInternal));
@@ -59,16 +81,16 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         CallDeferred(nameof(QuitToStartMenuInternal));
     }
 
-    private void QuitToStartMenuInternal()
-    {
-        Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuInternal)} returning to main menu.");
-        GetTree().ChangeSceneToPacked(GameFlowSceneProvider.StartMenuScene);
-    }
-
     public void StartGame()
     {
-        Logger.Debug($"{nameof(GameFlowManager)}.{nameof(StartGame)} starting up game.");
-        GetTree().ChangeSceneToPacked(GameFlowSceneProvider.MainGameScene);
+        Logger.Debug($"{nameof(GameFlowManager)}.{nameof(StartGame)} starting game.");
+        ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.InGame);
+    }
+
+    private void QuitToStartMenuInternal()
+    {
+        Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuInternal)} returning to start menu.");
+        ChangeScene(GameFlowSceneProvider.StartMenuScene, GameFlowState.StartMenu);
     }
 
     public void QuitWithOsError(string reason)
@@ -80,5 +102,28 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
             var tree = Engine.GetMainLoop() as SceneTree;
             tree?.Quit(1);
         }
+    }
+
+
+    private void ChangeScene(PackedScene scene, GameFlowState targetState)
+    {
+        _gameFlowState = GameFlowState.Loading;
+        _pendingGameFlowState = targetState;
+
+        var error = GetTree().ChangeSceneToPacked(scene);
+
+        if (error != Error.Ok)
+        {
+            Logger.Error(
+                $"{nameof(GameFlowManager)} scene change failed with {nameof(error)}={error}."
+            );
+
+            return;
+        }
+    }
+
+    private void OnSceneChanged()
+    {
+        _gameFlowState = _pendingGameFlowState;
     }
 }
