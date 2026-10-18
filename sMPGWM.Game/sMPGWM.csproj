@@ -15,6 +15,7 @@
     <Folder Include="assets\ui\icons\" />
     <Folder Include="scenes\ui\controls\" />
     <Folder Include="scenes\ui\screens\" />
+    <Folder Include="Scripts\EffectSystem\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\game_data\EffectDefinitions.yml" />
