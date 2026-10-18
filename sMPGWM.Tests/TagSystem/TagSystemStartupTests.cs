@@ -1,6 +1,7 @@
 using sMPGWM.Scripts.TagSystem;
 using sMPGWM.Scripts.TagSystem.Exceptions;
 using sMPGWM.Scripts.TagSystem.Ids;
+using sMPGWM.Scripts.TagSystem.Queries;
 
 namespace sMPGWM.Tests.TagSystem;
 
@@ -8,7 +9,7 @@ namespace sMPGWM.Tests.TagSystem;
 public class TagSystemStartupTests
 {
     [Test]
-    public void Registry_LoadsBaseTagFile()
+    public void Registry_CompilesSmallGameplayFixture()
     {
         var registry = TagSystemFixtureFactory.CreateSmallGameplayRegistry();
 
@@ -120,50 +121,85 @@ public class TagSystemStartupTests
         AssertValidationCode(builder, "ShortNamesDisabled");
     }
 
-    [Test]
-    public void Registry_ResolvesAliasesBeforeValidation()
+    [TestCase("All")]
+    [TestCase("Any")]
+    [TestCase("None")]
+    public void Query_RejectsUnknownCanonicalSelectors(string clause)
     {
-        var builder = TagSystemFixtureFactory.CreateSmallGameplayBuilder()
-            .RegisterAlias("Effect.Dot.Poison", "Effect.Damage.Poison.Dot")
-            .RegisterQuery(
-                "query.effect.alias_poison",
-                TagSystemFixtureFactory.EffectClassification,
-                all: ["Effect.Dot.Poison"]);
+        var builder = TagSystemFixtureFactory.CreateSmallGameplayBuilder();
+        string[] selectors = ["Condition.Unknown"];
+        builder.RegisterQuery("query.unknown", TagSystemFixtureFactory.EntityCondition,
+            all: clause == "All" ? selectors : null,
+            any: clause == "Any" ? selectors : null,
+            none: clause == "None" ? selectors : null,
+            matchAll: true);
 
-        var registry = builder.CompileAndFreeze();
-        var set = registry.CreateTagSet(TagSystemFixtureFactory.EffectClassification);
-        set.Add(TagSystemFixtureFactory.Tag(registry, "Effect.Damage.Poison.Dot"));
+        var exception = Assert.Throws<TagValidationException>(() => builder.CompileAndFreeze());
 
-        Assert.That(set.Matches(TagSystemFixtureFactory.Query(registry, "query.effect.alias_poison")), Is.True);
+        Assert.That(exception!.Diagnostics, Has.Some.Matches<TagValidationDiagnostic>(diagnostic =>
+            diagnostic.Code == "UnknownTag" &&
+            diagnostic.FieldPath.EndsWith($".{clause}[0]", StringComparison.Ordinal) &&
+            diagnostic.InvalidValue == "Condition.Unknown"));
+    }
+
+    [TestCase(-1)]
+    [TestCase(2)]
+    public void Query_RejectsInvalidMatchMode(int matchMode)
+    {
+        var builder = new TagRegistryBuilder()
+            .RegisterDomain("Conditions", "Condition", "Test conditions.")
+            .RegisterQuery("query.invalid", "Conditions", matchMode: (TagQueryMatchMode)matchMode, matchAll: true);
+
+        var exception = Assert.Throws<TagValidationException>(() => builder.CompileAndFreeze());
+
+        Assert.That(exception!.Diagnostics, Has.Some.Matches<TagValidationDiagnostic>(diagnostic =>
+            diagnostic.Code == "InvalidMatchMode" &&
+            diagnostic.FieldPath == "Queries[0].MatchMode"));
     }
 
     [Test]
-    public void Registry_RejectsAliasChains()
+    public void Registry_MissingNamesFailStrictAndTryLookups()
     {
-        var builder = TagSystemFixtureFactory.CreateSmallGameplayBuilder()
-            .RegisterAlias("Effect.Dot.Poison", "Effect.Legacy.Poison")
-            .RegisterAlias("Effect.Legacy.Poison", "Effect.Damage.Poison.Dot");
+        var registry = TagSystemFixtureFactory.CreateSmallGameplayRegistry();
 
-        AssertValidationCode(builder, "AliasChainOrCycle");
+        Assert.Throws<TagException>(() => registry.GetDomainId("Unknown"));
+        Assert.That(registry.TryGetDomainId("Unknown", out var domainId), Is.False);
+        Assert.That(domainId, Is.EqualTo(TagDomainId.Invalid));
+        Assert.Throws<TagException>(() => registry.GetTagId("Condition.Unknown"));
+        Assert.That(registry.TryGetTagId("Condition.Unknown", out var tagId), Is.False);
+        Assert.That(tagId, Is.EqualTo(TagId.Invalid));
+        Assert.Throws<TagException>(() => registry.GetQueryId("query.unknown"));
+        Assert.That(registry.TryGetQueryId("query.unknown", out var queryId), Is.False);
+        Assert.That(queryId, Is.EqualTo(TagQueryId.Invalid));
     }
 
-    [Test]
-    public void Registry_RejectsAliasCycles()
+    [TestCase(0)]
+    [TestCase(65535)]
+    public void Registry_InvalidIdsFailThroughPublicOperations(int value)
     {
-        var builder = TagSystemFixtureFactory.CreateSmallGameplayBuilder()
-            .RegisterAlias("Effect.Dot.Poison", "Effect.Legacy.Poison")
-            .RegisterAlias("Effect.Legacy.Poison", "Effect.Dot.Poison");
+        var registry = TagSystemFixtureFactory.CreateSmallGameplayRegistry();
+        var set = registry.CreateTagSet(TagSystemFixtureFactory.EntityCondition);
+        var domainId = new TagDomainId((ushort)value);
+        var tagId = new TagId((ushort)value);
+        var queryId = new TagQueryId((ushort)value);
 
-        AssertValidationCode(builder, "AliasChainOrCycle");
-    }
-
-    [Test]
-    public void Registry_RejectsCrossDomainAliases()
-    {
-        var builder = TagSystemFixtureFactory.CreateSmallGameplayBuilder()
-            .RegisterAlias("Condition.Poison", "Effect.Damage.Poison");
-
-        AssertValidationCode(builder, "CrossDomainAlias");
+        Assert.Throws<TagException>(() => registry.GetDomain(domainId));
+        Assert.Throws<TagException>(() => registry.CreateTagSet(domainId));
+        Assert.Throws<TagException>(() => registry.GetTag(tagId));
+        Assert.Throws<TagException>(() => registry.GetQuery(queryId));
+        Assert.Throws<TagException>(() => set.Add(tagId));
+        Assert.Throws<TagException>(() => set.Remove(tagId));
+        Assert.Throws<TagException>(() => set.HasDirect(tagId));
+        Assert.Throws<TagException>(() => set.HasExpanded(tagId));
+        Assert.That(set.TryAdd(tagId), Is.False);
+        Assert.That(set.TryRemove(tagId), Is.False);
+        Assert.That(set.TryHasDirect(tagId, out var hasDirect), Is.False);
+        Assert.That(hasDirect, Is.False);
+        Assert.That(set.TryHasExpanded(tagId, out var hasExpanded), Is.False);
+        Assert.That(hasExpanded, Is.False);
+        Assert.Throws<TagException>(() => set.Matches(queryId));
+        Assert.That(set.TryMatches(queryId, out var matches), Is.False);
+        Assert.That(matches, Is.False);
     }
 
     [Test]

@@ -315,7 +315,7 @@ public class TagSystemRunTests
         Assert.Throws<TagException>(() => set.Matches(TagQueryId.Invalid));
         Assert.That(set.TryMatches(TagQueryId.Invalid, out var matches), Is.False);
         Assert.That(matches, Is.False);
-        Assert.That(registry.TryGetQuery(TagQueryId.Invalid, out _), Is.False);
+        Assert.Throws<TagException>(() => registry.GetQuery(TagQueryId.Invalid));
     }
 
     [TestCase(nameof(MeasureHasDirect))]

@@ -37,7 +37,7 @@
     - [7.2 Strict Dot-Path Hierarchy](#72-strict-dot-path-hierarchy)
     - [7.3 Assignability](#73-assignability)
     - [7.4 Fully Qualified Names and Short Names](#74-fully-qualified-names-and-short-names)
-    - [7.5 Aliases and Migration](#75-aliases-and-migration)
+    - [7.5 Canonical References](#75-canonical-references)
     - [7.6 Semantic Links](#76-semantic-links)
 - [8 Registry Lifecycle](#8-registry-lifecycle)
     - [8.1 Content Source Loading](#81-content-source-loading)
@@ -161,7 +161,6 @@ This PRD covers:
 - domain-local dense bit indexes,
 - dynamic per-domain mask sizing during compilation,
 - direct and expanded masks,
-- startup/import-only aliases,
 - domain-safe assignment fields,
 - tag-set mutation operations,
 - simple `All` / `Any` / `None` tag queries,
@@ -203,7 +202,6 @@ Startup / import:
   TagRegistryBuilder
   RegisterDomain
   RegisterTag
-  RegisterAlias
   RegisterQuery
   CompileAndFreeze
 
@@ -264,7 +262,7 @@ The system must follow these rules:
 14. Runtime masks are domain-local dense bitsets sized by the registry during compilation.
 15. No public fixed-size type such as `TagMask64`, `TagMask128`, or `TagMask256` is required by consumers.
 16. `TagId` is not a bit index.
-17. Aliases are import/migration-only and do not exist at runtime.
+17. All authored tag references must use registered canonical names.
 18. Runtime systems must use cached IDs, tag sets, and compiled queries in hot paths.
 19. Peers must use the same `TagRegistryHash` for deterministic simulation.
 20. A content set cannot introduce unknown tags after registry freeze.
@@ -661,8 +659,7 @@ Canonical names must:
 - contain only valid name segments,
 - not contain empty segments,
 - not contain leading or trailing dots,
-- not contain whitespace,
-- not use alias names after canonicalization.
+- not contain whitespace.
 
 ### 7.2 Strict Dot-Path Hierarchy
 
@@ -805,45 +802,11 @@ If a short name is ambiguous, validation must fail.
 
 Runtime hot paths must not use short-name resolution.
 
-### 7.5 Aliases and Migration
+### 7.5 Canonical References
 
-Aliases are supported only as startup/import migration inputs.
-
-Example:
-
-```yaml
-Aliases:
-  Effect.Dot.Poison: Effect.Damage.Poison.Dot
-  Condition.Poison: Condition.Poisoned
-  Effect.CoolDownReduction: Effect.CooldownReduction
-```
-
-Alias rules:
-
-```text
-Aliases are resolved before validation, compilation, registry hashing, and freeze.
-Runtime data never stores aliases.
-Runtime queries never use aliases.
-Serialized/network/delta data never uses aliases.
-Aliases must resolve to canonical tags in the same domain.
-Alias chains are invalid.
-Alias cycles are invalid.
-Unknown alias targets are invalid.
-Ambiguous aliases are invalid.
-```
-
-Using an alias during normal import should produce a warning unless the importer is running in an explicit migration mode.
-
-Cross-domain aliases are invalid.
-
-Invalid:
-
-```yaml
-Aliases:
-  Condition.Poison: Effect.Damage.Poison
-```
-
-This is not a rename. It changes semantic domain and must be represented as explicit consuming-system logic or semantic metadata outside alias resolution.
+All authored tag assignments and query selectors must use registered canonical names.
+When renaming a tag, update its definition and every reference in the JSON content together.
+Each startup compiles a fresh registry from that content; unknown names fail validation.
 
 ### 7.6 Semantic Links
 
@@ -904,19 +867,17 @@ Canonicalization resolves:
 
 - domain root prefixes,
 - optional short names,
-- aliases,
-- deprecated names,
 - case rules,
 - duplicate definitions,
 - domain-specific assignment fields.
 
 After canonicalization, all compiled runtime data uses canonical full names.
 
-Aliases and short names must not survive into runtime data.
+All runtime references use compiled canonical IDs.
 
 ### 8.3 Validation
 
-Validation checks all domains, tags, aliases, queries, and references.
+Validation checks all domains, tags, queries, and references.
 
 Unknown tags must fail validation unless declared by a loaded content source before freeze.
 
@@ -962,21 +923,20 @@ Recommended deterministic assignment:
 
 1. Load all configured content sources.
 2. Canonicalize all names.
-3. Resolve aliases.
-4. Validate domains, root prefixes, tags, aliases, and queries.
-5. Sort domains by stable `DomainKey` or explicit deterministic domain order.
-6. Assign `TagDomainId` values.
-7. Sort canonical tags by canonical full name.
-8. Assign registry-wide `TagId` values.
-9. Group canonical tags by domain.
-10. Sort domain tags by canonical full name.
-11. Assign dense `DomainLocalIndex` values.
-12. Count tags per domain.
-13. Assign domain mask word counts.
-14. Compile direct-tag parent expansion data.
-15. Compile query masks.
-16. Emit registry hash.
-17. Freeze registry.
+3. Validate domains, root prefixes, tags, and queries.
+4. Sort domains by stable `DomainKey` or explicit deterministic domain order.
+5. Assign `TagDomainId` values.
+6. Sort canonical tags by canonical full name.
+7. Assign registry-wide `TagId` values.
+8. Group canonical tags by domain.
+9. Sort domain tags by canonical full name.
+10. Assign dense `DomainLocalIndex` values.
+11. Count tags per domain.
+12. Assign domain mask word counts.
+13. Compile direct-tag parent expansion data.
+14. Compile query masks.
+15. Emit registry hash.
+16. Freeze registry.
 
 ### 8.5 Domain Mask Size Assignment
 
@@ -998,7 +958,7 @@ DomainMaskByteSize = DomainMaskWordCount * sizeof(ulong)
 
 After registry freeze, domain mask sizes are immutable for the whole simulation session.
 
-Runtime systems may mutate assignments, but they may not change tag definitions, tag IDs, hierarchy, alias resolution, or compiled mask sizes.
+Runtime systems may mutate assignments, but they may not change tag definitions, tag IDs, hierarchy, or compiled mask sizes.
 
 ### 8.6 Startup Diagnostics
 
@@ -1051,7 +1011,6 @@ No changed parent hierarchy.
 No changed TagIds.
 No changed DomainLocalIndexes.
 No changed mask word counts.
-No changed alias resolution.
 No changed compiled query masks.
 ```
 
@@ -1059,7 +1018,7 @@ Runtime systems may mutate only their own `TagSet` assignments.
 
 ### 8.8 Registry Hash
 
-The hash input format `GameplayTagRegistry:v1.1.0:hash-v2` uses explicit LF separators and includes every word of the compiled `All`, `Any`, and `None` query masks, with section labels and lengths. Hashes from the previous format are incompatible and compatibility metadata must be rebuilt.
+The hash input format `GameplayTagRegistry:v1.1.0:hash-v3` hashes canonical domains, tags, and queries. It uses explicit LF separators and includes every word of the compiled `All`, `Any`, and `None` query masks, with section labels and lengths. Hashes from the previous format are incompatible and compatibility metadata must be rebuilt.
 
 The compiled registry must provide a deterministic hash:
 
@@ -1086,7 +1045,6 @@ canonical tag names
 domain assignments
 assignability flags
 dot-path parent relationships
-alias resolution policy and alias inputs
 stable TagId assignments
 DomainLocalIndex assignments
 domain mask word counts
@@ -1243,7 +1201,6 @@ Runtime must not:
 - change tag IDs,
 - change domain-local indexes,
 - change hierarchy metadata,
-- change alias resolution,
 - change mask word counts,
 - recompile queries.
 
@@ -1311,7 +1268,6 @@ All tags must belong to the declared query domain.
 Any tags must belong to the declared query domain.
 None tags must belong to the declared query domain.
 Unknown tags fail validation.
-Aliases are resolved before query validation.
 A query with no All and no Any requires MatchAll: true.
 An empty Any clause is ignored.
 An empty All clause is ignored.
@@ -1328,6 +1284,8 @@ Valid match modes:
 Expanded
 Direct
 ```
+
+Other values fail compilation with `InvalidMatchMode` at `Queries[i].MatchMode`.
 
 Default authoring:
 
@@ -1471,7 +1429,6 @@ Consumers should be able to:
 ```text
 Register domains.
 Register tags.
-Register aliases for migration.
 Register queries.
 Compile and freeze the registry.
 Create a tag set for a domain.
@@ -1518,10 +1475,6 @@ public sealed class TagRegistryBuilder
         string description = "",
         string debugName = "");
 
-    public void RegisterAlias(
-        string aliasName,
-        string canonicalTargetName);
-
     public void RegisterQuery(
         string queryKey,
         string domainKey,
@@ -1536,7 +1489,6 @@ The builder owns:
 
 ```text
 canonicalization
-alias resolution
 domain validation
 root prefix validation
 dot-path parent validation
@@ -1600,6 +1552,14 @@ public sealed class TagRegistry
 String lookup is allowed at startup/import/debug boundaries.
 
 Hot-path gameplay should cache `TagId`, `TagDomainId`, and `TagQueryId` values.
+
+Registry lookup visibility:
+
+- Name-to-ID lookups, both throwing and `TryGet`, remain public for startup consumers.
+- Compiled metadata retrieval (`GetDomain`, `GetTag`, `GetQuery`), root-prefix lookup, collections, and tag-set factories remain public.
+- `TryGetDomain` is private to the registry.
+- `TryGetTag`, `TryGetQuery`, domain-local indexing, and expansion-mask access are internal implementation helpers.
+- Registry and tag-set constructors remain internal.
 
 ### 11.4 Runtime Tag Set API
 
@@ -2226,12 +2186,6 @@ Startup/import validation must reject:
 - unknown tags,
 - missing required parent/category tags, unless generated deterministically by import policy,
 - explicit extra parents,
-- aliases remaining in canonical runtime data,
-- alias chains,
-- alias cycles,
-- alias targets in another domain,
-- unknown alias targets,
-- ambiguous aliases,
 - ambiguous short names,
 - domain mismatches,
 - queries referencing tags outside their declared domain,
@@ -2247,7 +2201,6 @@ Validation should warn or fail depending on policy for:
 - valid queries that match no current content,
 - unused tags,
 - tags with no description,
-- alias usage outside migration mode,
 - generated parent/category tags with no description.
 
 Recommended policy:
@@ -2258,7 +2211,6 @@ Domain mismatch: error
 Duplicate root prefix: error
 Explicit extra parent: error
 Ambiguous short name: error
-Alias usage during normal import: warning
 Empty query result against current content: warning
 Unused tag: warning
 Missing description: warning
@@ -2444,10 +2396,6 @@ TagRegistry:
     Damage.Poison:
       Domain: DamageKind
       Description: Poison damage kind.
-
-  Aliases:
-    Condition.Poison: Condition.Poisoned
-    Effect.Dot.Poison: Effect.Damage.Poison.Dot
 ```
 
 ### 17.2 Query Registry Example
@@ -2904,7 +2852,7 @@ Required test cases:
 
 | Test Name | Requirement |
 |---|---|
-| `Registry_LoadsBaseTagFile` | Loads the base tag fixture. |
+| `Registry_CompilesSmallGameplayFixture` | Compiles the in-memory gameplay fixture. |
 | `Registry_LoadsMultipleContentSourcesInDeterministicOrder` | Content source order is deterministic and repeatable. |
 | `Registry_RegistersDomainsAtStartup` | Registered domains receive stable domain IDs after compilation. |
 | `Registry_RejectsDuplicateDomainKey` | Duplicate `DomainKey` fails validation. |
@@ -2912,13 +2860,9 @@ Required test cases:
 | `Registry_RejectsUnknownDomain` | Tag or query referencing an unknown domain fails validation. |
 | `Registry_RejectsDuplicateCanonicalName` | Duplicate canonical tag name fails validation. |
 | `Registry_RejectsExplicitExtraParents` | v1.1.0 strict dot-path hierarchy remains enforced. |
-| `Registry_ResolvesAliasesBeforeValidation` | Alias input resolves to canonical tag before validation. |
-| `Registry_RejectsAliasChains` | Alias to alias fails validation. |
-| `Registry_RejectsAliasCycles` | Cyclic aliases fail validation. |
-| `Registry_RejectsCrossDomainAliases` | Alias target must stay in same domain. |
 | `Registry_RejectsAmbiguousShortNames` | Ambiguous short-name resolution fails validation. |
 | `Registry_FreezesAfterCompilation` | Successful build returns immutable registry. |
-| `Registry_PreventsMutationAfterFreeze` | Registering domains, tags, aliases, or queries after freeze fails. |
+| `Registry_PreventsMutationAfterFreeze` | Registering domains, tags, or queries after freeze fails. |
 | `Registry_ReportsDomainMaskSizes` | Startup diagnostics include deterministic domain mask sizing. |
 
 Acceptance criteria:
@@ -3156,6 +3100,10 @@ The report must name the first pressure level that crosses each threshold.
 
 ### 19.10 Statistics and Benchmark Reporting
 
+The report-generating smoke benchmark is an explicit NUnit test. Run it manually with
+`dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --filter FullyQualifiedName~Stress_30Tps_BaselineGameplayFixture_WritesBenchmarkArtifacts`.
+Reports are written under the test output directory's `artifacts` folder. This smoke benchmark reports measurements without enforcing timing budgets; representative performance gates remain future work.
+
 Stress and benchmark runs must generate machine-readable and human-readable statistics.
 
 Required metrics:
@@ -3288,7 +3236,7 @@ Then the query fails by domain mismatch
 Codex implementation tasks:
 
 ```text
-1. Create deterministic fixture factories for domains, tags, aliases, and queries.
+1. Create deterministic fixture factories for domains, tags, and queries.
 2. Implement startup and registry tests.
 3. Implement determinism tests that compare compiled outputs across repeated builds.
 4. Implement runtime tag-set mutation tests.

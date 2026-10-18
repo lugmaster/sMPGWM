@@ -41,7 +41,7 @@ public sealed class TagSet
     /// <exception cref="TagException">The tag is invalid, belongs to another domain, or is not assignable.</exception>
     public bool Add(TagId tagId)
     {
-        var tag = ValidateTagForMutation(tagId, requireAssignable: true);
+        var tag = ValidateTagForMutation(tagId);
         return AddValidated(tag);
     }
 
@@ -52,7 +52,7 @@ public sealed class TagSet
     /// <returns>True if a new direct assignment was added; otherwise, false.</returns>
     public bool TryAdd(TagId tagId)
     {
-        return TryValidateTagForMutation(tagId, requireAssignable: true, out var tag) && AddValidated(tag);
+        return TryValidateTagForMutation(tagId, out var tag) && AddValidated(tag);
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ public sealed class TagSet
     /// <exception cref="TagException">The tag is invalid, belongs to another domain, or is not assignable.</exception>
     public bool Remove(TagId tagId)
     {
-        var tag = ValidateTagForMutation(tagId, requireAssignable: true);
+        var tag = ValidateTagForMutation(tagId);
         return RemoveValidated(tag);
     }
 
@@ -74,7 +74,7 @@ public sealed class TagSet
     /// <returns>True if a direct assignment was removed; otherwise, false.</returns>
     public bool TryRemove(TagId tagId)
     {
-        return TryValidateTagForMutation(tagId, requireAssignable: true, out var tag) && RemoveValidated(tag);
+        return TryValidateTagForMutation(tagId, out var tag) && RemoveValidated(tag);
     }
 
     /// <summary>
@@ -272,10 +272,10 @@ public sealed class TagSet
     /// <summary>
     /// Retrieves a tag in this set's domain and enforces assignment rules.
     /// </summary>
-    private TagDefinition ValidateTagForMutation(TagId tagId, bool requireAssignable)
+    private TagDefinition ValidateTagForMutation(TagId tagId)
     {
         var tag = ValidateTagForRead(tagId);
-        if (requireAssignable && !tag.IsAssignable)
+        if (!tag.IsAssignable)
         {
             throw new TagException($"Gameplay tag '{tag.CanonicalName}' is not assignable.");
         }
@@ -286,14 +286,14 @@ public sealed class TagSet
     /// <summary>
     /// Attempts to retrieve a tag in this set's domain while enforcing assignment rules.
     /// </summary>
-    private bool TryValidateTagForMutation(TagId tagId, bool requireAssignable, out TagDefinition tag)
+    private bool TryValidateTagForMutation(TagId tagId, out TagDefinition tag)
     {
         if (!TryValidateTagForRead(tagId, out tag))
         {
             return false;
         }
 
-        return !requireAssignable || tag.IsAssignable;
+        return tag.IsAssignable;
     }
 
     /// <summary>

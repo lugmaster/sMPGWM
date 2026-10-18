@@ -17,7 +17,6 @@ public sealed class TagRegistryBuilder
 {
     private readonly List<DomainRegistration> _domains = [];
     private readonly List<TagRegistration> _tags = [];
-    private readonly List<AliasRegistration> _aliases = [];
     private readonly List<QueryRegistration> _queries = [];
     private bool _isFrozen;
 
@@ -47,21 +46,7 @@ public sealed class TagRegistryBuilder
     public TagRegistryBuilder RegisterTag(string domainKey, string canonicalName, bool? isAssignable = null)
     {
         EnsureMutable();
-        _tags.Add(new TagRegistration(domainKey, canonicalName, isAssignable, _tags.Count));
-        return this;
-    }
-
-    /// <summary>
-    /// Registers an alias that resolves to a canonical tag in the same domain.
-    /// </summary>
-    /// <param name="aliasName">The fully qualified alias name.</param>
-    /// <param name="canonicalTargetName">The canonical tag targeted by the alias.</param>
-    /// <returns>This builder for chained registration.</returns>
-    /// <exception cref="TagException">The builder has already compiled successfully.</exception>
-    public TagRegistryBuilder RegisterAlias(string aliasName, string canonicalTargetName)
-    {
-        EnsureMutable();
-        _aliases.Add(new AliasRegistration(aliasName, canonicalTargetName, _aliases.Count));
+        _tags.Add(new TagRegistration(domainKey, canonicalName, isAssignable));
         return this;
     }
 
@@ -119,12 +104,10 @@ public sealed class TagRegistryBuilder
 
         var domainByKey = BuildDomainLookup(diagnostics);
         var domainByRoot = BuildRootLookup(domainByKey.Values, diagnostics);
-        var aliasByName = BuildAliasLookup(domainByRoot, diagnostics);
         var tagInputs = BuildTagInputs(domainByKey, domainByRoot, diagnostics);
 
-        ValidateAliases(aliasByName, tagInputs, domainByRoot, diagnostics);
         ValidateTagParents(tagInputs, diagnostics);
-        ValidateQueryRegistrations(domainByKey, domainByRoot, aliasByName, tagInputs, diagnostics);
+        ValidateQueryRegistrations(domainByKey, domainByRoot, tagInputs, diagnostics);
 
         if (diagnostics.Count > 0)
         {
@@ -174,10 +157,10 @@ public sealed class TagRegistryBuilder
 
         var domainsByIndex = BuildDomains(orderedDomains, tagsByDomainLocalIndex, domainIdsByKey);
         var expansionMasks = BuildExpansionMasks(tagsByIndex, definitionsByName, domainsByIndex);
-        var queriesByIndex = BuildQueries(domainIdsByKey, domainByKey, domainByRoot, aliasByName, tagIdsByName,
+        var queriesByIndex = BuildQueries(domainIdsByKey, domainByKey, domainByRoot, tagIdsByName,
             definitionsByName, domainsByIndex);
         var queryIdsByKey = BuildQueryIdLookup(queriesByIndex);
-        var registryHash = ComputeRegistryHash(domainsByIndex, tagsByIndex, aliasByName, queriesByIndex);
+        var registryHash = ComputeRegistryHash(domainsByIndex, tagsByIndex, queriesByIndex);
 
         _isFrozen = true;
         return new TagRegistry(
@@ -261,35 +244,6 @@ public sealed class TagRegistryBuilder
     }
 
     /// <summary>
-    /// Builds an alias lookup and records malformed names or duplicate aliases.
-    /// </summary>
-    private Dictionary<string, AliasRegistration> BuildAliasLookup(
-        Dictionary<string, DomainRegistration> domainByRoot,
-        List<TagValidationDiagnostic> diagnostics)
-    {
-        var result = new Dictionary<string, AliasRegistration>(StringComparer.Ordinal);
-        for (var i = 0; i < _aliases.Count; i++)
-        {
-            var alias = _aliases[i];
-            var path = $"Aliases[{i}]";
-
-            ValidateFullNameShape(alias.AliasName, $"{path}.AliasName", domainByRoot, diagnostics);
-            ValidateFullNameShape(alias.CanonicalTargetName, $"{path}.CanonicalTargetName", domainByRoot, diagnostics);
-
-            if (!result.TryAdd(alias.AliasName, alias))
-            {
-                diagnostics.Add(new TagValidationDiagnostic(
-                    "DuplicateAlias",
-                    $"{path}.AliasName",
-                    "Alias names must be unique.",
-                    alias.AliasName));
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
     /// Creates domain roots and collects validated canonical tag inputs.
     /// </summary>
     private Dictionary<string, TagCompileInput> BuildTagInputs(
@@ -360,58 +314,6 @@ public sealed class TagRegistryBuilder
     }
 
     /// <summary>
-    /// Records aliases with chained, missing, or cross-domain targets.
-    /// </summary>
-    private void ValidateAliases(
-        Dictionary<string, AliasRegistration> aliasByName,
-        Dictionary<string, TagCompileInput> tagInputs,
-        Dictionary<string, DomainRegistration> domainByRoot,
-        List<TagValidationDiagnostic> diagnostics)
-    {
-        foreach (var alias in aliasByName.Values)
-        {
-            var path = $"Aliases[{alias.Sequence}]";
-            if (aliasByName.ContainsKey(alias.CanonicalTargetName))
-            {
-                diagnostics.Add(new TagValidationDiagnostic(
-                    "AliasChainOrCycle",
-                    $"{path}.CanonicalTargetName",
-                    "Alias targets must be canonical tag names, not another alias.",
-                    alias.CanonicalTargetName));
-                continue;
-            }
-
-            if (!tagInputs.ContainsKey(alias.CanonicalTargetName))
-            {
-                diagnostics.Add(new TagValidationDiagnostic(
-                    "UnknownAliasTarget",
-                    $"{path}.CanonicalTargetName",
-                    "Alias target must be a declared canonical tag.",
-                    alias.CanonicalTargetName));
-                continue;
-            }
-
-            var aliasRoot = GetRootPrefix(alias.AliasName);
-            var targetRoot = GetRootPrefix(alias.CanonicalTargetName);
-            if (aliasRoot is null || targetRoot is null ||
-                !domainByRoot.TryGetValue(aliasRoot, out var aliasDomain) ||
-                !domainByRoot.TryGetValue(targetRoot, out var targetDomain))
-            {
-                continue;
-            }
-
-            if (aliasDomain.DomainKey != targetDomain.DomainKey)
-            {
-                diagnostics.Add(new TagValidationDiagnostic(
-                    "CrossDomainAlias",
-                    $"{path}.CanonicalTargetName",
-                    "Alias target must stay within the alias domain.",
-                    alias.CanonicalTargetName));
-            }
-        }
-    }
-
-    /// <summary>
     /// Records missing ancestors required by the strict canonical tag hierarchy.
     /// </summary>
     private static void ValidateTagParents(
@@ -448,7 +350,6 @@ public sealed class TagRegistryBuilder
     private void ValidateQueryRegistrations(
         Dictionary<string, DomainRegistration> domainByKey,
         Dictionary<string, DomainRegistration> domainByRoot,
-        Dictionary<string, AliasRegistration> aliasByName,
         Dictionary<string, TagCompileInput> tagInputs,
         List<TagValidationDiagnostic> diagnostics)
     {
@@ -457,6 +358,15 @@ public sealed class TagRegistryBuilder
         {
             var query = _queries[i];
             var path = $"Queries[{i}]";
+
+            if (query.MatchMode != TagQueryMatchMode.Expanded && query.MatchMode != TagQueryMatchMode.Direct)
+            {
+                diagnostics.Add(new TagValidationDiagnostic(
+                    "InvalidMatchMode",
+                    $"{path}.MatchMode",
+                    "Query match mode must be Expanded or Direct.",
+                    ((int)query.MatchMode).ToString(CultureInfo.InvariantCulture)));
+            }
 
             if (!IsValidQueryKey(query.QueryKey))
             {
@@ -486,11 +396,11 @@ public sealed class TagRegistryBuilder
                 continue;
             }
 
-            var allCount = ValidateQueryTags(query.All, $"{path}.All", domain, domainByRoot, aliasByName, tagInputs,
+            var allCount = ValidateQueryTags(query.All, $"{path}.All", domain, domainByRoot, tagInputs,
                 diagnostics);
-            var anyCount = ValidateQueryTags(query.Any, $"{path}.Any", domain, domainByRoot, aliasByName, tagInputs,
+            var anyCount = ValidateQueryTags(query.Any, $"{path}.Any", domain, domainByRoot, tagInputs,
                 diagnostics);
-            ValidateQueryTags(query.None, $"{path}.None", domain, domainByRoot, aliasByName, tagInputs, diagnostics);
+            ValidateQueryTags(query.None, $"{path}.None", domain, domainByRoot, tagInputs, diagnostics);
 
             if (allCount == 0 && anyCount == 0 && !query.MatchAll)
             {
@@ -504,24 +414,22 @@ public sealed class TagRegistryBuilder
     }
 
     /// <summary>
-    /// Validates query selector names after resolving aliases and counts valid references.
+    /// Validates canonical query selector names and counts valid references.
     /// </summary>
     private static int ValidateQueryTags(
         IReadOnlyList<string> tagNames,
         string fieldPath,
         DomainRegistration queryDomain,
         Dictionary<string, DomainRegistration> domainByRoot,
-        Dictionary<string, AliasRegistration> aliasByName,
         Dictionary<string, TagCompileInput> tagInputs,
         List<TagValidationDiagnostic> diagnostics)
     {
         var validCount = 0;
         for (var i = 0; i < tagNames.Count; i++)
         {
-            var inputName = tagNames[i];
-            var resolvedName = ResolveAlias(inputName, aliasByName);
+            var canonicalName = tagNames[i];
             if (!TryValidateCanonicalNameForDomain(
-                    resolvedName,
+                    canonicalName,
                     queryDomain,
                     domainByRoot,
                     diagnostics,
@@ -530,13 +438,13 @@ public sealed class TagRegistryBuilder
                 continue;
             }
 
-            if (!tagInputs.ContainsKey(resolvedName))
+            if (!tagInputs.ContainsKey(canonicalName))
             {
                 diagnostics.Add(new TagValidationDiagnostic(
                     "UnknownTag",
                     $"{fieldPath}[{i}]",
                     "Query references an unknown tag.",
-                    resolvedName));
+                    canonicalName));
                 continue;
             }
 
@@ -718,7 +626,6 @@ public sealed class TagRegistryBuilder
         Dictionary<string, TagDomainId> domainIdsByKey,
         Dictionary<string, DomainRegistration> domainByKey,
         Dictionary<string, DomainRegistration> domainByRoot,
-        Dictionary<string, AliasRegistration> aliasByName,
         Dictionary<string, TagId> tagIdsByName,
         Dictionary<string, TagDefinition> definitionsByName,
         TagDomain[] domainsByIndex)
@@ -737,11 +644,11 @@ public sealed class TagRegistryBuilder
             var noneMask = new ulong[domain.DomainMaskWordCount];
             var queryDomain = domainByKey[query.DomainKey];
 
-            var allCount = CompileQueryMask(query.All, queryDomain, domainByRoot, aliasByName, tagIdsByName,
+            var allCount = CompileQueryMask(query.All, queryDomain, domainByRoot, tagIdsByName,
                 definitionsByName, allMask);
-            var anyCount = CompileQueryMask(query.Any, queryDomain, domainByRoot, aliasByName, tagIdsByName,
+            var anyCount = CompileQueryMask(query.Any, queryDomain, domainByRoot, tagIdsByName,
                 definitionsByName, anyMask);
-            var noneCount = CompileQueryMask(query.None, queryDomain, domainByRoot, aliasByName, tagIdsByName,
+            var noneCount = CompileQueryMask(query.None, queryDomain, domainByRoot, tagIdsByName,
                 definitionsByName, noneMask);
 
             result[i] = new CompiledTagQuery(
@@ -762,13 +669,12 @@ public sealed class TagRegistryBuilder
     }
 
     /// <summary>
-    /// Sets selector bits after resolving aliases and counts valid references.
+    /// Sets canonical selector bits and counts valid references.
     /// </summary>
     private static int CompileQueryMask(
         IReadOnlyList<string> tagNames,
         DomainRegistration queryDomain,
         Dictionary<string, DomainRegistration> domainByRoot,
-        Dictionary<string, AliasRegistration> aliasByName,
         Dictionary<string, TagId> tagIdsByName,
         Dictionary<string, TagDefinition> definitionsByName,
         ulong[] mask)
@@ -776,14 +682,14 @@ public sealed class TagRegistryBuilder
         var count = 0;
         for (var i = 0; i < tagNames.Count; i++)
         {
-            var resolvedName = ResolveAlias(tagNames[i], aliasByName);
-            if (!IsCanonicalNameForDomain(resolvedName, queryDomain, domainByRoot) ||
-                !tagIdsByName.TryGetValue(resolvedName, out _))
+            var canonicalName = tagNames[i];
+            if (!IsCanonicalNameForDomain(canonicalName, queryDomain, domainByRoot) ||
+                !tagIdsByName.TryGetValue(canonicalName, out _))
             {
                 continue;
             }
 
-            var tag = definitionsByName[resolvedName];
+            var tag = definitionsByName[canonicalName];
             SetBit(mask, tag.DomainLocalIndex);
             count++;
         }
@@ -806,16 +712,15 @@ public sealed class TagRegistryBuilder
     }
 
     /// <summary>
-    /// Hashes deterministic domain, tag, alias, and query data using the established format.
+    /// Hashes deterministic domain, tag, and query data using the established format.
     /// </summary>
     private static ulong ComputeRegistryHash(
         TagDomain[] domainsByIndex,
         TagDefinition[] tagsByIndex,
-        Dictionary<string, AliasRegistration> aliasByName,
         CompiledTagQuery[] queriesByIndex)
     {
         var builder = new StringBuilder();
-        builder.Append("GameplayTagRegistry:v1.1.0:hash-v2\n");
+        builder.Append("GameplayTagRegistry:v1.1.0:hash-v3\n");
 
         for (var i = 0; i < domainsByIndex.Length; i++)
         {
@@ -840,16 +745,6 @@ public sealed class TagRegistryBuilder
                 .Append('|').Append(tag.CanonicalName)
                 .Append('|').Append(tag.IsAssignable ? '1' : '0')
                 .Append('|').Append(tag.ParentId.Value.ToString(CultureInfo.InvariantCulture))
-                .Append('\n');
-        }
-
-        var aliases = new List<AliasRegistration>(aliasByName.Values);
-        aliases.Sort((left, right) => string.CompareOrdinal(left.AliasName, right.AliasName));
-        for (var i = 0; i < aliases.Count; i++)
-        {
-            builder
-                .Append("A|").Append(aliases[i].AliasName)
-                .Append('|').Append(aliases[i].CanonicalTargetName)
                 .Append('\n');
         }
 
@@ -1031,16 +926,6 @@ public sealed class TagRegistryBuilder
                candidateDomain.DomainKey == domain.DomainKey &&
                (candidate == domain.RootPrefix ||
                 candidate.StartsWith(domain.RootPrefix + ".", StringComparison.Ordinal));
-    }
-
-    /// <summary>
-    /// Returns an alias's canonical target, or the original name when no alias exists.
-    /// </summary>
-    private static string ResolveAlias(string inputName, Dictionary<string, AliasRegistration> aliasByName)
-    {
-        return aliasByName.TryGetValue(inputName, out var alias)
-            ? alias.CanonicalTargetName
-            : inputName;
     }
 
     /// <summary>

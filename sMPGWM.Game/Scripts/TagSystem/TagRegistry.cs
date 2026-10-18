@@ -123,7 +123,7 @@ public sealed class TagRegistry
     /// <param name="domainId">The domain identifier relative to this registry.</param>
     /// <param name="domain">Receives the compiled domain, or null when the identifier is invalid.</param>
     /// <returns>True if the domain identifier is valid; otherwise, false.</returns>
-    public bool TryGetDomain(TagDomainId domainId, out TagDomain domain)
+    private bool TryGetDomain(TagDomainId domainId, out TagDomain domain)
     {
         if (!domainId.IsValid || domainId.Value > _domainsByIndex.Length)
         {
@@ -184,7 +184,7 @@ public sealed class TagRegistry
     /// <param name="tagId">The tag identifier relative to this registry.</param>
     /// <param name="tag">Receives the compiled tag, or null when the identifier is invalid.</param>
     /// <returns>True if the tag identifier is valid; otherwise, false.</returns>
-    public bool TryGetTag(TagId tagId, out TagDefinition tag)
+    internal bool TryGetTag(TagId tagId, out TagDefinition tag)
     {
         if (!tagId.IsValid || tagId.Value > _tagsByIndex.Length)
         {
@@ -245,7 +245,7 @@ public sealed class TagRegistry
     /// <param name="queryId">The query identifier relative to this registry.</param>
     /// <param name="query">The compiled query owned by this set's registry.</param>
     /// <returns>True if the query identifier is valid; otherwise, false.</returns>
-    public bool TryGetQuery(TagQueryId queryId, out CompiledTagQuery query)
+    internal bool TryGetQuery(TagQueryId queryId, out CompiledTagQuery query)
     {
         if (!queryId.IsValid || queryId.Value > _queriesByIndex.Length)
         {

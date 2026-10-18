@@ -78,11 +78,12 @@ public class TagSystemIntegratedTests
     }
 
     [Test]
+    [Explicit("Generates smoke benchmark reports; run manually to inspect measurements.")]
     public void Stress_30Tps_BaselineGameplayFixture_WritesBenchmarkArtifacts()
     {
         var registry = TagSystemFixtureFactory.CreateSmallGameplayRegistry();
         var result = RunBaselineStress(registry);
-        var artifactDirectory = FindRepositoryRoot().CreateSubdirectory("artifacts").FullName;
+        var artifactDirectory = Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "artifacts")).FullName;
         var markdownPath = Path.Combine(artifactDirectory, "tag_system_benchmark_report.md");
         var jsonPath = Path.Combine(artifactDirectory, "tag_system_benchmark_report.json");
 
@@ -285,26 +286,10 @@ public class TagSystemIntegratedTests
         return sortedValues[Math.Clamp(index, 0, sortedValues.Length - 1)];
     }
 
-    private static DirectoryInfo FindRepositoryRoot()
-    {
-        var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "sMPGWM.sln")))
-            {
-                return directory;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate repository root from test directory.");
-    }
-
     private static string CreateMarkdownReport(TagRegistry registry, StressResult result)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("# Gameplay Tag System Benchmark Report");
+        builder.AppendLine("# Gameplay Tag System Smoke Benchmark Report");
         builder.AppendLine();
         builder.AppendLine("- Build/configuration summary: Debug test smoke scenario");
         builder.AppendLine($"- Runtime environment summary: {RuntimeInformation.FrameworkDescription}; {RuntimeInformation.OSDescription}");
