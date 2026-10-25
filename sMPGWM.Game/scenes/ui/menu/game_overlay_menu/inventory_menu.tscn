@@ -1,10 +1,66 @@
 [gd_scene format=3 uid="uid://b0ofgmyw23tcc"]
 
 [ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_butre"]
-[ext_resource type="Script" uid="uid://cl1188dtswktr" path="res://Scripts/UiSystem/OverlayMenuSystem/InventoryMenu.cs" id="2_butre"]
+[ext_resource type="Script" uid="uid://cl1188dtswktr" path="res://Scripts/UiSystem/OverlayMenuSystem/InventoryMenu/InventoryMenu.cs" id="2_hkkqo"]
+[ext_resource type="PackedScene" uid="uid://cokvgygk3eysc" path="res://scenes/ui/base/icon_with_label.tscn" id="3_fyjbo"]
+[ext_resource type="Script" uid="uid://cuerqmlisy4it" path="res://Scripts/UiSystem/OverlayMenuSystem/InventoryMenu/EquipmentContainer.cs" id="3_tkc35"]
+[ext_resource type="PackedScene" uid="uid://bc4wl8fu0vbyw" path="res://scenes/ui/base/inventory_container.tscn" id="5_qspun"]
 
 [node name="Inventory" unique_id=1431156458 instance=ExtResource("1_butre")]
-script = ExtResource("2_butre")
+script = ExtResource("2_hkkqo")
 
 [node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
 text = "Inventory"
+
+[node name="MainLayout" type="HBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=523829343]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="CharacterSection" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout" index="0" unique_id=219675959]
+layout_mode = 2
+
+[node name="EquipmentTitle" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection" index="0" unique_id=547703707]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Equipment"
+horizontal_alignment = 1
+
+[node name="EquipmentContainer" type="GridContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection" index="1" unique_id=133865936]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 12
+columns = 3
+script = ExtResource("3_tkc35")
+
+[node name="IconWithLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="0" unique_id=1956222726 instance=ExtResource("3_fyjbo")]
+layout_mode = 2
+
+[node name="IconWithLabel2" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="1" unique_id=1493450364 instance=ExtResource("3_fyjbo")]
+layout_mode = 2
+
+[node name="IconWithLabel3" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="2" unique_id=496890385 instance=ExtResource("3_fyjbo")]
+layout_mode = 2
+
+[node name="IconWithLabel4" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="3" unique_id=218928841 instance=ExtResource("3_fyjbo")]
+layout_mode = 2
+
+[node name="IconWithLabel5" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="4" unique_id=1591401097 instance=ExtResource("3_fyjbo")]
+layout_mode = 2
+
+[node name="IconWithLabel6" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="5" unique_id=2088991225 instance=ExtResource("3_fyjbo")]
+layout_mode = 2
+
+[node name="IconWithLabel7" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="6" unique_id=393339355 instance=ExtResource("3_fyjbo")]
+layout_mode = 2
+
+[node name="InventorySection" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout" index="1" unique_id=1519022622]
+layout_mode = 2
+
+[node name="InventoryLabel" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/InventorySection" index="0" unique_id=148381926]
+layout_mode = 2
+text = "Inventory"
+horizontal_alignment = 1
+
+[node name="InventoryContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/InventorySection" index="1" unique_id=1381080431 instance=ExtResource("5_qspun")]
+layout_mode = 2

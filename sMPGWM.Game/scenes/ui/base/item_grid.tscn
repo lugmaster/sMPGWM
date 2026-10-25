@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://j88ps3ai1b35"]
+
+[ext_resource type="PackedScene" uid="uid://bxfy1glfrrw6a" path="res://scenes/ui/base/clickable_icon.tscn" id="1_uawvf"]
+[ext_resource type="Script" uid="uid://cckftqbepynbt" path="res://Scripts/Util/UiComponents/ItemGrid.cs" id="1_wpadi"]
+
+[node name="ItemGrid" type="ScrollContainer" unique_id=931566361]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+script = ExtResource("1_wpadi")
+
+[node name="SlotGrid" type="GridContainer" parent="." unique_id=69379893]
+layout_mode = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 6
+
+[node name="ClickableIcon6" parent="SlotGrid" unique_id=2048931584 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon" parent="SlotGrid" unique_id=1985481858 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon2" parent="SlotGrid" unique_id=914815582 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon3" parent="SlotGrid" unique_id=142497256 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon4" parent="SlotGrid" unique_id=1426688719 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon5" parent="SlotGrid" unique_id=2003562158 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon7" parent="SlotGrid" unique_id=183878858 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon8" parent="SlotGrid" unique_id=864655946 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon9" parent="SlotGrid" unique_id=259125512 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon10" parent="SlotGrid" unique_id=100019451 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon11" parent="SlotGrid" unique_id=1761592701 instance=ExtResource("1_uawvf")]
+layout_mode = 2
+
+[node name="ClickableIcon12" parent="SlotGrid" unique_id=1733272603 instance=ExtResource("1_uawvf")]
+layout_mode = 2

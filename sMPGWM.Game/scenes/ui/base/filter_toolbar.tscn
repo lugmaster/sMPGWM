@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://bvlnfjbd1dmhy"]
+
+[ext_resource type="Script" uid="uid://bdpm6p5qoer02" path="res://Scripts/Util/UiComponents/FilterToolbar.cs" id="1_d68gm"]
+
+[node name="FilterToolbar" type="HBoxContainer" unique_id=307463620]
+offset_right = 104.0
+offset_bottom = 31.0
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+script = ExtResource("1_d68gm")
+
+[node name="LineEdit" type="LineEdit" parent="." unique_id=1128994829]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search items"
+clear_button_enabled = true
+
+[node name="SortSelector" type="OptionButton" parent="." unique_id=1184787400]
+layout_mode = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "Name"
+popup/item_0/id = 0
