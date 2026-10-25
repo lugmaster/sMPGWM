@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://bobi0ji036bw4"]
 
-[ext_resource type="Script" uid="uid://dkwp55w3o0stj" path="res://Scripts/Ui/Game/UiCanvas.cs" id="1_w7u23"]
+[ext_resource type="Script" uid="uid://dkwp55w3o0stj" path="res://Scripts/UiSystem/UiCanvas.cs" id="1_w7u23"]
 [ext_resource type="PackedScene" uid="uid://cklk7mqwxvqkw" path="res://scenes/ui/player_hud/player_hud.tscn" id="2_60q4y"]
-[ext_resource type="Script" uid="uid://c572x7f1kycoo" path="res://Scripts/Ui/Game/GameOverlayController.cs" id="2_ykq0k"]
+[ext_resource type="Script" uid="uid://c572x7f1kycoo" path="res://Scripts/UiSystem/OverlayMenuSystem/UiWindowManager.cs" id="2_ykq0k"]
 
 [node name="UiCanvas" type="CanvasLayer" unique_id=766120166]
 script = ExtResource("1_w7u23")
@@ -16,27 +16,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="MenuLayer" type="Control" parent="Root" unique_id=28754363]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="MenuHost" type="CenterContainer" parent="Root/MenuLayer" unique_id=857484386]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("2_ykq0k")
-
 [node name="Hudlayer" type="Control" parent="Root" unique_id=140263258]
 layout_mode = 1
 anchors_preset = 15
@@ -49,3 +28,43 @@ mouse_filter = 2
 [node name="PlayerHud" parent="Root/Hudlayer" unique_id=530051118 instance=ExtResource("2_60q4y")]
 unique_name_in_owner = true
 layout_mode = 1
+
+[node name="MenuLayer" type="Control" parent="Root" unique_id=28754363]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MenuHost" type="Control" parent="Root/MenuLayer" unique_id=857484386]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_ykq0k")
+
+[node name="WindowScroll" type="ScrollContainer" parent="Root/MenuLayer/MenuHost"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+follow_focus = true
+vertical_scroll_mode = 0
+
+[node name="WindowRow" type="HBoxContainer" parent="Root/MenuLayer/MenuHost/WindowScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1

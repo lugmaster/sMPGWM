@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b0ofgmyw23tcc"]
 
 [ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_butre"]
-[ext_resource type="Script" uid="uid://cl1188dtswktr" path="res://Scripts/Ui/Game/GameOverlayMenus/InventoryMenu.cs" id="2_butre"]
+[ext_resource type="Script" uid="uid://cl1188dtswktr" path="res://Scripts/UiSystem/OverlayMenuSystem/InventoryMenu.cs" id="2_butre"]
 
 [node name="Inventory" unique_id=1431156458 instance=ExtResource("1_butre")]
 script = ExtResource("2_butre")

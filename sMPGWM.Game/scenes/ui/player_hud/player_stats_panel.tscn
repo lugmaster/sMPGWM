@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b01bucnvb0gog"]
 
-[ext_resource type="Script" uid="uid://ciymk6iiyw7f1" path="res://Scripts/Ui/Game/Hud/PlayerStatsPanel.cs" id="1_script"]
+[ext_resource type="Script" uid="uid://ciymk6iiyw7f1" path="res://Scripts/UiSystem/HudSystem/PlayerStatsPanel.cs" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://b71y4hy7l1fqd" path="res://scenes/ui/base/stat_bar.tscn" id="2_lh4dq"]
 
 [node name="PlayerStatsPanel" type="PanelContainer" unique_id=1531154431]

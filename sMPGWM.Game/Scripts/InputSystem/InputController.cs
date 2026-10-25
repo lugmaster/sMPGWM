@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -27,14 +27,15 @@ public partial class InputController : AbstractSingleton<InputController>
     private readonly HoldInputMode _afterBurnerInput = new("AfterBurner");
     private readonly HoldInputMode _alternateActionInput = new("AlternateAction");
     private readonly HoldInputMode _breakInput = new("Break");
-    private readonly ToggleInputMode _showCombatMetricsInputMode = new("ShowCombatMetrics");
     private readonly List<IInputMode> _inputModes = [];
     
-    private bool _resetApplied;
+    private bool _gameplayInputEnabled;
+    private bool _wasInputAvailable;
+    private Func<bool> _isPointerOverUi = () => false;
 
-    private bool _wasTargetNearestSwitchPressed;
+    public bool IsGameplayInputAvailable => _gameplayInputEnabled && IsWindowFocused;
 
-    private MainGameState _mainGameState = MainGameState.Inactive;
+    public void SetPointerInputFilter(Func<bool> isPointerOverUi) => _isPointerOverUi = isPointerOverUi;
 
     protected override void OnReady()
     {
@@ -45,47 +46,44 @@ public partial class InputController : AbstractSingleton<InputController>
         _inputModes.Add(_alternateActionInput);
         _inputModes.Add(_afterBurnerInput);
         _inputModes.Add(_breakInput);
-        _inputModes.Add(_showCombatMetricsInputMode);
+        IsWindowFocused = DisplayServer.WindowIsFocused();
+        ResetInputState();
     }
 
-    public void ApplyUiState(MainGameState mainGameState)
+    public void SetGameplayInputEnabled(bool enabled)
     {
-        Logger.Debug($"{nameof(InputController)}.{nameof(ApplyUiState)} called with {nameof(mainGameState)}={mainGameState}.");
-        _mainGameState = mainGameState;
+        _gameplayInputEnabled = enabled;
+        if (!enabled)
+        {
+            ResetInputState();
+            _wasInputAvailable = false;
+        }
     }
 
     public override void _Process(double delta)
     {
-        // skip all inputs if not inside game window
-        if (IsWindowFocused)
+        if (!IsGameplayInputAvailable)
         {
-            // leave this as it is. will be later enabled for stable builds
-            // Input.MouseMode = Input.MouseModeEnum.Confined;
-        }
-        else
-        {
-            if (!_resetApplied)
-            {
-                ResetInputState();
-            }
+            if (_wasInputAvailable) ResetInputState();
+            _wasInputAvailable = false;
             return;
         }
-        if (_mainGameState == MainGameState.Active)
-        {
-            for (var i = 0; i < _inputModes.Count; i++)
-                _inputModes[i].Update();
 
-            Direction = Input.GetVector("Backwards", "Forwards", "StrafeLeft", "StrafeRight");
-            UpdateInputs();
-            DetectTargetSwitchPressed();
-        }
-        else
+        _wasInputAvailable = true;
+        var pointerBlocked = _isPointerOverUi();
+        for (var index = 0; index < _inputModes.Count; index++)
         {
-            if (!_resetApplied)
+            if (pointerBlocked && (_inputModes[index] == _actionInput || _inputModes[index] == _alternateActionInput))
             {
-                ResetInputState();
+                _inputModes[index].ResetState();
+                continue;
             }
+            _inputModes[index].Update();
         }
+
+        Direction = Input.GetVector("Backwards", "Forwards", "StrafeLeft", "StrafeRight");
+        UpdateInputs();
+        DetectTargetSwitchPressed();
     }
 
     private void UpdateInputs()
@@ -128,7 +126,6 @@ public partial class InputController : AbstractSingleton<InputController>
         TargetSwitchJustReleased = false;
         TargetNearestSwitchJustReleased = false;
         UpdateInputs();
-        _resetApplied = true;
     }
     
     public static bool IsWindowFocused { get; private set; } = true;
@@ -142,6 +139,11 @@ public partial class InputController : AbstractSingleton<InputController>
         if (what is notificationWmFocusIn or notificationWmFocusOut)
         {
             IsWindowFocused = DisplayServer.WindowIsFocused();
+            if (!IsWindowFocused)
+            {
+                ResetInputState();
+                _wasInputAvailable = false;
+            }
         }
     }
 }

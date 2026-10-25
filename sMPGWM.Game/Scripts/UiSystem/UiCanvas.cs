@@ -1,80 +1,52 @@
 using System;
+using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
-using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
-using PlayerHud = sMPGWM.Scripts.UiSystem.HudSystem.PlayerHud;
-using PlayerMock = sMPGWM.Scripts.Util.Mocks.PlayerMock;
+using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.UiSystem;
 
 public partial class UiCanvas : CanvasLayer
 {
     private PlayerHud _playerHud = null!;
-    private OverlayMenuManager _overlayMenuManager = null!;
-    public event Action<MenuActionType>? OnRequestMenuAction;
+    private UiWindowManager _windowManager = null!;
+
+    public bool HasBlockingWindow => _windowManager.HasBlockingWindow;
+    public event Action<bool>? BlockingChanged;
     public event Action<int>? OnRequestHotbarAction;
 
     public override void _EnterTree()
     {
-        Logger.Trace($"{nameof(UiCanvas)}.{nameof(_EnterTree)} called.");
         _playerHud = GetNode<PlayerHud>("%PlayerHud");
-        _overlayMenuManager = GetNode<OverlayMenuManager>("%MenuHost");
+        _windowManager = GetNode<UiWindowManager>("%MenuHost");
     }
 
     public override void _Ready()
     {
-        Logger.Trace($"{nameof(UiCanvas)}.{nameof(_Ready)} called.");
-        // _playerHud.Bind(PlayerMock.Instance.LivingEntityState,
-        // [
-        //     StatType.Health,
-        //         StatType.Shield,
-        //         StatType.EnergyStorage
-        // ]);
-        _playerHud.SetHotbarIcons(PlayerMock.Instance.GetHotBarSkills());
         _playerHud.HotbarSlotPressed += RequestHotbarAction;
-        _overlayMenuManager.OnMenuAction +=  RequestMenuAction;
-            
-        GamePlayManager.Instance.OnGameStateChanged += OnGameStateChanged;
-        Logger.Debug($"{nameof(UiCanvas)}.{nameof(_Ready)} loaded.");
+        _windowManager.BlockingChanged += OnBlockingChanged;
     }
 
     public override void _ExitTree()
     {
-        Logger.Trace($"{nameof(UiCanvas)}.{nameof(_ExitTree)} called.");
         _playerHud.HotbarSlotPressed -= RequestHotbarAction;
-        _overlayMenuManager.OnMenuAction -=  RequestMenuAction;
-        GamePlayManager.Instance.OnGameStateChanged -= OnGameStateChanged;
+        _windowManager.BlockingChanged -= OnBlockingChanged;
     }
 
-    public void RequestMenuAction(MenuActionType actionType)
+    public void SetHotbarIcons(IReadOnlyList<IconDefinition> icons) => _playerHud.SetHotbarIcons(icons);
+
+    public void SetNavigationEnabled(bool enabled) => _windowManager.SetNavigationEnabled(enabled);
+
+    public void SetGameplayInputEnabled(bool enabled) => _playerHud.SetGameplayInputEnabled(enabled);
+
+    public void RequestHotbarAction(int slotIndex) => OnRequestHotbarAction?.Invoke(slotIndex);
+
+    public bool IsPointerOverInteractiveUi()
     {
-        Logger.Debug($"{nameof(UiCanvas)}.{nameof(RequestMenuAction)} called with {nameof(actionType)}={actionType}.");
-        OnRequestMenuAction?.Invoke(actionType);
+        var hovered = GetViewport().GuiGetHoveredControl();
+        return hovered != null && IsAncestorOf(hovered);
     }
 
-    public void RequestHotbarAction(int slot)
-    {
-        Logger.Debug($"{nameof(UiCanvas)}.{nameof(RequestHotbarAction)} called with {nameof(slot)}={slot}.");
-        OnRequestHotbarAction?.Invoke(slot);
-    }
-
-    public void ApplyMenuAction(MenuActionType menuActionType)
-    {
-        Logger.Debug($"{nameof(UiCanvas)}.{nameof(ApplyMenuAction)} called with {nameof(menuActionType)}={menuActionType}.");
-        _overlayMenuManager.ApplyMenuAction(menuActionType);
-    }
-    
-    public void ApplyGameState(MainGameState mainGameState)
-    {
-        Logger.Debug($"{nameof(UiCanvas)}.{nameof(ApplyGameState)} called with {nameof(mainGameState)}={mainGameState}.");
-        _playerHud.ApplyGameState(mainGameState);
-        _overlayMenuManager.ApplyGameState(mainGameState);
-    }
-
-    private void OnGameStateChanged(MainGameState mainGameState)
-    {
-        ApplyGameState(mainGameState);
-    }
-    
+    private void OnBlockingChanged(bool blocking) => BlockingChanged?.Invoke(blocking);
 }

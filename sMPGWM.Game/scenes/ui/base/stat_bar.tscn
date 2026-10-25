@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b71y4hy7l1fqd"]
 
-[ext_resource type="Script" uid="uid://wd62u8hyne0q" path="res://Scripts/Ui/Base/StatBar.cs" id="1_rbkj5"]
+[ext_resource type="Script" uid="uid://wd62u8hyne0q" path="res://Scripts/Util/UiComponents/StatBar.cs" id="1_rbkj5"]
 
 [node name="StatBar" type="Control" unique_id=1063959680]
 custom_minimum_size = Vector2(0, 16)

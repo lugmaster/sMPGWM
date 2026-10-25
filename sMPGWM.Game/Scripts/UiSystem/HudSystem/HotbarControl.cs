@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -11,7 +10,7 @@ namespace sMPGWM.Scripts.UiSystem.HudSystem;
 public partial class HotbarControl : PanelContainer
 {
     private HBoxContainer _buttonContainer = null!;
-    private bool _isProcessingInput = true;
+    private bool _isProcessingInput;
     public event Action<int>? SlotPressed;
 
     public override void _EnterTree()
@@ -55,25 +54,9 @@ public partial class HotbarControl : PanelContainer
         }
     }
     
-    public void ApplyGameState(MainGameState mainGameState)
+    public void SetGameplayInputEnabled(bool enabled)
     {
-        Logger.Debug($"{nameof(HotbarControl)}.{nameof(ApplyGameState)} called with {nameof(mainGameState)}={mainGameState}.");
-        switch (mainGameState)
-        {
-            case MainGameState.Active:
-                ApplyActiveState();
-                break;
-
-            case MainGameState.InMenu:
-            case MainGameState.Inactive:
-                ApplyInactiveState();
-                break;
-
-            default:
-                Logger.Error($"{nameof(HotbarControl)}.{nameof(ApplyGameState)} reached unexpected {nameof(mainGameState)}={mainGameState}.");
-                throw new InvalidOperationException($"Unexpected game state: {mainGameState}");
-        }
-
+        _isProcessingInput = enabled;
         var children = _buttonContainer.GetChildren();
         for (var i = 0; i < children.Count; i++)
         {
@@ -83,17 +66,4 @@ public partial class HotbarControl : PanelContainer
 
     }
     
-    private void ApplyActiveState()
-    {
-        ProcessMode = ProcessModeEnum.Inherit;
-        MouseFilter = MouseFilterEnum.Pass;
-        _isProcessingInput = true;
-    }
-
-    private void ApplyInactiveState()
-    {
-        ProcessMode = ProcessModeEnum.Disabled;
-        MouseFilter = MouseFilterEnum.Ignore;
-        _isProcessingInput = false;
-    }
 }

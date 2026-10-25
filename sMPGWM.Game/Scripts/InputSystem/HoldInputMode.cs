@@ -6,16 +6,26 @@ public sealed class HoldInputMode(string action, bool initial = false) : IInputM
 {
     private readonly bool _initial = initial;
     private bool _isHeld = initial;
+    private bool _waitingForRelease;
 
-    public void Update()
+    public void Update() => Update(Input.IsActionPressed(action));
+
+    public void Update(bool isPressed)
     {
-        if (_isHeld && Input.IsActionJustReleased(action))
-            _isHeld = false;
-        if (!_isHeld && Input.IsActionPressed(action))
-            _isHeld = true;
+        if (_waitingForRelease)
+        {
+            if (!isPressed) _waitingForRelease = false;
+            return;
+        }
+
+        _isHeld = isPressed;
     }
 
     public bool IsActive() => _isHeld;
 
-    public void ResetState() => _isHeld = _initial;
+    public void ResetState()
+    {
+        _isHeld = _initial;
+        _waitingForRelease = true;
+    }
 }

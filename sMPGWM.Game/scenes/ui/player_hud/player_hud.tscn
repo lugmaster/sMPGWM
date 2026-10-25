@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cklk7mqwxvqkw"]
 
-[ext_resource type="Script" uid="uid://bfumwiqvr7041" path="res://Scripts/Ui/Game/Hud/PlayerHud.cs" id="1_rb7sb"]
+[ext_resource type="Script" uid="uid://bfumwiqvr7041" path="res://Scripts/UiSystem/HudSystem/PlayerHud.cs" id="1_rb7sb"]
 [ext_resource type="PackedScene" uid="uid://b01bucnvb0gog" path="res://scenes/ui/player_hud/player_stats_panel.tscn" id="1_stats"]
 [ext_resource type="PackedScene" uid="uid://bx0y6mgnv4sxp" path="res://scenes/ui/player_hud/radar_control.tscn" id="2_radar"]
 [ext_resource type="PackedScene" uid="uid://dp0ih827sy63x" path="res://scenes/ui/player_hud/hotbar_control.tscn" id="3_adh7x"]

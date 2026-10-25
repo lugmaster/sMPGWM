@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dp0ih827sy63x"]
 
-[ext_resource type="Script" uid="uid://cdnr3xi6qagm5" path="res://Scripts/Ui/Game/Hud/HotbarControl.cs" id="1_6j8mg"]
+[ext_resource type="Script" uid="uid://cdnr3xi6qagm5" path="res://Scripts/UiSystem/HudSystem/HotbarControl.cs" id="1_6j8mg"]
 [ext_resource type="PackedScene" uid="uid://bxfy1glfrrw6a" path="res://scenes/ui/base/clickable_icon.tscn" id="2_2ryyu"]
 
 [node name="HotbarControl" type="PanelContainer" unique_id=1772562676]

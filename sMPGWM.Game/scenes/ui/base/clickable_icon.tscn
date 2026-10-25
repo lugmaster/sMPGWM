@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bxfy1glfrrw6a"]
 
-[ext_resource type="Script" uid="uid://dqhp2qu7qg25n" path="res://Scripts/Ui/Base/ClickableIcon.cs" id="1_6bqkx"]
+[ext_resource type="Script" uid="uid://dqhp2qu7qg25n" path="res://Scripts/Util/UiComponents/ClickableIcon.cs" id="1_6bqkx"]
 [ext_resource type="Texture2D" uid="uid://b14ksx35yn6lp" path="res://assets/mocks/compass.png" id="1_rgkmo"]
 
 [node name="ClickableIcon" type="Button" unique_id=2048931584]

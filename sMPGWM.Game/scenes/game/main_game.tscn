@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cthi5krpfsovj"]
 
-[ext_resource type="Script" uid="uid://sokcm4ho6xh5" path="res://Scripts/Autoload/GameManager.cs" id="1_7qhhq"]
+[ext_resource type="Script" uid="uid://sokcm4ho6xh5" path="res://Scripts/GamePlaySystem/GamePlayManager.cs" id="1_7qhhq"]
+[ext_resource type="Script" uid="uid://dxopu4my0fllg" path="res://Scripts/InputSystem/InputController.cs" id="4_input"]
 [ext_resource type="PackedScene" uid="uid://cg8f4fn37ikfw" path="res://scenes/game/world_scene.tscn" id="1_p17hc"]
 [ext_resource type="PackedScene" uid="uid://bobi0ji036bw4" path="res://scenes/game/ui_canvas.tscn" id="2_qgbr3"]
 
@@ -9,6 +10,9 @@ layout_mode = 3
 anchors_preset = 0
 mouse_filter = 2
 script = ExtResource("1_7qhhq")
+
+[node name="InputController" type="Node" parent="."]
+script = ExtResource("4_input")
 
 [node name="UiCanvas" parent="." unique_id=766120166 instance=ExtResource("2_qgbr3")]
 unique_name_in_owner = true

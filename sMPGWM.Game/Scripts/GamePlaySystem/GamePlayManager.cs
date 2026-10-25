@@ -1,143 +1,69 @@
 using System;
 using Godot;
+using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.UiSystem;
-using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.Util;
-using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
-using PlayerMock = sMPGWM.Scripts.Util.Mocks.PlayerMock;
+using sMPGWM.Scripts.Util.Mocks;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
 public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
     private UiCanvas _canvas = null!;
-    private Node2D _world = null!;
-
+    private InputController _inputController = null!;
+    private PlayerActionController _playerActions = null!;
+    private readonly PlayerInputPolicy _inputPolicy = new();
     private MainGameState _gameState = MainGameState.Inactive;
 
-    public event Action<MainGameState> OnGameStateChanged;
+    public event Action<MainGameState>? OnGameStateChanged;
 
-    private MainGameState GameState
-    {
-        get => _gameState;
-        set => SetGameState(value);
-    }
+    public MainGameState GameState => _gameState;
 
     protected override void OnReady()
     {
         _canvas = GetNode<UiCanvas>("UiCanvas");
-        _world = GetNode<Node2D>(
-            "WorldViewPortContainer/WorldViewport/WorldScene");
-        _canvas.OnRequestHotbarAction += ConsumeOnHotbarSlotPressed;
-        _canvas.OnRequestMenuAction += ConsumeMenuAction;
+        _inputController = GetNode<InputController>("InputController");
+        _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
+        var player = GetNode<PlayerMock>("WorldViewPortContainer/WorldViewport/WorldScene/PlayerMock");
+        _playerActions = new PlayerActionController(
+            _inputPolicy, player.OnHotbarSlotPressed, () => _inputController.IsGameplayInputAvailable);
+
+        _canvas.OnRequestHotbarAction += _playerActions.RequestHotbarActivation;
+        _canvas.BlockingChanged += _inputPolicy.SetHasBlockingWindow;
+        _inputPolicy.CanControlPlayerChanged += ApplyPlayerInputAvailability;
+
+        _canvas.SetHotbarIcons(player.GetHotBarSkills());
+        _inputPolicy.SetHasBlockingWindow(_canvas.HasBlockingWindow);
+        _inputPolicy.SetSessionActive(GameState == MainGameState.Active);
+        _canvas.SetNavigationEnabled(GameState == MainGameState.Active);
+        ApplyPlayerInputAvailability(_inputPolicy.CanControlPlayer);
         CallDeferred(nameof(Start));
     }
-    
-    // private const double WaitingTime = 30.0f;
-    //
-    // private double _passedTime;
-    // private bool _fired;
-    // private bool _firedBack;
-    //
-    // public override void _Process(double delta)
-    // {
-    //     if (_fired && _firedBack)
-    //     {
-    //         return;
-    //     }
-    //
-    //     _passedTime += delta;
-    //
-    //     if (!_fired && _passedTime >= WaitingTime)
-    //     {
-    //         _fired = true;
-    //         Logger.Info($"Fired: {_passedTime} - Setting state to {_gameState}");
-    //         SetGameState(MainGameState.Inactive);
-    //     }
-    //
-    //     if (!_firedBack && _passedTime >= WaitingTime * 2)
-    //     {
-    //         _firedBack = true;
-    //         Logger.Info($"FiredBack: {_passedTime} - Setting state to {_gameState}");
-    //         SetGameState(MainGameState.Active);
-    //     }
-    // }
 
-    private void Start()
+    protected override void OnExitTree()
     {
-        GameState = MainGameState.Active;
+        _inputPolicy.CanControlPlayerChanged -= ApplyPlayerInputAvailability;
+        _canvas.BlockingChanged -= _inputPolicy.SetHasBlockingWindow;
+        _canvas.OnRequestHotbarAction -= _playerActions.RequestHotbarActivation;
     }
 
+    private void Start() => SetGameState(MainGameState.Active);
 
-    private void SetGameState(MainGameState newGameState)
+    public void SetGameState(MainGameState newGameState)
     {
-        if (newGameState == GameState) return;
+        if (!Enum.IsDefined(newGameState))
+            throw new ArgumentOutOfRangeException(nameof(newGameState), newGameState, null);
+        if (newGameState == _gameState) return;
+
         _gameState = newGameState;
+        _inputPolicy.SetSessionActive(newGameState == MainGameState.Active);
+        _canvas.SetNavigationEnabled(newGameState == MainGameState.Active);
         OnGameStateChanged?.Invoke(newGameState);
     }
 
-    public void ConsumeMenuAction(MenuActionType type)
+    private void ApplyPlayerInputAvailability(bool enabled)
     {
-        Logger.Debug($"{nameof(GamePlayManager)}.{nameof(ConsumeMenuAction)} called with {nameof(type)}={type}.");
-        switch ((_gameState, type))
-        {
-            case (MainGameState.Active, MenuActionType.OpenInventoryMenu):
-                _canvas.ApplyMenuAction(type);
-                SetGameState(MainGameState.InMenu);
-                break;
-
-            case (MainGameState.Active, MenuActionType.OpenMainMenu):
-                _canvas.ApplyMenuAction(type);
-                SetGameState(MainGameState.InMenu);
-                break;
-
-            case (MainGameState.Active, MenuActionType.OpenMapMenu):
-                _canvas.ApplyMenuAction(type);
-                SetGameState(MainGameState.InMenu);
-                break;
-            case (MainGameState.Active, MenuActionType.CloseOverlayMenu):
-                break;
-
-            case (MainGameState.InMenu, MenuActionType.OpenInventoryMenu):
-                _canvas.ApplyMenuAction(type);
-                break;
-
-            case (MainGameState.InMenu, MenuActionType.OpenMainMenu):
-                _canvas.ApplyMenuAction(type);
-                break;
-
-            case (MainGameState.InMenu, MenuActionType.OpenMapMenu):
-                _canvas.ApplyMenuAction(type);
-                break;
-            case (MainGameState.InMenu, MenuActionType.CloseOverlayMenu):
-                _canvas.ApplyMenuAction(type);
-                SetGameState(MainGameState.Active);
-                break;
-
-            case (MainGameState.Inactive, MenuActionType.CloseOverlayMenu):
-                _canvas.ApplyMenuAction(type);
-                break;
-            case (MainGameState.Inactive, _):
-                break;
-        }
-    }
-
-    public void ConsumeOnHotbarSlotPressed(int slotNumber)
-    {
-        Logger.Debug($"{nameof(GamePlayManager)}.{nameof(ConsumeOnHotbarSlotPressed)} called with {nameof(slotNumber)}={slotNumber}.");
-        switch (_gameState)
-        {
-            case MainGameState.Active:
-                PlayerMock.Instance.OnHotbarSlotPressed(slotNumber);
-                break;
-            case MainGameState.InMenu:
-            case MainGameState.Inactive:
-                // Intentionally ignore menu requests.
-                break;
-
-            default:
-                Logger.Error($"{nameof(GamePlayManager)}.{nameof(ConsumeOnHotbarSlotPressed)} reached unsupported {nameof(_gameState)}={_gameState}.");
-                throw new ArgumentOutOfRangeException(nameof(_gameState), _gameState, null);
-        }
+        _inputController.SetGameplayInputEnabled(enabled);
+        _canvas.SetGameplayInputEnabled(enabled);
     }
 }

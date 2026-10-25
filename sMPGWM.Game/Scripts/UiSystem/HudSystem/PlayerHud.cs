@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -18,7 +17,7 @@ public partial class PlayerHud : Control
     private PlayerStatsPanel _statsPanel = null!;
     private RadarControl _radarControl = null!;
     private HotbarControl _hotbarControl = null!;
-    private bool _isProcessingInput = true;
+    private bool _isProcessingInput;
 
     public override void _EnterTree()
     {
@@ -77,38 +76,9 @@ public partial class PlayerHud : Control
         _hotbarControl.SetIcons(iconDefinitions);
     }
 
-    public void ApplyGameState(MainGameState mainGameState)
+    public void SetGameplayInputEnabled(bool enabled)
     {
-        Logger.Debug(
-            $"{nameof(PlayerHud)}.{nameof(ApplyGameState)} called with {nameof(mainGameState)}={mainGameState}.");
-        _hotbarControl?.ApplyGameState(mainGameState);
-        switch (mainGameState)
-        {
-            case MainGameState.Active:
-                ApplyActiveState();
-                break;
-
-            case MainGameState.InMenu:
-            case MainGameState.Inactive:
-                ApplyInactiveState();
-                break;
-
-            default:
-                throw new InvalidOperationException($"Unexpected game state: {mainGameState}");
-        }
-    }
-
-    private void ApplyActiveState()
-    {
-        ProcessMode = ProcessModeEnum.Inherit;
-        MouseFilter = MouseFilterEnum.Pass;
-        _isProcessingInput = true;
-    }
-
-    private void ApplyInactiveState()
-    {
-        ProcessMode = ProcessModeEnum.Disabled;
-        MouseFilter = MouseFilterEnum.Ignore;
-        _isProcessingInput = false;
+        _isProcessingInput = enabled;
+        _hotbarControl.SetGameplayInputEnabled(enabled);
     }
 }
