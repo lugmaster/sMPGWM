@@ -42,7 +42,7 @@ public partial class GameOverlayMenu : BaseMenu
 
     private void UpdateWindowMinimumSize() => CustomMinimumSize = _menuPanel.GetCombinedMinimumSize();
 
-    public void GrabWindowFocus()
+    internal void GrabWindowFocus()
     {
         _closeButton.GrabFocus();
     }

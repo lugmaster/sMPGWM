@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 
-public sealed class UiWindowRegistry
+internal sealed class UiWindowRegistry
 {
     private readonly Dictionary<UiWindowId, bool> _windows = new();
     private readonly List<UiWindowId> _focusOrder = new();

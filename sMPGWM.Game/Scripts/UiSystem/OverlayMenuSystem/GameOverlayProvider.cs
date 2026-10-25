@@ -3,7 +3,7 @@ using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 
-public static class GameOverlayProvider
+internal static class GameOverlayProvider
 {
     private const string GameOverlayMenuPath = "res://scenes/ui/menu/game_overlay_menu/";
     private const string MainMenuPath = GameOverlayMenuPath + "main_menu.tscn";

@@ -79,6 +79,7 @@ func expect_window_visible(scroll: ScrollContainer, window: Control) -> void:
     expect(scroll.get_global_rect().grow(1).encloses(window.get_global_rect()), "Focused or fitting window should be fully visible")
 
 func verify_menu_press_guards(game: Node, windows: Node, row: HBoxContainer) -> void:
+    var canvas := game.get_node("UiCanvas")
     menu_key(KEY_ESCAPE, true, 0, true)
     expect(row.get_child_count() == 0, "Auto-repeat without an initial press should not open a menu")
     menu_key(KEY_ESCAPE, true)
@@ -94,7 +95,7 @@ func verify_menu_press_guards(game: Node, windows: Node, row: HBoxContainer) -> 
     menu_key(KEY_ESCAPE, true)
     menu_key(KEY_ESCAPE, false)
     expect(row.get_child_count() == 1, "A second intentional press in the same frame should open main menu")
-    windows.call("CloseAll")
+    canvas.call("CloseAllMenus")
 
     for keycode in [KEY_I, KEY_M]:
         menu_key(keycode, true)
@@ -113,7 +114,7 @@ func verify_menu_press_guards(game: Node, windows: Node, row: HBoxContainer) -> 
     expect(row.get_child_count() == 2, "Each menu action should have its own press guard")
     menu_key(KEY_I, false)
     menu_key(KEY_M, false)
-    windows.call("CloseAll")
+    canvas.call("CloseAllMenus")
 
     var consumer := ReleaseConsumer.new()
     consumer.focus_mode = Control.FOCUS_ALL
@@ -142,7 +143,11 @@ func verify_menu_press_guards(game: Node, windows: Node, row: HBoxContainer) -> 
     menu_key(KEY_I, true)
     menu_key(KEY_I, false)
     expect(row.get_child_count() == 1, "Disabling navigation should clear guards when key release is missed")
-    windows.call("CloseAll")
+    canvas.call("CloseAllMenus")
+    canvas.call("ToggleMenu", 0)
+    expect(row.get_child_count() == 1, "Canvas facade should toggle inventory open")
+    canvas.call("ToggleMenu", 0)
+    expect(row.get_child_count() == 0, "Canvas facade should toggle inventory closed")
     await settle()
 
 func run() -> void:
@@ -189,13 +194,13 @@ func run() -> void:
         var inventory_position := inventory.position
         var map_position := map.position
 
-        windows.call("Open", 0)
+        canvas.call("OpenMenu", 0)
         expect(row.get_child_count() == 2, "Reopening inventory should reuse its instance")
         expect(row.get_child(0) == inventory, "Focusing inventory should preserve opening order")
         expect(inventory.position == inventory_position and map.position == map_position, "Focus should not move windows")
         expect(root.gui_get_focus_owner() == inventory.get_node("%CloseButton"), "Reopening should focus the selected window")
 
-        windows.call("Open", 1)
+        canvas.call("OpenMenu", 1)
         click_at(inventory.get_global_rect().position + Vector2(8, 8))
         await settle()
         expect(root.gui_get_focus_owner() == inventory.get_node("%CloseButton"), "Clicking inventory should focus it")
@@ -211,7 +216,7 @@ func run() -> void:
         await settle()
 
         var two_window_position: Vector2 = inventory.position
-        windows.call("Open", 2)
+        canvas.call("OpenMenu", 2)
         await settle()
         expect(row.get_child_count() == 3, "All three windows should coexist")
         expect(inventory.position.x < two_window_position.x, "Opening third window should shift existing windows left")
@@ -223,11 +228,11 @@ func run() -> void:
         expect(scroll.get_h_scroll_bar().visible, "Narrow viewport should enable horizontal scrolling")
         expect_row_layout(scroll, row, false)
         expect_window_visible(scroll, row.get_child(2))
-        windows.call("Open", 0)
+        canvas.call("OpenMenu", 0)
         await settle()
         expect_window_visible(scroll, inventory)
         expect(row.get_child(0) == inventory, "Scrolling to focused window should preserve row order")
-        windows.call("Open", 2)
+        canvas.call("OpenMenu", 2)
         await settle()
         expect_window_visible(scroll, row.get_child(2))
         root.content_scale_size = original_scale_size
@@ -235,16 +240,16 @@ func run() -> void:
         expect(not scroll.get_h_scroll_bar().visible, "Wider viewport should remove unnecessary scrollbar")
         expect_row_layout(scroll, row)
 
-        windows.call("Close", 1)
+        canvas.call("CloseMenu", 1)
         await settle()
         expect(row.get_child_count() == 2, "Closing middle window should leave two windows")
         expect_row_layout(scroll, row)
-        windows.call("Open", 1)
+        canvas.call("OpenMenu", 1)
         await settle()
         map = row.get_child(2) as Control
         expect(map != inventory, "Reopening map should append a new instance")
         expect_row_layout(scroll, row)
-        windows.call("Close", 2)
+        canvas.call("CloseMenu", 2)
         await settle()
         expect(row.get_child(0) == inventory and row.get_child(1) == map, "Closing main menu should preserve remaining order")
         expect_row_layout(scroll, row)
@@ -255,8 +260,8 @@ func run() -> void:
         expect(buttons.get_child(0).disabled, "Remaining map should keep hotbar blocked")
         expect_row_layout(scroll, row)
 
-        windows.call("Open", 0)
-        windows.call("Open", 2)
+        canvas.call("OpenMenu", 0)
+        canvas.call("OpenMenu", 2)
         await settle()
         expect(row.get_child_count() == 3, "All three windows should be open before Escape")
         menu_key(KEY_ESCAPE, true, 94)
@@ -305,7 +310,7 @@ func run() -> void:
         game.call("SetGameState", 1)
         expect(row.get_child_count() == 0, "Inactive session should close all windows")
         expect(buttons.get_child(0).disabled, "Inactive session should block hotbar")
-        windows.call("Open", 0)
+        canvas.call("OpenMenu", 0)
         expect(row.get_child_count() == 0, "Inactive session should reject opening windows")
         menu_action("MainMenu")
         await settle()
@@ -315,8 +320,8 @@ func run() -> void:
 
         await verify_menu_press_guards(game, windows, row)
 
-        windows.call("Open", 0)
-        windows.call("Open", 1)
+        canvas.call("OpenMenu", 0)
+        canvas.call("OpenMenu", 1)
         await settle()
         game.queue_free()
         await settle()

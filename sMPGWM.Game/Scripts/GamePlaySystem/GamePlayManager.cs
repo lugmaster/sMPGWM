@@ -22,9 +22,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     protected override void OnReady()
     {
         _canvas = GetNode<UiCanvas>("UiCanvas");
-        _inputController = GetNode<InputController>("InputController");
+        _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
-        var player = GetNode<PlayerMock>("WorldViewPortContainer/WorldViewport/WorldScene/PlayerMock");
+        var player = PlayerMock.Instance;
         _playerActions = new PlayerActionController(
             _inputPolicy, player.OnHotbarSlotPressed, () => _inputController.IsGameplayInputAvailable);
 

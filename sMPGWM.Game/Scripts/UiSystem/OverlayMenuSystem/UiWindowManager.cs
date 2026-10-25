@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using sMPGWM.Scripts.Util.UiComponents;
 
@@ -7,8 +8,9 @@ namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 
 public partial class UiWindowManager : Control
 {
-    private static readonly string[] MenuActions = ["MainMenu", "InventoryMenu", "MapMenu"];
-    private readonly HashSet<string> _pressedMenuActions = new();
+    private static readonly Dictionary<UiWindowId, StringName> MenuActions =
+        Enum.GetValues<UiWindowId>().ToDictionary(action => action, action => new StringName(action.ToString()));
+    private readonly HashSet<UiWindowId> _pressedMenuActions = new();
     private readonly UiWindowRegistry _registry = new();
     private readonly Dictionary<UiWindowId, GameOverlayMenu> _windows = new();
     private readonly Dictionary<UiWindowId, Action> _closeHandlers = new();
@@ -16,9 +18,9 @@ public partial class UiWindowManager : Control
     private HBoxContainer _windowRow = null!;
     private bool _navigationEnabled;
 
-    public bool HasBlockingWindow => _registry.HasBlockingWindow;
+    internal bool HasBlockingWindow => _registry.HasBlockingWindow;
 
-    public event Action<bool>? BlockingChanged
+    internal event Action<bool>? BlockingChanged
     {
         add => _registry.BlockingChanged += value;
         remove => _registry.BlockingChanged -= value;
@@ -41,7 +43,7 @@ public partial class UiWindowManager : Control
         CloseAll();
     }
 
-    public void SetNavigationEnabled(bool enabled)
+    internal void SetNavigationEnabled(bool enabled)
     {
         _navigationEnabled = enabled;
         if (!enabled)
@@ -51,7 +53,7 @@ public partial class UiWindowManager : Control
         }
     }
 
-    public void Open(UiWindowId id)
+    internal void Open(UiWindowId id)
     {
         if (!_navigationEnabled) return;
         if (_registry.IsOpen(id))
@@ -61,7 +63,7 @@ public partial class UiWindowManager : Control
         }
 
         var window = CreateWindow(id);
-        Action closeHandler = () => Close(id);
+        var closeHandler = () => Close(id);
         window.OnMenuClosed += closeHandler;
         _closeHandlers.Add(id, closeHandler);
         _windows.Add(id, window);
@@ -72,7 +74,7 @@ public partial class UiWindowManager : Control
         QueueEnsureFocusedWindowVisible();
     }
 
-    public void Close(UiWindowId id)
+    internal void Close(UiWindowId id)
     {
         if (!_windows.Remove(id, out var window)) return;
         window.OnMenuClosed -= _closeHandlers[id];
@@ -85,18 +87,13 @@ public partial class UiWindowManager : Control
         FocusTopmost();
     }
 
-    public void Toggle(UiWindowId id)
+    internal void Toggle(UiWindowId id)
     {
         if (_registry.IsOpen(id)) Close(id);
         else Open(id);
     }
 
-    public void CloseTopmost()
-    {
-        if (_registry.Topmost is { } id) Close(id);
-    }
-
-    public void CloseAll()
+    internal void CloseAll()
     {
         foreach (var entry in _windows)
         {
@@ -115,8 +112,8 @@ public partial class UiWindowManager : Control
 
     public override void _Input(InputEvent @event)
     {
-        foreach (var action in MenuActions)
-            if (@event.IsActionReleased(action)) _pressedMenuActions.Remove(action);
+        foreach (var (action, actionName) in MenuActions)
+            if (@event.IsActionReleased(actionName)) _pressedMenuActions.Remove(action);
 
         if (!_navigationEnabled || @event is not InputEventMouseButton { Pressed: true } mouse) return;
         if (!_scrollContainer.GetGlobalRect().HasPoint(mouse.Position)) return;
@@ -137,25 +134,18 @@ public partial class UiWindowManager : Control
     {
         if (!_navigationEnabled) return;
 
-        foreach (var action in MenuActions)
+        foreach (var (action, actionName) in MenuActions)
         {
-            if (!@event.IsActionPressed(action, true)) continue;
+            if (!@event.IsActionPressed(actionName, true)) continue;
             GetViewport().SetInputAsHandled();
             if (@event.IsEcho() || !_pressedMenuActions.Add(action)) return;
 
-            switch (action)
+            if (action == UiWindowId.MainMenu)
             {
-                case "MainMenu":
-                    if (_registry.Topmost != null) CloseAll();
-                    else Open(UiWindowId.MainMenu);
-                    break;
-                case "InventoryMenu":
-                    Toggle(UiWindowId.Inventory);
-                    break;
-                case "MapMenu":
-                    Toggle(UiWindowId.Map);
-                    break;
+                if (_registry.Topmost != null) CloseAll();
+                else Open(UiWindowId.MainMenu);
             }
+            else Toggle(action);
 
             return;
         }
@@ -192,8 +182,8 @@ public partial class UiWindowManager : Control
 
     private static GameOverlayMenu CreateWindow(UiWindowId id) => id switch
     {
-        UiWindowId.Inventory => GameOverlayProvider.CreateInventoryMenu(),
-        UiWindowId.Map => GameOverlayProvider.CreateMapMenu(),
+        UiWindowId.InventoryMenu => GameOverlayProvider.CreateInventoryMenu(),
+        UiWindowId.MapMenu => GameOverlayProvider.CreateMapMenu(),
         UiWindowId.MainMenu => GameOverlayProvider.CreateMainMenu(),
         _ => throw new ArgumentOutOfRangeException(nameof(id), id, null)
     };

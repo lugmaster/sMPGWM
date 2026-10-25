@@ -12,9 +12,9 @@ public partial class UiCanvas : CanvasLayer
     private PlayerHud _playerHud = null!;
     private UiWindowManager _windowManager = null!;
 
-    public bool HasBlockingWindow => _windowManager.HasBlockingWindow;
-    public event Action<bool>? BlockingChanged;
-    public event Action<int>? OnRequestHotbarAction;
+    internal bool HasBlockingWindow => _windowManager.HasBlockingWindow;
+    internal event Action<bool>? BlockingChanged;
+    internal event Action<int>? OnRequestHotbarAction;
 
     public override void _EnterTree()
     {
@@ -34,15 +34,23 @@ public partial class UiCanvas : CanvasLayer
         _windowManager.BlockingChanged -= OnBlockingChanged;
     }
 
-    public void SetHotbarIcons(IReadOnlyList<IconDefinition> icons) => _playerHud.SetHotbarIcons(icons);
+    public void OpenMenu(UiWindowId id) => _windowManager.Open(id);
 
-    public void SetNavigationEnabled(bool enabled) => _windowManager.SetNavigationEnabled(enabled);
+    public void CloseMenu(UiWindowId id) => _windowManager.Close(id);
 
-    public void SetGameplayInputEnabled(bool enabled) => _playerHud.SetGameplayInputEnabled(enabled);
+    public void ToggleMenu(UiWindowId id) => _windowManager.Toggle(id);
 
-    public void RequestHotbarAction(int slotIndex) => OnRequestHotbarAction?.Invoke(slotIndex);
+    public void CloseAllMenus() => _windowManager.CloseAll();
 
-    public bool IsPointerOverInteractiveUi()
+    internal void SetHotbarIcons(IReadOnlyList<IconDefinition> icons) => _playerHud.SetHotbarIcons(icons);
+
+    internal void SetNavigationEnabled(bool enabled) => _windowManager.SetNavigationEnabled(enabled);
+
+    internal void SetGameplayInputEnabled(bool enabled) => _playerHud.SetGameplayInputEnabled(enabled);
+
+    private void RequestHotbarAction(int slotIndex) => OnRequestHotbarAction?.Invoke(slotIndex);
+
+    internal bool IsPointerOverInteractiveUi()
     {
         var hovered = GetViewport().GuiGetHoveredControl();
         return hovered != null && IsAncestorOf(hovered);

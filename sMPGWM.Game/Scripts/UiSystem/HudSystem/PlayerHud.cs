@@ -8,7 +8,7 @@ namespace sMPGWM.Scripts.UiSystem.HudSystem;
 
 public partial class PlayerHud : Control
 {
-    public event Action<int>? HotbarSlotPressed;
+    internal event Action<int>? HotbarSlotPressed;
 
     private Control _statsAnchor = null!;
     private Control _radarAnchor = null!;
@@ -69,14 +69,14 @@ public partial class PlayerHud : Control
     //     // _statsPanel.Bind(state, visibleStats);
     // }
 
-    public void SetHotbarIcons(IReadOnlyList<IconDefinition> iconDefinitions)
+    internal void SetHotbarIcons(IReadOnlyList<IconDefinition> iconDefinitions)
     {
         Logger.Debug(
             $"{nameof(PlayerHud)}.{nameof(SetHotbarIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
         _hotbarControl.SetIcons(iconDefinitions);
     }
 
-    public void SetGameplayInputEnabled(bool enabled)
+    internal void SetGameplayInputEnabled(bool enabled)
     {
         _isProcessingInput = enabled;
         _hotbarControl.SetGameplayInputEnabled(enabled);

@@ -6,8 +6,8 @@ namespace sMPGWM.Tests.UiSystem;
 [TestFixture]
 public class UiWindowRegistryTests
 {
-    [TestCase(UiWindowId.Inventory)]
-    [TestCase(UiWindowId.Map)]
+    [TestCase(UiWindowId.InventoryMenu)]
+    [TestCase(UiWindowId.MapMenu)]
     public void ClosingOneOfTwoWindows_KeepsPlayerBlocked(UiWindowId firstClosed)
     {
         var registry = new UiWindowRegistry();
@@ -15,8 +15,8 @@ public class UiWindowRegistryTests
         registry.BlockingChanged += policy.SetHasBlockingWindow;
         policy.SetSessionActive(true);
 
-        registry.Open(UiWindowId.Inventory);
-        registry.Open(UiWindowId.Map);
+        registry.Open(UiWindowId.InventoryMenu);
+        registry.Open(UiWindowId.MapMenu);
         registry.Close(firstClosed);
 
         Assert.That(policy.CanControlPlayer, Is.False);
@@ -30,11 +30,11 @@ public class UiWindowRegistryTests
         var registry = new UiWindowRegistry();
         var blockingChanges = new List<bool>();
         registry.BlockingChanged += blockingChanges.Add;
-        registry.Open(UiWindowId.Inventory);
-        registry.Open(UiWindowId.Map);
+        registry.Open(UiWindowId.InventoryMenu);
+        registry.Open(UiWindowId.MapMenu);
 
-        Assert.That(registry.Open(UiWindowId.Inventory), Is.False);
-        Assert.That(registry.FocusOrder, Is.EqualTo(new[] { UiWindowId.Map, UiWindowId.Inventory }));
+        Assert.That(registry.Open(UiWindowId.InventoryMenu), Is.False);
+        Assert.That(registry.FocusOrder, Is.EqualTo(new[] { UiWindowId.MapMenu, UiWindowId.InventoryMenu }));
         Assert.That(blockingChanges, Is.EqualTo(new[] { true }));
     }
 
@@ -42,26 +42,26 @@ public class UiWindowRegistryTests
     public void FocusAndTopmostClose_LeaveOtherWindowsOpen()
     {
         var registry = new UiWindowRegistry();
-        registry.Open(UiWindowId.Inventory);
-        registry.Open(UiWindowId.Map);
+        registry.Open(UiWindowId.InventoryMenu);
+        registry.Open(UiWindowId.MapMenu);
         registry.Open(UiWindowId.MainMenu);
-        registry.Focus(UiWindowId.Inventory);
+        registry.Focus(UiWindowId.InventoryMenu);
         registry.Close(registry.Topmost!.Value);
 
         Assert.That(registry.Topmost, Is.EqualTo(UiWindowId.MainMenu));
-        Assert.That(registry.IsOpen(UiWindowId.Map), Is.True);
-        Assert.That(registry.IsOpen(UiWindowId.Inventory), Is.False);
+        Assert.That(registry.IsOpen(UiWindowId.MapMenu), Is.True);
+        Assert.That(registry.IsOpen(UiWindowId.InventoryMenu), Is.False);
     }
 
     [Test]
     public void ClosingUnknownWindow_DoesNotChangeFocusOrBlocking()
     {
         var registry = new UiWindowRegistry();
-        registry.Open(UiWindowId.Inventory);
+        registry.Open(UiWindowId.InventoryMenu);
 
-        Assert.That(registry.Close(UiWindowId.Map), Is.False);
-        registry.Focus(UiWindowId.Map);
-        Assert.That(registry.Topmost, Is.EqualTo(UiWindowId.Inventory));
+        Assert.That(registry.Close(UiWindowId.MapMenu), Is.False);
+        registry.Focus(UiWindowId.MapMenu);
+        Assert.That(registry.Topmost, Is.EqualTo(UiWindowId.InventoryMenu));
         Assert.That(registry.HasBlockingWindow, Is.True);
     }
 
@@ -71,8 +71,8 @@ public class UiWindowRegistryTests
         var registry = new UiWindowRegistry();
         var changes = new List<bool>();
         registry.BlockingChanged += changes.Add;
-        registry.Open(UiWindowId.Inventory);
-        registry.Open(UiWindowId.Map);
+        registry.Open(UiWindowId.InventoryMenu);
+        registry.Open(UiWindowId.MapMenu);
         registry.CloseAll();
         registry.CloseAll();
 
@@ -85,11 +85,11 @@ public class UiWindowRegistryTests
     public void NonBlockingWindow_DoesNotKeepPlayerBlocked()
     {
         var registry = new UiWindowRegistry();
-        registry.Open(UiWindowId.Map, blocksPlayerControls: false);
-        registry.Open(UiWindowId.Inventory);
-        registry.Close(UiWindowId.Inventory);
+        registry.Open(UiWindowId.MapMenu, blocksPlayerControls: false);
+        registry.Open(UiWindowId.InventoryMenu);
+        registry.Close(UiWindowId.InventoryMenu);
 
-        Assert.That(registry.IsOpen(UiWindowId.Map), Is.True);
+        Assert.That(registry.IsOpen(UiWindowId.MapMenu), Is.True);
         Assert.That(registry.HasBlockingWindow, Is.False);
     }
 }

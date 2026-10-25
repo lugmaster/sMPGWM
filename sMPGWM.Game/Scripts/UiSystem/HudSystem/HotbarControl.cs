@@ -11,7 +11,7 @@ public partial class HotbarControl : PanelContainer
 {
     private HBoxContainer _buttonContainer = null!;
     private bool _isProcessingInput;
-    public event Action<int>? SlotPressed;
+    internal event Action<int>? SlotPressed;
 
     public override void _EnterTree()
     {
@@ -27,7 +27,7 @@ public partial class HotbarControl : PanelContainer
         Logger.Debug($"{nameof(HotbarControl)}.{nameof(_Ready)} loaded.");
     }
 
-    public void SetIcons(IReadOnlyList<IconDefinition> iconDefinitions)
+    internal void SetIcons(IReadOnlyList<IconDefinition> iconDefinitions)
     {
         Logger.Debug($"{nameof(HotbarControl)}.{nameof(SetIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
         ClearButtons();
@@ -54,7 +54,7 @@ public partial class HotbarControl : PanelContainer
         }
     }
     
-    public void SetGameplayInputEnabled(bool enabled)
+    internal void SetGameplayInputEnabled(bool enabled)
     {
         _isProcessingInput = enabled;
         var children = _buttonContainer.GetChildren();
