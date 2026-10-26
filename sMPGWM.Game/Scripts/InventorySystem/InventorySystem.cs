@@ -21,6 +21,9 @@ public sealed class InventorySystem : IDisposable
     public int Capacity => Snapshot.Capacity;
     public long Revision => Snapshot.Revision;
     public event Action<InventorySnapshot>? Changed;
+    internal ItemCatalog Catalog => _catalog;
+    internal InventoryResult Availability => _disposed ? InventoryResult.Disposed :
+        _publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
 
     public InventorySystem(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
     {
@@ -129,23 +132,27 @@ public sealed class InventorySystem : IDisposable
         _publishing = true;
         try
         {
-            if (Changed is not { } handlers) return;
-            foreach (Action<InventorySnapshot> observer in handlers.GetInvocationList())
-            {
-                try
-                {
-                    observer(Snapshot);
-                }
-                catch (Exception exception)
-                {
-                    try { _reportObserverError?.Invoke(exception); }
-                    catch (Exception) { }
-                }
-            }
+            NotifyObservers();
         }
         finally
         {
             _publishing = false;
+        }
+    }
+
+    internal void SetPublicationInProgress(bool publishing) => _publishing = publishing;
+
+    internal void NotifyObservers()
+    {
+        if (Changed is not { } handlers) return;
+        foreach (Action<InventorySnapshot> observer in handlers.GetInvocationList())
+        {
+            try { observer(Snapshot); }
+            catch (Exception exception)
+            {
+                try { _reportObserverError?.Invoke(exception); }
+                catch (Exception) { }
+            }
         }
     }
 

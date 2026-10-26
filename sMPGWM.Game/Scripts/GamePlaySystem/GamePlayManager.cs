@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Godot;
+using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.ItemSystem;
@@ -26,6 +27,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public ItemCategories ItemCategories { get; private set; } = null!;
     public ItemCatalog Items { get; private set; } = null!;
     public InventorySystem.InventorySystem Inventory { get; private set; } = null!;
+    public EquipmentSystem.EquipmentSystem Equipment { get; private set; } = null!;
+    public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
     public IReadOnlyDictionary<ItemCategoryId, IconDefinition> CategoryIcons { get; private set; } = null!;
 
     protected override void OnReady()
@@ -70,6 +73,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         Items = new ItemCatalog(ItemCategories, Array.Empty<ItemDefinition>());
         Inventory = new InventorySystem.InventorySystem(Items,
             exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
+        Equipment = new EquipmentSystem.EquipmentSystem(Items,
+            exception => LoggingSystem.Logger.Error($"Equipment observer failed: {exception}"));
+        ItemTransfers = new InventoryEquipmentTransferService(Inventory, Equipment);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
         _inputController = InputController.Instance;
@@ -92,7 +98,11 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     protected override void OnExitTree()
     {
+        ItemTransfers?.Dispose();
+        Equipment?.Dispose();
         Inventory?.Dispose();
+        ItemTransfers = null!;
+        Equipment = null!;
         Inventory = null!;
         Items = null!;
         ItemCategories = null!;
@@ -114,6 +124,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (newGameState == _gameState) return;
 
         _gameState = newGameState;
+        if (newGameState != MainGameState.Active) ItemTransfers?.RevokeEditSession();
         _inputPolicy.SetSessionActive(newGameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(newGameState == MainGameState.Active);
         OnGameStateChanged?.Invoke(newGameState);

@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 and INV-02 implemented. INV-03 through INV-10 remain pending.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-03 implemented. INV-04 through INV-10 remain pending.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -93,6 +93,12 @@ Validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --filter FullyQualifie
 ## INV-03 — Equipment and atomic transfers
 
 Refinement: complete. Dependencies: INV-01, INV-02.
+
+Implementation: complete (2026-10-26). Added game-owned equipment with eight ordered, immutable slot definitions and read-only revisioned snapshots. The transfer coordinator uses one validation/planning path for inventory/inventory, inventory/equipment, and equipment/equipment moves, swaps, and merges. Requests capture session identity, participating revisions, source entity, and destination entity (including expected emptiness). Rejections and no-ops preserve snapshots and publish nothing; explicit placement never grows inventory. Moves/swaps preserve entity identity; partial/full merges preserve the destination identity and retire the source only when exhausted.
+
+Both next snapshots are prepared before installation; both owners are installed before observers run. Publication guards span both notification streams, blocking reentrant additions and transfers even through another coordinator. Observer and logging failures are isolated. `GamePlayManager` creates and disposes equipment/coordinator alongside inventory, revoking edits on inactive gameplay and teardown. Explicit open/revoke session APIs are ready for inventory-window/focus lifecycle binding in INV-04; no production edit session is opened yet.
+
+Validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --filter FullyQualifiedName~EquipmentTransferTests --verbosity quiet` passed all 79 cases. `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --verbosity quiet` passed all 281 cases; `git diff --check` passed. Checks cover all 64 category/slot combinations, reverse swap compatibility, replacements, equipment swaps/unequips, full/partial merges, identity and quantity conservation, no growth/auto-routing, read-only snapshots, stale sources/targets/revisions/sessions, duplicate submission, atomic callback visibility, reentrancy, observer/logging failures, disposal, and independent game state. Existing nullable-context, member-hiding, and Godot test-source-generator warnings remain. Scene smoke checks were not rerun for this domain increment; inventory-view integration begins in INV-04.
 
 ### Output and implementation steps
 
@@ -300,7 +306,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | --- | --- | --- |
 | INV-01 Item metadata | Complete | Complete |
 | INV-02 Inventory state | Complete | Complete |
-| INV-03 Equipment/transfers | Complete | Not started |
+| INV-03 Equipment/transfers | Complete | Complete |
 | INV-04 Scenes/empty slots | Complete | Not started |
 | INV-05 Tooltips/counts | Complete | Not started |
 | INV-06 Click placement | Complete | Not started |
