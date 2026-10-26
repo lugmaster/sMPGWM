@@ -240,6 +240,33 @@ func verify_browsing(game: Node, canvas: Node, row: Node) -> void:
     if failures == previous_failures:
         print("Inventory browsing checks passed (%s)." % root.size)
 
+func hover_cell(cell: Control) -> void:
+    var motion := InputEventMouseMotion.new()
+    motion.position = cell.get_global_rect().get_center()
+    pointer_motion(motion)
+    await settle()
+
+func verify_hotbar_noop(menu: Node, fixture: RefCounted, source: Control, target: Control, message: String) -> void:
+    var feedback := menu.get_node("%ItemPointerFeedback") as Label
+    var preview := menu.get_node("%ItemPointerPreview") as Control
+    var revision: int = fixture.call("Revision")
+    var inventory_revision: int = fixture.call("InventoryRevision")
+    await pointer_click(source.get_global_rect().get_center())
+    expect(feedback.visible and feedback.text == "Cancel placement", "Hovering the original source must offer cancellation")
+    await hover_cell(target)
+    expect(feedback.visible and feedback.text == message, "Hotbar no-op hover must display: %s" % message)
+    await pointer_click(target.get_global_rect().get_center())
+    expect(preview.visible and feedback.visible and feedback.text == message, "Hotbar no-op click must retain pickup and contextual feedback")
+    await pointer_click(source.get_global_rect().get_center())
+    expect(not preview.visible and not feedback.visible, "Clicking the original source must cancel hotbar pickup")
+    await begin_drag(source.get_global_rect().get_center(), "hotbar no-op")
+    await hover_cell(target)
+    expect(feedback.visible and feedback.text == message, "Native no-op hover must agree with click feedback")
+    await finish_drag(target.get_global_rect().get_center())
+    expect(not preview.visible and not feedback.visible, "Native no-op release must end pickup")
+    expect(fixture.call("Revision") == revision and fixture.call("InventoryRevision") == inventory_revision,
+        "Hotbar no-op hover, clicks, and drag release must preserve revisions")
+
 func verify_hotbar(game: Node, canvas: Node, row: Node) -> void:
     var previous_failures := failures
     var fixture = load("res://Scripts/Util/Mocks/InventoryHotbarSmokeFixture.cs").new()
@@ -256,6 +283,7 @@ func verify_hotbar(game: Node, canvas: Node, row: Node) -> void:
     expect(fixture.call("BindingAt", 0) == "consumable", "Click placement must replace a mock action with a consumable link")
     expect(buttons.get_child(0).get_node("QuantityLabel").text == "15", "Hotbar must aggregate both matching stacks")
     expect(fixture.call("InventoryRevision") == inventory_revision, "Assignment must not transfer inventory ownership")
+    await verify_hotbar_noop(menu, fixture, grid.get_child(1), buttons.get_child(0), "Already assigned here")
     await pointer_click(buttons.get_child(0).get_global_rect().get_center())
     await pointer_click(buttons.get_child(1).get_global_rect().get_center())
     expect(fixture.call("BindingAt", 0) == "1" and fixture.call("BindingAt", 1) == "consumable", "Click editing must swap hotbar entries")
@@ -267,12 +295,14 @@ func verify_hotbar(game: Node, canvas: Node, row: Node) -> void:
     await begin_drag(grid.get_child(1).get_global_rect().get_center(), "consumable assignment")
     await finish_drag(buttons.get_child(1).get_global_rect().get_center())
     expect(fixture.call("BindingAt", 1) == "consumable", "Native item drag must assign a duplicate definition link")
+    await verify_hotbar_noop(menu, fixture, buttons.get_child(0), buttons.get_child(1), "These slots already have the same assignment")
     await begin_drag(grid.get_child(2).get_global_rect().get_center(), "inventory weapon rejection")
     await finish_drag(buttons.get_child(2).get_global_rect().get_center())
     expect(fixture.call("BindingAt", 2) == "2", "Inventory weapons cannot be assigned to hotbar")
     await begin_drag(equipment.get_child(4).get_node("%ClickableIcon").get_global_rect().get_center(), "weapon slot assignment")
     await finish_drag(buttons.get_child(2).get_global_rect().get_center())
     expect(fixture.call("BindingAt", 2) == "light_weapon_1", "Equipped weapons must bind their stable slot key")
+    await verify_hotbar_noop(menu, fixture, equipment.get_child(4).get_node("%ClickableIcon"), buttons.get_child(2), "Already assigned here")
     var revision: int = fixture.call("Revision")
     await begin_drag(buttons.get_child(2).get_global_rect().get_center(), "outside cancellation")
     await finish_drag(Vector2(5, 5))
@@ -336,6 +366,8 @@ func verify_click_placement(game: Node, canvas: Node, row: Node) -> void:
     await pointer_click(grid.get_child(0).get_global_rect().get_center())
     await pointer_click(grid.get_child(2).get_global_rect().get_center())
     expect(fixture.call("Carrying"), "Full matching stack must retain carrying")
+    expect(menu.get_node("%ItemPointerFeedback").visible and menu.get_node("%ItemPointerFeedback").text == "Stack is full",
+        "Full matching inventory stacks must keep their existing feedback")
     await pointer_click(grid.get_child(1).get_global_rect().get_center())
     expect(not fixture.call("Carrying") and fixture.call("CountAt", 1) == 5 and fixture.call("CountAt", 2) == 10, "Partial merge must end carrying with exact counts")
     revision = fixture.call("Revision")

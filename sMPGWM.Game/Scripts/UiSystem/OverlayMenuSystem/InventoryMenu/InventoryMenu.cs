@@ -275,8 +275,11 @@ public partial class InventoryMenu : GameOverlayMenu
         {
             TransferResult.Success => target!.IsHotbar ? "Assign or move hotbar link" : "Place item",
             TransferResult.IncompatiblePlacement => "Item does not fit here",
-            TransferResult.NoChange => target != null && ItemInteractionController.SameCell(_interaction!.Source!, target)
-                ? "Cancel placement" : "Stack is full",
+            TransferResult.NoChange when target != null && ItemInteractionController.SameCell(_interaction!.Source!, target)
+                => "Cancel placement",
+            TransferResult.NoChange when target?.IsHotbar == true => _interaction!.Source!.IsHotbar
+                ? "These slots already have the same assignment" : "Already assigned here",
+            TransferResult.NoChange => "Stack is full",
             null => "Choose a slot - Right-click to cancel",
             _ => "Placement unavailable"
         };

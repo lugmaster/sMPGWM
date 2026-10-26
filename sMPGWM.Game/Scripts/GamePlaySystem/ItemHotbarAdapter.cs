@@ -25,7 +25,11 @@ public sealed class ItemHotbarAdapter(ItemHotbarState state, InventoryImpl inven
         {
             TransferResult.InvalidSession => HotbarResult.InvalidSession,
             TransferResult.StaleRevision or TransferResult.StaleEntity => HotbarResult.StaleRevision,
-            _ => HotbarResult.IneligibleSource
+            TransferResult.InvalidLocation => HotbarResult.InvalidLocation,
+            TransferResult.Disposed => HotbarResult.Disposed,
+            TransferResult.PublicationInProgress => HotbarResult.PublicationInProgress,
+            // A validated transfer to the source itself can only be NoChange or a validation error.
+            _ => throw new InvalidOperationException($"Unexpected source validation result: {validation}")
         };
         var sourceEntity = source.InventoryAddress.HasValue ? inventory.Snapshot.Slots[source.InventoryAddress.Value] :
             equipment.Snapshot.Slots[equipment.FindSlot(source.EquipmentSlotKey!)];
@@ -35,7 +39,8 @@ public sealed class ItemHotbarAdapter(ItemHotbarState state, InventoryImpl inven
             : source.EquipmentSlotKey != null && ItemHotbarPolicy.IsWeapon(definition.CategoryId)
                 ? new WeaponHotbarBinding(source.EquipmentSlotKey) : null;
         if (binding == null) return HotbarResult.IneligibleSource;
-        return commit ? state.Assign(session, hotbarRevision, position, binding) : HotbarResult.Success;
+        return commit ? state.Assign(session, hotbarRevision, position, binding) :
+            state.ValidateAssignment(session, hotbarRevision, position, binding);
     }
 
     public HotbarAvailability Resolve(int position)

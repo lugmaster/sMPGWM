@@ -36,6 +36,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     protected override void OnReady()
     {
+        // TODO pack initialization into speaking methods to make the start up more understandable
         var definitionsResult = FileLoader.LoadYamlDefinition<ItemCategoryDefinitions>(
             FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYaml, FilePaths.ItemCategoryDataYamlSchema);
         if (!definitionsResult.IsSuccess)

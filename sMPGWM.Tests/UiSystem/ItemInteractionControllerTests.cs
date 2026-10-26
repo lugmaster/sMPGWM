@@ -21,6 +21,7 @@ public class ItemInteractionControllerTests
         _catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[]
         {
             new ItemDefinition(new ItemDefinitionId("engine"), "Engine", ItemCategories.Engine),
+            new ItemDefinition(new ItemDefinitionId("weapon"), "Weapon", ItemCategories.LightWeapon),
             new ItemDefinition(new ItemDefinitionId("potion"), "Potion", ItemCategories.Consumable, maximumStackSize: 10)
         });
         _inventory = new InventoryImpl(_catalog);
@@ -317,6 +318,109 @@ public class ItemInteractionControllerTests
         var before = _inventory.Snapshot;
         Assert.That(_controller.Drop(token, Bag(1)), Is.EqualTo(TransferResult.StaleRevision));
         Assert.That(_inventory.Snapshot, Is.SameAs(before));
+    }
+
+    [TestCase("disposed", TransferResult.Disposed, false)]
+    [TestCase("location", TransferResult.InvalidLocation, false)]
+    [TestCase("publication", TransferResult.PublicationInProgress, true)]
+    [TestCase("session", TransferResult.InvalidSession, false)]
+    [TestCase("revision", TransferResult.StaleRevision, false)]
+    [TestCase("entity", TransferResult.StaleRevision, false)]
+    [TestCase("ineligible", TransferResult.IncompatiblePlacement, true)]
+    public void HotbarSourceRejectionsApplyPickupPolicy(string reason, TransferResult expected, bool retained)
+    {
+        Seed(("potion", 3), ("engine", 1));
+        using var hotbar = ConfigureHotbar();
+        var source = reason == "ineligible" ? Bag(1) : Bag(0);
+        if (reason == "location") source = source with { Location = ItemLocation.Inventory(_inventory.Capacity) };
+        if (reason == "entity") source = source with { Entity = _catalog.CreateEntity(new("potion"), 3) };
+        void Invalidate()
+        {
+            switch (reason)
+            {
+                case "disposed": _transfers.Dispose(); break;
+                case "publication": _inventory.SetPublicationInProgress(true); break;
+                case "session": _transfers.RevokeEditSession(); break;
+                case "revision": _inventory.Add(new("potion"), 1); break;
+            }
+        }
+        Click(source);
+        Invalidate();
+        var inventory = _inventory.Snapshot;
+        var equipment = _equipment.Snapshot;
+        var entries = hotbar.Entries;
+        var revision = hotbar.Revision;
+        var notifications = 0;
+        _inventory.Changed += _ => notifications++;
+        _equipment.Changed += _ => notifications++;
+        hotbar.Changed += () => notifications++;
+        var target = ItemCellBinding.Hotbar(1, revision);
+        Assert.That(_controller.Validate(target), Is.EqualTo(expected));
+        Assert.That(_controller.IsCarrying, Is.EqualTo(retained));
+
+        // Start a fresh click attempt to exercise commit cancellation independently of hover.
+        _controller.Cancel();
+        _controller.Click(source, source.Revision, _equipment.Revision, 0);
+        Click(target);
+        Assert.That(_controller.IsCarrying, Is.EqualTo(retained));
+        if (retained) Assert.That(_controller.Feedback, Is.EqualTo(expected));
+
+        _controller.Cancel();
+        var token = _controller.BeginDrag(source, source.Revision, _equipment.Revision, 0);
+        Assert.That(_controller.Drop(token, target), Is.EqualTo(expected));
+        Assert.That(_controller.IsCarrying, Is.False);
+        Assert.That(_inventory.Snapshot, Is.SameAs(inventory));
+        Assert.That(_equipment.Snapshot, Is.SameAs(equipment));
+        Assert.That(hotbar.Entries, Is.SameAs(entries));
+        Assert.That(hotbar.Revision, Is.EqualTo(revision));
+        Assert.That(notifications, Is.Zero);
+    }
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public void HotbarNoOpsRetainClickPickupAndEndNativeDrag(bool weapon, bool move)
+    {
+        Seed(("potion", 3), ("potion", 4), ("weapon", 1));
+        using var hotbar = ConfigureHotbar();
+        if (weapon)
+        {
+            Click(Bag(2));
+            Click(Slot("light_weapon_1"));
+        }
+        var itemSource = weapon ? Slot("light_weapon_1") : Bag(0);
+        Click(itemSource);
+        Click(ItemCellBinding.Hotbar(1, hotbar.Revision));
+        Click(itemSource);
+        Click(ItemCellBinding.Hotbar(2, hotbar.Revision));
+        var source = move ? ItemCellBinding.Hotbar(1, hotbar.Revision) : weapon ? itemSource : Bag(1);
+        var target = ItemCellBinding.Hotbar(2, hotbar.Revision);
+        var inventory = _inventory.Snapshot;
+        var equipment = _equipment.Snapshot;
+        var entries = hotbar.Entries;
+        var revision = hotbar.Revision;
+        var notifications = 0;
+        _inventory.Changed += _ => notifications++;
+        _equipment.Changed += _ => notifications++;
+        hotbar.Changed += () => notifications++;
+        Click(source);
+        Assert.That(_controller.Validate(source), Is.EqualTo(TransferResult.NoChange));
+        Assert.That(_controller.Validate(target), Is.EqualTo(TransferResult.NoChange));
+        Click(target);
+        Assert.That(_controller.Feedback, Is.EqualTo(TransferResult.NoChange));
+        Assert.That(_controller.IsCarrying, Is.True);
+        Click(source);
+        Assert.That(_controller.IsCarrying, Is.False);
+        var token = _controller.BeginDrag(source, _inventory.Revision, _equipment.Revision, 0);
+        Assert.That(_controller.ValidateDrag(token, target), Is.EqualTo(TransferResult.NoChange));
+        Assert.That(_controller.Drop(token, target), Is.EqualTo(TransferResult.NoChange));
+        Assert.That(_controller.IsCarrying, Is.False);
+        Assert.That(_inventory.Snapshot, Is.SameAs(inventory));
+        Assert.That(_equipment.Snapshot, Is.SameAs(equipment));
+        Assert.That(hotbar.Entries, Is.SameAs(entries));
+        Assert.That(hotbar.Revision, Is.EqualTo(revision));
+        Assert.That(notifications, Is.Zero);
     }
 
 }

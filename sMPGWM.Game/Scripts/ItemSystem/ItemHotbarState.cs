@@ -17,6 +17,7 @@ public enum HotbarResult
     InvalidSession,
     StaleRevision,
     InvalidPosition,
+    InvalidLocation,
     IneligibleSource,
     Unavailable,
     PublicationInProgress,
@@ -64,23 +65,36 @@ public sealed class ItemHotbarState : IDisposable
         return position is >= 0 and < PositionCount ? HotbarResult.Success : HotbarResult.InvalidPosition;
     }
 
-    internal HotbarResult Assign(Guid session, long revision, int position, HotbarBinding binding)
+    internal HotbarResult ValidateAssignment(Guid session, long revision, int position, HotbarBinding binding)
     {
         var result = ValidateEdit(session, revision, position);
         if (result != HotbarResult.Success) return result;
-        if (Entries[position] == binding) return HotbarResult.NoChange;
+        return Entries[position] == binding ? HotbarResult.NoChange : HotbarResult.Success;
+    }
+
+    internal HotbarResult Assign(Guid session, long revision, int position, HotbarBinding binding)
+    {
+        var result = ValidateAssignment(session, revision, position, binding);
+        if (result != HotbarResult.Success) return result;
         var next = Entries.ToArray();
         next[position] = binding;
         return Publish(next);
     }
 
-    public HotbarResult Move(Guid session, long revision, int source, int destination)
+    public HotbarResult ValidateMove(Guid session, long revision, int source, int destination)
     {
         var result = ValidateEdit(session, revision, source);
         if (result != HotbarResult.Success) return result;
         result = ValidateEdit(session, revision, destination);
         if (result != HotbarResult.Success) return result;
         if (source == destination || Entries[source] == null || Entries[source] == Entries[destination]) return HotbarResult.NoChange;
+        return HotbarResult.Success;
+    }
+
+    public HotbarResult Move(Guid session, long revision, int source, int destination)
+    {
+        var result = ValidateMove(session, revision, source, destination);
+        if (result != HotbarResult.Success) return result;
         var next = Entries.ToArray();
         (next[source], next[destination]) = (next[destination], next[source]);
         return Publish(next);

@@ -130,7 +130,7 @@ internal sealed class ItemInteractionController(InventoryEquipmentTransferServic
         if (target.Revision != _hotbarRevision) return TransferResult.StaleRevision;
         if (source.IsHotbar)
             return commit ? Convert(_hotbar.Move(_session, _hotbarRevision, source.HotbarPosition!.Value, target.HotbarPosition.Value)) :
-                SameCell(source, target) ? TransferResult.NoChange : TransferResult.Success;
+                Convert(_hotbar.ValidateMove(_session, _hotbarRevision, source.HotbarPosition!.Value, target.HotbarPosition.Value));
         return Convert(_adapter.Assign(_session, _hotbarRevision, target.HotbarPosition.Value, source.Location, source.Entity!.Id,
             _inventoryRevision, _equipmentRevision, commit));
     }
@@ -146,9 +146,11 @@ internal sealed class ItemInteractionController(InventoryEquipmentTransferServic
         HotbarResult.NoChange => TransferResult.NoChange,
         HotbarResult.StaleRevision => TransferResult.StaleRevision,
         HotbarResult.InvalidSession => TransferResult.InvalidSession,
+        HotbarResult.InvalidLocation or HotbarResult.InvalidPosition => TransferResult.InvalidLocation,
         HotbarResult.Disposed => TransferResult.Disposed,
         HotbarResult.PublicationInProgress => TransferResult.PublicationInProgress,
-        _ => TransferResult.IncompatiblePlacement
+        HotbarResult.IneligibleSource or HotbarResult.Unavailable => TransferResult.IncompatiblePlacement,
+        _ => throw new ArgumentOutOfRangeException(nameof(result), result, null)
     };
 
     private static bool IsStale(TransferResult result) => result is TransferResult.InvalidSession or

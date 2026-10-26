@@ -259,4 +259,117 @@ public class ItemHotbarTests
         Assert.That(ItemHotbarPolicy.IsConsumable(category), Is.False);
         Assert.That(ItemHotbarPolicy.IsWeapon(category), Is.False);
     }
+
+    [TestCase("disposed", HotbarResult.Disposed)]
+    [TestCase("inventoryDisposed", HotbarResult.Disposed)]
+    [TestCase("equipmentDisposed", HotbarResult.Disposed)]
+    [TestCase("location", HotbarResult.InvalidLocation)]
+    [TestCase("equipmentLocation", HotbarResult.InvalidLocation)]
+    [TestCase("publication", HotbarResult.PublicationInProgress)]
+    [TestCase("session", HotbarResult.InvalidSession)]
+    [TestCase("revision", HotbarResult.StaleRevision)]
+    [TestCase("entity", HotbarResult.StaleRevision)]
+    [TestCase("ineligible", HotbarResult.IneligibleSource)]
+    public void SourceValidationErrorsArePreservedWithoutMutation(string reason, HotbarResult expected)
+    {
+        var source = ItemLocation.Inventory(0);
+        var entity = _inventory.Snapshot.Slots[0]!.Id;
+        var revision = _inventory.Revision;
+        switch (reason)
+        {
+            case "disposed": _transfers.Dispose(); break;
+            case "inventoryDisposed": _inventory.Dispose(); break;
+            case "equipmentDisposed": _equipment.Dispose(); break;
+            case "location": source = ItemLocation.Inventory(_inventory.Capacity); break;
+            case "equipmentLocation": source = ItemLocation.Equipment("missing"); break;
+            case "publication": _inventory.SetPublicationInProgress(true); break;
+            case "session": _transfers.RevokeEditSession(); break;
+            case "revision": revision--; break;
+            case "entity": entity = ItemEntityId.Create(); break;
+            case "ineligible": source = ItemLocation.Inventory(4); entity = _inventory.Snapshot.Slots[4]!.Id; break;
+        }
+        var inventory = _inventory.Snapshot;
+        var equipment = _equipment.Snapshot;
+        var entries = _state.Entries;
+        var hotbarRevision = _state.Revision;
+        var notifications = 0;
+        _inventory.Changed += _ => notifications++;
+        _equipment.Changed += _ => notifications++;
+        _state.Changed += () => notifications++;
+        foreach (var commit in new[] { false, true })
+            Assert.That(_adapter.Assign(_session, hotbarRevision, 0, source, entity, revision, _equipment.Revision, commit),
+                Is.EqualTo(expected));
+        Assert.That(_inventory.Snapshot, Is.SameAs(inventory));
+        Assert.That(_equipment.Snapshot, Is.SameAs(equipment));
+        Assert.That(_state.Entries, Is.SameAs(entries));
+        Assert.That(_state.Revision, Is.EqualTo(hotbarRevision));
+        Assert.That(notifications, Is.Zero);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void AssignmentAndMoveValidationAgreeWithNoOpCommits(bool weapon)
+    {
+        if (weapon) Assert.That(Equip(3), Is.EqualTo(TransferResult.Success));
+        var source = weapon ? ItemLocation.Equipment("light_weapon_1") : ItemLocation.Inventory(0);
+        var entity = weapon ? _equipment.Snapshot.Slots[4]!.Id : _inventory.Snapshot.Slots[0]!.Id;
+        HotbarResult AssignLink(int position, bool commit) => _adapter.Assign(_session, _state.Revision, position,
+            source, entity, _inventory.Revision, _equipment.Revision, commit);
+        var inventory = _inventory.Snapshot;
+        var equipment = _equipment.Snapshot;
+        var notifications = 0;
+        _state.Changed += () => notifications++;
+        _inventory.Changed += _ => notifications++;
+        _equipment.Changed += _ => notifications++;
+        var initialEntries = _state.Entries;
+        Assert.That(AssignLink(0, false), Is.EqualTo(HotbarResult.Success));
+        Assert.That(_state.Entries, Is.SameAs(initialEntries));
+        Assert.That(_state.Revision, Is.Zero);
+        Assert.That(notifications, Is.Zero);
+        Assert.That(AssignLink(0, true), Is.EqualTo(HotbarResult.Success));
+        var firstEntries = _state.Entries;
+        Assert.That(_state.ValidateMove(_session, _state.Revision, 0, 1), Is.EqualTo(HotbarResult.Success));
+        Assert.That(_state.Entries, Is.SameAs(firstEntries));
+        Assert.That(_state.Revision, Is.EqualTo(1));
+        Assert.That(notifications, Is.EqualTo(1));
+        Assert.That(AssignLink(1, true), Is.EqualTo(HotbarResult.Success));
+        // A different consumable entity still produces the same definition link.
+        if (!weapon) entity = _inventory.Snapshot.Slots[1]!.Id;
+        if (!weapon) source = ItemLocation.Inventory(1);
+        var entries = _state.Entries;
+        var revision = _state.Revision;
+        notifications = 0;
+        Assert.That(AssignLink(0, false), Is.EqualTo(HotbarResult.NoChange));
+        Assert.That(AssignLink(0, true), Is.EqualTo(HotbarResult.NoChange));
+        Assert.That(_state.ValidateMove(_session, revision, 0, 1), Is.EqualTo(HotbarResult.NoChange));
+        Assert.That(_state.Move(_session, revision, 0, 1), Is.EqualTo(HotbarResult.NoChange));
+        Assert.That(_state.Entries, Is.SameAs(entries));
+        Assert.That(_state.Revision, Is.EqualTo(revision));
+        Assert.That(_inventory.Snapshot, Is.SameAs(inventory));
+        Assert.That(_equipment.Snapshot, Is.SameAs(equipment));
+        Assert.That(notifications, Is.Zero);
+    }
+
+    [Test]
+    public void AssignmentDuringTransferPublicationRejectsWithoutCommitting()
+    {
+        HotbarResult? validation = null;
+        HotbarResult? commit = null;
+        var entries = _state.Entries;
+        var notifications = 0;
+        _state.Changed += () => notifications++;
+        _inventory.Changed += _ =>
+        {
+            var entity = _inventory.Snapshot.Slots[0]!;
+            validation = _adapter.Assign(_session, 0, 0, ItemLocation.Inventory(0), entity.Id,
+                _inventory.Revision, _equipment.Revision, false);
+            commit = Assign(0);
+        };
+        Assert.That(Equip(3), Is.EqualTo(TransferResult.Success));
+        Assert.That(validation, Is.EqualTo(HotbarResult.PublicationInProgress));
+        Assert.That(commit, Is.EqualTo(validation));
+        Assert.That(_state.Entries, Is.SameAs(entries));
+        Assert.That(_state.Revision, Is.Zero);
+        Assert.That(notifications, Is.Zero);
+    }
 }
