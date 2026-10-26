@@ -147,6 +147,33 @@ public sealed class ItemCategoryLoadingTests
         Assert.That(result.Value.Get(ItemCategories.Hull).IconKey, Is.Null);
     }
 
+    [TestCase("engine")]
+    [TestCase("hull")]
+    [TestCase("shield_generator")]
+    [TestCase("reactor")]
+    [TestCase("light_weapon")]
+    [TestCase("heavy_weapon")]
+    public void MissingEquipmentCategory_ReturnsStructuredLoadError(string id)
+    {
+        var data = PackagedToken();
+        var categories = (JArray)data["Categories"]!;
+        categories.Single(category => (string?)category["Id"] == id).Remove();
+        var result = Load(data.ToString());
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Title, Is.EqualTo("Invalid item categories"));
+        Assert.That(result.Error.ToDisplayString(), Does.Contain(id).And.Contain(FilePaths.UserItemCategoryDataYaml));
+    }
+
+    [Test]
+    public void UnknownIcon_ReturnsStructuredLoadErrorBeforeGameplayInitialization()
+    {
+        var data = PackagedToken();
+        data["Categories"]![0]!["Icon"] = "Alchemy.Unknown";
+        var result = Load(data.ToString());
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.ToDisplayString(), Does.Contain("Alchemy.Unknown").And.Contain("engine"));
+    }
+
     private static LoadResult<ItemCategories> Load(string yaml)
     {
         var definitions = YamlParser.ValidateAndDeserialize<ItemCategoryDefinitions>(yaml,

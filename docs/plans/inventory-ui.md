@@ -1,6 +1,6 @@
 # Epic: Inventory, Character Equipment, and Item Hotbar Links
 
-Status: INV-01 through INV-10 are implemented. The solution build, all 345 NUnit tests, UI architecture smoke, icon sizing smoke, and inventory smoke pass. Rendered inventory checks and visual captures cover 1280x720 and 1920x1080 across two game lifetimes. See the implementation plan for exact checks and handoff limitations.
+Status: INV-01 through INV-10 are implemented. The solution build, all 360 NUnit tests, UI architecture smoke, icon sizing smoke, and inventory smoke pass. Rendered inventory checks and visual captures cover 1280x720 and 1920x1080 across two game lifetimes. See the implementation plan for exact checks and handoff limitations.
 
 All ten stories have completed planning refinement. See [inventory-ui-implementation-plan.md](inventory-ui-implementation-plan.md) for story outputs, technical decisions, examples, implementation progress, and checks. Refined does not mean implemented. The implementation plan resolves presentation and interaction details within the requirements below.
 

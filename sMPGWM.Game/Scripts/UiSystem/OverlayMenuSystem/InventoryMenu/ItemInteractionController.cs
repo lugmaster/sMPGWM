@@ -2,32 +2,36 @@
 
 using System;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
-internal sealed record ItemPointerBinding(ItemLocation Location, ItemEntity? Entity, long Revision)
-{
-    internal static ItemPointerBinding? From(object? binding) => binding switch
-    {
-        InventoryCellBinding cell => new(ItemLocation.Inventory(cell.Address), cell.Entity, cell.Revision),
-        EquipmentCellBinding cell => new(ItemLocation.Equipment(cell.SlotKey), cell.Entity, cell.Revision),
-        _ => null
-    };
-}
-
 internal sealed class ItemInteractionController(InventoryEquipmentTransferService transfers)
 {
+    internal enum PlacementMode { Idle, Click, NativeDrag }
+
     private Guid _session;
     private long _inventoryRevision;
     private long _equipmentRevision;
+    private long _hotbarRevision;
     private long _mappingVersion;
     private Guid _dragToken;
+    private ItemHotbarState? _hotbar;
+    private ItemHotbarAdapter? _adapter;
 
-    internal ItemPointerBinding? Source { get; private set; }
-    internal bool IsCarrying => Source != null;
-    internal bool OwnsDrag(Guid token) => token != Guid.Empty && token == _dragToken && IsCarrying;
+    internal ItemCellBinding? Source { get; private set; }
+    internal PlacementMode Mode { get; private set; }
+    internal bool IsCarrying => Mode != PlacementMode.Idle;
+    internal bool OwnsDrag(Guid token) => token != Guid.Empty && token == _dragToken && Mode == PlacementMode.NativeDrag;
     internal TransferResult? Feedback { get; private set; }
+
+    internal void BindHotbar(ItemHotbarState? hotbar, ItemHotbarAdapter? adapter)
+    {
+        Cancel();
+        _hotbar = hotbar;
+        _adapter = adapter;
+    }
 
     internal void SetSession(Guid session)
     {
@@ -38,69 +42,114 @@ internal sealed class ItemInteractionController(InventoryEquipmentTransferServic
     internal void Cancel()
     {
         Source = null;
+        Mode = PlacementMode.Idle;
         Feedback = null;
         _dragToken = Guid.Empty;
     }
 
-    internal Guid BeginDrag(ItemPointerBinding source, long inventoryRevision, long equipmentRevision, long mappingVersion)
+    internal Guid BeginDrag(ItemCellBinding source, long inventoryRevision, long equipmentRevision, long mappingVersion)
     {
         Cancel();
         Click(source, inventoryRevision, equipmentRevision, mappingVersion);
         if (!IsCarrying) return Guid.Empty;
-        _dragToken = Guid.NewGuid();
-        return _dragToken;
+        Mode = PlacementMode.NativeDrag;
+        return _dragToken = Guid.NewGuid();
     }
 
-    internal TransferResult? ValidateDrag(Guid token, ItemPointerBinding target) =>
-        token != Guid.Empty && token == _dragToken && Source != null ? transfers.Validate(Request(target)) : null;
+    internal TransferResult? ValidateDrag(Guid token, ItemCellBinding target) =>
+        OwnsDrag(token) ? Evaluate(target, false) : null;
 
-    internal TransferResult? Drop(Guid token, ItemPointerBinding target)
+    internal TransferResult? Drop(Guid token, ItemCellBinding target)
     {
-        if (token == Guid.Empty || token != _dragToken || Source == null) return null;
-        try { return transfers.Transfer(Request(target)); }
+        if (!OwnsDrag(token)) return null;
+        try { return Evaluate(target, true); }
         finally { Cancel(); }
     }
 
     internal void Refresh(long inventoryRevision, long equipmentRevision, long mappingVersion)
     {
-        if (IsCarrying && (_inventoryRevision != inventoryRevision ||
-            _equipmentRevision != equipmentRevision || _mappingVersion != mappingVersion)) Cancel();
+        if (IsCarrying && (_inventoryRevision != inventoryRevision || _equipmentRevision != equipmentRevision ||
+            _mappingVersion != mappingVersion || _hotbarRevision != (_hotbar?.Revision ?? 0))) Cancel();
     }
 
-    internal void Click(ItemPointerBinding target, long inventoryRevision, long equipmentRevision, long mappingVersion)
+    internal void Click(ItemCellBinding target, long inventoryRevision, long equipmentRevision, long mappingVersion)
     {
         var wasCarrying = IsCarrying;
         Refresh(inventoryRevision, equipmentRevision, mappingVersion);
-        if (wasCarrying && !IsCarrying) return;
-        if (_session == Guid.Empty) return;
+        if (wasCarrying && !IsCarrying || _session == Guid.Empty) return;
         if (Source == null)
         {
-            if (target.Entity == null) return;
-            if (target.Revision != (target.Location.InventoryAddress.HasValue ? inventoryRevision : equipmentRevision)) return;
+            if (target.IsHotbar)
+            {
+                if (_hotbar == null || _hotbar.ValidateEdit(_session, target.Revision, target.HotbarPosition!.Value) != HotbarResult.Success ||
+                    _hotbar.Entries[target.HotbarPosition.Value] == null) return;
+            }
+            else if (target.Entity == null || target.Revision !=
+                (target.Location.InventoryAddress.HasValue ? inventoryRevision : equipmentRevision)) return;
             Source = target;
+            Mode = PlacementMode.Click;
             _inventoryRevision = inventoryRevision;
             _equipmentRevision = equipmentRevision;
+            _hotbarRevision = _hotbar?.Revision ?? 0;
             _mappingVersion = mappingVersion;
             return;
         }
-        if (Source.Location == target.Location) { Cancel(); return; }
-        var result = transfers.Transfer(Request(target));
+        if (SameCell(Source, target)) { Cancel(); return; }
+        var result = Evaluate(target, true);
         if (result == TransferResult.Success || IsStale(result)) Cancel();
         else Feedback = result;
     }
 
-    internal TransferResult? Validate(ItemPointerBinding target)
+    internal TransferResult? Validate(ItemCellBinding target)
     {
         if (Source == null) return null;
-        var result = transfers.Validate(Request(target));
+        var result = Evaluate(target, false);
         if (IsStale(result)) Cancel();
         return result;
     }
 
-    private TransferRequest Request(ItemPointerBinding target) => new(_session, Source!.Location, Source.Entity!.Id,
+    internal HotbarResult Clear(ItemCellBinding target) => !target.IsHotbar || _hotbar == null
+        ? HotbarResult.IneligibleSource : _hotbar.Clear(_session, target.Revision, target.HotbarPosition!.Value);
+
+    internal static bool SameCell(ItemCellBinding left, ItemCellBinding right) =>
+        left.IsHotbar == right.IsHotbar && (left.IsHotbar ? left.HotbarPosition == right.HotbarPosition : left.Location == right.Location);
+
+    private TransferResult Evaluate(ItemCellBinding target, bool commit)
+    {
+        var source = Source!;
+        if (!target.IsHotbar)
+        {
+            if (source.IsHotbar) return TransferResult.IncompatiblePlacement;
+            if (target.Revision != (target.Location.InventoryAddress.HasValue ? _inventoryRevision : _equipmentRevision))
+                return TransferResult.StaleRevision;
+            return commit ? transfers.Transfer(Request(target)) : transfers.Validate(Request(target));
+        }
+        if (_hotbar == null || _adapter == null) return TransferResult.InvalidSession;
+        var validation = _hotbar.ValidateEdit(_session, _hotbarRevision, target.HotbarPosition!.Value);
+        if (validation != HotbarResult.Success) return Convert(validation);
+        if (target.Revision != _hotbarRevision) return TransferResult.StaleRevision;
+        if (source.IsHotbar)
+            return commit ? Convert(_hotbar.Move(_session, _hotbarRevision, source.HotbarPosition!.Value, target.HotbarPosition.Value)) :
+                SameCell(source, target) ? TransferResult.NoChange : TransferResult.Success;
+        return Convert(_adapter.Assign(_session, _hotbarRevision, target.HotbarPosition.Value, source.Location, source.Entity!.Id,
+            _inventoryRevision, _equipmentRevision, commit));
+    }
+
+    private TransferRequest Request(ItemCellBinding target) => new(_session, Source!.Location, Source.Entity!.Id,
         target.Location, target.Entity?.Id,
         target.Location.InventoryAddress.HasValue ? target.Revision : _inventoryRevision,
         target.Location.EquipmentSlotKey != null ? target.Revision : _equipmentRevision);
+
+    private static TransferResult Convert(HotbarResult result) => result switch
+    {
+        HotbarResult.Success => TransferResult.Success,
+        HotbarResult.NoChange => TransferResult.NoChange,
+        HotbarResult.StaleRevision => TransferResult.StaleRevision,
+        HotbarResult.InvalidSession => TransferResult.InvalidSession,
+        HotbarResult.Disposed => TransferResult.Disposed,
+        HotbarResult.PublicationInProgress => TransferResult.PublicationInProgress,
+        _ => TransferResult.IncompatiblePlacement
+    };
 
     private static bool IsStale(TransferResult result) => result is TransferResult.InvalidSession or
         TransferResult.StaleRevision or TransferResult.StaleEntity or TransferResult.InvalidLocation or TransferResult.Disposed;

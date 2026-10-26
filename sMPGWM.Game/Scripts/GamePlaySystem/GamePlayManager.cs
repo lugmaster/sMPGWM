@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.FileLoadingSystem;
@@ -32,7 +31,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
     public ItemHotbarState ItemHotbar { get; private set; } = null!;
     public ItemHotbarAdapter HotbarAdapter { get; private set; } = null!;
-    public IReadOnlyDictionary<ItemCategoryId, IconDefinition> CategoryIcons { get; private set; } = null!;
 
     protected override void OnReady()
     {
@@ -52,27 +50,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
             return;
         }
 
-        var categoryIcons = new Dictionary<ItemCategoryId, IconDefinition>();
-        foreach (var category in categoriesResult.Value!.All)
-        {
-            if (category.IconKey is null)
-                continue;
-
-            try
-            {
-                categoryIcons.Add(category.Id, Icons.Get(category.IconKey));
-            }
-            catch (ArgumentException exception)
-            {
-                FileLoader.AbortLoad(new DataLoadError("Invalid category icon",
-                    $"Category {category.Id}: {exception.Message}", FilePaths.UserItemCategoryDataYaml,
-                    FilePaths.ItemCategoryDataYamlSchema, exception));
-                return;
-            }
-        }
-
         ItemCategories = categoriesResult.Value;
-        CategoryIcons = new ReadOnlyDictionary<ItemCategoryId, IconDefinition>(categoryIcons);
         Items = new ItemCatalog(ItemCategories, Array.Empty<ItemDefinition>());
         InventoryImpl = new InventoryImpl(Items,
             exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
@@ -126,7 +104,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         InventoryImpl = null!;
         Items = null!;
         ItemCategories = null!;
-        CategoryIcons = null!;
         if (_playerActions is null)
             return;
 

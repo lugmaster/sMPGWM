@@ -14,7 +14,7 @@ public sealed class EquipmentImpl : IDisposable
 
     internal ItemCatalog Catalog { get; }
     public IReadOnlyList<EquipmentSlotDefinition> Definitions { get; }
-    public EquipmentSnapshot Snapshot { get; private set; } = new(0, new ItemEntity?[8]);
+    public EquipmentSnapshot Snapshot { get; private set; } = new(0, new ItemEntity?[EquipmentSlotDefinition.Defaults.Count]);
     public long Revision => Snapshot.Revision;
     public event Action<EquipmentSnapshot>? Changed;
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :
@@ -25,17 +25,7 @@ public sealed class EquipmentImpl : IDisposable
         ArgumentNullException.ThrowIfNull(catalog);
         Catalog = catalog;
         _reportObserverError = reportObserverError;
-        Definitions = Array.AsReadOnly(new[]
-        {
-            new EquipmentSlotDefinition("engine", "Engine", ItemCategories.Engine),
-            new EquipmentSlotDefinition("hull", "Hull", ItemCategories.Hull),
-            new EquipmentSlotDefinition("shield_generator", "Shield Generator", ItemCategories.ShieldGenerator),
-            new EquipmentSlotDefinition("reactor", "Reactor", ItemCategories.Reactor),
-            new EquipmentSlotDefinition("light_weapon_1", "Light Weapon Slot 1", ItemCategories.LightWeapon),
-            new EquipmentSlotDefinition("light_weapon_2", "Light Weapon Slot 2", ItemCategories.LightWeapon),
-            new EquipmentSlotDefinition("heavy_weapon_1", "Heavy Weapon Slot 1", ItemCategories.HeavyWeapon),
-            new EquipmentSlotDefinition("heavy_weapon_2", "Heavy Weapon Slot 2", ItemCategories.HeavyWeapon)
-        });
+        Definitions = EquipmentSlotDefinition.Defaults;
         foreach (var definition in Definitions)
             catalog.Categories.Get(definition.AcceptedCategory);
     }

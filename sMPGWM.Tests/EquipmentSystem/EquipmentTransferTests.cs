@@ -299,4 +299,25 @@ public class EquipmentTransferTests
         Assert.That(nextInventory.Snapshot.Occupied, Is.Empty);
         Assert.That(nextEquipment.Snapshot.Slots, Has.All.Null);
     }
+    [Test]
+    public void HoverValidation_DoesNotAllocateOrPublishEvenForPartialMerges()
+    {
+        Seed((0, "consumable", 7), (1, "consumable", 8));
+        var request = Request(ItemLocation.Inventory(0), ItemLocation.Inventory(1));
+        var before = _inventoryImpl.Snapshot;
+        var notifications = 0;
+        _inventoryImpl.Changed += _ => notifications++;
+        for (var index = 0; index < 32; index++) _transfers.Validate(request);
+        var allocated = GC.GetAllocatedBytesForCurrentThread();
+        var result = TransferResult.NoChange;
+        for (var index = 0; index < 256; index++) result = _transfers.Validate(request);
+        allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        Assert.That(result, Is.EqualTo(TransferResult.Success));
+        Assert.That(allocated, Is.Zero);
+        Assert.That(_inventoryImpl.Snapshot, Is.SameAs(before));
+        Assert.That(notifications, Is.Zero);
+        Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Success));
+        Assert.That(notifications, Is.EqualTo(1));
+    }
+
 }

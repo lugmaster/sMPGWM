@@ -1,6 +1,7 @@
 #nullable enable
 
 using Godot;
+using System;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.Util.UiComponents;
@@ -8,6 +9,19 @@ namespace sMPGWM.Scripts.Util.UiComponents;
 public partial class ClickableIcon : Button
 {
     internal object? Binding { get; set; }
+    internal Color DisplayModulate { get; set; } = Colors.White;
+    internal event Action<ClickableIcon, InputEvent>? InputReceived;
+    internal event Action<ClickableIcon, bool>? HoverChanged;
+    internal event Action<ClickableIcon>? Exiting;
+    internal Func<ClickableIcon, Variant>? DragRequested { get; set; }
+    internal Func<ClickableIcon, Variant, bool>? DropValidated { get; set; }
+    internal Action<ClickableIcon, Variant>? DropRequested { get; set; }
+
+    public override void _GuiInput(InputEvent @event) => InputReceived?.Invoke(this, @event);
+    public override Variant _GetDragData(Vector2 atPosition) => DragRequested?.Invoke(this) ?? default;
+    public override bool _CanDropData(Vector2 atPosition, Variant data) => DropValidated?.Invoke(this, data) == true;
+    public override void _DropData(Vector2 atPosition, Variant data) => DropRequested?.Invoke(this, data);
+    public override void _ExitTree() => Exiting?.Invoke(this);
     private Texture2D? _iconTexture;
     private IconSize _iconSize = IconSize.Medium;
     private IconDisplayData _display = new();
@@ -31,6 +45,7 @@ public partial class ClickableIcon : Button
 
     public override GodotObject _MakeCustomTooltip(string forText)
     {
+        if (string.IsNullOrEmpty(forText)) return null!;
         _tooltipLabel = new Label
         {
             Text = forText,
@@ -55,7 +70,12 @@ public partial class ClickableIcon : Button
     {
         if (what == NotificationApplicationFocusOut || what == NotificationWMWindowFocusOut)
             DismissTooltip();
-        if (what == NotificationMouseEnter) TooltipText = _display.Tooltip;
+        if (what == NotificationMouseEnter)
+        {
+            TooltipText = _display.Tooltip;
+            HoverChanged?.Invoke(this, true);
+        }
+        else if (what == NotificationMouseExit) HoverChanged?.Invoke(this, false);
     }
 
     public Texture2D? IconTexture

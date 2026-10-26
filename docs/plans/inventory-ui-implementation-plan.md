@@ -356,3 +356,18 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-10 Integration checks | Complete | Complete |
 
 No unresolved product questions block these stories. Defaults inferred during refinement are recorded explicitly above; future item-definition YAML schema/loading and actual item effects remain outside the epic. Category YAML loading was added by explicit follow-up request.
+
+## Post-implementation refactor (2026-10-26)
+
+All six review recommendations are implemented:
+
+1. Category loading validates icon keys and category references from the shared equipment-slot defaults before gameplay construction. Errors retain YAML/schema source details. A shared UI resolver applies item asset, category asset/key, and placeholder precedence; native tabs display configured icons and category-ID metadata. Existing user categories may omit optional icons.
+2. Transfer validation evaluates affected locations and merge counts without allocations or full-state copies. Only commit constructs replacement entities/snapshots and checks global identity uniqueness. Both owners are installed before publication.
+3. One `ItemInteractionController` owns item and hotbar placement through explicit idle, click, and native-drag modes. One `ItemCellBinding` supplies real locations or hotbar positions and captured revisions. Newer target bindings cannot authorize an older drag source.
+4. Cells register plain C# events and delegates once, and unregister on removal or menu teardown. Virtual GUI/drag callbacks and hover/tree notifications form the engine boundary; managed cell dispatch does not use Godot signals or Callable wrappers. Rendering updates binding data; it does not rebuild input handlers. Source and hover controls are retained directly, and per-frame work only positions cursor presentation.
+5. Shared formatting and icon resolution live under `Scripts/UiSystem/Items`, using Godot resource caching. Hotbar controls are cached; pointer preview/feedback nodes are scene-authored. Empty custom tooltips return null.
+6. Removed `CategoryTab` and separate inventory, equipment, and hotbar binding models. Retained typed IDs, immutable snapshots, `InventoryChangePlan` (owner/before-state installation checks), and `ItemTooltipData` (immutable domain presentation snapshot). Inventory and equipment remain separate state owners.
+
+Validation: solution build passed; all 360 NUnit tests passed, including missing-category/unknown-icon load failures, zero-allocation hover evaluation, stale-source rejection, and click/native hotbar placement. Inventory, UI architecture, and icon sizing smoke checks passed. Rendered inventory checks passed at 1280x720 and 1920x1080 across two game lifetimes; captured tooltip/count and drag-preview images were inspected. Runtime fixtures also check icon precedence, placeholder reuse, native tab icons/metadata, and rebinding iconless categories. Existing compiler/source-generator warnings remain. `git diff --check` passed.
+
+Logs use the `artifacts/inventory-refactor-` prefix: `build.log`, `tests.log`, `inventory-smoke.log`, `ui_architecture-smoke.log`, `icon_sizing-smoke.log`, and `visual-smoke.log`. New captures use `artifacts/inventory-refactor-*.png`, preserving the INV-10 captures. To reproduce the rendered run, append `-- --capture-visuals --capture-prefix=inventory-refactor` to the inventory smoke command.

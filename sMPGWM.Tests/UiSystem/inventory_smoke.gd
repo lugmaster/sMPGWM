@@ -19,7 +19,11 @@ func capture_visual(name: String) -> void:
     if not OS.get_cmdline_user_args().has("--capture-visuals"):
         return
     await RenderingServer.frame_post_draw
-    var path := "res://../artifacts/inventory-inv10-%s-%dx%d.png" % [name, root.size.x, root.size.y]
+    var prefix := "inventory-inv10"
+    for argument in OS.get_cmdline_user_args():
+        if argument.begins_with("--capture-prefix="):
+            prefix = argument.trim_prefix("--capture-prefix=")
+    var path := "res://../artifacts/%s-%s-%dx%d.png" % [prefix, name, root.size.x, root.size.y]
     expect(root.get_texture().get_image().save_png(path) == OK, "Visual evidence must save: %s" % path)
 
 func tooltip_visible(node: Node) -> bool:
@@ -445,6 +449,12 @@ func verify_cells(menu: Node) -> void:
     expect(equipment.get_child_count() == 8, "Equipment must replace previews with eight slots")
     expect(grid.get_child_count() == 128, "Bag must replace previews with 128 cells")
     expect(grid.columns == 8, "Bag must retain eight columns")
+    var tabs := menu.get_node("%InventoryContainer").get_node("%CategoryTabs") as TabBar
+    expect(tabs.tab_count == 9 and tabs.get_tab_icon(0) == null, "Categories must use native tabs with a text-only All tab")
+    for index in range(1, tabs.tab_count):
+        expect(tabs.get_tab_metadata(index) is String and not tabs.get_tab_metadata(index).is_empty(), "Tabs must retain stable category IDs")
+    expect(not menu.get_node("%ItemPointerPreview").visible and not menu.get_node("%ItemPointerFeedback").visible,
+        "Scene-owned pointer presentation must start hidden")
     for index in range(equipment.get_child_count()):
         var cell := equipment.get_child(index)
         var label := cell.get_node("%Label") as Label

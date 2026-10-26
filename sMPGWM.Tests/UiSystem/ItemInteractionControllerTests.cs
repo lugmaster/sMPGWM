@@ -1,4 +1,5 @@
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
@@ -45,11 +46,11 @@ public class ItemInteractionControllerTests
         _inventory.Install(_inventory.PrepareChange(slots));
     }
 
-    private ItemPointerBinding Bag(int address) => new(ItemLocation.Inventory(address),
+    private ItemCellBinding Bag(int address) => new(ItemLocation.Inventory(address),
         _inventory.Snapshot.Slots[address], _inventory.Revision);
-    private ItemPointerBinding Slot(string key) => new(ItemLocation.Equipment(key),
+    private ItemCellBinding Slot(string key) => new(ItemLocation.Equipment(key),
         _equipment.Snapshot.Slots[_equipment.FindSlot(key)], _equipment.Revision);
-    private void Click(ItemPointerBinding target, long mapping = 0) =>
+    private void Click(ItemCellBinding target, long mapping = 0) =>
         _controller.Click(target, _inventory.Revision, _equipment.Revision, mapping);
 
     [Test]
@@ -230,4 +231,92 @@ public class ItemInteractionControllerTests
         Click(Bag(0));
         Assert.That(_controller.IsCarrying, Is.False);
     }
+    private ItemHotbarState ConfigureHotbar()
+    {
+        var state = new ItemHotbarState(new HotbarBinding[] { new ActionHotbarBinding("7") });
+        var session = _transfers.OpenEditSession();
+        state.SetEditSession(session);
+        _controller.SetSession(session);
+        _controller.BindHotbar(state, new ItemHotbarAdapter(state, _inventory, _equipment, _transfers));
+        return state;
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void UnifiedPlacement_AssignsConsumableWithoutMovingItems(bool drag)
+    {
+        Seed(("potion", 7));
+        using var hotbar = ConfigureHotbar();
+        var before = _inventory.Snapshot;
+        var target = ItemCellBinding.Hotbar(1, hotbar.Revision);
+        if (drag)
+        {
+            var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+            Assert.That(_controller.ValidateDrag(token, target), Is.EqualTo(TransferResult.Success));
+            Assert.That(_controller.Drop(token, target), Is.EqualTo(TransferResult.Success));
+            Assert.That(_controller.Drop(token, target), Is.Null);
+        }
+        else { Click(Bag(0)); Click(target); }
+        Assert.That(hotbar.Entries[1], Is.EqualTo(new ConsumableHotbarBinding(new("potion"))));
+        Assert.That(_inventory.Snapshot, Is.SameAs(before));
+        Assert.That(_controller.Mode, Is.EqualTo(ItemInteractionController.PlacementMode.Idle));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void UnifiedPlacement_MovesAndSwapsHotbarActions(bool drag)
+    {
+        Seed(("potion", 1));
+        using var hotbar = ConfigureHotbar();
+        Click(Bag(0));
+        Click(ItemCellBinding.Hotbar(1, hotbar.Revision));
+        var source = ItemCellBinding.Hotbar(0, hotbar.Revision);
+        var target = ItemCellBinding.Hotbar(1, hotbar.Revision);
+        if (drag)
+        {
+            var token = _controller.BeginDrag(source, _inventory.Revision, _equipment.Revision, 0);
+            Assert.That(_controller.ValidateDrag(token, Bag(2)), Is.EqualTo(TransferResult.IncompatiblePlacement));
+            Assert.That(_controller.Drop(token, target), Is.EqualTo(TransferResult.Success));
+        }
+        else { Click(source); Click(target); }
+        Assert.That(hotbar.Entries[0], Is.TypeOf<ConsumableHotbarBinding>());
+        Assert.That(hotbar.Entries[1], Is.EqualTo(new ActionHotbarBinding("7")));
+        Click(ItemCellBinding.Hotbar(1, hotbar.Revision));
+        Click(ItemCellBinding.Hotbar(2, hotbar.Revision));
+        Assert.That(hotbar.Entries[1], Is.Null);
+        Assert.That(hotbar.Entries[2], Is.EqualTo(new ActionHotbarBinding("7")));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void UnifiedPlacement_RejectsStaleHotbarTargetAndRevokedSession(bool drag)
+    {
+        Seed(("potion", 3));
+        using var hotbar = ConfigureHotbar();
+        var target = ItemCellBinding.Hotbar(1, -1);
+        if (drag)
+        {
+            var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+            Assert.That(_controller.Drop(token, target), Is.EqualTo(TransferResult.StaleRevision));
+        }
+        else { Click(Bag(0)); Click(target); }
+        Assert.That(hotbar.Entries[1], Is.Null);
+        Assert.That(_controller.IsCarrying, Is.False);
+        _controller.SetSession(Guid.Empty);
+        Click(ItemCellBinding.Hotbar(0, hotbar.Revision));
+        Assert.That(_controller.IsCarrying, Is.False);
+        Assert.That(_controller.Clear(ItemCellBinding.Hotbar(0, hotbar.Revision)), Is.EqualTo(HotbarResult.InvalidSession));
+    }
+
+    [Test]
+    public void NativeDrag_NewerBagTargetCannotAuthorizeAnOlderSource()
+    {
+        Seed(("potion", 3));
+        var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+        _inventory.Add(new("potion"), 1);
+        var before = _inventory.Snapshot;
+        Assert.That(_controller.Drop(token, Bag(1)), Is.EqualTo(TransferResult.StaleRevision));
+        Assert.That(_inventory.Snapshot, Is.SameAs(before));
+    }
+
 }

@@ -1,3 +1,5 @@
+#nullable enable
+
 using Godot;
 using System.Collections.Generic;
 using System;
@@ -9,6 +11,8 @@ public partial class ItemGrid: ScrollContainer
 {
     private GridContainer _slotGrid = null!;
     private readonly List<ClickableIcon> _cells = new();
+    internal IReadOnlyList<ClickableIcon> Cells => _cells;
+    internal event Action<ClickableIcon>? CellCreated;
 
     public override void _Ready()
     {
@@ -38,6 +42,7 @@ public partial class ItemGrid: ScrollContainer
                 cell.IconSize = IconSize.Medium;
                 _cells.Add(cell);
                 _slotGrid.AddChild(cell);
+                CellCreated?.Invoke(cell);
             }
 
             _cells[index].Binding = bindings[index];

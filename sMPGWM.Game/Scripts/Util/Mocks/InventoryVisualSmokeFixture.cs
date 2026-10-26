@@ -8,6 +8,7 @@ using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem;
+using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 using sMPGWM.Scripts.Util.UiComponents;
@@ -48,6 +49,45 @@ public partial class InventoryVisualSmokeFixture : RefCounted
     {
         try
         {
+            var category = new ItemCategory(new("icon_fixture"), "Icon fixture", 0, false)
+            {
+                IconKey = "Alchemy.Arsenic"
+            };
+            var definition = new ItemDefinition(new("icon_fixture"), "Icon fixture", category.Id,
+                iconAssetPath: "res://missing-fixture-icon.png");
+            var icons = new ItemCatalog(new ItemCategories(new[] { category }), new[] { definition });
+            Require(ItemIconResolver.Item(icons, definition) == Icons.Get("Alchemy.Arsenic").IconTexture,
+                "Missing item icons must fall back to the category icon.");
+            var explicitIcon = new ItemDefinition(new("explicit_icon"), "Explicit icon", category.Id,
+                iconAssetPath: "res://assets/mocks/hammer.png");
+            Require(ItemIconResolver.Item(icons, explicitIcon) == ResourceLoader.Load<Texture2D>(explicitIcon.IconAssetPath),
+                "An item icon must take precedence over its category.");
+            var noIcon = new ItemCategory(new("no_icon"), "No icon", 0, false);
+            var noIconDefinition = new ItemDefinition(new("no_icon"), "No icon", noIcon.Id);
+            var noIcons = new ItemCatalog(new ItemCategories(new[] { noIcon }), new[] { noIconDefinition });
+            Require(ItemIconResolver.Item(noIcons, noIconDefinition) == ItemIconResolver.Placeholder(),
+                "Items without usable item or category icons must share the placeholder.");
+            Require(ItemIconResolver.Category(category with { IconKey = null }) == null,
+                "Categories without icons must keep text-only tabs.");
+            var categoryView = ResourceLoader.Load<PackedScene>("res://scenes/ui/base/inventory_container.tscn")
+                .Instantiate<InventoryContainer>();
+            game.AddChild(categoryView);
+            try
+            {
+                categoryView.Bind(new InventoryViewState(), icons);
+                var tabs = categoryView.GetNode<TabBar>("%CategoryTabs");
+                Require(tabs.TabCount == 2 && tabs.GetTabIcon(1) == Icons.Get("Alchemy.Arsenic").IconTexture &&
+                    tabs.GetTabMetadata(1).AsString() == category.Id.Value,
+                    "Configured category icons and identities must reach the native tabs.");
+                categoryView.Bind(new InventoryViewState(), noIcons);
+                Require(tabs.GetTabIcon(1) == null, "Rebinding iconless categories must clear previous tab icons.");
+            }
+            finally
+            {
+                categoryView.Unbind();
+                game.RemoveChild(categoryView);
+                categoryView.QueueFree();
+            }
             var canvas = game.GetNode<UiCanvas>("UiCanvas");
             var menu = canvas.GetNode<HBoxContainer>("Root/MenuLayer/MenuHost/WindowScroll/WindowRow")
                 .GetChild<InventoryMenu>(0);
@@ -55,7 +95,7 @@ public partial class InventoryVisualSmokeFixture : RefCounted
                 .GetNode<ItemGrid>("%ItemGrid").GetNode<GridContainer>("%SlotGrid");
             foreach (var icon in grid.GetChildren().Cast<ClickableIcon>())
             {
-                var entity = ((InventoryCellBinding)icon.Binding!).Entity;
+                var entity = ((ItemCellBinding)icon.Binding!).Entity;
                 var label = icon.GetNode<Label>("QuantityLabel");
                 Require(label.MouseFilter == Control.MouseFilterEnum.Ignore && label.FocusMode == Control.FocusModeEnum.None,
                     "Quantity overlay must not intercept input.");

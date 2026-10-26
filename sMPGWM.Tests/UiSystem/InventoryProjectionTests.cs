@@ -12,11 +12,14 @@ public class InventoryProjectionTests
     {
         var categories = new ItemCategories(ItemCategories.CreateDefault().All.Append(
             new ItemCategory(new ItemCategoryId("extra"), "Extra", -1, false)));
-        var tabs = CategoryTab.Create(categories);
-        Assert.That(tabs.Select(tab => tab.CategoryId), Is.EqualTo(
-            new ItemCategoryId?[] { null }.Concat(categories.All.Select(category => (ItemCategoryId?)category.Id))));
-        Assert.That(tabs[1].Title, Is.EqualTo("Extra"));
-        Assert.That(tabs.Count, Is.EqualTo(10));
+        var id = new ItemDefinitionId("extra");
+        var catalog = new ItemCatalog(categories, new[] { new ItemDefinition(id, "Extra item", new("extra")) });
+        using var inventory = new InventoryImpl(catalog);
+        inventory.Add(id, 1);
+        var state = new InventoryViewState { SelectedTab = 1 };
+        Assert.That(InventoryProjection.Create(inventory.Snapshot, catalog, state)[0].Entity?.DefinitionId, Is.EqualTo(id));
+        state.SelectedTab = 2;
+        Assert.That(InventoryProjection.Create(inventory.Snapshot, catalog, state).Count, Is.EqualTo(127));
     }
 
     [TestCase(10, " engine ", 121)]
@@ -134,6 +137,6 @@ public class InventoryProjectionTests
         Assert.That(before.All(cell => cell.Entity == null && cell.Revision == 0), Is.True);
         for (var index = 0; index < count; index++)
             Assert.That(cells[index].Entity, Is.SameAs(inventory.Snapshot.Slots[index]));
-        Assert.Throws<NotSupportedException>(() => ((IList<InventoryCellBinding>)cells).Clear());
+        Assert.Throws<NotSupportedException>(() => ((IList<ItemCellBinding>)cells).Clear());
     }
 }

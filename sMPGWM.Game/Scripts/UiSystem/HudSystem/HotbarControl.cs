@@ -2,10 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Godot;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
@@ -22,7 +22,8 @@ public partial class HotbarControl : PanelContainer
     private ItemHotbarAdapter? _adapter;
     private ItemVisuals? _visuals;
     private IReadOnlyList<IconDefinition> _actions = Array.Empty<IconDefinition>();
-    internal ClickableIcon[] Icons => _buttonContainer.GetChildren().OfType<ClickableIcon>().ToArray();
+    private ClickableIcon[] _icons = Array.Empty<ClickableIcon>();
+    internal ClickableIcon[] Icons => _icons;
     internal event Action<int>? SlotPressed;
 
     public override void _EnterTree()
@@ -44,6 +45,7 @@ public partial class HotbarControl : PanelContainer
         Logger.Debug($"{nameof(HotbarControl)}.{nameof(SetIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
         ClearButtons();
 
+        _icons = new ClickableIcon[iconDefinitions.Count];
         for (var i = 0; i < iconDefinitions.Count; i++)
         {
             var slotIndex = i;
@@ -52,6 +54,7 @@ public partial class HotbarControl : PanelContainer
             icon.Pressed += () => SlotPressed?.Invoke(slotIndex);
             icon.Disabled = !_isProcessingInput && !_canEdit;
 
+            _icons[i] = icon;
             _buttonContainer.AddChild(icon);
         }
     }
@@ -59,6 +62,7 @@ public partial class HotbarControl : PanelContainer
     private void ClearButtons()
     {
         var children = _buttonContainer.GetChildren();
+        _icons = Array.Empty<ClickableIcon>();
         for (var i = children.Count - 1; i >= 0; i--)
         {
             if (children[i] is ClickableIcon child)
@@ -116,11 +120,12 @@ public partial class HotbarControl : PanelContainer
         for (var position = 0; position < icons.Length; position++)
         {
             var icon = icons[position];
-            icon.Binding = new HotbarCellBinding(position, _state.Revision);
+            icon.Binding = ItemCellBinding.Hotbar(position, _state.Revision);
             var availability = _adapter.Resolve(position);
             if (_state.Entries[position] is ActionHotbarBinding action && int.TryParse(action.ActionKey, out var originalIndex))
             {
                 icon.SetDisplay(_actions[originalIndex].IconTexture, new IconDisplayData($"Skill {originalIndex + 1}"));
+                icon.DisplayModulate = Colors.White;
                 icon.Modulate = Colors.White;
             }
             else _visuals!.ApplyDefinition(icon, availability.DefinitionId, availability.Quantity, availability.Label,
@@ -131,5 +136,3 @@ public partial class HotbarControl : PanelContainer
     public override void _ExitTree() => Unbind();
     
 }
-
-internal sealed record HotbarCellBinding(int Position, long Revision);

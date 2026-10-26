@@ -1,14 +1,20 @@
+#nullable enable
+
 using Godot;
+using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
+using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
 public partial class EquipmentContainer : GridContainer
 {
-    private readonly List<IconWithLabel> _cells = new();
+    private readonly List<ClickableIcon> _cells = new();
+    internal IReadOnlyList<ClickableIcon> Cells => _cells;
+    internal event Action<ClickableIcon>? CellCreated;
 
     public override void _Ready()
     {
@@ -28,13 +34,14 @@ public partial class EquipmentContainer : GridContainer
             {
                 var cell = HudProvider.CreateIconWithLabel();
                 cell.LabelText = definition.DisplayName;
-                _cells.Add(cell);
+                _cells.Add(cell.Cell);
                 AddChild(cell);
+                CellCreated?.Invoke(cell.Cell);
             }
 
-            var icon = _cells[index].Cell;
+            var icon = _cells[index];
             icon.IconSize = IconSize.Medium;
-            icon.Binding = new EquipmentCellBinding(definition.Key, snapshot.Slots[index], snapshot.Revision);
+            icon.Binding = ItemCellBinding.Equipment(definition.Key, snapshot.Slots[index], snapshot.Revision);
             visuals.Apply(icon, snapshot.Slots[index], definition.DisplayName);
         }
     }

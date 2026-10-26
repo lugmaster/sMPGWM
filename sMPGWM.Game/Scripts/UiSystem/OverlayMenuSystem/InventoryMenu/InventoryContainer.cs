@@ -1,7 +1,10 @@
+#nullable enable
+
 using Godot;
 using System;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
@@ -14,6 +17,9 @@ public partial class InventoryContainer : VBoxContainer
     private OptionButton _sort = null!;
     private ItemCatalog _catalog = null!;
     private Label _emptyResult = null!;
+    private ItemGrid _grid = null!;
+    internal System.Collections.Generic.IReadOnlyList<ClickableIcon> Cells => _grid.Cells;
+    internal event Action<ClickableIcon>? CellCreated;
     internal event Action? ViewChanging;
     internal event Action? ViewChanged;
 
@@ -29,8 +35,18 @@ public partial class InventoryContainer : VBoxContainer
         _search = GetNode<LineEdit>("FilterToolbar/LineEdit");
         _sort = GetNode<OptionButton>("FilterToolbar/SortSelector");
         _tabs = GetNode<TabBar>("%CategoryTabs");
+        _grid = GetNode<ItemGrid>("%ItemGrid");
+        _grid.CellCreated += OnCellCreated;
         _tabs.ClearTabs();
-        foreach (var tab in CategoryTab.Create(catalog.Categories)) _tabs.AddTab(tab.Title);
+        _tabs.AddTab("All");
+        foreach (var category in catalog.Categories.All)
+        {
+            _tabs.AddTab(category.DisplayName, ItemIconResolver.Category(category));
+            var index = _tabs.TabCount - 1;
+            _tabs.SetTabMetadata(index, category.Id.Value);
+            _tabs.SetTabIconMaxWidth(index, 16);
+        }
+        state.SelectedTab = Math.Clamp(state.SelectedTab, 0, _tabs.TabCount - 1);
         _sort.Clear();
         _sort.AddItem("Name ascending");
         _sort.AddItem("Name descending");
@@ -52,6 +68,7 @@ public partial class InventoryContainer : VBoxContainer
     internal void Unbind()
     {
         if (_viewState == null) return;
+        _grid.CellCreated -= OnCellCreated;
         _search.TextChanged -= OnSearchChanged;
         _tabs.TabChanged -= OnTabChanged;
         _sort.ItemSelected -= OnSortChanged;
@@ -62,9 +79,11 @@ public partial class InventoryContainer : VBoxContainer
     {
         var cells = InventoryProjection.Create(snapshot, _catalog, _viewState);
         _emptyResult.Visible = cells.Count == snapshot.EmptyAddresses.Count;
-        GetNode<ItemGrid>("%ItemGrid").Render(cells,
+        _grid.Render(cells,
             (icon, binding) => visuals.Apply(icon, binding.Entity));
     }
+
+    private void OnCellCreated(ClickableIcon cell) => CellCreated?.Invoke(cell);
 
     public override void _ExitTree() => Unbind();
 
