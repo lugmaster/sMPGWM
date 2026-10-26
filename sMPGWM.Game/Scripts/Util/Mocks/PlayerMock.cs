@@ -27,33 +27,41 @@ public partial class PlayerMock: AbstractSingleton<PlayerMock>
         return Array.Empty<IconDefinition>();
     }
 
-    public IReadOnlyList<ItemDefinition> GetTestItems(ItemCategories categories)
+    private static readonly (ItemDefinitionId Id, long Quantity)[] InventoryExamples =
+    [
+        (new("mock_standard_engine"), 2),
+        (new("mock_advanced_engine"), 2),
+        (new("mock_standard_hull"), 2),
+        (new("mock_advanced_hull"), 2),
+        (new("mock_standard_shield_generator"), 2),
+        (new("mock_advanced_shield_generator"), 2),
+        (new("mock_standard_reactor"), 2),
+        (new("mock_advanced_reactor"), 2),
+        (new("mock_standard_light_weapon"), 2),
+        (new("mock_advanced_light_weapon"), 2),
+        (new("mock_standard_heavy_weapon"), 2),
+        (new("mock_advanced_heavy_weapon"), 2),
+        (new("mock_standard_consumable"), 27),
+        (new("mock_advanced_consumable"), 1250),
+        (new("mock_standard_resource"), 27),
+        (new("mock_advanced_resource"), 1250),
+    ];
+
+    internal static void ValidateInventoryDefinitions(ItemCatalog catalog)
     {
-        var definitions = new List<ItemDefinition>();
-        foreach (var category in categories.All)
-        {
-            definitions.Add(new ItemDefinition(new($"mock_standard_{category.Id.Value}"),
-                $"Standard {category.DisplayName}", category.Id,
-                "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.",
-                maximumStackSize: category.CanStack ? 10 : null));
-            definitions.Add(new ItemDefinition(new($"mock_advanced_{category.Id.Value}"),
-                $"Advanced {category.DisplayName}", category.Id,
-                "PlayerMock alternate example for equipment swaps and separate item stacks.",
-                maximumStackSize: category.CanStack ? 1000 : null));
-        }
-        return definitions.AsReadOnly();
+        foreach (var (id, _) in InventoryExamples)
+            catalog.Get(id);
     }
 
     public void PopulateInventory(InventoryImpl inventory)
     {
-        foreach (var definition in inventory.Catalog.Definitions)
+        // Resolve every reference before the first addition, so missing definitions cannot partially seed a player.
+        ValidateInventoryDefinitions(inventory.Catalog);
+        foreach (var (id, quantity) in InventoryExamples)
         {
-            var quantity = inventory.Catalog.Categories.Get(definition.CategoryId).CanStack
-                ? definition.MaximumStackSize == 10 ? 27 : 1250
-                : 2;
-            var result = inventory.Add(definition.Id, quantity);
+            var result = inventory.Add(id, quantity);
             if (result != InventoryResult.Success)
-                throw new InvalidOperationException($"Could not add mock item {definition.Id}: {result}.");
+                throw new InvalidOperationException($"Could not add mock item {id}: {result}.");
         }
     }
 

@@ -525,9 +525,11 @@ func verify_window_overflow(canvas: Node, row: HBoxContainer) -> void:
 func run() -> void:
     create_timer(60).timeout.connect(func(): quit(1))
     var packed := load("res://scenes/game/main_game.tscn") as PackedScene
+    var loading_fixture = load("res://Scripts/Util/Mocks/InventorySlotSmokeFixture.cs").new()
     var demo := packed.instantiate()
     root.add_child(demo)
     await settle()
+    expect(loading_fixture.call("VerifyLoadedItems", demo, true), "Seeded startup must use the loaded item catalog")
     demo.get_node("UiCanvas").call("OpenMenu", 0)
     await settle()
     var demo_menu := demo.get_node("UiCanvas/Root/MenuLayer/MenuHost/WindowScroll/WindowRow").get_child(0)
@@ -547,6 +549,10 @@ func run() -> void:
     expect(demo_buttons.get_child_count() == 10, "Default hotbar must retain ten empty slots")
     for cell in demo_buttons.get_children():
         expect(cell.icon == null and not cell.get_node("QuantityLabel").visible, "Default hotbar must have no legacy icons or counts")
+    demo.get_node("UiCanvas").call("CloseAllMenus")
+    demo.get_node("UiCanvas").call("OpenMenu", 0)
+    await settle()
+    expect(loading_fixture.call("VerifyLoadedItems", demo, true), "Menu reopen must reuse loaded definitions and preserve quantities")
     demo.queue_free()
     await settle()
     for viewport_size in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
@@ -558,6 +564,7 @@ func run() -> void:
         game.set("PopulateMockInventory", false)
         root.add_child(game)
         await settle()
+        expect(loading_fixture.call("VerifyLoadedItems", game, false), "Unseeded games must load independent catalogs and keep inventory empty")
         var canvas := game.get_node("UiCanvas")
         var row := game.get_node("UiCanvas/Root/MenuLayer/MenuHost/WindowScroll/WindowRow")
         canvas.call("OpenMenu", 0)

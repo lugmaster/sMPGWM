@@ -1,0 +1,69 @@
+Items:
+  - Id: mock_standard_engine
+    DisplayName: Standard Engine
+    CategoryId: engine
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_engine
+    DisplayName: Advanced Engine
+    CategoryId: engine
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+  - Id: mock_standard_hull
+    DisplayName: Standard Hull
+    CategoryId: hull
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_hull
+    DisplayName: Advanced Hull
+    CategoryId: hull
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+  - Id: mock_standard_shield_generator
+    DisplayName: Standard Shield Generator
+    CategoryId: shield_generator
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_shield_generator
+    DisplayName: Advanced Shield Generator
+    CategoryId: shield_generator
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+  - Id: mock_standard_reactor
+    DisplayName: Standard Reactor
+    CategoryId: reactor
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_reactor
+    DisplayName: Advanced Reactor
+    CategoryId: reactor
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+  - Id: mock_standard_light_weapon
+    DisplayName: Standard Light Weapon
+    CategoryId: light_weapon
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_light_weapon
+    DisplayName: Advanced Light Weapon
+    CategoryId: light_weapon
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+  - Id: mock_standard_heavy_weapon
+    DisplayName: Standard Heavy Weapon
+    CategoryId: heavy_weapon
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_heavy_weapon
+    DisplayName: Advanced Heavy Weapon
+    CategoryId: heavy_weapon
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+  - Id: mock_standard_consumable
+    DisplayName: Standard Consumable
+    CategoryId: consumable
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+    MaximumStackSize: 10
+  - Id: mock_advanced_consumable
+    DisplayName: Advanced Consumable
+    CategoryId: consumable
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+    MaximumStackSize: 1000
+  - Id: mock_standard_resource
+    DisplayName: Standard Resource
+    CategoryId: resource
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+    MaximumStackSize: 10
+  - Id: mock_advanced_resource
+    DisplayName: Advanced Resource
+    CategoryId: resource
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+    MaximumStackSize: 1000

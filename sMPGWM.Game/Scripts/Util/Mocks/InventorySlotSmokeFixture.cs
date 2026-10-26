@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
@@ -15,6 +16,46 @@ namespace sMPGWM.Scripts.Util.Mocks;
 
 public partial class InventorySlotSmokeFixture : RefCounted
 {
+    private ItemCatalog? _loadedCatalog;
+    private ulong _gameId;
+
+    public bool VerifyLoadedItems(GamePlayManager game, bool seeded)
+    {
+        try
+        {
+            Require(game.Items.Definitions.Count == 16, "Startup must load all packaged item definitions even without seeding.");
+            Require(ReferenceEquals(game.Items, game.InventoryImpl.Catalog), "Inventory must reference the game catalog.");
+            Require(ReferenceEquals(game.ItemCategories, game.Items.Categories), "Items must reference the loaded categories.");
+            if (_loadedCatalog != null)
+                Require(ReferenceEquals(_loadedCatalog, game.Items) == (_gameId == game.GetInstanceId()),
+                    "Menu reopen must reuse the catalog; another game must get an independent catalog.");
+            _loadedCatalog = game.Items;
+            _gameId = game.GetInstanceId();
+            Require(game.InventoryImpl.Snapshot.Occupied.Count == (seeded ? 34 : 0),
+                "Mock seeding must remain optional.");
+            if (seeded)
+            {
+                foreach (var definition in game.Items.Definitions)
+                {
+                    var counts = game.InventoryImpl.Snapshot.Occupied
+                        .Where(entry => entry.Entity.DefinitionId == definition.Id)
+                        .Select(entry => entry.Entity.Count).ToArray();
+                    var expected = game.ItemCategories.Get(definition.CategoryId).CanStack
+                        ? definition.Id.Value.StartsWith("mock_standard_", StringComparison.Ordinal)
+                            ? new[] { 10, 10, 7 } : new[] { 1000, 250 }
+                        : new[] { 1, 1 };
+                    Require(counts.SequenceEqual(expected), $"Unexpected mock stacks for {definition.Id}.");
+                }
+            }
+            return true;
+        }
+        catch (Exception exception)
+        {
+            GD.PushError($"Loaded item fixture failed: {exception}");
+            return false;
+        }
+    }
+
     public bool Run(GamePlayManager game)
     {
         var canvas = game.GetNode<UiCanvas>("UiCanvas");

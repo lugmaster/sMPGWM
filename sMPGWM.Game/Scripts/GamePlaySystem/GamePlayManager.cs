@@ -53,9 +53,39 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
             return;
         }
 
+        var itemsResult = FileLoader.LoadYamlDefinition<ItemDefinitions>(
+            FilePaths.UserItemDataYaml, FilePaths.ItemDataYaml, FilePaths.ItemDataYamlSchema);
+        if (!itemsResult.IsSuccess)
+        {
+            FileLoader.AbortLoad(itemsResult.Error!);
+            return;
+        }
+
+        var catalogResult = itemsResult.Value!.ToCatalog(categoriesResult.Value!,
+            FilePaths.UserItemDataYaml, FilePaths.ItemDataYamlSchema);
+        if (!catalogResult.IsSuccess)
+        {
+            FileLoader.AbortLoad(catalogResult.Error!);
+            return;
+        }
+
+        if (PopulateMockInventory)
+        {
+            try
+            {
+                PlayerMock.ValidateInventoryDefinitions(catalogResult.Value!);
+            }
+            catch (ArgumentException exception)
+            {
+                FileLoader.AbortLoad(new DataLoadError("Invalid mock inventory definitions", exception.Message,
+                    FilePaths.UserItemDataYaml, FilePaths.ItemDataYamlSchema, exception));
+                return;
+            }
+        }
+
         ItemCategories = categoriesResult.Value;
         var player = PlayerMock.Instance;
-        Items = new ItemCatalog(ItemCategories, player.GetTestItems(ItemCategories));
+        Items = catalogResult.Value!;
         InventoryImpl = new InventoryImpl(Items,
             exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
         if (PopulateMockInventory) player.PopulateInventory(InventoryImpl);

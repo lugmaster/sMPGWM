@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement and implementation complete for INV-01 through INV-10.
+Status: planning refinement and implementation complete for INV-01 through INV-10, including the item-definition YAML follow-up below.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -25,7 +25,7 @@ The domain architecture below is an engineering recommendation based on the insp
 - A successful state-changing command advances participating revisions once. Rejected requests and no-ops publish nothing. Requests carry expected source identity/location and relevant state revisions; empty targets must still be empty at commit. No transaction database, undo framework, or general command bus is needed.
 - UI editing is authorized by a short-lived inventory-open session. Open/close/reopen creates a new session identity; focus loss invalidates pending interactions. User placement requests must match the current edit session and state revisions. Gameplay additions do not require inventory to be open.
 - Preserve `UiCanvas`'s four public menu operations. Add internal binding/lifecycle hooks only. Existing window focus, centered rows, scrolling, Escape behavior, and input release tracking remain authoritative.
-- Production startup remains an empty inventory with 128 cells. Seeded demo items are opt-in development/test fixtures, never unconditional startup content. Category YAML definitions and schema now load through `FileLoadingSystem` in `GamePlayManager`; item-definition YAML loading remains deferred.
+- Production startup remains an empty inventory with 128 cells. Seeded demo items are opt-in development/test fixtures, never unconditional startup content. Category and item-definition YAML now load once per game instance through `FileLoadingSystem` in `GamePlayManager`. The PlayerMock follow-up below supersedes empty startup for the mock player.
 
 ## INV-01 — Item metadata and extensible categories
 
@@ -61,7 +61,7 @@ Likely files: `Scripts/ItemSystem/ItemCategories.cs` (replace obsolete enum repr
 - Two consumable definitions in the same category never merge with each other.
 - Two stacks of one definition have different runtime IDs. Rendering changes neither ID.
 - Registering another nonstackable category with metadata makes it discoverable without a UI edit; it is not automatically equippable or hotbar-eligible.
-- NUnit covers invalid definitions, defaults, ID lifecycle, and stack compatibility. Category YAML schema/deserialization and catalog conversion are covered by `ItemCategoryLoadingTests`; item-definition loading remains deferred.
+- NUnit covers invalid definitions, defaults, ID lifecycle, and stack compatibility. Category YAML schema/deserialization and catalog conversion are covered by `ItemCategoryLoadingTests`; item-definition loading is covered by the follow-up below.
 
 ## INV-02 — Inventory state and growth
 
@@ -297,7 +297,7 @@ Implementation: complete (2026-10-26). Consolidated the existing domain/controll
 
 Added opt-in `--capture-visuals` to the inventory smoke. A rendered run saves tooltip/count, native drag preview, empty-result, and horizontal-overflow captures at both resolutions under `artifacts/inventory-inv10-*.png`. The rendered fixture synchronizes the OS cursor with injected mouse motion and focuses its window; the initial unsynchronized run exposed real-cursor interference with tooltip timers and dragging. The synchronized run passes the same interaction assertions as headless execution. Visual inspection of the captures confirmed exact tooltip quantities, readable compact bottom-right badges, missing-icon placeholders, source highlighting, drag feedback, and empty-result text. Focus-loss, rebinding, closure, and preview cleanup are also asserted by native scene input checks. This was an automated rendered run with captured-image inspection, not a separate manual playthrough.
 
-Validation: `dotnet build sMPGWM.sln --verbosity quiet` passed; `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-build --verbosity quiet` passed all 345 cases. Headless `ui_architecture_smoke.gd`, `inventory_smoke.gd`, and `icon_sizing_smoke.gd` passed. Rendered `inventory_smoke.gd -- --capture-visuals` passed at 1280x720 and 1920x1080 across two game lifetimes. `git diff --check` passed. Logs: `artifacts/inventory-inv10-build.log`, `artifacts/inventory-inv10-tests.log`, `artifacts/inventory-inv10-architecture-smoke.log`, `artifacts/inventory-inv10-smoke.log`, `artifacts/inventory-inv10-icon-sizing-smoke.log`, and `artifacts/inventory-inv10-visual-smoke.log`. Existing Godot test-source-generator warnings remain; there were no environment blockers. Item-definition YAML loading and actual item effects remain outside this epic. Production starts with 128 empty cells and legacy mock hotbar actions; development fixture artwork remains intentionally temporary.
+Validation: `dotnet build sMPGWM.sln --verbosity quiet` passed; `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-build --verbosity quiet` passed all 345 cases. Headless `ui_architecture_smoke.gd`, `inventory_smoke.gd`, and `icon_sizing_smoke.gd` passed. Rendered `inventory_smoke.gd -- --capture-visuals` passed at 1280x720 and 1920x1080 across two game lifetimes. `git diff --check` passed. Logs: `artifacts/inventory-inv10-build.log`, `artifacts/inventory-inv10-tests.log`, `artifacts/inventory-inv10-architecture-smoke.log`, `artifacts/inventory-inv10-smoke.log`, `artifacts/inventory-inv10-icon-sizing-smoke.log`, and `artifacts/inventory-inv10-visual-smoke.log`. Existing Godot test-source-generator warnings remain; there were no environment blockers. Item-definition YAML loading was subsequently added by the follow-up below; actual item effects remain outside this epic. Production starts with 128 empty cells and legacy mock hotbar actions; development fixture artwork remains intentionally temporary.
 
 ### Output and implementation steps
 
@@ -355,7 +355,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-09 Browsing/compact results | Complete | Complete |
 | INV-10 Integration checks | Complete | Complete |
 
-No unresolved product questions block these stories. Defaults inferred during refinement are recorded explicitly above; future item-definition YAML schema/loading and actual item effects remain outside the epic. Category YAML loading was added by explicit follow-up request.
+No unresolved product questions block these stories. Defaults inferred during refinement are recorded explicitly above; actual item effects remain outside the epic. Category and item-definition YAML loading were added by explicit follow-up requests.
 
 ## Post-implementation refactor (2026-10-26)
 
@@ -377,6 +377,20 @@ Logs use the `artifacts/inventory-refactor-` prefix: `build.log`, `tests.log`, `
 
 By explicit follow-up request, current startup now seeds demo items through `PlayerMock`, superseding the earlier empty-production-startup decision for this mock player. `GamePlayManager.PopulateMockInventory` defaults to true; set it to false for an empty inventory. The underlying inventory service still starts with 128 empty cells before additions.
 
-PlayerMock supplies Standard and Advanced definitions for each loaded category, inheriting its configured category artwork. Default categories yield 16 definitions and 34 occupied cells: two copies of each equipment definition, Standard stacks of 10/10/7, and Advanced stacks of 1000/250. Remaining cells stay empty for transfers. Equipment starts unequipped. The hotbar always starts with ten empty positions; the old generated skill icons and initial action bindings are no longer supplied. Consumables can be linked directly; equip a weapon before linking its equipment slot.
+Originally, PlayerMock generated Standard and Advanced definitions for each loaded category, inheriting its configured category artwork. The item-definition YAML follow-up below replaces that generation with packaged definitions and explicit seed references. Default categories yield 16 definitions and 34 occupied cells: two copies of each equipment definition, Standard stacks of 10/10/7, and Advanced stacks of 1000/250. Remaining cells stay empty for transfers. Equipment starts unequipped. The hotbar always starts with ten empty positions; the old generated skill icons and initial action bindings are no longer supplied. Consumables can be linked directly; equip a weapon before linking its equipment slot.
 
 Validation: solution build and all 360 NUnit tests passed. Headless inventory, UI architecture, and icon sizing smoke checks passed. Inventory smoke now verifies seeded startup, examples in every category, and ten iconless hotbar positions before running the existing isolated fixtures with seeding disabled. Existing compiler/source-generator warnings remain. Logs: `artifacts/inventory-playground-smoke.log`, `artifacts/inventory-playground-architecture.log`, and `artifacts/inventory-playground-icon-sizing.log`. `git diff --check` passed.
+
+## Item-definition YAML follow-up (2026-10-26)
+
+Implemented by explicit follow-up request. `assets/game_data/ItemDefinitions.yml` now contains the 16 previously generated Standard/Advanced examples with the same IDs, names, descriptions, category references, and stack limits. `ItemSchema.yml` requires `Id`, `DisplayName`, and `CategoryId`; it supports optional `Description` (default empty), `IconAssetPath`, and nullable `MaximumStackSize`. Limits must be positive 32-bit integers. Unknown properties are rejected. An empty item list is valid when mock seeding is disabled. Example items omit artwork overrides and inherit category artwork.
+
+`FileLoadingSystem/ItemDefinitions.cs` maps YAML transport records to the existing immutable `ItemDefinition` and `ItemCatalog` types. Catalog validation rejects duplicate IDs, missing categories, and nonstackable limits above one, preserving source/schema details in `LoadResult` failures. Domain types remain independent of YAML and Godot.
+
+`GamePlayManager.OnReady` loads categories, then items, once per game instance, before constructing inventory/equipment or binding UI. Both catalogs are published only after validation succeeds. The item file follows category-file behavior: copy packaged defaults to `user://config/items/ItemDefinitions.yml` when missing or when `ReloadConfigOnStart` is enabled; otherwise preserve user content. Invalid files abort startup through the existing load-error path. There is no static cache or menu-triggered reload. A new game loads a fresh catalog.
+
+`PlayerMock` now contains only explicit item IDs and seed quantities: two of each equipment example, 27 of each Standard stackable example, and 1250 of each Advanced stackable example. All referenced IDs are resolved before any inventory addition; missing mock references abort startup with item source/schema details before inventory construction. Additional YAML items/categories are not automatically seeded, and seed quantities no longer depend on configured stack limits. Disabling `PopulateMockInventory` still loads the full catalog but leaves all 128 cells empty. Packaged defaults preserve 34 occupied cells (Standard stacks 10/10/7, Advanced stacks 1000/250), unequipped equipment, and ten empty hotbar positions.
+
+Validation: the 24 new `ItemDefinitionLoadingTests` and all 410 NUnit cases passed; solution build passed. New cases cover packaged metadata, required/optional fields, malformed documents, unknown properties, invalid/overflowing limits, duplicate IDs, missing categories, nonstackable contradictions, independent loads, empty catalogs, and missing mock references. Inventory scene checks now assert catalog sharing, reuse on reopen, independent catalogs across game lifetimes, exact seed stacks, and definitions loaded with seeding disabled.
+
+Headless inventory, UI architecture, and icon sizing smoke checks passed. Inventory checks exercised both resolutions and independent game lifetimes; logs confirm default item-file copying during startup. `git diff --check` passed. Logs: `artifacts/item-yaml-focused-tests.log`, `artifacts/item-yaml-build.log`, `artifacts/item-yaml-tests.log`, `artifacts/item-yaml-inventory-smoke.log`, `artifacts/item-yaml-architecture-smoke.log`, and `artifacts/item-yaml-icon-sizing-smoke.log`. Existing nullable/member-hiding and Godot source-generator warnings appeared during compilation. No rendered capture run was needed for this data-loading change.

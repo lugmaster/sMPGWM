@@ -13,6 +13,10 @@ public partial class FilePaths : AbstractSingleton<FilePaths>
     public const string ItemCategoryDataYaml = "res://assets/game_data/ItemCategoryDefinitions.yml";
     public const string ItemCategoryDataYamlSchema = "res://assets/game_data/ItemCategorySchema.yml";
 
+    public const string UserItemDataYaml = UserConfigDirectory + "items/ItemDefinitions.yml";
+    public const string ItemDataYaml = "res://assets/game_data/ItemDefinitions.yml";
+    public const string ItemDataYamlSchema = "res://assets/game_data/ItemSchema.yml";
+
     // Effects
     public const string UserEffectDataJson = UserConfigDirectory + "effects/effects.json";
     public const string EffectDataJson = "res://config/effects/effects.json";

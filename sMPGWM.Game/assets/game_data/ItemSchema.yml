@@ -1,0 +1,33 @@
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+required:
+  - Items
+properties:
+  Items:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - Id
+        - DisplayName
+        - CategoryId
+      properties:
+        Id:
+          type: string
+          pattern: '\S'
+        DisplayName:
+          type: string
+          pattern: '\S'
+        CategoryId:
+          type: string
+          pattern: '\S'
+        Description:
+          type: string
+        IconAssetPath:
+          type: [string, 'null']
+        MaximumStackSize:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 2147483647
