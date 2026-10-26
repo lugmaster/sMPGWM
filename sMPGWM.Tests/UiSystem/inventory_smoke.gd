@@ -246,9 +246,9 @@ func hover_cell(cell: Control) -> void:
     pointer_motion(motion)
     await settle()
 
-func verify_hotbar_noop(menu: Node, fixture: RefCounted, source: Control, target: Control, message: String) -> void:
-    var feedback := menu.get_node("%ItemPointerFeedback") as Label
-    var preview := menu.get_node("%ItemPointerPreview") as Control
+func verify_hotbar_noop(pointer_overlay: Node, fixture: RefCounted, source: Control, target: Control, message: String) -> void:
+    var feedback := pointer_overlay.get_node("%ItemPointerFeedback") as Label
+    var preview := pointer_overlay.get_node("%ItemPointerPreview") as Control
     var revision: int = fixture.call("Revision")
     var inventory_revision: int = fixture.call("InventoryRevision")
     await pointer_click(source.get_global_rect().get_center())
@@ -283,7 +283,7 @@ func verify_hotbar(game: Node, canvas: Node, row: Node) -> void:
     expect(fixture.call("BindingAt", 0) == "consumable", "Click placement must replace a mock action with a consumable link")
     expect(buttons.get_child(0).get_node("QuantityLabel").text == "15", "Hotbar must aggregate both matching stacks")
     expect(fixture.call("InventoryRevision") == inventory_revision, "Assignment must not transfer inventory ownership")
-    await verify_hotbar_noop(menu, fixture, grid.get_child(1), buttons.get_child(0), "Already assigned here")
+    await verify_hotbar_noop(canvas.get_node("%ItemPointerOverlay"), fixture, grid.get_child(1), buttons.get_child(0), "Already assigned here")
     await pointer_click(buttons.get_child(0).get_global_rect().get_center())
     await pointer_click(buttons.get_child(1).get_global_rect().get_center())
     expect(fixture.call("BindingAt", 0) == "1" and fixture.call("BindingAt", 1) == "consumable", "Click editing must swap hotbar entries")
@@ -295,14 +295,14 @@ func verify_hotbar(game: Node, canvas: Node, row: Node) -> void:
     await begin_drag(grid.get_child(1).get_global_rect().get_center(), "consumable assignment")
     await finish_drag(buttons.get_child(1).get_global_rect().get_center())
     expect(fixture.call("BindingAt", 1) == "consumable", "Native item drag must assign a duplicate definition link")
-    await verify_hotbar_noop(menu, fixture, buttons.get_child(0), buttons.get_child(1), "These slots already have the same assignment")
+    await verify_hotbar_noop(canvas.get_node("%ItemPointerOverlay"), fixture, buttons.get_child(0), buttons.get_child(1), "These slots already have the same assignment")
     await begin_drag(grid.get_child(2).get_global_rect().get_center(), "inventory weapon rejection")
     await finish_drag(buttons.get_child(2).get_global_rect().get_center())
     expect(fixture.call("BindingAt", 2) == "2", "Inventory weapons cannot be assigned to hotbar")
     await begin_drag(equipment.get_child(4).get_node("%ClickableIcon").get_global_rect().get_center(), "weapon slot assignment")
     await finish_drag(buttons.get_child(2).get_global_rect().get_center())
     expect(fixture.call("BindingAt", 2) == "light_weapon_1", "Equipped weapons must bind their stable slot key")
-    await verify_hotbar_noop(menu, fixture, equipment.get_child(4).get_node("%ClickableIcon"), buttons.get_child(2), "Already assigned here")
+    await verify_hotbar_noop(canvas.get_node("%ItemPointerOverlay"), fixture, equipment.get_child(4).get_node("%ClickableIcon"), buttons.get_child(2), "Already assigned here")
     var revision: int = fixture.call("Revision")
     await begin_drag(buttons.get_child(2).get_global_rect().get_center(), "outside cancellation")
     await finish_drag(Vector2(5, 5))
@@ -349,10 +349,14 @@ func verify_click_placement(game: Node, canvas: Node, row: Node) -> void:
     var menu := row.get_child(0)
     var grid := menu.get_node("%InventoryContainer").get_node("%ItemGrid").get_node("%SlotGrid")
     var equipment := menu.get_node("%EquipmentContainer")
+    var pointer_overlay := canvas.get_node("%ItemPointerOverlay") as Control
+    var preview := pointer_overlay.get_node("%ItemPointerPreview") as Control
+    var feedback := pointer_overlay.get_node("%ItemPointerFeedback") as Label
     var revision: int = fixture.call("Revision")
     await pointer_click(grid.get_child(0).get_global_rect().get_center())
     expect(fixture.call("Carrying"), "Occupied release must pick up an item")
-    expect(menu.get_node("ItemPointerPreview").visible and menu.get_node("ItemPointerPreview").mouse_filter == Control.MOUSE_FILTER_IGNORE, "Carrying preview must be visible and ignore pointer input")
+    expect(preview.is_visible_in_tree() and preview.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Carrying preview must be visible and ignore pointer input")
+    expect(preview.global_position.is_equal_approx(pointer_overlay.get_global_mouse_position() + Vector2(16, 16)), "Shared preview must follow the cursor")
     expect(fixture.call("Revision") == revision and grid.get_child(0).icon != null, "Pickup must preserve source ownership and icon")
     var target_presses := [0]
     equipment.get_child(0).get_node("%ClickableIcon").pressed.connect(func(): target_presses[0] += 1)
@@ -360,13 +364,13 @@ func verify_click_placement(game: Node, canvas: Node, row: Node) -> void:
     expect(fixture.call("Carrying") and fixture.call("Revision") == revision, "Invalid equipment placement must retain carrying without mutation")
     await pointer_click(equipment.get_child(0).get_node("%ClickableIcon").get_global_rect().get_center())
     expect(fixture.call("EngineEquipped") and not fixture.call("Carrying"), "Valid placement must equip once and end carrying")
-    expect(not menu.get_node("ItemPointerPreview").visible, "Successful placement must remove the pointer preview")
+    expect(not preview.visible and not pointer_overlay.visible, "Successful placement must remove the pointer overlay")
     expect(fixture.call("Revision") == revision + 1, "Placement release must commit exactly once")
     expect(target_presses[0] == 0, "Placement must consume the target button event")
     await pointer_click(grid.get_child(0).get_global_rect().get_center())
     await pointer_click(grid.get_child(2).get_global_rect().get_center())
     expect(fixture.call("Carrying"), "Full matching stack must retain carrying")
-    expect(menu.get_node("%ItemPointerFeedback").visible and menu.get_node("%ItemPointerFeedback").text == "Stack is full",
+    expect(feedback.is_visible_in_tree() and feedback.text == "Stack is full",
         "Full matching inventory stacks must keep their existing feedback")
     await pointer_click(grid.get_child(1).get_global_rect().get_center())
     expect(not fixture.call("Carrying") and fixture.call("CountAt", 1) == 5 and fixture.call("CountAt", 2) == 10, "Partial merge must end carrying with exact counts")
@@ -387,13 +391,16 @@ func verify_click_placement(game: Node, canvas: Node, row: Node) -> void:
     await pointer_click(grid.get_child(0).get_global_rect().get_center())
     canvas.notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
     expect(not fixture.call("Carrying"), "Focus loss must cancel")
+    expect(not pointer_overlay.visible, "Focus loss must hide the shared pointer overlay")
     canvas.notification(NOTIFICATION_APPLICATION_FOCUS_IN)
     await pointer_click(grid.get_child(0).get_global_rect().get_center())
     canvas.call("OpenMenu", 1)
     canvas.call("CloseMenu", 0)
+    expect(not pointer_overlay.visible, "Closing inventory must hide its shared pointer presentation")
     canvas.call("OpenMenu", 0)
     await settle()
     expect(not fixture.call("Carrying"), "Close/reopen with Map open must invalidate old pickup")
+    expect(canvas.get_node("%ItemPointerOverlay") == pointer_overlay, "Reopening inventory must reuse the canvas-owned overlay")
     canvas.call("CloseMenu", 1)
     await settle()
     menu = row.get_child(0)
@@ -409,6 +416,7 @@ func verify_click_placement(game: Node, canvas: Node, row: Node) -> void:
     root.push_input(escape)
     await settle()
     expect(row.get_child_count() == 0 and not fixture.call("Carrying"), "Escape must close all windows and clear carrying")
+    expect(not pointer_overlay.visible, "Closing all windows must hide the shared pointer overlay")
     expect(fixture.call("Revision") == revision, "Cancellation paths must preserve inventory revision")
     fixture.call("Restore", game)
     if failures == previous_failures:
@@ -474,7 +482,7 @@ func verify_visual_pointer(canvas: Node, row: Node, fixture: RefCounted) -> void
     canvas.call("OpenMenu", 0)
     await settle()
 
-func verify_cells(menu: Node) -> void:
+func verify_cells(menu: Node, pointer_overlay: Control) -> void:
     var equipment := menu.get_node("%EquipmentContainer")
     var bag := menu.get_node("%InventoryContainer").get_node("%ItemGrid")
     var grid := bag.get_node("%SlotGrid")
@@ -485,8 +493,12 @@ func verify_cells(menu: Node) -> void:
     expect(tabs.tab_count == 9 and tabs.get_tab_icon(0) == null, "Categories must use native tabs with a text-only All tab")
     for index in range(1, tabs.tab_count):
         expect(tabs.get_tab_metadata(index) is String and not tabs.get_tab_metadata(index).is_empty(), "Tabs must retain stable category IDs")
-    expect(not menu.get_node("%ItemPointerPreview").visible and not menu.get_node("%ItemPointerFeedback").visible,
-        "Scene-owned pointer presentation must start hidden")
+    expect(not menu.has_node("ItemPointerPreview") and not menu.has_node("ItemPointerFeedback"), "Inventory must not own pointer presentation nodes")
+    expect(not pointer_overlay.visible and not pointer_overlay.get_node("%ItemPointerPreview").visible and not pointer_overlay.get_node("%ItemPointerFeedback").visible,
+        "Canvas-owned pointer presentation must start hidden")
+    expect(pointer_overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE and pointer_overlay.get_node("%ItemPointerFeedback").mouse_filter == Control.MOUSE_FILTER_IGNORE,
+        "Shared pointer presentation must pass mouse input through")
+    expect(pointer_overlay.get_parent().layer > 2, "Pointer presentation must render above menus and hotbar")
     for index in range(equipment.get_child_count()):
         var cell := equipment.get_child(index)
         var label := cell.get_node("%Label") as Label
@@ -570,7 +582,7 @@ func run() -> void:
         canvas.call("OpenMenu", 0)
         await settle()
         var menu := row.get_child(0)
-        await verify_cells(menu)
+        await verify_cells(menu, canvas.get_node("%ItemPointerOverlay"))
         await verify_window_overflow(canvas, row)
         var search := menu.get_node("%InventoryContainer").get_node("FilterToolbar/LineEdit") as LineEdit
         expect(search.text.is_empty(), "A new game must have independent view choices")
@@ -587,11 +599,11 @@ func run() -> void:
         menu = row.get_child(1)
         expect(menu.get_instance_id() != original_id, "Reopen must create a fresh view")
         expect(menu.get_node("%InventoryContainer").get_node("FilterToolbar/LineEdit").text == "retained choice", "View choices must survive reopening")
-        await verify_cells(menu)
+        await verify_cells(menu, canvas.get_node("%ItemPointerOverlay"))
         canvas.call("CloseAllMenus")
         canvas.call("OpenMenu", 0)
         await settle()
-        await verify_cells(row.get_child(0))
+        await verify_cells(row.get_child(0), canvas.get_node("%ItemPointerOverlay"))
         var fixture = load("res://Scripts/Util/Mocks/InventorySlotSmokeFixture.cs").new()
         expect(fixture.call("Run", game), "Live growth, compact transfer bindings, and detached subscriptions must pass")
         var visuals = load("res://Scripts/Util/Mocks/InventoryVisualSmokeFixture.cs").new()

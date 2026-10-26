@@ -25,8 +25,7 @@ public partial class InventoryMenu : GameOverlayMenu
     private ItemVisuals _visuals = null!;
     private ItemInteractionController? _interaction;
     private ItemHotbarState? _hotbar;
-    private TextureRect? _preview;
-    private Label? _feedback;
+    private ItemPointerOverlay? _pointerOverlay;
     private ClickableIcon? _sourceIcon;
     private ClickableIcon? _hoverIcon;
     private ClickableIcon? _pressedIcon;
@@ -36,6 +35,12 @@ public partial class InventoryMenu : GameOverlayMenu
     private bool _nativeDrag;
     private bool _dropping;
     internal bool IsCarrying => _interaction?.IsCarrying == true;
+
+    internal void SetPointerOverlay(ItemPointerOverlay overlay)
+    {
+        CancelInteraction();
+        _pointerOverlay = overlay;
+    }
 
     internal void BindHotbar(ItemHotbarState? state, ItemHotbarAdapter? adapter, HotbarControl view, Guid session)
     {
@@ -69,8 +74,6 @@ public partial class InventoryMenu : GameOverlayMenu
         base.OnReady();
         _inventoryView = GetNode<InventoryContainer>("%InventoryContainer");
         _equipmentView = GetNode<EquipmentContainer>("%EquipmentContainer");
-        _preview = GetNode<TextureRect>("%ItemPointerPreview");
-        _feedback = GetNode<Label>("%ItemPointerFeedback");
         if (_inventory != null) BindViews();
     }
 
@@ -153,9 +156,7 @@ public partial class InventoryMenu : GameOverlayMenu
         _pressedIcon = null;
         DismissTooltips();
         _sourceIcon = icon;
-        icon.SetDragPreview(new TextureRect { Texture = icon.IconTexture, MouseFilter = MouseFilterEnum.Ignore,
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, CustomMinimumSize = new Vector2(40, 40),
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered });
+        _pointerOverlay?.SetDragPreviewFor(icon, icon.IconTexture);
         UpdateFeedback(GetViewport().GuiGetHoveredControl() as ClickableIcon);
         return token.ToString();
     }
@@ -190,8 +191,7 @@ public partial class InventoryMenu : GameOverlayMenu
         RestoreHighlight(_hoverIcon);
         _sourceIcon = null;
         _hoverIcon = null;
-        _preview?.Hide();
-        _feedback?.Hide();
+        if (GodotObject.IsInstanceValid(_pointerOverlay)) _pointerOverlay!.Clear();
         if (_nativeDrag && !_dropping && IsInsideTree()) GetViewport().GuiCancelDrag();
     }
 
@@ -257,11 +257,10 @@ public partial class InventoryMenu : GameOverlayMenu
     {
         RestoreHighlight(_hoverIcon);
         _hoverIcon = null;
-        if (!IsCarrying || _preview == null || _feedback == null) return;
+        if (!IsCarrying || _pointerOverlay == null) return;
         if (_sourceIcon != null)
         {
             _sourceIcon.Modulate = new Color(1f, 0.85f, 0.4f);
-            _preview.Texture = _sourceIcon.IconTexture;
         }
         var target = hovered != null && _cells.Contains(hovered) ? hovered.Binding as ItemCellBinding : null;
         var result = target == null ? null : _interaction!.Validate(target);
@@ -271,7 +270,7 @@ public partial class InventoryMenu : GameOverlayMenu
             _hoverIcon = hovered;
             hovered!.Modulate = result == TransferResult.Success ? new Color(0.5f, 0.85f, 1f) : new Color(1f, 0.6f, 0.4f);
         }
-        _feedback.Text = result switch
+        var feedback = result switch
         {
             TransferResult.Success => target!.IsHotbar ? "Assign or move hotbar link" : "Place item",
             TransferResult.IncompatiblePlacement => "Item does not fit here",
@@ -283,14 +282,6 @@ public partial class InventoryMenu : GameOverlayMenu
             null => "Choose a slot - Right-click to cancel",
             _ => "Placement unavailable"
         };
-        _preview.Visible = !_nativeDrag;
-        _feedback.Show();
-    }
-
-    public override void _Process(double delta)
-    {
-        if (!IsCarrying || _preview == null || _feedback == null) return;
-        _preview.GlobalPosition = GetGlobalMousePosition() + new Vector2(16, 16);
-        _feedback.GlobalPosition = _preview.GlobalPosition + new Vector2(0, 44);
+        _pointerOverlay.UpdateDisplay(_sourceIcon?.IconTexture, feedback, !_nativeDrag);
     }
 }

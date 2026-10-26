@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dkwp55w3o0stj" path="res://Scripts/UiSystem/UiCanvas.cs" id="1_w7u23"]
 [ext_resource type="PackedScene" uid="uid://cklk7mqwxvqkw" path="res://scenes/ui/player_hud/player_hud.tscn" id="2_60q4y"]
 [ext_resource type="Script" uid="uid://c572x7f1kycoo" path="res://Scripts/UiSystem/OverlayMenuSystem/UiWindowManager.cs" id="2_ykq0k"]
+[ext_resource type="PackedScene" path="res://scenes/ui/base/item_pointer_overlay.tscn" id="4_pointer"]
 
 [node name="UiCanvas" type="CanvasLayer" unique_id=766120166]
 script = ExtResource("1_w7u23")
@@ -68,3 +69,9 @@ size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/separation = 24
 alignment = 1
+
+[node name="PointerLayer" type="CanvasLayer" parent="."]
+layer = 3
+
+[node name="ItemPointerOverlay" parent="PointerLayer" instance=ExtResource("4_pointer")]
+unique_name_in_owner = true

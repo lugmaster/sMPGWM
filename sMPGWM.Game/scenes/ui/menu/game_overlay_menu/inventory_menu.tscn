@@ -94,24 +94,6 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ItemPointerPreview" type="TextureRect" parent="."]
-unique_name_in_owner = true
-visible = false
-top_level = true
-z_index = 100
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ItemPointerFeedback" type="Label" parent="."]
-unique_name_in_owner = true
-visible = false
-top_level = true
-z_index = 100
-mouse_filter = 2
-
 [editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel"]
 [editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel2"]
 [editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel3"]

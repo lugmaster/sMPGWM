@@ -8,6 +8,7 @@ using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
+using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.Util.UiComponents;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
@@ -18,6 +19,7 @@ public partial class UiCanvas : CanvasLayer
 {
     private PlayerHud _playerHud = null!;
     private UiWindowManager _windowManager = null!;
+    private ItemPointerOverlay _itemPointerOverlay = null!;
     private InventoryImpl? _inventory;
     private EquipmentImpl? _equipment;
     private InventoryEquipmentTransferService? _transfers;
@@ -36,6 +38,7 @@ public partial class UiCanvas : CanvasLayer
     {
         _playerHud = GetNode<PlayerHud>("%PlayerHud");
         _windowManager = GetNode<UiWindowManager>("%MenuHost");
+        _itemPointerOverlay = GetNode<ItemPointerOverlay>("%ItemPointerOverlay");
     }
 
     public override void _Ready()
@@ -107,6 +110,7 @@ public partial class UiCanvas : CanvasLayer
     {
         if (id != UiWindowId.InventoryMenu) return;
         _inventoryMenu = (InventoryMenu)window;
+        _inventoryMenu.SetPointerOverlay(_itemPointerOverlay);
         if (_inventory != null && _equipment != null)
         {
             _inventoryMenu.Bind(_inventory, _equipment, _inventoryViewState);
