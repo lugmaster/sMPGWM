@@ -58,7 +58,10 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(256, 256)
 layout_mode = 1
 
-[node name="HotbarAnchor" type="Control" parent="." unique_id=517701217]
+[node name="HotbarLayer" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="HotbarAnchor" type="Control" parent="HotbarLayer" unique_id=517701217]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 7
@@ -74,7 +77,7 @@ grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
 
-[node name="HotbarControl" parent="HotbarAnchor" unique_id=1756593433 instance=ExtResource("3_adh7x")]
+[node name="HotbarControl" parent="HotbarLayer/HotbarAnchor" unique_id=1756593433 instance=ExtResource("3_adh7x")]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15

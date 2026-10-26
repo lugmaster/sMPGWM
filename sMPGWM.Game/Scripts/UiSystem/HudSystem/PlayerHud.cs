@@ -18,6 +18,7 @@ public partial class PlayerHud : Control
     private RadarControl _radarControl = null!;
     private HotbarControl _hotbarControl = null!;
     private bool _isProcessingInput;
+    internal HotbarControl Hotbar => _hotbarControl;
 
     public override void _EnterTree()
     {

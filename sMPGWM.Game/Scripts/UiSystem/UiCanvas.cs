@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.Util.UiComponents;
@@ -22,6 +24,8 @@ public partial class UiCanvas : CanvasLayer
     private InventoryViewState _inventoryViewState = new();
     private InventoryMenu? _inventoryMenu;
     private bool _hasApplicationFocus = true;
+    private ItemHotbarState? _hotbar;
+    private ItemHotbarAdapter? _hotbarAdapter;
 
     internal bool HasBlockingWindow => _windowManager.HasBlockingWindow;
     internal event Action<bool>? BlockingChanged;
@@ -67,17 +71,37 @@ public partial class UiCanvas : CanvasLayer
     {
         InventoryEditAvailabilityChanged?.Invoke(false);
         _inventoryMenu?.Unbind();
+        if (_inventory != null) _inventory.Changed -= RefreshHotbarInventory;
+        if (_equipment != null) _equipment.Changed -= RefreshHotbarEquipment;
         _inventory = null;
         _equipment = null;
         _transfers = null;
+        _playerHud.Hotbar.Unbind();
+        _hotbar = null;
+        _hotbarAdapter = null;
     }
 
     internal void SetInventoryEditing(bool available)
     {
         _transfers?.RevokeEditSession();
-        _inventoryMenu?.SetInteraction(_transfers, available && _transfers != null
-            ? _transfers.OpenEditSession() : Guid.Empty);
+        var session = available && _transfers != null ? _transfers.OpenEditSession() : Guid.Empty;
+        _hotbar?.SetEditSession(session);
+        _playerHud.Hotbar.SetEditing(session != Guid.Empty);
+        _inventoryMenu?.SetInteraction(_transfers, session);
+        _inventoryMenu?.BindHotbar(_hotbar, _hotbarAdapter, _playerHud.Hotbar, session);
     }
+
+    internal void BindHotbar(ItemHotbarState state, ItemHotbarAdapter adapter, ItemCatalog catalog, IReadOnlyList<IconDefinition> actions)
+    {
+        _hotbar = state;
+        _hotbarAdapter = adapter;
+        _playerHud.Hotbar.Bind(state, adapter, catalog, actions);
+        _inventory!.Changed += RefreshHotbarInventory;
+        _equipment!.Changed += RefreshHotbarEquipment;
+    }
+
+    private void RefreshHotbarInventory(InventorySnapshot snapshot) => _playerHud.Hotbar.Refresh();
+    private void RefreshHotbarEquipment(EquipmentSnapshot snapshot) => _playerHud.Hotbar.Refresh();
 
     private void OnWindowOpening(UiWindowId id, GameOverlayMenu window)
     {

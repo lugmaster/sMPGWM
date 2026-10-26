@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
@@ -29,6 +30,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public InventoryImpl InventoryImpl { get; private set; } = null!;
     public EquipmentImpl EquipmentImpl { get; private set; } = null!;
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
+    public ItemHotbarState ItemHotbar { get; private set; } = null!;
+    public ItemHotbarAdapter HotbarAdapter { get; private set; } = null!;
     public IReadOnlyDictionary<ItemCategoryId, IconDefinition> CategoryIcons { get; private set; } = null!;
 
     protected override void OnReady()
@@ -83,14 +86,21 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var player = PlayerMock.Instance;
+        var actions = player.GetHotBarSkills();
+        ItemHotbar = new ItemHotbarState(Enumerable.Range(0, actions.Count).Select(index => new ActionHotbarBinding(index.ToString())),
+            exception => LoggingSystem.Logger.Error($"Hotbar observer failed: {exception}"));
+        HotbarAdapter = new ItemHotbarAdapter(ItemHotbar, InventoryImpl, EquipmentImpl, ItemTransfers);
         _playerActions = new PlayerActionController(
-            _inputPolicy, player.OnHotbarSlotPressed, () => _inputController.IsGameplayInputAvailable);
+            _inputPolicy, position => HotbarAdapter.Activate(position,
+                key => player.OnHotbarSlotPressed(int.Parse(key)),
+                request => LoggingSystem.Logger.Info($"Item hotbar activation requested: {request}")),
+            () => _inputController.IsGameplayInputAvailable);
 
         _canvas.OnRequestHotbarAction += _playerActions.RequestHotbarActivation;
         _canvas.BlockingChanged += _inputPolicy.SetHasBlockingWindow;
         _inputPolicy.CanControlPlayerChanged += ApplyPlayerInputAvailability;
 
-        _canvas.SetHotbarIcons(player.GetHotBarSkills());
+        _canvas.BindHotbar(ItemHotbar, HotbarAdapter, Items, actions);
         _inputPolicy.SetHasBlockingWindow(_canvas.HasBlockingWindow);
         _inputPolicy.SetSessionActive(GameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(GameState == MainGameState.Active);
@@ -106,6 +116,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
             _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
         }
         ItemTransfers?.Dispose();
+        ItemHotbar?.Dispose();
+        ItemHotbar = null!;
+        HotbarAdapter = null!;
         EquipmentImpl?.Dispose();
         InventoryImpl?.Dispose();
         ItemTransfers = null!;

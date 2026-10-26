@@ -11,14 +11,19 @@ internal static class ItemDisplayFormatter
     internal static IconDisplayData Create(ItemCatalog catalog, ItemEntity? entity)
     {
         if (entity == null) return new IconDisplayData();
-        var data = catalog.GetTooltip(entity.DefinitionId);
+        return Create(catalog, entity.DefinitionId, entity.Count);
+    }
+
+    internal static IconDisplayData Create(ItemCatalog catalog, ItemDefinitionId definitionId, long? quantity)
+    {
+        var data = catalog.GetTooltip(definitionId);
         var tooltip = $"{data.DisplayName}\n{data.CategoryName}";
         if (data.Description.Length > 0) tooltip += $"\n{data.Description}";
         if (data.CanStack)
         {
             var limit = data.ConfiguredStackLimit?.ToString(CultureInfo.InvariantCulture) ?? "No configured limit";
-            tooltip += $"\nQuantity: {entity.Count.ToString(CultureInfo.InvariantCulture)}\nStack limit: {limit}";
+            tooltip += $"\nQuantity: {quantity.GetValueOrDefault().ToString(CultureInfo.InvariantCulture)}\nStack limit: {limit}";
         }
-        return new IconDisplayData(tooltip, data.CanStack ? entity.Count : null);
+        return new IconDisplayData(tooltip, data.CanStack ? quantity : null);
     }
 }

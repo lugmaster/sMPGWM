@@ -26,6 +26,7 @@ internal sealed class ItemInteractionController(InventoryEquipmentTransferServic
 
     internal ItemPointerBinding? Source { get; private set; }
     internal bool IsCarrying => Source != null;
+    internal bool OwnsDrag(Guid token) => token != Guid.Empty && token == _dragToken && IsCarrying;
     internal TransferResult? Feedback { get; private set; }
 
     internal void SetSession(Guid session)

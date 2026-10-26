@@ -47,6 +47,18 @@ public class ItemDisplayTests
         Assert.That(display.Tooltip, Does.Contain("2147483647").And.Contain("No configured limit"));
     }
 
+    [TestCase(0L)]
+    [TestCase(4294967294L)]
+    public void HotbarTooltipSupportsZeroAndAggregateQuantities(long quantity)
+    {
+        var definition = new ItemDefinition(new ItemDefinitionId("linked"), "Repair", ItemCategories.Consumable,
+            maximumStackSize: 10);
+        var catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[] { definition });
+        var display = ItemDisplayFormatter.Create(catalog, definition.Id, quantity);
+        Assert.That(display.Quantity, Is.EqualTo(quantity));
+        Assert.That(display.Tooltip, Does.Contain($"Quantity: {quantity}").And.Contain("Stack limit: 10"));
+    }
+
     [Test]
     public void EmptyAndNonstackableDisplays_HaveNoQuantity()
     {

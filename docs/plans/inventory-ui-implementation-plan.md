@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-07 implemented. INV-08 through INV-10 remain pending.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-08 implemented. INV-09 and INV-10 remain pending.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -231,6 +231,12 @@ Validation: all 18 `ItemInteractionControllerTests` and the full 321-case NUnit 
 
 Refinement: complete. Dependencies: INV-05, INV-06, INV-07.
 
+Implementation: complete (2026-10-26). Added game-owned, revisioned ten-position hotbar state with immutable consumable-definition and opaque weapon-slot links. The gameplay composition adapter retains original mock action keys separately from display positions, validates assignments through the existing edit session and source expectations, resolves aggregate quantities/current equipment, and emits typed item activation requests to the integration log without executing effects. ItemSystem contains no mock actions or equipment dependencies. New assignments replace entries without transferring ownership; existing entries move/swap, and right-click clears without restoring overwritten actions.
+
+InventoryMenu reuses the click/native drag adapters for hotbar editing, including stale mapping/session cancellation, source highlighting, destination feedback, invalid/outside drops, focus loss, and unavailable links. Activation permission remains independently gated through PlayerHud and PlayerActionController. Inventory alone authorizes editing; closing it while Map remains open immediately disables the hotbar buttons. A dedicated HUD canvas layer keeps the hotbar reachable above the menu's full-screen scroll surface. Consumable tooltips/counts share the existing formatter, including zero and quantities above int.MaxValue. Production still starts with an empty inventory and ten mock actions.
+
+Validation: all 15 ItemHotbarTests and all 19 ItemDisplayTests passed (34 focused cases); the full 338-case NUnit suite, solution build, and `git diff --check` passed. Native inventory smoke passed at 1280x720 and 1920x1080 across two game lifetimes, including actual click/drag assignments, swaps/moves, duplicate links, clearing, rejected inventory weapons, weapon-slot links, zero/unavailable retention, invalid/outside drops, focus loss, closed-inventory editing rejection, Map-only blocking, and legacy activation forwarding. Architecture smoke now asserts interactive editing without activation and retains exactly its 14 previously recorded window visibility, horizontal centering, and unnecessary scrollbar failures. Interactive visual inspection was not performed. Logs: `artifacts/inventory-inv08-*.log`.
+
 ### Output and implementation steps
 
 1. Retain ten hotbar positions, matching `PlayerMock.GetHotBarSkills()` and the current scene smoke expectations. `ItemSystem` defines consumable-definition links and weapon-equipment-slot links, plus validated item-binding operations. Category eligibility is domain metadata/policy, never a UI category switch; new categories default to no hotbar assignment.
@@ -333,7 +339,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-05 Tooltips/counts | Complete | Complete |
 | INV-06 Click placement | Complete | Complete |
 | INV-07 Drag-and-drop | Complete | Complete |
-| INV-08 Hotbar links | Complete | Not started |
+| INV-08 Hotbar links | Complete | Complete |
 | INV-09 Browsing/compact results | Complete | Not started |
 | INV-10 Integration checks | Complete | Not started |
 

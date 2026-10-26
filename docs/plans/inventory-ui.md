@@ -1,6 +1,6 @@
 # Epic: Inventory, Character Equipment, and Item Hotbar Links
 
-Status: INV-01 through INV-06 are implemented; all 313 NUnit tests and the new native click-placement smoke assertions pass. INV-07 through INV-10 remain pending. The inventory smoke reports an existing six-versus-eight-column mismatch; the headless UI architecture smoke still fails its previously recorded layout assertions. See the implementation plan for validation details.
+Status: INV-01 through INV-08 are implemented; all 338 NUnit tests and the inventory scene smoke pass, including native dragging and hotbar editing at both resolutions across two game lifetimes. INV-09 and INV-10 remain pending. The headless UI architecture smoke retains its previously recorded layout assertion failures. See the implementation plan for validation details.
 
 All ten stories have completed planning refinement. See [inventory-ui-implementation-plan.md](inventory-ui-implementation-plan.md) for story outputs, technical decisions, examples, implementation progress, and checks. Refined does not mean implemented. The implementation plan resolves presentation and interaction details within the requirements below.
 

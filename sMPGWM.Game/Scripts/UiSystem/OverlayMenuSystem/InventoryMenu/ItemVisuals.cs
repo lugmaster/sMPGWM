@@ -26,6 +26,20 @@ internal sealed class ItemVisuals(ItemCatalog catalog)
         icon.SetDisplay(texture ?? Placeholder(), ItemDisplayFormatter.Create(catalog, entity));
     }
 
+    internal void ApplyDefinition(ClickableIcon icon, ItemDefinitionId? definitionId, long? quantity, string label,
+        bool available, bool showPlaceholder = false)
+    {
+        if (definitionId == null)
+            icon.SetDisplay(showPlaceholder ? Placeholder() : null, new IconDisplayData(label));
+        else
+        {
+            var definition = catalog.Get(definitionId.Value);
+            icon.SetDisplay(Resolve(definition.IconAssetPath) ?? Placeholder(),
+                ItemDisplayFormatter.Create(catalog, definition.Id, quantity));
+        }
+        icon.Modulate = available ? Colors.White : new Color(0.6f, 0.6f, 0.6f);
+    }
+
     private Texture2D? Resolve(string? path)
     {
         if (string.IsNullOrWhiteSpace(path)) return null;

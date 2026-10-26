@@ -180,7 +180,15 @@ func run() -> void:
         var inventory := row.get_child(0) as Control
         expect_row_layout(scroll, row)
         var single_window_position: Vector2 = inventory.position
-        expect(buttons.get_child(0).disabled, "Inventory should block hotbar activation")
+        expect(not buttons.get_child(0).disabled, "Inventory should keep hotbar buttons interactive for editing")
+        var activation_probe = load("res://Scripts/Util/Mocks/InventoryHotbarSmokeFixture.cs").new()
+        activation_probe.call("Observe", canvas)
+        click_at(buttons.get_child(0).get_global_rect().get_center())
+        await settle()
+        expect(activation_probe.call("Activations") == 0, "Editing an enabled hotbar button must not request gameplay activation")
+        activation_probe.call("StopObserving")
+        click_at(Vector2(5, 5))
+        await settle()
         expect(input.get("Direction") == Vector2.ZERO, "Opening inventory should clear movement")
         expect(not input.get("ActionButtonPressed"), "Opening inventory should clear attacks")
         expect(hud.process_mode != Node.PROCESS_MODE_DISABLED, "HUD processing should continue")
