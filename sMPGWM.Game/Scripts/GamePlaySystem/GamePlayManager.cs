@@ -79,7 +79,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
         _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
-        _canvas.BindInventory(InventoryImpl, EquipmentImpl);
+        _canvas.BindInventory(InventoryImpl, EquipmentImpl, ItemTransfers);
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var player = PlayerMock.Instance;
@@ -126,8 +126,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     private void SetInventoryEditing(bool available)
     {
-        if (available && GameState == MainGameState.Active) ItemTransfers.OpenEditSession();
-        else ItemTransfers?.RevokeEditSession();
+        _canvas.SetInventoryEditing(available && GameState == MainGameState.Active);
     }
 
     public void SetGameState(MainGameState newGameState)
@@ -137,7 +136,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (newGameState == _gameState) return;
 
         _gameState = newGameState;
-        if (newGameState != MainGameState.Active) ItemTransfers?.RevokeEditSession();
+        if (newGameState != MainGameState.Active) SetInventoryEditing(false);
         _inputPolicy.SetSessionActive(newGameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(newGameState == MainGameState.Active);
         OnGameStateChanged?.Invoke(newGameState);

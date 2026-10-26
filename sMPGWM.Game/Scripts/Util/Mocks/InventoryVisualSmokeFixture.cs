@@ -99,7 +99,7 @@ public partial class InventoryVisualSmokeFixture : RefCounted
     {
         var canvas = game.GetNode<UiCanvas>("UiCanvas");
         canvas.CloseAllMenus();
-        canvas.BindInventory(game.InventoryImpl, game.EquipmentImpl);
+        canvas.BindInventory(game.InventoryImpl, game.EquipmentImpl, game.ItemTransfers);
         _equipment?.Dispose();
         _inventory?.Dispose();
         _equipment = null;

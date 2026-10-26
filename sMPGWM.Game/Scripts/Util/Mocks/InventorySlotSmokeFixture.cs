@@ -88,7 +88,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
         {
             canvas.InventoryEditAvailabilityChanged -= trackEditing;
             canvas.CloseAllMenus();
-            canvas.BindInventory(game.InventoryImpl, game.EquipmentImpl);
+            canvas.BindInventory(game.InventoryImpl, game.EquipmentImpl, game.ItemTransfers);
         }
     }
 

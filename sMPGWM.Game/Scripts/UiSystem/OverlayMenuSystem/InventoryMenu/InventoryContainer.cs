@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.Util.UiComponents;
 
@@ -10,6 +11,11 @@ public partial class InventoryContainer : VBoxContainer
     private LineEdit _search = null!;
     private TabBar _tabs = null!;
     private OptionButton _sort = null!;
+    internal event Action? ViewChanging;
+
+    internal bool IsToolbarControl(Control control) =>
+        control == _tabs || _tabs.IsAncestorOf(control) ||
+        GetNode<Control>("FilterToolbar").IsAncestorOf(control);
 
     internal void Bind(InventoryViewState state)
     {
@@ -41,7 +47,7 @@ public partial class InventoryContainer : VBoxContainer
 
     public override void _ExitTree() => Unbind();
 
-    private void OnSearchChanged(string text) => _viewState.SearchText = text;
-    private void OnTabChanged(long index) => _viewState.SelectedTab = (int)index;
-    private void OnSortChanged(long index) => _viewState.SelectedSort = (int)index;
+    private void OnSearchChanged(string text) { ViewChanging?.Invoke(); _viewState.SearchText = text; }
+    private void OnTabChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedTab = (int)index; }
+    private void OnSortChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedSort = (int)index; }
 }

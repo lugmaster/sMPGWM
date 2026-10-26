@@ -18,6 +18,7 @@ public partial class UiCanvas : CanvasLayer
     private UiWindowManager _windowManager = null!;
     private InventoryImpl? _inventory;
     private EquipmentImpl? _equipment;
+    private InventoryEquipmentTransferService? _transfers;
     private InventoryViewState _inventoryViewState = new();
     private InventoryMenu? _inventoryMenu;
     private bool _hasApplicationFocus = true;
@@ -50,11 +51,13 @@ public partial class UiCanvas : CanvasLayer
         _windowManager.WindowClosed -= OnWindowClosed;
     }
 
-    internal void BindInventory(InventoryImpl inventory, EquipmentImpl equipment)
+    internal void BindInventory(InventoryImpl inventory, EquipmentImpl equipment,
+        InventoryEquipmentTransferService? transfers = null)
     {
         UnbindInventory();
         _inventory = inventory;
         _equipment = equipment;
+        _transfers = transfers;
         _inventoryViewState = new InventoryViewState();
         _inventoryMenu?.Bind(inventory, equipment, _inventoryViewState);
         InventoryEditAvailabilityChanged?.Invoke(_inventoryMenu != null && _hasApplicationFocus);
@@ -66,6 +69,14 @@ public partial class UiCanvas : CanvasLayer
         _inventoryMenu?.Unbind();
         _inventory = null;
         _equipment = null;
+        _transfers = null;
+    }
+
+    internal void SetInventoryEditing(bool available)
+    {
+        _transfers?.RevokeEditSession();
+        _inventoryMenu?.SetInteraction(_transfers, available && _transfers != null
+            ? _transfers.OpenEditSession() : Guid.Empty);
     }
 
     private void OnWindowOpening(UiWindowId id, GameOverlayMenu window)

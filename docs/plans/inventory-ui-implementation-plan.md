@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-05 implemented. INV-06 through INV-10 remain pending.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-06 implemented. INV-07 through INV-10 remain pending.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -181,6 +181,10 @@ Validation: all 17 `ItemDisplayTests` and the full 303-case NUnit suite passed; 
 
 Refinement: complete. Dependencies: INV-02, INV-03, INV-05.
 
+Implementation: complete (2026-10-26). Added a plain interaction controller with idle/click-carrying state, captured source/target identities and revisions, edit-session authorization, and presentation version checks. Inventory and equipment share one controller. Release picks up without removing the source; placement uses the existing atomic coordinator. Incompatible/full-stack targets retain carrying with text feedback; successful transfers, including partial merges, end carrying. A pointer-ignoring preview and separate source/target highlights reflect read-only validation. Source, outside, right-click, toolbar, refresh, focus, closure, and inactive-session cancellation clear pending state. Toolbar controls remain usable and Escape retains close-all behavior. Target bindings are captured on press and never retargeted after a refresh. Native dragging remains INV-07.
+
+Validation: the focused `ItemInteractionControllerTests` passed all 10 cases; the full NUnit suite passed all 313 cases; `dotnet build sMPGWM.sln --verbosity quiet` and `git diff --check` passed with existing compiler warnings. Extended native-pointer smoke checks cover equip/rejection, full/partial merges, single commit/event consumption, preview cleanup, source/outside/right-click/toolbar cancellation, focus loss, close/reopen with Map open, and Escape at 1280x720 and 1920x1080 across two game lifetimes. These pointer assertions pass. The complete inventory smoke remains failing because the existing scene has eight columns while its older assertion expects six (also present in HEAD). The architecture smoke still fails its previously recorded visibility, horizontal centering, and scrollbar assertions. Initial scene startup was blocked by Steam being closed; checks were rerun after the user started Steam. Logs: `artifacts/inventory-inv06-*.log`.
+
 ### Output and implementation steps
 
 1. Add one UI interaction controller shared by inventory, equipment, and later hotbar surfaces. States are Idle, ClickCarrying, and Dragging; there is only one pending source at a time. This controller stores source identity/address, expected state revisions, edit-session identity, and presentation-mapping version, never item ownership.
@@ -323,7 +327,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-03 Equipment/transfers | Complete | Complete |
 | INV-04 Scenes/empty slots | Complete | Complete |
 | INV-05 Tooltips/counts | Complete | Complete |
-| INV-06 Click placement | Complete | Not started |
+| INV-06 Click placement | Complete | Complete |
 | INV-07 Drag-and-drop | Complete | Not started |
 | INV-08 Hotbar links | Complete | Not started |
 | INV-09 Browsing/compact results | Complete | Not started |
