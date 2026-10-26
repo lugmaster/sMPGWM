@@ -1,6 +1,6 @@
 # Epic: Inventory, Character Equipment, and Item Hotbar Links
 
-Status: implementation started. INV-01 item metadata and startup category YAML loading are implemented; all 168 NUnit tests pass. INV-02 through INV-10 remain pending. The headless UI architecture smoke currently fails layout assertions; see the implementation plan for validation details.
+Status: implementation started. INV-01 item metadata/startup category YAML loading and INV-02 inventory state/growth are implemented; all 202 NUnit tests pass. INV-03 through INV-10 remain pending. The headless UI architecture smoke previously failed layout assertions; it was not rerun for INV-02. See the implementation plan for validation details.
 
 All ten stories have completed planning refinement. See [inventory-ui-implementation-plan.md](inventory-ui-implementation-plan.md) for story outputs, technical decisions, examples, implementation progress, and checks. Refined does not mean implemented. The implementation plan resolves presentation and interaction details within the requirements below.
 
@@ -8,7 +8,7 @@ All ten stories have completed planning refinement. See [inventory-ui-implementa
 
 Refine the existing inventory and character screen, with domain-owned state and rules, familiar click placement and drag-and-drop, tooltips, stack counts, and hotbar links. Implement metadata and the minimum state operations needed by these interactions; defer actual item gameplay.
 
-The UI scripts are mostly scaffolding: `InventorySystem` is an empty singleton shell, `EquipmentSystem` is an empty class, and the inventory containers and related presentation controls have no implemented item behavior. `ClickableIcon` handles texture and size only. Its scene defaults to a mock compass texture. The equipment scene has seven preview cells; eight are needed. `ItemGrid/SlotGrid` contains twelve preview cells and has six columns. Category tabs are placeholders. INV-01 replaced the obsolete category enum with an extensible catalog matching the agreed categories and added the item domain model.
+The UI scripts are mostly scaffolding: `EquipmentSystem` is an empty class, and the inventory containers and related presentation controls have no implemented item behavior. `ClickableIcon` handles texture and size only. Its scene defaults to a mock compass texture. The equipment scene has seven preview cells; eight are needed. `ItemGrid/SlotGrid` contains twelve preview cells and has six columns. Category tabs are placeholders. INV-01 replaced the obsolete category enum with an extensible catalog matching the agreed categories and added the item domain model. INV-02 added the game-owned inventory service, immutable storage snapshots, atomic bulk additions, and automatic capacity growth.
 
 The existing HUD routes activation through `PlayerActionController` and the player-input policy. Preserve that integration and the existing overlay window system.
 
@@ -120,6 +120,8 @@ Acceptance criteria:
 ### INV-02: Establish inventory state and automatic capacity growth
 
 Dependency: INV-01.
+
+Implementation: complete. See the implementation plan for details and validation.
 
 Acceptance criteria:
 - One inventory system per running game owns 128 initially empty slots.

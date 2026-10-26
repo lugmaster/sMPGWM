@@ -24,6 +24,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     public MainGameState GameState => _gameState;
     public ItemCategories ItemCategories { get; private set; } = null!;
+    public ItemCatalog Items { get; private set; } = null!;
+    public InventorySystem.InventorySystem Inventory { get; private set; } = null!;
     public IReadOnlyDictionary<ItemCategoryId, IconDefinition> CategoryIcons { get; private set; } = null!;
 
     protected override void OnReady()
@@ -65,6 +67,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
         ItemCategories = categoriesResult.Value;
         CategoryIcons = new ReadOnlyDictionary<ItemCategoryId, IconDefinition>(categoryIcons);
+        Items = new ItemCatalog(ItemCategories, Array.Empty<ItemDefinition>());
+        Inventory = new InventorySystem.InventorySystem(Items,
+            exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
         _inputController = InputController.Instance;
@@ -87,6 +92,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     protected override void OnExitTree()
     {
+        Inventory?.Dispose();
+        Inventory = null!;
+        Items = null!;
         ItemCategories = null!;
         CategoryIcons = null!;
         if (_playerActions is null)

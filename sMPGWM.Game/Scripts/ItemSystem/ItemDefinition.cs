@@ -34,11 +34,3 @@ public sealed record ItemDefinition
         MaximumStackSize = maximumStackSize;
     }
 }
-
-public sealed record ItemTooltipData(
-    string DisplayName,
-    string CategoryName,
-    string Description,
-    bool CanStack,
-    int EffectiveStackLimit,
-    int? ConfiguredStackLimit);

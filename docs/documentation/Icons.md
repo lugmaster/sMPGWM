@@ -2,7 +2,8 @@
 
 Run `powershell -NoProfile -File tools/Generate-IconAtlases.ps1` from the repository root once when
 the source icons change. This Windows script uses System.Drawing and generates
-the PNG atlases and `Icons.cs`; commit these outputs. It is not run
+the PNG atlases and `Icons.cs`; commit these outputs. Icon groups stay together
+as nested classes in this generated file. It is not run
 during game startup. Open the project in Godot to import regenerated textures
 before running or exporting the game.
 
@@ -38,7 +39,7 @@ Use nearest texture filtering on pixel-art UI controls. Shared atlas textures
 allow Godot to batch compatible consecutive UI draws; materials, clipping and
 draw order can still split batches.
 
-Do not edit the generated C# file. Regeneration sorts filenames and checks for
+Do not edit the generated C# files. Regeneration sorts filenames and checks for
 identifier collisions and oversized sprites before writing output. Original
 sprites and category sheets are retained for editing and are not loaded by the
 runtime provider.

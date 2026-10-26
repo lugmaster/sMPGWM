@@ -6,16 +6,6 @@ using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.FileLoadingSystem;
 
-public sealed record ItemCategoryDefinition(
-    string Id,
-    string DisplayName,
-    int DisplayOrder,
-    bool CanStack,
-    string? IconAssetPath = null)
-{
-    public string? Icon { get; init; }
-}
-
 public sealed record ItemCategoryDefinitions(ItemCategoryDefinition[] Categories)
 {
     public LoadResult<ItemCategories> ToCategories(string sourcePath, string schemaPath)

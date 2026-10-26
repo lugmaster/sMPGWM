@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 implemented. INV-02 through INV-10 remain pending.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 and INV-02 implemented. INV-03 through INV-10 remain pending.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -66,6 +66,12 @@ Likely files: `Scripts/ItemSystem/ItemCategories.cs` (replace obsolete enum repr
 ## INV-02 — Inventory state and growth
 
 Refinement: complete. Dependency: INV-01.
+
+Implementation: complete (2026-10-26). Replaced the unused singleton shell with a plain game-owned inventory service. Immutable snapshots expose stable indexed storage, occupied entries, genuine empty addresses, capacity, and revision. Bulk additions fill matching partial stacks and existing holes in ascending address order before growing in the minimum 64-cell chunks. Planning uses bounded `long` arithmetic and constructs the full next snapshot before installation; rejected requests and no-ops preserve the exact prior snapshot and publish nothing. Existing stack IDs survive additions. Storage never shrinks or compacts.
+
+Internal prepare/validate/install/publish hooks support later transfer coordination, rejecting stale or repeated plans and duplicate live identities. Notifications run after installation, isolate observer/logging failures, and reject reentrant mutations. `GamePlayManager` creates an empty item catalog and inventory after category initialization, before gameplay activation, and disposes/releases them on teardown. Production remains empty; item-definition YAML loading, view binding, and inventory-open edit sessions remain with subsequent stories.
+
+Validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --filter FullyQualifiedName~InventorySystemTests --verbosity quiet` passed all 20 cases. `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --verbosity quiet` passed all 202 cases; `git diff --check` passed. Coverage includes 128/129/192/193/257 boundaries, partial stacks before holes, full stacks, ID conservation, quantities above `int.MaxValue`, huge atomic rejection, immutable snapshots, no shrinking, stale plans, observer failure/reentrancy, disposal, and independent game state. Existing nullable-context, member-hiding, and Godot test-source-generator warnings remain. Scene smoke checks were not rerun for this domain increment; actual menu/game-scene lifetime checks remain for UI integration.
 
 ### Output and implementation steps
 
@@ -293,7 +299,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | Story | Refinement | Implementation |
 | --- | --- | --- |
 | INV-01 Item metadata | Complete | Complete |
-| INV-02 Inventory state | Complete | Not started |
+| INV-02 Inventory state | Complete | Complete |
 | INV-03 Equipment/transfers | Complete | Not started |
 | INV-04 Scenes/empty slots | Complete | Not started |
 | INV-05 Tooltips/counts | Complete | Not started |
