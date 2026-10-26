@@ -25,6 +25,7 @@ sMPGWM is a **2D top-down multiplayer space shooter** developed in **Godot 4.6 w
 - Avoid LINQ operations; prefer straightforward loops.
 - Prefer arrays and efficient, allocation-conscious implementations where appropriate.
 - Favor fast, clear implementations without unnecessary overhead.
+- Use one file per class/enum/record except for internal classes that are embedded in another class. Exception: Icons.*
 
 ## Runtime and Networking
 
