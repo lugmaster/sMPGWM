@@ -45,11 +45,14 @@ public partial class HotbarControl : PanelContainer
         Logger.Debug($"{nameof(HotbarControl)}.{nameof(SetIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
         ClearButtons();
 
-        _icons = new ClickableIcon[iconDefinitions.Count];
-        for (var i = 0; i < iconDefinitions.Count; i++)
+        _icons = new ClickableIcon[_state?.Entries.Count ?? iconDefinitions.Count];
+        for (var i = 0; i < _icons.Length; i++)
         {
             var slotIndex = i;
-            var icon = BaseFactory.CreateClickableIcon(iconDefinitions[i]);
+            var icon = i < iconDefinitions.Count
+                ? BaseFactory.CreateClickableIcon(iconDefinitions[i])
+                : HudProvider.CreateClickableIcon();
+            icon.IconSize = IconSize.Large;
 
             icon.Pressed += () => SlotPressed?.Invoke(slotIndex);
             icon.Disabled = !_isProcessingInput && !_canEdit;
@@ -124,7 +127,8 @@ public partial class HotbarControl : PanelContainer
             var availability = _adapter.Resolve(position);
             if (_state.Entries[position] is ActionHotbarBinding action && int.TryParse(action.ActionKey, out var originalIndex))
             {
-                icon.SetDisplay(_actions[originalIndex].IconTexture, new IconDisplayData($"Skill {originalIndex + 1}"));
+                var texture = originalIndex >= 0 && originalIndex < _actions.Count ? _actions[originalIndex].IconTexture : null;
+                icon.SetDisplay(texture, new IconDisplayData($"Skill {originalIndex + 1}"));
                 icon.DisplayModulate = Colors.White;
                 icon.Modulate = Colors.White;
             }

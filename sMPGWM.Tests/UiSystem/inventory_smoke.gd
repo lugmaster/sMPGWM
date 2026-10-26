@@ -493,12 +493,37 @@ func verify_window_overflow(canvas: Node, row: HBoxContainer) -> void:
 func run() -> void:
     create_timer(60).timeout.connect(func(): quit(1))
     var packed := load("res://scenes/game/main_game.tscn") as PackedScene
+    var demo := packed.instantiate()
+    root.add_child(demo)
+    await settle()
+    demo.get_node("UiCanvas").call("OpenMenu", 0)
+    await settle()
+    var demo_menu := demo.get_node("UiCanvas/Root/MenuLayer/MenuHost/WindowScroll/WindowRow").get_child(0)
+    var demo_container := demo_menu.get_node("%InventoryContainer")
+    var demo_grid := demo_container.get_node("%ItemGrid").get_node("%SlotGrid")
+    var occupied := 0
+    for cell in demo_grid.get_children():
+        if cell.icon != null:
+            occupied += 1
+    expect(demo_grid.get_child_count() == 128 and occupied == 34, "PlayerMock must seed examples while keeping free inventory slots")
+    var demo_tabs := demo_container.get_node("%CategoryTabs") as TabBar
+    for index in range(1, demo_tabs.tab_count):
+        demo_tabs.current_tab = index
+        await settle()
+        expect(demo_grid.get_child_count() > 94, "Every category must contain PlayerMock examples")
+    var demo_buttons := demo.get_node("UiCanvas").get_node("%PlayerHud").get_node("%HotbarControl").get_node("%ButtonContainer")
+    expect(demo_buttons.get_child_count() == 10, "Default hotbar must retain ten empty slots")
+    for cell in demo_buttons.get_children():
+        expect(cell.icon == null and not cell.get_node("QuantityLabel").visible, "Default hotbar must have no legacy icons or counts")
+    demo.queue_free()
+    await settle()
     for viewport_size in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
         root.size = viewport_size
         root.content_scale_size = viewport_size
         if OS.get_cmdline_user_args().has("--capture-visuals"):
             root.grab_focus()
         var game := packed.instantiate()
+        game.set("PopulateMockInventory", false)
         root.add_child(game)
         await settle()
         var canvas := game.get_node("UiCanvas")

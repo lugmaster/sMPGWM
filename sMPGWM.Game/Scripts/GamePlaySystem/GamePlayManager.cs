@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
@@ -32,6 +32,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public ItemHotbarState ItemHotbar { get; private set; } = null!;
     public ItemHotbarAdapter HotbarAdapter { get; private set; } = null!;
 
+    [Export] public bool PopulateMockInventory { get; set; } = true;
+
     protected override void OnReady()
     {
         var definitionsResult = FileLoader.LoadYamlDefinition<ItemCategoryDefinitions>(
@@ -51,9 +53,11 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         }
 
         ItemCategories = categoriesResult.Value;
-        Items = new ItemCatalog(ItemCategories, Array.Empty<ItemDefinition>());
+        var player = PlayerMock.Instance;
+        Items = new ItemCatalog(ItemCategories, player.GetTestItems(ItemCategories));
         InventoryImpl = new InventoryImpl(Items,
             exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
+        if (PopulateMockInventory) player.PopulateInventory(InventoryImpl);
         EquipmentImpl = new EquipmentImpl(Items,
             exception => LoggingSystem.Logger.Error($"Equipment observer failed: {exception}"));
         ItemTransfers = new InventoryEquipmentTransferService(InventoryImpl, EquipmentImpl);
@@ -63,9 +67,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _canvas.BindInventory(InventoryImpl, EquipmentImpl, ItemTransfers);
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
-        var player = PlayerMock.Instance;
         var actions = player.GetHotBarSkills();
-        ItemHotbar = new ItemHotbarState(Enumerable.Range(0, actions.Count).Select(index => new ActionHotbarBinding(index.ToString())),
+        ItemHotbar = new ItemHotbarState(
             exception => LoggingSystem.Logger.Error($"Hotbar observer failed: {exception}"));
         HotbarAdapter = new ItemHotbarAdapter(ItemHotbar, InventoryImpl, EquipmentImpl, ItemTransfers);
         _playerActions = new PlayerActionController(

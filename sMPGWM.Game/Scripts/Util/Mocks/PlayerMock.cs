@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
-using Godot;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -22,29 +24,37 @@ public partial class PlayerMock: AbstractSingleton<PlayerMock>
 
     public IReadOnlyList<IconDefinition> GetHotBarSkills()
     {
-        return
-        [
-            CreateIcon("res://assets/mocks/compass.png"),
-            CreateIcon("res://assets/mocks/diamond.png"),
-            CreateIcon("res://assets/mocks/Diamond-02.png"),
-            CreateIcon("res://assets/mocks/Dumbbell.png"),
-            CreateIcon("res://assets/mocks/Dumbbell-02.png"),
-
-            CreateIcon("res://assets/mocks/fishhook.png"),
-            CreateIcon("res://assets/mocks/fishing-rod.png"),
-            CreateIcon("res://assets/mocks/funnel.png"),
-            CreateIcon("res://assets/mocks/hair-dryer.png"),
-            CreateIcon("res://assets/mocks/hammer.png"),
-        ];
+        return Array.Empty<IconDefinition>();
     }
 
-    private static IconDefinition CreateIcon(string texturePath)
+    public IReadOnlyList<ItemDefinition> GetTestItems(ItemCategories categories)
     {
-        return new IconDefinition
+        var definitions = new List<ItemDefinition>();
+        foreach (var category in categories.All)
         {
-            IconTexture = GD.Load<Texture2D>(texturePath),
-            IconSize = IconSize.Large
-        };
+            definitions.Add(new ItemDefinition(new($"mock_standard_{category.Id.Value}"),
+                $"Standard {category.DisplayName}", category.Id,
+                "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.",
+                maximumStackSize: category.CanStack ? 10 : null));
+            definitions.Add(new ItemDefinition(new($"mock_advanced_{category.Id.Value}"),
+                $"Advanced {category.DisplayName}", category.Id,
+                "PlayerMock alternate example for equipment swaps and separate item stacks.",
+                maximumStackSize: category.CanStack ? 1000 : null));
+        }
+        return definitions.AsReadOnly();
+    }
+
+    public void PopulateInventory(InventoryImpl inventory)
+    {
+        foreach (var definition in inventory.Catalog.Definitions)
+        {
+            var quantity = inventory.Catalog.Categories.Get(definition.CategoryId).CanStack
+                ? definition.MaximumStackSize == 10 ? 27 : 1250
+                : 2;
+            var result = inventory.Add(definition.Id, quantity);
+            if (result != InventoryResult.Success)
+                throw new InvalidOperationException($"Could not add mock item {definition.Id}: {result}.");
+        }
     }
 
     public void OnHotbarSlotPressed(int slotIndex)
