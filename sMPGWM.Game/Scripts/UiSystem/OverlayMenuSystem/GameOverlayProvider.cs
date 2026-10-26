@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.UiSystem.MessageStackSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.UiComponents;
 
@@ -9,6 +10,8 @@ internal static class GameOverlayProvider
     private const string MainMenuPath = GameOverlayMenuPath + "main_menu.tscn";
     private const string InventoryMenuPath = GameOverlayMenuPath + "inventory_menu.tscn";
     private const string MapMenuPath = GameOverlayMenuPath + "map_menu.tscn";
+    private const string MessageStackPath = GameOverlayMenuPath + "message_stack.tscn";
+    private const string MessageEntryPath = GameOverlayMenuPath + "message_entry.tscn";
 
     public static GameOverlayMenu CreateMainMenu()
     {
@@ -23,5 +26,10 @@ internal static class GameOverlayProvider
     public static GameOverlayMenu CreateMapMenu()
     {
         return SceneLoader.LoadAndInstantiate<GameOverlayMenu>(MapMenuPath);
+    }
+
+    public static MessageEntry CreateMessageStack()
+    {
+        return SceneLoader.LoadAndInstantiate<MessageEntry>(MessageEntryPath);
     }
 }
