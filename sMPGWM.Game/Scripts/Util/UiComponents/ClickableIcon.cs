@@ -70,6 +70,7 @@ public partial class ClickableIcon : Button
         }
     }
 
+    [Export]
     public IconSize IconSize
     {
         get => _iconSize;
@@ -100,8 +101,7 @@ public partial class ClickableIcon : Button
 
     private void ApplySize()
     {
-        var size = _iconSize.Vector();
-
-        CustomMinimumSize = size;
+        ExpandIcon = true;
+        CustomMinimumSize = _iconSize.Vector() + GetThemeStylebox("normal").GetMinimumSize();
     }
 }

@@ -35,6 +35,7 @@ public partial class ItemGrid: ScrollContainer
             if (index == _cells.Count)
             {
                 var cell = HudProvider.CreateClickableIcon();
+                cell.IconSize = IconSize.Medium;
                 _cells.Add(cell);
                 _slotGrid.AddChild(cell);
             }

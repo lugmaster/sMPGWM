@@ -43,7 +43,7 @@ public partial class PlayerMock: AbstractSingleton<PlayerMock>
         return new IconDefinition
         {
             IconTexture = GD.Load<Texture2D>(texturePath),
-            IconSize = IconSize.Medium
+            IconSize = IconSize.Large
         };
     }
 

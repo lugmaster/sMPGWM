@@ -33,6 +33,7 @@ public partial class EquipmentContainer : GridContainer
             }
 
             var icon = _cells[index].Cell;
+            icon.IconSize = IconSize.Medium;
             icon.Binding = new EquipmentCellBinding(definition.Key, snapshot.Slots[index], snapshot.Revision);
             visuals.Apply(icon, snapshot.Slots[index], definition.DisplayName);
         }

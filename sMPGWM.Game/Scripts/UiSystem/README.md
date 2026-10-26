@@ -32,6 +32,8 @@ Placement changes are immediate. Window dragging, resizing, and modal dialogs ar
 
 ## Inventory view binding
 
+`IconSize` is the shared sizing vocabulary: hotbar definitions select `Large` (64-pixel artwork); inventory and equipment select `Medium` (48-pixel artwork). `ClickableIcon` adds theme padding to that size and fits textures proportionally into the content area. Centered sizing flags prevent container stretching. Texture dimensions and empty/occupied state do not determine button dimensions. With the current theme, hotbar buttons are 72×72 and inventory/equipment buttons are 56×56.
+
 `GamePlayManager` supplies its inventory and equipment through internal `UiCanvas` binding hooks. The window manager announces individual window openings before adding them to the tree and identifies closed windows. Inventory views accept data before `_Ready`, replace editor preview cells, subscribe to committed snapshots, and detach on closure and teardown. Opening a view renders current state immediately; reopening preserves game-owned capacity and UI-owned toolbar choices.
 
 `InventoryProjection` packs occupied entries in storage order, followed by genuine empty addresses. Each cell retains an immutable binding with its actual address/slot key, entity expectation, and revision. `ItemGrid` reuses controls during refresh and appends cells on growth. Equipment labels come from domain slot definitions through the existing labeled-icon scene/provider. Generic icons accept opaque bindings without querying gameplay services.
@@ -64,6 +66,9 @@ From the repository root:
 dotnet build sMPGWM.sln
 dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj
 & $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/ui_architecture_smoke.gd
+& $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/icon_sizing_smoke.gd
 ```
 
 Set `$godotExecutable` to the Godot .NET console executable. The smoke script loads the actual game scene twice and checks row placement, scrolling, window navigation, focus, input blocking, hotbar interaction, and teardown. It runs the project's normal autoloads, including Steam initialization.
+
+The sizing smoke checks hotbar, inventory, and equipment at both viewport sizes with 16-, 64-, and 256-pixel textures, a rectangular texture, and empty slots. It verifies that texture changes preserve the configured slot dimensions, including the hotbar while inventory is open.
