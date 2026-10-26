@@ -37,26 +37,50 @@ script = ExtResource("3_tkc35")
 [node name="IconWithLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="0" unique_id=1956222726 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
 
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel" index="0" unique_id=1236882631]
+text = "Engine"
+
 [node name="IconWithLabel2" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="1" unique_id=1493450364 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel2" index="0" unique_id=1236882631]
+text = "Hull"
 
 [node name="IconWithLabel3" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="2" unique_id=496890385 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
 
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel3" index="0" unique_id=1236882631]
+text = "Shield Generator"
+
 [node name="IconWithLabel4" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="3" unique_id=218928841 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel4" index="0" unique_id=1236882631]
+text = "Reactor"
 
 [node name="IconWithLabel5" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="4" unique_id=1591401097 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
 
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel5" index="0" unique_id=1236882631]
+text = "Light Weapon Slot 1"
+
 [node name="IconWithLabel6" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="5" unique_id=2088991225 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel6" index="0" unique_id=1236882631]
+text = "Light Weapon Slot 2"
 
 [node name="IconWithLabel7" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="6" unique_id=393339355 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
 
-[node name="IconWithLabel8" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="7" instance=ExtResource("3_fyjbo")]
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel7" index="0" unique_id=1236882631]
+text = "Heavy Weapon Slot 1"
+
+[node name="IconWithLabel8" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="7" unique_id=1873425726 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel8" index="0" unique_id=1236882631]
+text = "Heavy Weapon Slot 2"
 
 [node name="InventorySection" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout" index="1" unique_id=1519022622]
 layout_mode = 2
@@ -69,30 +93,6 @@ horizontal_alignment = 1
 [node name="InventoryContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/InventorySection" index="1" unique_id=1381080431 instance=ExtResource("5_qspun")]
 unique_name_in_owner = true
 layout_mode = 2
-
-[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel" index="0"]
-text = "Engine"
-
-[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel2" index="0"]
-text = "Hull"
-
-[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel3" index="0"]
-text = "Shield Generator"
-
-[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel4" index="0"]
-text = "Reactor"
-
-[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel5" index="0"]
-text = "Light Weapon Slot 1"
-
-[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel6" index="0"]
-text = "Light Weapon Slot 2"
-
-[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel7" index="0"]
-text = "Heavy Weapon Slot 1"
-
-[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel8" index="0"]
-text = "Heavy Weapon Slot 2"
 
 [editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel"]
 [editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel2"]

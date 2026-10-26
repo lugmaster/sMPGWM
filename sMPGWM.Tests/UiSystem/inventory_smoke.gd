@@ -15,6 +15,13 @@ func settle() -> void:
     for frame in range(6):
         await process_frame
 
+func capture_visual(name: String) -> void:
+    if not OS.get_cmdline_user_args().has("--capture-visuals"):
+        return
+    await RenderingServer.frame_post_draw
+    var path := "res://../artifacts/inventory-inv10-%s-%dx%d.png" % [name, root.size.x, root.size.y]
+    expect(root.get_texture().get_image().save_png(path) == OK, "Visual evidence must save: %s" % path)
+
 func tooltip_visible(node: Node) -> bool:
     if node is Label and node.is_visible_in_tree() and node.text.contains("Development visual fixture."):
         return true
@@ -23,10 +30,15 @@ func tooltip_visible(node: Node) -> bool:
             return true
     return false
 
+func pointer_motion(motion: InputEventMouseMotion) -> void:
+    if OS.get_cmdline_user_args().has("--capture-visuals"):
+        root.warp_mouse(motion.position)
+    root.push_input(motion)
+
 func pointer_click(position: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
     var motion := InputEventMouseMotion.new()
     motion.position = position
-    root.push_input(motion)
+    pointer_motion(motion)
     await process_frame
     var click := InputEventMouseButton.new()
     click.position = position
@@ -41,7 +53,7 @@ func pointer_click(position: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
 func begin_drag(position: Vector2, context := "placement") -> void:
     var motion := InputEventMouseMotion.new()
     motion.position = position
-    root.push_input(motion)
+    pointer_motion(motion)
     await process_frame
     var press := InputEventMouseButton.new()
     press.position = position
@@ -53,15 +65,17 @@ func begin_drag(position: Vector2, context := "placement") -> void:
     motion.position = position + Vector2(24, 0)
     motion.relative = Vector2(24, 0)
     motion.button_mask = MOUSE_BUTTON_MASK_LEFT
-    root.push_input(motion)
+    pointer_motion(motion)
     await settle()
     expect(root.gui_is_dragging(), "Real mouse motion across threshold must start native dragging (%s) at %s (hover: %s)" % [context, position, root.gui_get_hovered_control()])
+    if context == "placement":
+        await capture_visual("drag-preview")
 
 func finish_drag(position: Vector2) -> void:
     var motion := InputEventMouseMotion.new()
     motion.position = position
     motion.button_mask = MOUSE_BUTTON_MASK_LEFT
-    root.push_input(motion)
+    pointer_motion(motion)
     await settle()
     var release := InputEventMouseButton.new()
     release.position = position
@@ -207,6 +221,7 @@ func verify_browsing(game: Node, canvas: Node, row: Node) -> void:
     await settle()
     grid = container.get_node("%ItemGrid").get_node("%SlotGrid")
     expect(grid.get_child_count() == 0 and container.get_node("EmptyResult").visible, "Full inventory with no matches must expose no drop targets")
+    await capture_visual("empty-results")
     var bag := container.get_node("%ItemGrid") as ScrollContainer
     expect(bag.scroll_vertical == 0, "Empty results must clamp the scroll position")
     await pointer_click(search.get_global_rect().get_center())
@@ -369,20 +384,21 @@ func verify_visual_pointer(canvas: Node, row: Node, fixture: RefCounted) -> void
     var overlay := cell.get_node("QuantityLabel") as Label
     var motion := InputEventMouseMotion.new()
     motion.position = overlay.get_global_rect().get_center()
-    root.push_input(motion)
+    pointer_motion(motion)
     await settle()
     expect(root.gui_get_hovered_control() == cell, "Quantity overlay must pass pointer hover to its icon")
     await create_timer(1.0).timeout
     expect(tooltip_visible(root), "Hover must display the standard delayed item tooltip")
+    await capture_visual("tooltip-counts")
     canvas.notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
     await settle()
     expect(not tooltip_visible(root), "Focus loss must dismiss the visible item tooltip")
     canvas.notification(NOTIFICATION_APPLICATION_FOCUS_IN)
     motion.position = Vector2.ZERO
-    root.push_input(motion)
+    pointer_motion(motion)
     await settle()
     motion.position = cell.get_global_rect().get_center()
-    root.push_input(motion)
+    pointer_motion(motion)
     cell.disabled = true
     await create_timer(1.0).timeout
     expect(tooltip_visible(root), "Disabled activation must retain tooltip availability after focus recovery")
@@ -400,20 +416,20 @@ func verify_visual_pointer(canvas: Node, row: Node, fixture: RefCounted) -> void
     await settle()
     expect(presses[0] == 1, "Quantity overlay must allow a single native button click")
     motion.position = Vector2.ZERO
-    root.push_input(motion)
+    pointer_motion(motion)
     await settle()
     motion.position = cell.get_global_rect().get_center()
-    root.push_input(motion)
+    pointer_motion(motion)
     await create_timer(1.0).timeout
     expect(tooltip_visible(root), "Tooltip must remain available after clicking")
     expect(fixture.call("MoveSource"), "Source move fixture must commit")
     await settle()
     expect(not tooltip_visible(root), "Rebinding a hovered source must dismiss its old tooltip")
     motion.position = Vector2.ZERO
-    root.push_input(motion)
+    pointer_motion(motion)
     await settle()
     motion.position = cell.get_global_rect().get_center()
-    root.push_input(motion)
+    pointer_motion(motion)
     await create_timer(1.0).timeout
     expect(tooltip_visible(root), "Rebound cell must show the new item's tooltip")
     canvas.call("CloseMenu", 0)
@@ -444,12 +460,34 @@ func verify_cells(menu: Node) -> void:
     await settle()
     expect(bag.scroll_vertical > 0, "Inventory must scroll to trailing empty cells")
 
+func verify_window_overflow(canvas: Node, row: HBoxContainer) -> void:
+    var scroll := row.get_parent() as ScrollContainer
+    var inventory := row.get_child(0) as Control
+    var inventory_size := inventory.size
+    canvas.call("OpenMenu", 1)
+    canvas.call("OpenMenu", 2)
+    await settle()
+    expect(scroll.get_h_scroll_bar().visible, "Three windows must overflow horizontally at both supported resolutions")
+    expect(inventory.size == inventory_size, "Horizontal overflow must not shrink inventory")
+    for index in [2, 0, 1]:
+        canvas.call("OpenMenu", index)
+        await settle()
+        expect(scroll.get_global_rect().grow(1).encloses(row.get_child(index).get_global_rect()), "Focusing an overflowing row must reveal the selected window")
+    await capture_visual("window-overflow")
+    canvas.call("CloseMenu", 1)
+    canvas.call("CloseMenu", 2)
+    await settle()
+    expect(not scroll.get_h_scroll_bar().visible, "Closing extra windows must remove horizontal overflow")
+    expect(absf(inventory.get_global_rect().get_center().x - scroll.get_global_rect().get_center().x) <= 1, "Single inventory must recenter after overflow")
+
 func run() -> void:
     create_timer(60).timeout.connect(func(): quit(1))
     var packed := load("res://scenes/game/main_game.tscn") as PackedScene
     for viewport_size in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
         root.size = viewport_size
         root.content_scale_size = viewport_size
+        if OS.get_cmdline_user_args().has("--capture-visuals"):
+            root.grab_focus()
         var game := packed.instantiate()
         root.add_child(game)
         await settle()
@@ -459,6 +497,7 @@ func run() -> void:
         await settle()
         var menu := row.get_child(0)
         await verify_cells(menu)
+        await verify_window_overflow(canvas, row)
         var search := menu.get_node("%InventoryContainer").get_node("FilterToolbar/LineEdit") as LineEdit
         expect(search.text.is_empty(), "A new game must have independent view choices")
         search.text = "retained choice"

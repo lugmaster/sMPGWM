@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-09 implemented. INV-10 remains pending.
+Status: planning refinement and implementation complete for INV-01 through INV-10.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -293,6 +293,12 @@ Validation: solution build passed; all 12 `InventoryProjectionTests` and all 345
 
 Refinement: complete. Dependencies: INV-01 through INV-09.
 
+Implementation: complete (2026-10-26). Consolidated the existing domain/controller regression suites and extended the inventory scene smoke with horizontal overflow, focus visibility, unchanged window size, and recentering checks at both supported resolutions. The architecture smoke now sizes its fitting viewport from the actual row minimum, then explicitly narrows to 1280x720 and restores the fitting size. Its previous 14 failures came from assuming that the enlarged three-window row fit at 1920 pixels; visibility, centering, spacing, input-blocking, and scrollbar assertions remain enforced. No production placement rules changed.
+
+Added opt-in `--capture-visuals` to the inventory smoke. A rendered run saves tooltip/count, native drag preview, empty-result, and horizontal-overflow captures at both resolutions under `artifacts/inventory-inv10-*.png`. The rendered fixture synchronizes the OS cursor with injected mouse motion and focuses its window; the initial unsynchronized run exposed real-cursor interference with tooltip timers and dragging. The synchronized run passes the same interaction assertions as headless execution. Visual inspection of the captures confirmed exact tooltip quantities, readable compact bottom-right badges, missing-icon placeholders, source highlighting, drag feedback, and empty-result text. Focus-loss, rebinding, closure, and preview cleanup are also asserted by native scene input checks. This was an automated rendered run with captured-image inspection, not a separate manual playthrough.
+
+Validation: `dotnet build sMPGWM.sln --verbosity quiet` passed; `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-build --verbosity quiet` passed all 345 cases. Headless `ui_architecture_smoke.gd`, `inventory_smoke.gd`, and `icon_sizing_smoke.gd` passed. Rendered `inventory_smoke.gd -- --capture-visuals` passed at 1280x720 and 1920x1080 across two game lifetimes. `git diff --check` passed. Logs: `artifacts/inventory-inv10-build.log`, `artifacts/inventory-inv10-tests.log`, `artifacts/inventory-inv10-architecture-smoke.log`, `artifacts/inventory-inv10-smoke.log`, `artifacts/inventory-inv10-icon-sizing-smoke.log`, and `artifacts/inventory-inv10-visual-smoke.log`. Existing Godot test-source-generator warnings remain; there were no environment blockers. Item-definition YAML loading and actual item effects remain outside this epic. Production starts with 128 empty cells and legacy mock hotbar actions; development fixture artwork remains intentionally temporary.
+
 ### Output and implementation steps
 
 1. Add meaningful NUnit coverage alongside existing suites: item model/rules, inventory additions/growth, equipment and transfer coordination, hotbar bindings, and pure presentation/controller behavior. Place suites under the corresponding domain folders in `sMPGWM.Tests`; keep Godot pointer behavior in scene smoke tests.
@@ -326,9 +332,11 @@ dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj
 $godotExecutable = 'C:/Users/lober/godot_engine/Godot_v4.6.2_mono_steam/editor/godot.windows.editor.x86_64.mono.console.exe'
 & $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/ui_architecture_smoke.gd
 & $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/inventory_smoke.gd
+& $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/icon_sizing_smoke.gd
+& $godotExecutable --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/inventory_smoke.gd -- --capture-visuals
 ```
 
-Verify the local Godot executable path when implementing. The inventory smoke file currently covers INV-04 slots, projection bindings, growth, and lifecycle; later stories extend it with visuals and pointer interactions. Normal scene startup loads existing Steam autoloads; record actual environment limitations if encountered.
+Verify the local Godot executable path when rerunning. The inventory smoke covers slots, projection bindings, growth, lifecycle, visuals, click/native drag interactions, hotbar permissions, browsing, and horizontal window overflow. Rendered capture mode requires a desktop, takes window focus, and moves the OS cursor; leave the pointer idle during that run. Normal scene startup loads existing Steam autoloads; record actual environment limitations if encountered.
 
 ## Sequencing and completion ledger
 
@@ -345,6 +353,6 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-07 Drag-and-drop | Complete | Complete |
 | INV-08 Hotbar links | Complete | Complete |
 | INV-09 Browsing/compact results | Complete | Complete |
-| INV-10 Integration checks | Complete | Not started |
+| INV-10 Integration checks | Complete | Complete |
 
 No unresolved product questions block these stories. Defaults inferred during refinement are recorded explicitly above; future item-definition YAML schema/loading and actual item effects remain outside the epic. Category YAML loading was added by explicit follow-up request.

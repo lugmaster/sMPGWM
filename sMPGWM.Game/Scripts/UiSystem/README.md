@@ -73,8 +73,13 @@ dotnet build sMPGWM.sln
 dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj
 & $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/ui_architecture_smoke.gd
 & $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/icon_sizing_smoke.gd
+& $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/inventory_smoke.gd
 ```
 
 Set `$godotExecutable` to the Godot .NET console executable. The smoke script loads the actual game scene twice and checks row placement, scrolling, window navigation, focus, input blocking, hotbar interaction, and teardown. It runs the project's normal autoloads, including Steam initialization.
 
 The sizing smoke checks hotbar, inventory, and equipment at both viewport sizes with 16-, 64-, and 256-pixel textures, a rectangular texture, and empty slots. It verifies that texture changes preserve the configured slot dimensions, including the hotbar while inventory is open.
+
+The inventory smoke checks 1280x720 and 1920x1080 across two game lifetimes, using opt-in fixtures and actual mouse input for click/native drag transfers, cancellation, hotbar editing, and filtered address mapping. It also checks growth, detached subscriptions, delayed tooltip dismissal, vertical bag scrolling, horizontal multi-window overflow, focus visibility, and recentering. The architecture smoke derives a fitting viewport from the row's actual minimum width before narrowing it to test overflow; three current windows exceed 1920 pixels together.
+
+For rendered visual evidence, run `& $godotExecutable --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/inventory_smoke.gd -- --capture-visuals`. This saves tooltip/count, drag-preview, empty-result, and window-overflow screenshots for each resolution to `artifacts/inventory-inv10-*.png`. It requires a desktop, focuses the test window, and moves the OS cursor to match injected pointer events; leave the pointer idle during the run. Automated rendered checks and captured-image inspection passed for INV-10; a separate manual playthrough was not performed. Fixture artwork is temporary. Production remains empty until gameplay supplies items; item-definition YAML loading and actual item effects remain deferred.

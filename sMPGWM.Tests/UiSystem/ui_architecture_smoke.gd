@@ -154,6 +154,8 @@ func run() -> void:
     create_timer(15).timeout.connect(func(): quit(1))
     var packed := load("res://scenes/game/main_game.tscn") as PackedScene
     for cycle in range(2):
+        root.size = Vector2i(1920, 1080)
+        root.content_scale_size = root.size
         var game := packed.instantiate()
         root.add_child(game)
         await settle()
@@ -228,10 +230,15 @@ func run() -> void:
         await settle()
         expect(row.get_child_count() == 3, "All three windows should coexist")
         expect(inventory.position.x < two_window_position.x, "Opening third window should shift existing windows left")
+        var fitting_size := Vector2i(ceili(row.get_combined_minimum_size().x) + 64, 1080)
+        root.size = fitting_size
+        root.content_scale_size = fitting_size
+        await settle()
+        expect(not scroll.get_h_scroll_bar().visible, "A viewport wider than the row should fit all windows")
         expect_row_layout(scroll, row)
 
-        var original_scale_size := root.content_scale_size
-        root.content_scale_size = Vector2i(1100, 1080)
+        root.size = Vector2i(1280, 720)
+        root.content_scale_size = root.size
         await settle()
         expect(scroll.get_h_scroll_bar().visible, "Narrow viewport should enable horizontal scrolling")
         expect_row_layout(scroll, row, false)
@@ -243,7 +250,8 @@ func run() -> void:
         canvas.call("OpenMenu", 2)
         await settle()
         expect_window_visible(scroll, row.get_child(2))
-        root.content_scale_size = original_scale_size
+        root.size = fitting_size
+        root.content_scale_size = fitting_size
         await settle()
         expect(not scroll.get_h_scroll_bar().visible, "Wider viewport should remove unnecessary scrollbar")
         expect_row_layout(scroll, row)
