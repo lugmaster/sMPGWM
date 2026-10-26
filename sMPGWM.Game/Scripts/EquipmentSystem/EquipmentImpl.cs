@@ -6,7 +6,7 @@ using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.EquipmentSystem;
 
-public sealed class EquipmentSystem : IDisposable
+public sealed class EquipmentImpl : IDisposable
 {
     private readonly Action<Exception>? _reportObserverError;
     private bool _disposed;
@@ -20,7 +20,7 @@ public sealed class EquipmentSystem : IDisposable
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :
         _publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
 
-    public EquipmentSystem(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
+    public EquipmentImpl(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         Catalog = catalog;
@@ -55,14 +55,14 @@ public sealed class EquipmentSystem : IDisposable
 
     internal EquipmentSnapshot PrepareChange(ItemEntity?[] slots)
     {
-        if (slots.Length != Definitions.Count) throw new ArgumentException("Invalid equipment size.", nameof(slots));
+        if (slots.Length != Definitions.Count) throw new ArgumentException("Invalid equipmentImpl size.", nameof(slots));
         var identities = new HashSet<ItemEntityId>();
         for (var index = 0; index < slots.Length; index++)
         {
             if (slots[index] is not { } entity) continue;
             if (entity.Id == default || !identities.Add(entity.Id) || entity.Count != 1 ||
                 !CanPlace(Definitions[index].Key, entity.DefinitionId))
-                throw new ArgumentException("Invalid equipment placement or duplicate identity.", nameof(slots));
+                throw new ArgumentException("Invalid equipmentImpl placement or duplicate identity.", nameof(slots));
         }
         return new EquipmentSnapshot(checked(Revision + 1), slots);
     }

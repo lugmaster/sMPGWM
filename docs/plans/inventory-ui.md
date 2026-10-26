@@ -8,7 +8,7 @@ All ten stories have completed planning refinement. See [inventory-ui-implementa
 
 Refine the existing inventory and character screen, with domain-owned state and rules, familiar click placement and drag-and-drop, tooltips, stack counts, and hotbar links. Implement metadata and the minimum state operations needed by these interactions; defer actual item gameplay.
 
-The UI scripts are mostly scaffolding: the inventory containers and related presentation controls have no implemented item behavior. `ClickableIcon` handles texture and size only. Its scene defaults to a mock compass texture. The equipment scene has seven preview cells; eight are needed. `ItemGrid/SlotGrid` contains twelve preview cells and has six columns. Category tabs are placeholders. INV-01 replaced the obsolete category enum with an extensible catalog matching the agreed categories and added the item domain model. INV-02 added the game-owned inventory service, immutable storage snapshots, atomic bulk additions, and automatic capacity growth. INV-03 added game-owned equipment and atomic transfer coordination with revision/entity/session validation; UI binding remains pending.
+INV-01 added the extensible item metadata and domain model. INV-02 added game-owned inventory, immutable storage snapshots, atomic bulk additions, and automatic growth. INV-03 added game-owned equipment and atomic transfer coordination with revision/entity/session validation. INV-04 binds these services to disposable inventory views, generates eight labeled equipment cells and initially 128 empty bag cells, and maintains compact address-preserving projections as state changes. `ItemGrid/SlotGrid` retains six columns and replaces its twelve editor preview cells at runtime. Equipment previews now contain all eight labels. Empty cells have no mock texture, and the shared icon scene has a hidden quantity label prepared for INV-05. Item visuals, pointer interactions, and category/search/sort behavior remain pending.
 
 The existing HUD routes activation through `PlayerActionController` and the player-input policy. Preserve that integration and the existing overlay window system.
 
@@ -144,6 +144,8 @@ Acceptance criteria:
 ### INV-04: Prepare scenes and generate empty slots
 
 Dependencies: INV-02, INV-03, editor checklist.
+
+Implementation: complete. See the implementation plan for details, passing slot/lifecycle checks, and the existing architecture-smoke layout failures.
 
 Acceptance criteria:
 - Startup clears every preview child of `EquipmentContainer` and every preview cell inside `SlotGrid`, retaining structural nodes.

@@ -1,9 +1,14 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Godot;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
 namespace sMPGWM.Scripts.UiSystem;
 
@@ -11,10 +16,16 @@ public partial class UiCanvas : CanvasLayer
 {
     private PlayerHud _playerHud = null!;
     private UiWindowManager _windowManager = null!;
+    private InventoryImpl? _inventory;
+    private EquipmentImpl? _equipment;
+    private InventoryViewState _inventoryViewState = new();
+    private InventoryMenu? _inventoryMenu;
+    private bool _hasApplicationFocus = true;
 
     internal bool HasBlockingWindow => _windowManager.HasBlockingWindow;
     internal event Action<bool>? BlockingChanged;
     internal event Action<int>? OnRequestHotbarAction;
+    internal event Action<bool>? InventoryEditAvailabilityChanged;
 
     public override void _EnterTree()
     {
@@ -26,12 +37,69 @@ public partial class UiCanvas : CanvasLayer
     {
         _playerHud.HotbarSlotPressed += RequestHotbarAction;
         _windowManager.BlockingChanged += OnBlockingChanged;
+        _windowManager.WindowOpening += OnWindowOpening;
+        _windowManager.WindowClosed += OnWindowClosed;
     }
 
     public override void _ExitTree()
     {
+        UnbindInventory();
         _playerHud.HotbarSlotPressed -= RequestHotbarAction;
         _windowManager.BlockingChanged -= OnBlockingChanged;
+        _windowManager.WindowOpening -= OnWindowOpening;
+        _windowManager.WindowClosed -= OnWindowClosed;
+    }
+
+    internal void BindInventory(InventoryImpl inventory, EquipmentImpl equipment)
+    {
+        UnbindInventory();
+        _inventory = inventory;
+        _equipment = equipment;
+        _inventoryViewState = new InventoryViewState();
+        _inventoryMenu?.Bind(inventory, equipment, _inventoryViewState);
+        InventoryEditAvailabilityChanged?.Invoke(_inventoryMenu != null && _hasApplicationFocus);
+    }
+
+    internal void UnbindInventory()
+    {
+        InventoryEditAvailabilityChanged?.Invoke(false);
+        _inventoryMenu?.Unbind();
+        _inventory = null;
+        _equipment = null;
+    }
+
+    private void OnWindowOpening(UiWindowId id, GameOverlayMenu window)
+    {
+        if (id != UiWindowId.InventoryMenu) return;
+        _inventoryMenu = (InventoryMenu)window;
+        if (_inventory != null && _equipment != null)
+        {
+            _inventoryMenu.Bind(_inventory, _equipment, _inventoryViewState);
+            InventoryEditAvailabilityChanged?.Invoke(_hasApplicationFocus);
+        }
+    }
+
+    private void OnWindowClosed(UiWindowId id)
+    {
+        if (id != UiWindowId.InventoryMenu) return;
+        _inventoryMenu?.Unbind();
+        _inventoryMenu = null;
+        InventoryEditAvailabilityChanged?.Invoke(false);
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationApplicationFocusOut || what == NotificationWMWindowFocusOut)
+        {
+            _hasApplicationFocus = false;
+            InventoryEditAvailabilityChanged?.Invoke(false);
+        }
+        else if (what == NotificationApplicationFocusIn || what == NotificationWMWindowFocusIn)
+        {
+            if (_hasApplicationFocus) return;
+            _hasApplicationFocus = true;
+            InventoryEditAvailabilityChanged?.Invoke(_inventoryMenu != null && _inventory != null);
+        }
     }
 
     public void OpenMenu(UiWindowId id) => _windowManager.Open(id);

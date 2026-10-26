@@ -7,7 +7,7 @@ using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.InventorySystem;
 
-public sealed class InventorySystem : IDisposable
+public sealed class InventoryImpl : IDisposable
 {
     public const int InitialCapacity = 128;
     public const int GrowthChunk = 64;
@@ -25,7 +25,7 @@ public sealed class InventorySystem : IDisposable
     internal InventoryResult Availability => _disposed ? InventoryResult.Disposed :
         _publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
 
-    public InventorySystem(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
+    public InventoryImpl(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         _catalog = catalog;
@@ -105,7 +105,7 @@ public sealed class InventorySystem : IDisposable
             if (entity is null) continue;
             if (entity.Id == default || !identities.Add(entity.Id) || entity.Count <= 0 ||
                 entity.Count > _catalog.GetStackLimit(entity.DefinitionId))
-                throw new ArgumentException("Invalid inventory entity or duplicate identity.", nameof(slots));
+                throw new ArgumentException("Invalid inventoryImpl entity or duplicate identity.", nameof(slots));
         }
 
         return new InventoryChangePlan(this, Snapshot, new InventorySnapshot(checked(Revision + 1), slots));

@@ -1,3 +1,5 @@
+#nullable enable
+
 using Godot;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -5,6 +7,7 @@ namespace sMPGWM.Scripts.Util.UiComponents;
 
 public partial class ClickableIcon : Button
 {
+    internal object? Binding { get; set; }
     private Texture2D? _iconTexture;
     private IconSize _iconSize = IconSize.Medium;
 

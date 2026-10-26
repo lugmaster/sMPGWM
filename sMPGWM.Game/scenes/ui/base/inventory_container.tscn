@@ -11,6 +11,7 @@ size_flags_horizontal = 3
 script = ExtResource("1_74jvx")
 
 [node name="CategoryTabs" type="TabBar" parent="." unique_id=552793215]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/icon_max_width = 20
 current_tab = 0
@@ -26,5 +27,6 @@ tab_1/icon = ExtResource("2_74jvx")
 layout_mode = 2
 
 [node name="ItemGrid" parent="." unique_id=931566361 instance=ExtResource("4_otley")]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(404, 400)
 layout_mode = 2

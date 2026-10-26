@@ -1,11 +1,10 @@
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
-using Inventory = sMPGWM.Scripts.InventorySystem.InventorySystem;
 
 namespace sMPGWM.Tests.InventorySystem;
 
 [TestFixture]
-public class InventorySystemTests
+public class InventoryImplTests
 {
     private static readonly ItemDefinitionId Engine = new("engine");
     private static readonly ItemDefinitionId Repair = new("repair");
@@ -20,7 +19,7 @@ public class InventorySystemTests
     [Test]
     public void NewInventory_Has128GenuineEmptyAddresses()
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         Assert.That(inventory.Capacity, Is.EqualTo(128));
         Assert.That(inventory.Revision, Is.Zero);
         Assert.That(inventory.Snapshot.Occupied, Is.Empty);
@@ -35,7 +34,7 @@ public class InventorySystemTests
     [TestCase(257, 320)]
     public void BulkAdd_GrowsInMinimum64CellChunks(int quantity, int capacity)
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         var notifications = 0;
         InventorySnapshot? observed = null;
         inventory.Changed += snapshot =>
@@ -58,7 +57,7 @@ public class InventorySystemTests
     [Test]
     public void Add_FillsPartialStacksBeforeHolesInStorageOrderAndPreservesIds()
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         var slots = inventory.Snapshot.Slots.ToArray();
         slots[3] = Catalog.CreateEntity(Repair, 7);
         slots[7] = Catalog.CreateEntity(Repair, 5);
@@ -85,7 +84,7 @@ public class InventorySystemTests
     [Test]
     public void FullStacks_AllocateNextStackAndRetainExistingIdentity()
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         inventory.Add(Repair, 1280);
         var before = inventory.Snapshot;
         inventory.Add(Repair, 1);
@@ -98,7 +97,7 @@ public class InventorySystemTests
     [Test]
     public void LargeStackQuantities_UseLongArithmetic()
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         var quantity = (long)int.MaxValue * 2 + 3;
         inventory.Add(Resource, quantity);
         Assert.That(inventory.Snapshot.Occupied.Select(entry => entry.Entity.Count),
@@ -115,7 +114,7 @@ public class InventorySystemTests
     [TestCase((long)int.MaxValue, InventoryResult.CapacityExceeded)]
     public void InvalidOrNoopAdd_PreservesExactSnapshotAndPublishesNothing(long quantity, InventoryResult expected)
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         inventory.Add(Repair, 7);
         var before = inventory.Snapshot;
         var notifications = 0;
@@ -131,7 +130,7 @@ public class InventorySystemTests
     [Test]
     public void UnknownDefinitions_AreRejectedIncludingDefaultAndZeroQuantity()
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         var before = inventory.Snapshot;
         Assert.That(inventory.Add(default, 1), Is.EqualTo(InventoryResult.UnknownDefinition));
         Assert.That(inventory.Add(new ItemDefinitionId("missing"), 0), Is.EqualTo(InventoryResult.UnknownDefinition));
@@ -141,7 +140,7 @@ public class InventorySystemTests
     [Test]
     public void RemovalThroughInternalPlan_LeavesHolesAndNeverShrinks()
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         inventory.Add(Engine, 129);
         var slots = inventory.Snapshot.Slots.ToArray();
         var retained = slots[128];
@@ -159,7 +158,7 @@ public class InventorySystemTests
     [Test]
     public void SnapshotsAndPreparedPlans_DoNotExposeWritableStorage()
     {
-        using var inventory = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
         var slots = inventory.Snapshot.Slots.ToArray();
         slots[2] = Catalog.CreateEntity(Engine);
         var plan = inventory.PrepareChange(slots);
@@ -174,8 +173,8 @@ public class InventorySystemTests
     [Test]
     public void InternalPlans_RejectDuplicatesStalePlansOtherOwnersAndNoops()
     {
-        using var inventory = new Inventory(Catalog);
-        using var other = new Inventory(Catalog);
+        using var inventory = new InventoryImpl(Catalog);
+        using var other = new InventoryImpl(Catalog);
         var slots = inventory.Snapshot.Slots.ToArray();
         var noop = inventory.PrepareChange(slots);
         Assert.That(inventory.Install(noop), Is.EqualTo(InventoryResult.NoChange));
@@ -194,7 +193,7 @@ public class InventorySystemTests
     public void Notifications_IsolateFailuresAndRejectReentrantMutation()
     {
         var errors = new List<Exception>();
-        using var inventory = new Inventory(Catalog, exception =>
+        using var inventory = new InventoryImpl(Catalog, exception =>
         {
             errors.Add(exception);
             throw new InvalidOperationException("Logging also failed");
@@ -219,14 +218,14 @@ public class InventorySystemTests
     [Test]
     public void Disposal_RevokesMutationsAndNewGameHasIndependentEmptyStorage()
     {
-        var inventory = new Inventory(Catalog);
+        var inventory = new InventoryImpl(Catalog);
         inventory.Add(Engine, 129);
         var before = inventory.Snapshot;
         inventory.Dispose();
         inventory.Dispose();
         Assert.That(inventory.Add(Engine, 1), Is.EqualTo(InventoryResult.Disposed));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
-        using var nextGame = new Inventory(Catalog);
+        using var nextGame = new InventoryImpl(Catalog);
         Assert.That(nextGame.Capacity, Is.EqualTo(128));
         Assert.That(nextGame.Snapshot.Occupied, Is.Empty);
         Assert.That(nextGame.Revision, Is.Zero);

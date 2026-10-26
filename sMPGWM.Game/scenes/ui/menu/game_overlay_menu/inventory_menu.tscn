@@ -27,10 +27,11 @@ text = "Equipment"
 horizontal_alignment = 1
 
 [node name="EquipmentContainer" type="GridContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection" index="1" unique_id=133865936]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 12
-columns = 3
+columns = 2
 script = ExtResource("3_tkc35")
 
 [node name="IconWithLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="0" unique_id=1956222726 instance=ExtResource("3_fyjbo")]
@@ -54,6 +55,9 @@ layout_mode = 2
 [node name="IconWithLabel7" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="6" unique_id=393339355 instance=ExtResource("3_fyjbo")]
 layout_mode = 2
 
+[node name="IconWithLabel8" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer" index="7" instance=ExtResource("3_fyjbo")]
+layout_mode = 2
+
 [node name="InventorySection" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout" index="1" unique_id=1519022622]
 layout_mode = 2
 
@@ -63,4 +67,38 @@ text = "Inventory"
 horizontal_alignment = 1
 
 [node name="InventoryContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/InventorySection" index="1" unique_id=1381080431 instance=ExtResource("5_qspun")]
+unique_name_in_owner = true
 layout_mode = 2
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel" index="0"]
+text = "Engine"
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel2" index="0"]
+text = "Hull"
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel3" index="0"]
+text = "Shield Generator"
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel4" index="0"]
+text = "Reactor"
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel5" index="0"]
+text = "Light Weapon Slot 1"
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel6" index="0"]
+text = "Light Weapon Slot 2"
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel7" index="0"]
+text = "Heavy Weapon Slot 1"
+
+[node name="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel8" index="0"]
+text = "Heavy Weapon Slot 2"
+
+[editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel"]
+[editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel2"]
+[editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel3"]
+[editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel4"]
+[editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel5"]
+[editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel6"]
+[editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel7"]
+[editable path="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection/EquipmentContainer/IconWithLabel8"]

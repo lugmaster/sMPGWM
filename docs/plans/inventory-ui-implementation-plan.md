@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-03 implemented. INV-04 through INV-10 remain pending.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-04 implemented. INV-05 through INV-10 remain pending.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -121,6 +121,14 @@ Validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --filter FullyQualifie
 ## INV-04 — Prepare scenes and generate slots
 
 Refinement: complete. Dependencies: INV-02, INV-03; epic editor checklist.
+
+Implementation: complete (2026-10-26). Prepared the existing reusable scenes with eight labeled equipment previews, wrapped equipment labels, scene-local unique node references, empty Button visuals, and a hidden, pointer-ignoring bottom-right quantity label. Runtime immediately detaches previews before queuing deletion, retaining the scroll root and six-column `SlotGrid`. Equipment renders ordered domain slot definitions; inventory projects occupied storage addresses followed by genuine empty addresses. Immutable cell bindings retain entities, locations, and snapshot revisions. Existing controls are reused on refresh and capacity growth appends cells.
+
+Internal window-opening/closing hooks bind views before `_Ready` and identify InventoryMenu independently of Map or other blocking windows. Views subscribe only while bound and detach before deletion or game teardown. `UiCanvas` owns view-choice state across disposable windows; toolbar controls retain their current selections, with actual category/search/sort behavior still reserved for INV-09. Gameplay opens/revokes edit sessions on inventory lifecycle and focus changes. Production starts empty; `InventorySlotSmokeFixture` is an explicit smoke-only fixture, never loaded by production scenes. Item textures/tooltips/count rendering remains INV-05.
+
+Validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --filter FullyQualifiedName~InventoryProjectionTests --verbosity quiet` passed all five cases. `dotnet build sMPGWM.sln --verbosity quiet` succeeded; the full NUnit suite passed all 286 cases. Projection checks cover compact holes, exact capacity, genuine address/entity/revision mapping, immutable projections, growth, and unchanged underlying state.
+
+Scene validation: the documented Godot executable ran `inventory_smoke.gd` headlessly at logical 1280x720 and 1920x1080 across two game lifetimes. Checks passed for exact cell counts, empty textures, labels, quantity pointer filtering, vertical scrolling, reopen/state retention, live growth to 192 without recreating existing cells, compact mapping after equipping, equipment refresh, closed-view subscription detachment, rebinding, focus permission, and inventory closure while Map remains open. `ui_architecture_smoke.gd` still exits with the previously recorded visibility/centering/scrollbar layout failures (14 assertions); other checks report no failures. These existing layout failures remain unresolved. `git diff --check` passed. Existing compiler/source-generator warnings remain; interactive visual inspection was not performed.
 
 ### Output and implementation steps
 
@@ -296,7 +304,7 @@ $godotExecutable = 'C:/Users/lober/godot_engine/Godot_v4.6.2_mono_steam/editor/g
 & $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/inventory_smoke.gd
 ```
 
-Verify the local Godot executable path when implementing. The inventory smoke file above is planned, not present yet. Normal scene startup may load existing Steam autoloads; record actual environment limitations if encountered. No build or game tests are needed to validate this documentation-only refinement.
+Verify the local Godot executable path when implementing. The inventory smoke file currently covers INV-04 slots, projection bindings, growth, and lifecycle; later stories extend it with visuals and pointer interactions. Normal scene startup loads existing Steam autoloads; record actual environment limitations if encountered.
 
 ## Sequencing and completion ledger
 
@@ -307,7 +315,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-01 Item metadata | Complete | Complete |
 | INV-02 Inventory state | Complete | Complete |
 | INV-03 Equipment/transfers | Complete | Complete |
-| INV-04 Scenes/empty slots | Complete | Not started |
+| INV-04 Scenes/empty slots | Complete | Complete |
 | INV-05 Tooltips/counts | Complete | Not started |
 | INV-06 Click placement | Complete | Not started |
 | INV-07 Drag-and-drop | Complete | Not started |

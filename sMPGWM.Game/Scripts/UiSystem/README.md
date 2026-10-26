@@ -30,6 +30,14 @@ Windows use an `HBoxContainer` inside a `ScrollContainer`. The row is centered h
 
 Placement changes are immediate. Dragging, resizing, modal dialogs, and item dragging are deferred.
 
+## Inventory view binding
+
+`GamePlayManager` supplies its inventory and equipment through internal `UiCanvas` binding hooks. The window manager announces individual window openings before adding them to the tree and identifies closed windows. Inventory views accept data before `_Ready`, replace editor preview cells, subscribe to committed snapshots, and detach on closure and teardown. Opening a view renders current state immediately; reopening preserves game-owned capacity and UI-owned toolbar choices.
+
+`InventoryProjection` packs occupied entries in storage order, followed by genuine empty addresses. Each cell retains an immutable binding with its actual address/slot key, entity expectation, and revision. `ItemGrid` reuses controls during refresh and appends cells on growth. Equipment labels come from domain slot definitions through the existing labeled-icon scene/provider. Generic icons accept opaque bindings without querying gameplay services.
+
+Inventory-specific lifecycle and application focus authorize/revoke domain edit sessions independently of other blocking windows. Map alone does not authorize inventory edits. The public canvas boundary remains its four menu operations. INV-04 prepares empty cells and quantity-label nodes; item visuals, placement, and category/search/sort behavior follow in subsequent stories. The opt-in `InventorySlotSmokeFixture` is loaded only by `sMPGWM.Tests/UiSystem/inventory_smoke.gd`; normal startup remains empty.
+
 ## Adding features
 
 The public window boundary is `UiCanvas.OpenMenu`, `CloseMenu`, `ToggleMenu`, and `CloseAllMenus`. Window manager operations, HUD configuration, and gameplay integration members are internal; event-forwarding helpers are private. Godot lifecycle overrides remain public. The registry and scene provider are internal, with `InternalsVisibleTo` granting NUnit access to the registry's state logic.

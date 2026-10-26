@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
+using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.Util;
@@ -26,8 +26,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public MainGameState GameState => _gameState;
     public ItemCategories ItemCategories { get; private set; } = null!;
     public ItemCatalog Items { get; private set; } = null!;
-    public InventorySystem.InventorySystem Inventory { get; private set; } = null!;
-    public EquipmentSystem.EquipmentSystem Equipment { get; private set; } = null!;
+    public InventoryImpl InventoryImpl { get; private set; } = null!;
+    public EquipmentImpl EquipmentImpl { get; private set; } = null!;
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
     public IReadOnlyDictionary<ItemCategoryId, IconDefinition> CategoryIcons { get; private set; } = null!;
 
@@ -71,13 +71,15 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ItemCategories = categoriesResult.Value;
         CategoryIcons = new ReadOnlyDictionary<ItemCategoryId, IconDefinition>(categoryIcons);
         Items = new ItemCatalog(ItemCategories, Array.Empty<ItemDefinition>());
-        Inventory = new InventorySystem.InventorySystem(Items,
+        InventoryImpl = new InventoryImpl(Items,
             exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
-        Equipment = new EquipmentSystem.EquipmentSystem(Items,
+        EquipmentImpl = new EquipmentImpl(Items,
             exception => LoggingSystem.Logger.Error($"Equipment observer failed: {exception}"));
-        ItemTransfers = new InventoryEquipmentTransferService(Inventory, Equipment);
+        ItemTransfers = new InventoryEquipmentTransferService(InventoryImpl, EquipmentImpl);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
+        _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
+        _canvas.BindInventory(InventoryImpl, EquipmentImpl);
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var player = PlayerMock.Instance;
@@ -98,12 +100,17 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     protected override void OnExitTree()
     {
+        if (_canvas != null)
+        {
+            _canvas.UnbindInventory();
+            _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
+        }
         ItemTransfers?.Dispose();
-        Equipment?.Dispose();
-        Inventory?.Dispose();
+        EquipmentImpl?.Dispose();
+        InventoryImpl?.Dispose();
         ItemTransfers = null!;
-        Equipment = null!;
-        Inventory = null!;
+        EquipmentImpl = null!;
+        InventoryImpl = null!;
         Items = null!;
         ItemCategories = null!;
         CategoryIcons = null!;
@@ -116,6 +123,12 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     }
 
     private void Start() => SetGameState(MainGameState.Active);
+
+    private void SetInventoryEditing(bool available)
+    {
+        if (available && GameState == MainGameState.Active) ItemTransfers.OpenEditSession();
+        else ItemTransfers?.RevokeEditSession();
+    }
 
     public void SetGameState(MainGameState newGameState)
     {

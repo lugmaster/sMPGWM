@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +21,8 @@ public partial class UiWindowManager : Control
     private bool _navigationEnabled;
 
     internal bool HasBlockingWindow => _registry.HasBlockingWindow;
+    internal event Action<UiWindowId, GameOverlayMenu>? WindowOpening;
+    internal event Action<UiWindowId>? WindowClosed;
 
     internal event Action<bool>? BlockingChanged
     {
@@ -63,6 +67,7 @@ public partial class UiWindowManager : Control
         }
 
         var window = CreateWindow(id);
+        WindowOpening?.Invoke(id, window);
         var closeHandler = () => Close(id);
         window.OnMenuClosed += closeHandler;
         _closeHandlers.Add(id, closeHandler);
@@ -83,6 +88,7 @@ public partial class UiWindowManager : Control
         _windowRow.RemoveChild(window);
         window.QueueFree();
         _registry.Close(id);
+        WindowClosed?.Invoke(id);
         _scrollContainer.Visible = _windows.Count > 0;
         FocusTopmost();
     }
@@ -102,6 +108,7 @@ public partial class UiWindowManager : Control
             window.Hide();
             _windowRow.RemoveChild(window);
             window.QueueFree();
+            WindowClosed?.Invoke(entry.Key);
         }
 
         _windows.Clear();

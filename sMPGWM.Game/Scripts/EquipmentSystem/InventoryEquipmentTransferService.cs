@@ -9,20 +9,20 @@ namespace sMPGWM.Scripts.EquipmentSystem;
 
 public sealed class InventoryEquipmentTransferService : IDisposable
 {
-    private readonly InventorySystem.InventorySystem _inventory;
-    private readonly EquipmentSystem _equipment;
+    private readonly InventoryImpl _inventoryImpl;
+    private readonly EquipmentImpl _equipmentImpl;
     private Guid _session;
     private bool _disposed;
     private bool _publishing;
 
-    public InventoryEquipmentTransferService(InventorySystem.InventorySystem inventory, EquipmentSystem equipment)
+    public InventoryEquipmentTransferService(InventoryImpl inventoryImpl, EquipmentImpl equipmentImpl)
     {
-        ArgumentNullException.ThrowIfNull(inventory);
-        ArgumentNullException.ThrowIfNull(equipment);
-        if (!ReferenceEquals(inventory.Catalog, equipment.Catalog))
-            throw new ArgumentException("State owners must share their item catalog.", nameof(equipment));
-        _inventory = inventory;
-        _equipment = equipment;
+        ArgumentNullException.ThrowIfNull(inventoryImpl);
+        ArgumentNullException.ThrowIfNull(equipmentImpl);
+        if (!ReferenceEquals(inventoryImpl.Catalog, equipmentImpl.Catalog))
+            throw new ArgumentException("State owners must share their item catalog.", nameof(equipmentImpl));
+        _inventoryImpl = inventoryImpl;
+        _equipmentImpl = equipmentImpl;
     }
 
     public Guid OpenEditSession()
@@ -45,26 +45,26 @@ public sealed class InventoryEquipmentTransferService : IDisposable
         EquipmentSnapshot? equipmentPlan;
         try
         {
-            inventoryPlan = inventorySlots is null ? null : _inventory.PrepareChange(inventorySlots);
-            equipmentPlan = equipmentSlots is null ? null : _equipment.PrepareChange(equipmentSlots);
+            inventoryPlan = inventorySlots is null ? null : _inventoryImpl.PrepareChange(inventorySlots);
+            equipmentPlan = equipmentSlots is null ? null : _equipmentImpl.PrepareChange(equipmentSlots);
         }
         catch (OutOfMemoryException) { return TransferResult.CapacityExceeded; }
         catch (OverflowException) { return TransferResult.CapacityExceeded; }
 
-        if (inventoryPlan is not null) _inventory.Install(inventoryPlan);
-        if (equipmentPlan is not null) _equipment.Install(equipmentPlan);
+        if (inventoryPlan is not null) _inventoryImpl.Install(inventoryPlan);
+        if (equipmentPlan is not null) _equipmentImpl.Install(equipmentPlan);
         _publishing = true;
-        _inventory.SetPublicationInProgress(true);
-        _equipment.SetPublicationInProgress(true);
+        _inventoryImpl.SetPublicationInProgress(true);
+        _equipmentImpl.SetPublicationInProgress(true);
         try
         {
-            if (inventoryPlan is not null) _inventory.NotifyObservers();
-            if (equipmentPlan is not null) _equipment.NotifyObservers();
+            if (inventoryPlan is not null) _inventoryImpl.NotifyObservers();
+            if (equipmentPlan is not null) _equipmentImpl.NotifyObservers();
         }
         finally
         {
-            _equipment.SetPublicationInProgress(false);
-            _inventory.SetPublicationInProgress(false);
+            _equipmentImpl.SetPublicationInProgress(false);
+            _inventoryImpl.SetPublicationInProgress(false);
             _publishing = false;
         }
         return TransferResult.Success;
@@ -76,46 +76,46 @@ public sealed class InventoryEquipmentTransferService : IDisposable
         ArgumentNullException.ThrowIfNull(request);
         inventorySlots = null;
         equipmentSlots = null;
-        if (_disposed || _inventory.Availability == InventoryResult.Disposed ||
-            _equipment.Availability == TransferResult.Disposed) return TransferResult.Disposed;
-        if (_publishing || _inventory.Availability == InventoryResult.PublicationInProgress ||
-            _equipment.Availability == TransferResult.PublicationInProgress) return TransferResult.PublicationInProgress;
+        if (_disposed || _inventoryImpl.Availability == InventoryResult.Disposed ||
+            _equipmentImpl.Availability == TransferResult.Disposed) return TransferResult.Disposed;
+        if (_publishing || _inventoryImpl.Availability == InventoryResult.PublicationInProgress ||
+            _equipmentImpl.Availability == TransferResult.PublicationInProgress) return TransferResult.PublicationInProgress;
         if (_session == Guid.Empty || request.EditSession != _session) return TransferResult.InvalidSession;
         if (!TryResolve(request.Source, out var sourceIndex, out var source) ||
             !TryResolve(request.Destination, out var destinationIndex, out var destination))
             return TransferResult.InvalidLocation;
         var usesInventory = request.Source.InventoryAddress.HasValue || request.Destination.InventoryAddress.HasValue;
         var usesEquipment = request.Source.EquipmentSlotKey is not null || request.Destination.EquipmentSlotKey is not null;
-        if ((usesInventory && request.InventoryRevision != _inventory.Revision) ||
-            (usesEquipment && request.EquipmentRevision != _equipment.Revision)) return TransferResult.StaleRevision;
+        if ((usesInventory && request.InventoryRevision != _inventoryImpl.Revision) ||
+            (usesEquipment && request.EquipmentRevision != _equipmentImpl.Revision)) return TransferResult.StaleRevision;
         if (source is null || source.Id != request.SourceEntity || destination?.Id != request.DestinationEntity)
             return TransferResult.StaleEntity;
         if (request.Source == request.Destination) return TransferResult.NoChange;
 
         ItemEntity? nextSource = destination;
         var nextDestination = source;
-        if (destination is not null && _inventory.Catalog.CanStackTogether(source.DefinitionId, destination.DefinitionId))
+        if (destination is not null && _inventoryImpl.Catalog.CanStackTogether(source.DefinitionId, destination.DefinitionId))
         {
-            var moved = Math.Min(source.Count, _inventory.Catalog.GetStackLimit(destination.DefinitionId) - destination.Count);
+            var moved = Math.Min(source.Count, _inventoryImpl.Catalog.GetStackLimit(destination.DefinitionId) - destination.Count);
             if (moved == 0) return TransferResult.NoChange;
             nextSource = moved == source.Count ? null : new ItemEntity(source.Id, source.DefinitionId, source.Count - moved);
             nextDestination = new ItemEntity(destination.Id, destination.DefinitionId, destination.Count + moved);
         }
         if (!CanPlace(request.Source, nextSource) || !CanPlace(request.Destination, nextDestination))
             return TransferResult.IncompatiblePlacement;
-        if ((usesInventory && _inventory.Revision == long.MaxValue) ||
-            (usesEquipment && _equipment.Revision == long.MaxValue)) return TransferResult.CapacityExceeded;
+        if ((usesInventory && _inventoryImpl.Revision == long.MaxValue) ||
+            (usesEquipment && _equipmentImpl.Revision == long.MaxValue)) return TransferResult.CapacityExceeded;
 
         try
         {
-            if (usesInventory) inventorySlots = Copy(_inventory.Snapshot.Slots);
-            if (usesEquipment) equipmentSlots = Copy(_equipment.Snapshot.Slots);
+            if (usesInventory) inventorySlots = Copy(_inventoryImpl.Snapshot.Slots);
+            if (usesEquipment) equipmentSlots = Copy(_equipmentImpl.Snapshot.Slots);
             (request.Source.InventoryAddress.HasValue ? inventorySlots! : equipmentSlots!)[sourceIndex] = nextSource;
             (request.Destination.InventoryAddress.HasValue ? inventorySlots! : equipmentSlots!)[destinationIndex] = nextDestination;
             var identities = new HashSet<ItemEntityId>();
-            foreach (var entity in inventorySlots ?? _inventory.Snapshot.Slots)
+            foreach (var entity in inventorySlots ?? _inventoryImpl.Snapshot.Slots)
                 if (entity is not null && !identities.Add(entity.Id)) return TransferResult.StaleEntity;
-            foreach (var entity in equipmentSlots ?? _equipment.Snapshot.Slots)
+            foreach (var entity in equipmentSlots ?? _equipmentImpl.Snapshot.Slots)
                 if (entity is not null && !identities.Add(entity.Id)) return TransferResult.StaleEntity;
         }
         catch (OutOfMemoryException) { return TransferResult.CapacityExceeded; }
@@ -124,14 +124,14 @@ public sealed class InventoryEquipmentTransferService : IDisposable
 
     private bool TryResolve(ItemLocation location, out int index, out ItemEntity? entity)
     {
-        index = location.InventoryAddress ?? _equipment.FindSlot(location.EquipmentSlotKey!);
-        var slots = location.InventoryAddress.HasValue ? _inventory.Snapshot.Slots : _equipment.Snapshot.Slots;
+        index = location.InventoryAddress ?? _equipmentImpl.FindSlot(location.EquipmentSlotKey!);
+        var slots = location.InventoryAddress.HasValue ? _inventoryImpl.Snapshot.Slots : _equipmentImpl.Snapshot.Slots;
         entity = index >= 0 && index < slots.Count ? slots[index] : null;
         return index >= 0 && index < slots.Count;
     }
 
     private bool CanPlace(ItemLocation location, ItemEntity? entity) => entity is null ||
-        location.InventoryAddress.HasValue || (entity.Count == 1 && _equipment.CanPlace(location.EquipmentSlotKey!, entity.DefinitionId));
+        location.InventoryAddress.HasValue || (entity.Count == 1 && _equipmentImpl.CanPlace(location.EquipmentSlotKey!, entity.DefinitionId));
 
     private static ItemEntity?[] Copy(IReadOnlyList<ItemEntity?> slots)
     {

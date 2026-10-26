@@ -1,8 +1,6 @@
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
-using Equipment = sMPGWM.Scripts.EquipmentSystem.EquipmentSystem;
-using Inventory = sMPGWM.Scripts.InventorySystem.InventorySystem;
 
 namespace sMPGWM.Tests.EquipmentSystem;
 
@@ -10,8 +8,8 @@ namespace sMPGWM.Tests.EquipmentSystem;
 public class EquipmentTransferTests
 {
     private ItemCatalog _catalog = null!;
-    private Inventory _inventory = null!;
-    private Equipment _equipment = null!;
+    private InventoryImpl _inventoryImpl = null!;
+    private EquipmentImpl _equipmentImpl = null!;
     private InventoryEquipmentTransferService _transfers = null!;
     private Guid _session;
 
@@ -24,9 +22,9 @@ public class EquipmentTransferTests
             definitions.Add(new ItemDefinition(new ItemDefinitionId(category.Id.Value), category.DisplayName,
                 category.Id, maximumStackSize: category.CanStack ? 10 : null));
         _catalog = new ItemCatalog(categories, definitions);
-        _inventory = new Inventory(_catalog);
-        _equipment = new Equipment(_catalog);
-        _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
+        _inventoryImpl = new InventoryImpl(_catalog);
+        _equipmentImpl = new EquipmentImpl(_catalog);
+        _transfers = new InventoryEquipmentTransferService(_inventoryImpl, _equipmentImpl);
         _session = _transfers.OpenEditSession();
     }
 
@@ -34,32 +32,32 @@ public class EquipmentTransferTests
     public void TearDown()
     {
         _transfers.Dispose();
-        _equipment.Dispose();
-        _inventory.Dispose();
+        _equipmentImpl.Dispose();
+        _inventoryImpl.Dispose();
     }
 
     private void Seed(params (int Address, string Definition, int Count)[] entries)
     {
-        var slots = _inventory.Snapshot.Slots.ToArray();
+        var slots = _inventoryImpl.Snapshot.Slots.ToArray();
         foreach (var entry in entries)
             slots[entry.Address] = _catalog.CreateEntity(new ItemDefinitionId(entry.Definition), entry.Count);
-        _inventory.Install(_inventory.PrepareChange(slots));
+        _inventoryImpl.Install(_inventoryImpl.PrepareChange(slots));
     }
 
     private TransferRequest Request(ItemLocation source, ItemLocation destination)
     {
         ItemEntity? At(ItemLocation location) => location.InventoryAddress is { } address
-            ? _inventory.Snapshot.Slots[address]
-            : _equipment.Snapshot.Slots[_equipment.FindSlot(location.EquipmentSlotKey!)];
+            ? _inventoryImpl.Snapshot.Slots[address]
+            : _equipmentImpl.Snapshot.Slots[_equipmentImpl.FindSlot(location.EquipmentSlotKey!)];
         return new TransferRequest(_session, source, At(source)!.Id, destination, At(destination)?.Id,
-            _inventory.Revision, _equipment.Revision);
+            _inventoryImpl.Revision, _equipmentImpl.Revision);
     }
 
     private TransferResult Move(ItemLocation source, ItemLocation destination) => _transfers.Transfer(Request(source, destination));
 
     private static IEnumerable<TestCaseData> CompatibilityCases()
     {
-        var equipment = new Equipment(new ItemCatalog(ItemCategories.CreateDefault(), Array.Empty<ItemDefinition>()));
+        var equipment = new EquipmentImpl(new ItemCatalog(ItemCategories.CreateDefault(), Array.Empty<ItemDefinition>()));
         foreach (var category in ItemCategories.CreateDefault().All)
         foreach (var slot in equipment.Definitions)
             yield return new TestCaseData(category.Id.Value, slot.Key, category.Id == slot.AcceptedCategory);
@@ -70,33 +68,33 @@ public class EquipmentTransferTests
     public void AllCategorySlotCombinations_UseCategoryIdentity(string category, string slot, bool accepted)
     {
         Seed((0, category, 1));
-        var inventoryBefore = _inventory.Snapshot;
-        var equipmentBefore = _equipment.Snapshot;
+        var inventoryBefore = _inventoryImpl.Snapshot;
+        var equipmentBefore = _equipmentImpl.Snapshot;
         Assert.That(Move(ItemLocation.Inventory(0), ItemLocation.Equipment(slot)),
             Is.EqualTo(accepted ? TransferResult.Success : TransferResult.IncompatiblePlacement));
         if (accepted)
         {
-            Assert.That(_equipment.Snapshot.Slots[_equipment.FindSlot(slot)], Is.SameAs(inventoryBefore.Slots[0]));
-            Assert.That(_inventory.Snapshot.Slots[0], Is.Null);
+            Assert.That(_equipmentImpl.Snapshot.Slots[_equipmentImpl.FindSlot(slot)], Is.SameAs(inventoryBefore.Slots[0]));
+            Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.Null);
         }
         else
         {
-            Assert.That(_inventory.Snapshot, Is.SameAs(inventoryBefore));
-            Assert.That(_equipment.Snapshot, Is.SameAs(equipmentBefore));
+            Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
+            Assert.That(_equipmentImpl.Snapshot, Is.SameAs(equipmentBefore));
         }
     }
 
     [Test]
     public void SlotDefinitionsAndSnapshots_AreOrderedAndReadOnly()
     {
-        Assert.That(_equipment.Definitions.Select(slot => slot.Key), Is.EqualTo(new[]
+        Assert.That(_equipmentImpl.Definitions.Select(slot => slot.Key), Is.EqualTo(new[]
         {
             "engine", "hull", "shield_generator", "reactor", "light_weapon_1", "light_weapon_2",
             "heavy_weapon_1", "heavy_weapon_2"
         }));
-        Assert.That(_equipment.Snapshot.Slots, Has.All.Null);
-        Assert.Throws<NotSupportedException>(() => ((IList<EquipmentSlotDefinition>)_equipment.Definitions).Clear());
-        Assert.Throws<NotSupportedException>(() => ((IList<ItemEntity?>)_equipment.Snapshot.Slots)[0] = null);
+        Assert.That(_equipmentImpl.Snapshot.Slots, Has.All.Null);
+        Assert.Throws<NotSupportedException>(() => ((IList<EquipmentSlotDefinition>)_equipmentImpl.Definitions).Clear());
+        Assert.Throws<NotSupportedException>(() => ((IList<ItemEntity?>)_equipmentImpl.Snapshot.Slots)[0] = null);
     }
 
     [Test]
@@ -106,23 +104,23 @@ public class EquipmentTransferTests
         Move(ItemLocation.Inventory(0), ItemLocation.Equipment("light_weapon_1"));
         Move(ItemLocation.Inventory(1), ItemLocation.Equipment("light_weapon_2"));
         Move(ItemLocation.Inventory(2), ItemLocation.Equipment("heavy_weapon_1"));
-        var before = _equipment.Snapshot;
-        var inventoryBefore = _inventory.Snapshot;
+        var before = _equipmentImpl.Snapshot;
+        var inventoryBefore = _inventoryImpl.Snapshot;
         Assert.That(Move(ItemLocation.Equipment("light_weapon_1"), ItemLocation.Equipment("heavy_weapon_1")),
             Is.EqualTo(TransferResult.IncompatiblePlacement));
         Assert.That(Move(ItemLocation.Equipment("light_weapon_1"), ItemLocation.Inventory(3)),
             Is.EqualTo(TransferResult.IncompatiblePlacement));
-        Assert.That(_equipment.Snapshot, Is.SameAs(before));
-        Assert.That(_inventory.Snapshot, Is.SameAs(inventoryBefore));
+        Assert.That(_equipmentImpl.Snapshot, Is.SameAs(before));
+        Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
         Assert.That(Move(ItemLocation.Equipment("light_weapon_1"), ItemLocation.Equipment("light_weapon_2")),
             Is.EqualTo(TransferResult.Success));
-        Assert.That(_equipment.Snapshot.Slots[4], Is.SameAs(before.Slots[5]));
-        Assert.That(_equipment.Snapshot.Slots[5], Is.SameAs(before.Slots[4]));
-        Assert.That(_equipment.Revision, Is.EqualTo(before.Revision + 1));
-        Assert.That(_inventory.Snapshot, Is.SameAs(inventoryBefore));
+        Assert.That(_equipmentImpl.Snapshot.Slots[4], Is.SameAs(before.Slots[5]));
+        Assert.That(_equipmentImpl.Snapshot.Slots[5], Is.SameAs(before.Slots[4]));
+        Assert.That(_equipmentImpl.Revision, Is.EqualTo(before.Revision + 1));
+        Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
         Assert.That(Move(ItemLocation.Equipment("light_weapon_1"), ItemLocation.Inventory(0)), Is.EqualTo(TransferResult.Success));
-        Assert.That(_inventory.Snapshot.Slots[0], Is.SameAs(before.Slots[5]));
-        Assert.That(_inventory.Capacity, Is.EqualTo(128));
+        Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.SameAs(before.Slots[5]));
+        Assert.That(_inventoryImpl.Capacity, Is.EqualTo(128));
     }
 
     [TestCase(7, 8, 5, 10)]
@@ -131,48 +129,48 @@ public class EquipmentTransferTests
     public void Merges_ConserveCountsAndExpectedIdentities(int sourceCount, int destinationCount, int remaining, int total)
     {
         Seed((0, "consumable", sourceCount), (1, "consumable", destinationCount));
-        var before = _inventory.Snapshot;
+        var before = _inventoryImpl.Snapshot;
         var result = Move(ItemLocation.Inventory(0), ItemLocation.Inventory(1));
         Assert.That(result, Is.EqualTo(destinationCount == 10 ? TransferResult.NoChange : TransferResult.Success));
-        Assert.That(_inventory.Snapshot.Slots[1]!.Count, Is.EqualTo(total));
-        Assert.That(_inventory.Snapshot.Slots[1]!.Id, Is.EqualTo(before.Slots[1]!.Id));
-        Assert.That(_inventory.Snapshot.Slots[0]?.Count ?? 0, Is.EqualTo(remaining));
-        if (remaining > 0) Assert.That(_inventory.Snapshot.Slots[0]!.Id, Is.EqualTo(before.Slots[0]!.Id));
-        else Assert.That(_inventory.Snapshot.Occupied.Any(entry => entry.Entity.Id == before.Slots[0]!.Id), Is.False);
-        Assert.That(_inventory.Snapshot.Occupied.Sum(entry => (long)entry.Entity.Count), Is.EqualTo(sourceCount + destinationCount));
-        Assert.That(_inventory.Revision, Is.EqualTo(before.Revision + (destinationCount == 10 ? 0 : 1)));
+        Assert.That(_inventoryImpl.Snapshot.Slots[1]!.Count, Is.EqualTo(total));
+        Assert.That(_inventoryImpl.Snapshot.Slots[1]!.Id, Is.EqualTo(before.Slots[1]!.Id));
+        Assert.That(_inventoryImpl.Snapshot.Slots[0]?.Count ?? 0, Is.EqualTo(remaining));
+        if (remaining > 0) Assert.That(_inventoryImpl.Snapshot.Slots[0]!.Id, Is.EqualTo(before.Slots[0]!.Id));
+        else Assert.That(_inventoryImpl.Snapshot.Occupied.Any(entry => entry.Entity.Id == before.Slots[0]!.Id), Is.False);
+        Assert.That(_inventoryImpl.Snapshot.Occupied.Sum(entry => (long)entry.Entity.Count), Is.EqualTo(sourceCount + destinationCount));
+        Assert.That(_inventoryImpl.Revision, Is.EqualTo(before.Revision + (destinationCount == 10 ? 0 : 1)));
     }
 
     [Test]
     public void DifferentDefinitions_SwapAndEmptyDestinationsMoveWithoutGrowing()
     {
         Seed((0, "consumable", 7), (1, "resource", 8));
-        var before = _inventory.Snapshot;
+        var before = _inventoryImpl.Snapshot;
         Assert.That(Move(ItemLocation.Inventory(0), ItemLocation.Inventory(1)), Is.EqualTo(TransferResult.Success));
-        Assert.That(_inventory.Snapshot.Slots[0], Is.SameAs(before.Slots[1]));
-        Assert.That(_inventory.Snapshot.Slots[1], Is.SameAs(before.Slots[0]));
+        Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.SameAs(before.Slots[1]));
+        Assert.That(_inventoryImpl.Snapshot.Slots[1], Is.SameAs(before.Slots[0]));
         Assert.That(Move(ItemLocation.Inventory(1), ItemLocation.Inventory(127)), Is.EqualTo(TransferResult.Success));
-        Assert.That(_inventory.Snapshot.Slots[127], Is.SameAs(before.Slots[0]));
+        Assert.That(_inventoryImpl.Snapshot.Slots[127], Is.SameAs(before.Slots[0]));
         var request = Request(ItemLocation.Inventory(127), ItemLocation.Inventory(1));
         Assert.That(_transfers.Transfer(request with { Destination = ItemLocation.Inventory(128) }), Is.EqualTo(TransferResult.InvalidLocation));
-        Assert.That(_inventory.Capacity, Is.EqualTo(128));
+        Assert.That(_inventoryImpl.Capacity, Is.EqualTo(128));
     }
 
     [Test]
     public void ValidationAndNoOps_DoNotPublishOrChangeSnapshots()
     {
         Seed((0, "engine", 1));
-        var inventoryBefore = _inventory.Snapshot;
-        var equipmentBefore = _equipment.Snapshot;
+        var inventoryBefore = _inventoryImpl.Snapshot;
+        var equipmentBefore = _equipmentImpl.Snapshot;
         var notifications = 0;
-        _inventory.Changed += _ => notifications++;
-        _equipment.Changed += _ => notifications++;
+        _inventoryImpl.Changed += _ => notifications++;
+        _equipmentImpl.Changed += _ => notifications++;
         var request = Request(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
         Assert.That(_transfers.Validate(request), Is.EqualTo(TransferResult.Success));
         Assert.That(_transfers.Validate(request), Is.EqualTo(TransferResult.Success));
         Assert.That(Move(ItemLocation.Inventory(0), ItemLocation.Inventory(0)), Is.EqualTo(TransferResult.NoChange));
-        Assert.That(_inventory.Snapshot, Is.SameAs(inventoryBefore));
-        Assert.That(_equipment.Snapshot, Is.SameAs(equipmentBefore));
+        Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
+        Assert.That(_equipmentImpl.Snapshot, Is.SameAs(equipmentBefore));
         Assert.That(notifications, Is.Zero);
     }
 
@@ -192,11 +190,11 @@ public class EquipmentTransferTests
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.InvalidSession));
         request = Request(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Success));
-        var inventoryAfter = _inventory.Snapshot;
-        var equipmentAfter = _equipment.Snapshot;
+        var inventoryAfter = _inventoryImpl.Snapshot;
+        var equipmentAfter = _equipmentImpl.Snapshot;
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.StaleRevision));
-        Assert.That(_inventory.Snapshot, Is.SameAs(inventoryAfter));
-        Assert.That(_equipment.Snapshot, Is.SameAs(equipmentAfter));
+        Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryAfter));
+        Assert.That(_equipmentImpl.Snapshot, Is.SameAs(equipmentAfter));
     }
 
     [Test]
@@ -205,29 +203,29 @@ public class EquipmentTransferTests
         Seed((0, "engine", 1));
         var request = Request(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
         var notifications = 0;
-        var inventoryRevision = _inventory.Revision;
+        var inventoryRevision = _inventoryImpl.Revision;
         void Observe()
         {
             notifications++;
-            Assert.That(_inventory.Snapshot.Slots[0], Is.Null);
-            Assert.That(_equipment.Snapshot.Slots[0]!.Id, Is.EqualTo(request.SourceEntity));
-            Assert.That(_inventory.Revision, Is.EqualTo(inventoryRevision + 1));
-            Assert.That(_equipment.Revision, Is.EqualTo(1));
-            Assert.That(_inventory.Add(new ItemDefinitionId("engine"), 1), Is.EqualTo(InventoryResult.PublicationInProgress));
+            Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.Null);
+            Assert.That(_equipmentImpl.Snapshot.Slots[0]!.Id, Is.EqualTo(request.SourceEntity));
+            Assert.That(_inventoryImpl.Revision, Is.EqualTo(inventoryRevision + 1));
+            Assert.That(_equipmentImpl.Revision, Is.EqualTo(1));
+            Assert.That(_inventoryImpl.Add(new ItemDefinitionId("engine"), 1), Is.EqualTo(InventoryResult.PublicationInProgress));
             Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.PublicationInProgress));
-            using var otherCoordinator = new InventoryEquipmentTransferService(_inventory, _equipment);
+            using var otherCoordinator = new InventoryEquipmentTransferService(_inventoryImpl, _equipmentImpl);
             Assert.That(otherCoordinator.Transfer(request), Is.EqualTo(TransferResult.PublicationInProgress));
         }
         var failures = new List<Exception>();
         Action<InventorySnapshot> inventoryObserver = _ => { try { Observe(); } catch (Exception exception) { failures.Add(exception); } };
-        _inventory.Changed += inventoryObserver;
-        _inventory.Changed += _ => throw new InvalidOperationException("observer failure");
-        _equipment.Changed += _ => { try { Observe(); } catch (Exception exception) { failures.Add(exception); } };
+        _inventoryImpl.Changed += inventoryObserver;
+        _inventoryImpl.Changed += _ => throw new InvalidOperationException("observer failure");
+        _equipmentImpl.Changed += _ => { try { Observe(); } catch (Exception exception) { failures.Add(exception); } };
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Success));
         Assert.That(failures, Is.Empty);
         Assert.That(notifications, Is.EqualTo(2));
-        _inventory.Changed -= inventoryObserver;
-        Assert.That(_inventory.Add(new ItemDefinitionId("engine"), 1), Is.EqualTo(InventoryResult.Success));
+        _inventoryImpl.Changed -= inventoryObserver;
+        Assert.That(_inventoryImpl.Add(new ItemDefinitionId("engine"), 1), Is.EqualTo(InventoryResult.Success));
     }
 
     [Test]
@@ -235,34 +233,34 @@ public class EquipmentTransferTests
     {
         Seed((0, "engine", 1), (1, "engine", 1));
         Move(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
-        var before = _equipment.Snapshot.Slots[0];
-        var replacement = _inventory.Snapshot.Slots[1];
+        var before = _equipmentImpl.Snapshot.Slots[0];
+        var replacement = _inventoryImpl.Snapshot.Slots[1];
         var stale = Request(ItemLocation.Inventory(1), ItemLocation.Inventory(0));
         Assert.That(Move(ItemLocation.Inventory(1), ItemLocation.Equipment("engine")), Is.EqualTo(TransferResult.Success));
-        Assert.That(_equipment.Snapshot.Slots[0], Is.SameAs(replacement));
-        Assert.That(_inventory.Snapshot.Slots[1], Is.SameAs(before));
-        _inventory.Add(new ItemDefinitionId("hull"), 1);
-        var inventoryBefore = _inventory.Snapshot;
+        Assert.That(_equipmentImpl.Snapshot.Slots[0], Is.SameAs(replacement));
+        Assert.That(_inventoryImpl.Snapshot.Slots[1], Is.SameAs(before));
+        _inventoryImpl.Add(new ItemDefinitionId("hull"), 1);
+        var inventoryBefore = _inventoryImpl.Snapshot;
         Assert.That(_transfers.Transfer(stale), Is.EqualTo(TransferResult.StaleRevision));
-        Assert.That(_transfers.Transfer(stale with { InventoryRevision = _inventory.Revision, SourceEntity = before!.Id }),
+        Assert.That(_transfers.Transfer(stale with { InventoryRevision = _inventoryImpl.Revision, SourceEntity = before!.Id }),
             Is.EqualTo(TransferResult.StaleEntity));
-        Assert.That(_inventory.Snapshot, Is.SameAs(inventoryBefore));
+        Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
     }
 
     [Test]
     public void ObserverAndLoggingFailures_DoNotStopRemainingNotifications()
     {
         var errors = 0;
-        using var inventory = new Inventory(_catalog, _ => { errors++; throw new Exception("logging"); });
-        using var equipment = new Equipment(_catalog, _ => { errors++; throw new Exception("logging"); });
+        using var inventory = new InventoryImpl(_catalog, _ => { errors++; throw new Exception("logging"); });
+        using var equipment = new EquipmentImpl(_catalog, _ => { errors++; throw new Exception("logging"); });
         using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
         inventory.Add(new ItemDefinitionId("engine"), 1);
         var request = new TransferRequest(transfers.OpenEditSession(), ItemLocation.Inventory(0),
             inventory.Snapshot.Slots[0]!.Id, ItemLocation.Equipment("engine"), null, inventory.Revision, equipment.Revision);
         var notifications = 0;
-        inventory.Changed += _ => throw new Exception("inventory");
+        inventory.Changed += _ => throw new Exception("inventoryImpl");
         inventory.Changed += _ => notifications++;
-        equipment.Changed += _ => throw new Exception("equipment");
+        equipment.Changed += _ => throw new Exception("equipmentImpl");
         equipment.Changed += _ => notifications++;
         Assert.That(transfers.Transfer(request), Is.EqualTo(TransferResult.Success));
         Assert.That(errors, Is.EqualTo(2));
@@ -272,29 +270,29 @@ public class EquipmentTransferTests
     [Test]
     public void FullInventory_RejectsIllegalSwapWithoutGrowingOrAutoRouting()
     {
-        _inventory.Add(new ItemDefinitionId("engine"), 128);
+        _inventoryImpl.Add(new ItemDefinitionId("engine"), 128);
         Move(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
-        _inventory.Add(new ItemDefinitionId("hull"), 1);
-        var inventoryBefore = _inventory.Snapshot;
-        var equipmentBefore = _equipment.Snapshot;
+        _inventoryImpl.Add(new ItemDefinitionId("hull"), 1);
+        var inventoryBefore = _inventoryImpl.Snapshot;
+        var equipmentBefore = _equipmentImpl.Snapshot;
         Assert.That(Move(ItemLocation.Equipment("engine"), ItemLocation.Inventory(0)), Is.EqualTo(TransferResult.IncompatiblePlacement));
-        Assert.That(_inventory.Snapshot, Is.SameAs(inventoryBefore));
-        Assert.That(_equipment.Snapshot, Is.SameAs(equipmentBefore));
+        Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
+        Assert.That(_equipmentImpl.Snapshot, Is.SameAs(equipmentBefore));
     }
 
-    [TestCase("inventory")]
-    [TestCase("equipment")]
+    [TestCase("inventoryImpl")]
+    [TestCase("equipmentImpl")]
     [TestCase("coordinator")]
     public void DisposedOwners_RejectTransfersAndNextGameIsIndependent(string owner)
     {
         Seed((0, "engine", 1));
         var request = Request(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
-        if (owner == "inventory") _inventory.Dispose();
-        if (owner == "equipment") _equipment.Dispose();
+        if (owner == "inventoryImpl") _inventoryImpl.Dispose();
+        if (owner == "equipmentImpl") _equipmentImpl.Dispose();
         if (owner == "coordinator") _transfers.Dispose();
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Disposed));
-        using var nextInventory = new Inventory(_catalog);
-        using var nextEquipment = new Equipment(_catalog);
+        using var nextInventory = new InventoryImpl(_catalog);
+        using var nextEquipment = new EquipmentImpl(_catalog);
         using var nextTransfers = new InventoryEquipmentTransferService(nextInventory, nextEquipment);
         nextTransfers.OpenEditSession();
         Assert.That(nextTransfers.Transfer(request), Is.EqualTo(TransferResult.InvalidSession));
