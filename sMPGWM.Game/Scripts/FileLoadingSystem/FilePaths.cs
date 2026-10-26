@@ -9,6 +9,10 @@ public partial class FilePaths : AbstractSingleton<FilePaths>
     public const string UserConfigDirectory = "user://config/";
     public const string UserConfigPath = UserConfigDirectory + "config.cfg";
 
+    public const string UserItemCategoryDataYaml = UserConfigDirectory + "items/ItemCategoryDefinitions.yml";
+    public const string ItemCategoryDataYaml = "res://assets/game_data/ItemCategoryDefinitions.yml";
+    public const string ItemCategoryDataYamlSchema = "res://assets/game_data/ItemCategorySchema.yml";
+
     // Effects
     public const string UserEffectDataJson = UserConfigDirectory + "effects/effects.json";
     public const string EffectDataJson = "res://config/effects/effects.json";

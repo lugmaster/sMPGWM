@@ -1,14 +1,14 @@
 # Epic: Inventory, Character Equipment, and Item Hotbar Links
 
-Status: refined backlog. This planning session changes documentation only; no implementation or test-pass claims.
+Status: implementation started. INV-01 item metadata and startup category YAML loading are implemented; all 168 NUnit tests pass. INV-02 through INV-10 remain pending. The headless UI architecture smoke currently fails layout assertions; see the implementation plan for validation details.
 
-All ten stories have completed planning refinement. See [inventory-ui-implementation-plan.md](inventory-ui-implementation-plan.md) for story outputs, technical decisions, examples, and implementation checks. Refined does not mean implemented. The implementation plan resolves presentation and interaction details within the requirements below.
+All ten stories have completed planning refinement. See [inventory-ui-implementation-plan.md](inventory-ui-implementation-plan.md) for story outputs, technical decisions, examples, implementation progress, and checks. Refined does not mean implemented. The implementation plan resolves presentation and interaction details within the requirements below.
 
 ## Goal and verified baseline
 
 Refine the existing inventory and character screen, with domain-owned state and rules, familiar click placement and drag-and-drop, tooltips, stack counts, and hotbar links. Implement metadata and the minimum state operations needed by these interactions; defer actual item gameplay.
 
-The current scripts are mostly scaffolding: `InventorySystem` is an empty singleton shell, `EquipmentSystem` is an empty class, and the inventory containers and related presentation controls have no implemented item behavior. `ClickableIcon` handles texture and size only. Its scene defaults to a mock compass texture. The equipment scene has seven preview cells; eight are needed. `ItemGrid/SlotGrid` contains twelve preview cells and has six columns. Category tabs are placeholders, and the existing enum differs from the agreed categories.
+The UI scripts are mostly scaffolding: `InventorySystem` is an empty singleton shell, `EquipmentSystem` is an empty class, and the inventory containers and related presentation controls have no implemented item behavior. `ClickableIcon` handles texture and size only. Its scene defaults to a mock compass texture. The equipment scene has seven preview cells; eight are needed. `ItemGrid/SlotGrid` contains twelve preview cells and has six columns. Category tabs are placeholders. INV-01 replaced the obsolete category enum with an extensible catalog matching the agreed categories and added the item domain model.
 
 The existing HUD routes activation through `PlayerActionController` and the player-input policy. Preserve that integration and the existing overlay window system.
 
@@ -52,7 +52,9 @@ There are eight initial categories and eight equipment slots. Slot display order
 
 Category definitions supply display metadata and stacking eligibility. Item definitions supply identity, name, category, icon reference, tooltip content, and an optional stack limit. Item entities/stacks have IDs distinct from definition IDs; multiple stacks can share a definition.
 
-Item definitions will later be authored in `.yml` files and loaded at startup. The YAML schema, paths, and production loading integration are deferred to a later story. Keep the domain model independent of serialization and use development definitions for this epic; reuse the existing file-loading system when implementing YAML loading.
+Category definitions are authored in `assets/game_data/ItemCategoryDefinitions.yml` and validated against `ItemCategorySchema.yml`. `GamePlayManager` loads them before gameplay activation using the existing file loader, which copies packaged defaults to `user://config/items/ItemCategoryDefinitions.yml` when absent or forced by `ReloadConfigOnStart`. Invalid data aborts startup through the existing load-error path. The loaded catalog belongs to the game instance and is released on teardown. `ItemCategories.CreateDefault()` remains available for explicit programmatic fixtures; gameplay uses the loaded catalog.
+
+Item definitions will later be authored in `.yml` files and loaded at startup. Their YAML schema, paths, and production loading integration remain deferred to a later story. Keep the domain model independent of serialization and use development item definitions for this epic; reuse the existing file-loading system when implementing item-definition loading.
 
 For stackable categories, an omitted limit means `int.MaxValue`; explicit limits must be positive. Nonstackable categories always hold one item per entity/cell. Merge compatibility requires the same item definition, not just the same category. Adding a category with existing behavior must not require UI category switches. New gameplay behavior or equipment destinations may still require domain changes.
 

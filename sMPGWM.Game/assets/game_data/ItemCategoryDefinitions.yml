@@ -1,0 +1,33 @@
+Categories:
+  - Id: engine
+    DisplayName: Engine
+    DisplayOrder: 0
+    CanStack: false
+  - Id: hull
+    DisplayName: Hull
+    DisplayOrder: 1
+    CanStack: false
+  - Id: shield_generator
+    DisplayName: Shield Generator
+    DisplayOrder: 2
+    CanStack: false
+  - Id: reactor
+    DisplayName: Reactor
+    DisplayOrder: 3
+    CanStack: false
+  - Id: light_weapon
+    DisplayName: Light Weapon
+    DisplayOrder: 4
+    CanStack: false
+  - Id: heavy_weapon
+    DisplayName: Heavy Weapon
+    DisplayOrder: 5
+    CanStack: false
+  - Id: consumable
+    DisplayName: Consumable
+    DisplayOrder: 6
+    CanStack: true
+  - Id: resource
+    DisplayName: Resource
+    DisplayOrder: 7
+    CanStack: true

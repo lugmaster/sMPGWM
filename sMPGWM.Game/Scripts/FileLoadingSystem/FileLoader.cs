@@ -58,7 +58,7 @@ public partial class FileLoader : AbstractSingleton<FileLoader>
             files.DefinitionText, files.SchemaText, userPath, schemaPath);
     }
 
-    protected static LoadResult<TDefinition> LoadYamlDefinition<TDefinition>(
+    public static LoadResult<TDefinition> LoadYamlDefinition<TDefinition>(
         string userPath,
         string defaultPath,
         string schemaPath)
@@ -75,7 +75,7 @@ public partial class FileLoader : AbstractSingleton<FileLoader>
             files.DefinitionText, files.SchemaText, userPath, schemaPath);
     }
 
-    protected static void AbortLoad(DataLoadError error)
+    public static void AbortLoad(DataLoadError error)
     {
         var message = error.ToDisplayString();
         Logger.Info(message);

@@ -1,8 +1,8 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; implementation has not started.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 implemented. INV-02 through INV-10 remain pending.
 
-Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement. No gameplay scripts or scenes are changed by this planning work. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
+Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
 ## Reference games and design decisions
 
@@ -25,11 +25,21 @@ The domain architecture below is an engineering recommendation based on the insp
 - A successful state-changing command advances participating revisions once. Rejected requests and no-ops publish nothing. Requests carry expected source identity/location and relevant state revisions; empty targets must still be empty at commit. No transaction database, undo framework, or general command bus is needed.
 - UI editing is authorized by a short-lived inventory-open session. Open/close/reopen creates a new session identity; focus loss invalidates pending interactions. User placement requests must match the current edit session and state revisions. Gameplay additions do not require inventory to be open.
 - Preserve `UiCanvas`'s four public menu operations. Add internal binding/lifecycle hooks only. Existing window focus, centered rows, scrolling, Escape behavior, and input release tracking remain authoritative.
-- Production startup remains an empty inventory with 128 cells. Seeded demo items are opt-in development/test fixtures, never unconditional startup content. YAML schema and loading remain deferred; later reuse `FileLoadingSystem` rather than adding a parallel loader.
+- Production startup remains an empty inventory with 128 cells. Seeded demo items are opt-in development/test fixtures, never unconditional startup content. Category YAML definitions and schema now load through `FileLoadingSystem` in `GamePlayManager`; item-definition YAML loading remains deferred.
 
 ## INV-01 — Item metadata and extensible categories
 
 Refinement: complete. Dependency: none.
+
+Implementation: complete (2026-10-26). Added immutable category/definition catalogs, typed category/definition/entity IDs, validated entity creation, centralized stack limits and compatibility, and structured tooltip data. The eight categories are ordered metadata, replacing the unused enum. Catalogs copy inputs and expose read-only collections. No runtime items are seeded. Move/merge identity conservation will be exercised with the transfer operations in INV-03.
+
+Validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --filter FullyQualifiedName~ItemCatalogTests --verbosity minimal` passed all 25 cases. Coverage includes invalid/default/duplicate IDs, missing categories, invalid limits, category extension, immutable snapshots, entity identity, count boundaries, compatibility, and tooltip metadata.
+
+Regression validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --verbosity quiet` passed all 152 cases; `git diff --check` passed. Existing nullable-context, member-hiding, and Godot test-source-generator warnings remain. Scene smoke checks were not run for this domain-only increment; UI integration starts in INV-04.
+
+Category loading follow-up (2026-10-26): `assets/game_data/ItemCategoryDefinitions.yml` supplies the eight category definitions; `ItemCategorySchema.yml` validates their shape. `GamePlayManager.OnReady` assembles the existing `FileLoader.LoadYamlDefinition` call and converts the DTOs into its game-owned `ItemCategories` before activating gameplay. Defaults copy to `user://config/items/ItemCategoryDefinitions.yml` when missing or when `ReloadConfigOnStart` is enabled. Invalid schema/content or duplicate IDs use the existing abort-load path; no hardcoded fallback replaces invalid user data. Teardown also supports failed initialization. The domain remains independent of YAML and Godot.
+
+Follow-up validation: all 16 `ItemCategoryLoadingTests` passed; the full NUnit suite passed all 168 cases. The headless `ui_architecture_smoke.gd` run confirmed successful default copying and startup loading across game lifetimes, but exited with window visibility, horizontal centering, and scrollbar assertion failures. These UI layout assertions remain unresolved; category loading produced no errors.
 
 ### Output and implementation steps
 
@@ -49,7 +59,7 @@ Likely files: `Scripts/ItemSystem/ItemCategories.cs` (replace obsolete enum repr
 - Two consumable definitions in the same category never merge with each other.
 - Two stacks of one definition have different runtime IDs. Rendering changes neither ID.
 - Registering another nonstackable category with metadata makes it discoverable without a UI edit; it is not automatically equippable or hotbar-eligible.
-- NUnit covers invalid definitions, defaults, ID lifecycle, and stack compatibility. YAML deserialization tests belong to the deferred loading story.
+- NUnit covers invalid definitions, defaults, ID lifecycle, and stack compatibility. Category YAML schema/deserialization and catalog conversion are covered by `ItemCategoryLoadingTests`; item-definition loading remains deferred.
 
 ## INV-02 — Inventory state and growth
 
@@ -280,7 +290,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 
 | Story | Refinement | Implementation |
 | --- | --- | --- |
-| INV-01 Item metadata | Complete | Not started |
+| INV-01 Item metadata | Complete | Complete |
 | INV-02 Inventory state | Complete | Not started |
 | INV-03 Equipment/transfers | Complete | Not started |
 | INV-04 Scenes/empty slots | Complete | Not started |
@@ -291,4 +301,4 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-09 Browsing/compact results | Complete | Not started |
 | INV-10 Integration checks | Complete | Not started |
 
-No unresolved product questions block these stories. Defaults inferred during refinement are recorded explicitly above; future YAML schema/loading and actual item effects remain outside the epic.
+No unresolved product questions block these stories. Defaults inferred during refinement are recorded explicitly above; future item-definition YAML schema/loading and actual item effects remain outside the epic. Category YAML loading was added by explicit follow-up request.

@@ -1,6 +1,8 @@
 using System;
 using Godot;
+using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
@@ -18,9 +20,28 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public event Action<MainGameState>? OnGameStateChanged;
 
     public MainGameState GameState => _gameState;
+    public ItemCategories ItemCategories { get; private set; } = null!;
 
     protected override void OnReady()
     {
+        var definitionsResult = FileLoader.LoadYamlDefinition<ItemCategoryDefinitions>(
+            FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYaml, FilePaths.ItemCategoryDataYamlSchema);
+        if (!definitionsResult.IsSuccess)
+        {
+            FileLoader.AbortLoad(definitionsResult.Error!);
+            return;
+        }
+
+        var categoriesResult = definitionsResult.Value!.ToCategories(
+            FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYamlSchema);
+        if (!categoriesResult.IsSuccess)
+        {
+            FileLoader.AbortLoad(categoriesResult.Error!);
+            return;
+        }
+
+        ItemCategories = categoriesResult.Value!;
+
         _canvas = GetNode<UiCanvas>("UiCanvas");
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
@@ -42,6 +63,10 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     protected override void OnExitTree()
     {
+        ItemCategories = null!;
+        if (_playerActions is null)
+            return;
+
         _inputPolicy.CanControlPlayerChanged -= ApplyPlayerInputAvailability;
         _canvas.BlockingChanged -= _inputPolicy.SetHasBlockingWindow;
         _canvas.OnRequestHotbarAction -= _playerActions.RequestHotbarActivation;
