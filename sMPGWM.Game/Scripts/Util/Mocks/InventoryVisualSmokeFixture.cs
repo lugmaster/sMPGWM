@@ -89,7 +89,7 @@ public partial class InventoryVisualSmokeFixture : RefCounted
                 categoryView.QueueFree();
             }
             var canvas = game.GetNode<UiCanvas>("UiCanvas");
-            var menu = canvas.GetNode<HBoxContainer>("Root/MenuLayer/MenuHost/WindowScroll/WindowRow")
+            var menu = canvas.GetNode<HBoxContainer>("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")
                 .GetChild<InventoryMenu>(0);
             var grid = menu.GetNode<InventoryContainer>("%InventoryContainer")
                 .GetNode<ItemGrid>("%ItemGrid").GetNode<GridContainer>("%SlotGrid");

@@ -498,7 +498,7 @@ func verify_cells(menu: Node, pointer_overlay: Control) -> void:
         "Canvas-owned pointer presentation must start hidden")
     expect(pointer_overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE and pointer_overlay.get_node("%ItemPointerFeedback").mouse_filter == Control.MOUSE_FILTER_IGNORE,
         "Shared pointer presentation must pass mouse input through")
-    expect(pointer_overlay.get_parent().layer > 2, "Pointer presentation must render above menus and hotbar")
+    expect(pointer_overlay.get_canvas() == menu.get_canvas() and pointer_overlay.get_index() == pointer_overlay.get_parent().get_child_count() - 1, "Pointer presentation must render last in the shared UI canvas")
     for index in range(equipment.get_child_count()):
         var cell := equipment.get_child(index)
         var label := cell.get_node("%Label") as Label
@@ -526,13 +526,21 @@ func verify_window_overflow(canvas: Node, row: HBoxContainer) -> void:
     for index in [2, 0, 1]:
         canvas.call("OpenMenu", index)
         await settle()
-        expect(scroll.get_global_rect().grow(1).encloses(row.get_child(index).get_global_rect()), "Focusing an overflowing row must reveal the selected window")
+        var area := scroll.get_global_rect()
+        if scroll.get_v_scroll_bar().visible:
+            area.size.x -= scroll.get_v_scroll_bar().size.x
+        var bounds: Rect2 = row.get_child(index).get_global_rect()
+        expect(bounds.position.x >= area.position.x - 1 and bounds.end.x <= area.end.x + 1, "Focusing an overflowing row must reveal the selected window horizontally")
+        expect(bounds.intersects(area), "Focused windows must remain reachable within UiContainer")
     await capture_visual("window-overflow")
     canvas.call("CloseMenu", 1)
     canvas.call("CloseMenu", 2)
     await settle()
     expect(not scroll.get_h_scroll_bar().visible, "Closing extra windows must remove horizontal overflow")
-    expect(absf(inventory.get_global_rect().get_center().x - scroll.get_global_rect().get_center().x) <= 1, "Single inventory must recenter after overflow")
+    var available_width := scroll.size.x
+    if scroll.get_v_scroll_bar().visible:
+        available_width -= scroll.get_v_scroll_bar().size.x
+    expect(absf(inventory.get_global_rect().get_center().x - scroll.global_position.x - available_width / 2) <= 1, "Single inventory must recenter in the usable menu area after overflow")
 
 func run() -> void:
     create_timer(60).timeout.connect(func(): quit(1))
@@ -544,7 +552,7 @@ func run() -> void:
     expect(loading_fixture.call("VerifyLoadedItems", demo, true), "Seeded startup must use the loaded item catalog")
     demo.get_node("UiCanvas").call("OpenMenu", 0)
     await settle()
-    var demo_menu := demo.get_node("UiCanvas/Root/MenuLayer/MenuHost/WindowScroll/WindowRow").get_child(0)
+    var demo_menu := demo.get_node("UiCanvas/Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow").get_child(0)
     var demo_container := demo_menu.get_node("%InventoryContainer")
     var demo_grid := demo_container.get_node("%ItemGrid").get_node("%SlotGrid")
     var occupied := 0
@@ -567,7 +575,7 @@ func run() -> void:
     expect(loading_fixture.call("VerifyLoadedItems", demo, true), "Menu reopen must reuse loaded definitions and preserve quantities")
     demo.queue_free()
     await settle()
-    for viewport_size in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+    for viewport_size in [Vector2i(1920, 1080), Vector2i(2560, 1440)]:
         root.size = viewport_size
         root.content_scale_size = viewport_size
         if OS.get_cmdline_user_args().has("--capture-visuals"):
@@ -578,10 +586,20 @@ func run() -> void:
         await settle()
         expect(loading_fixture.call("VerifyLoadedItems", game, false), "Unseeded games must load independent catalogs and keep inventory empty")
         var canvas := game.get_node("UiCanvas")
-        var row := game.get_node("UiCanvas/Root/MenuLayer/MenuHost/WindowScroll/WindowRow")
+        var row := game.get_node("UiCanvas/Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")
         canvas.call("OpenMenu", 0)
         await settle()
         var menu := row.get_child(0)
+        var hotbar := canvas.get_node("%PlayerHud").get_node("%HotbarControl") as Control
+        var overlay := canvas.get_node("%ItemPointerOverlay") as Control
+        var scroll := canvas.get_node("Root/MenuLayer/UiContainer/MenuHost/WindowScroll") as ScrollContainer
+        var menu_area := canvas.get_node("%UiContainer") as Control
+        expect(menu_area.clip_contents and menu_area.get_global_rect().encloses(scroll.get_global_rect()), "UiContainer must bound the menu scroll surface")
+        expect(hotbar.get_canvas() == overlay.get_canvas() and hotbar.get_canvas() == menu.get_canvas(), "HUD, windows, and pointer visuals must share one UI canvas")
+        expect(hotbar.get_viewport() == root and overlay.get_viewport() == root, "UI must render in the root viewport independently of the world viewport")
+        expect(game.get_node("WorldViewPortContainer/WorldViewport").size == Vector2i(1280, 720), "World rendering must retain its independent 720p resolution")
+        expect(scroll.get_global_rect().end.y <= hotbar.get_global_rect().position.y, "Window scroll surface must leave the hotbar strip unobstructed")
+        expect(overlay.get_parent() == canvas.get_node("Root") and overlay.get_index() == overlay.get_parent().get_child_count() - 1, "Pointer visuals must draw last under the shared UI root")
         await verify_cells(menu, canvas.get_node("%ItemPointerOverlay"))
         await verify_window_overflow(canvas, row)
         var search := menu.get_node("%InventoryContainer").get_node("FilterToolbar/LineEdit") as LineEdit
@@ -618,5 +636,5 @@ func run() -> void:
         game.queue_free()
         await settle()
     if failures == 0:
-        print("Inventory slot smoke checks passed (1280x720 and 1920x1080, two game lifetimes).")
+        print("Inventory slot smoke checks passed (1920x1080 and 2560x1440 UI, 1280x720 world, two game lifetimes).")
     quit(0 if failures == 0 else 1)

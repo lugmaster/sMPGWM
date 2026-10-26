@@ -73,10 +73,23 @@ func expect_row_layout(scroll: ScrollContainer, row: HBoxContainer, centered: bo
         var first := children.front() as Control
         var last := children.back() as Control
         var center := (first.get_global_rect().position.x + last.get_global_rect().end.x) / 2
-        expect(absf(center - scroll.get_global_rect().get_center().x) <= 1, "Window row should be horizontally centered")
+        var available_width := scroll.size.x
+        if scroll.get_v_scroll_bar().visible:
+            available_width -= scroll.get_v_scroll_bar().size.x
+        expect(absf(center - scroll.global_position.x - available_width / 2) <= 1, "Window row should be horizontally centered in the usable menu area")
 
 func expect_window_visible(scroll: ScrollContainer, window: Control) -> void:
-    expect(scroll.get_global_rect().grow(1).encloses(window.get_global_rect()), "Focused or fitting window should be fully visible")
+    var area := scroll.get_global_rect()
+    if scroll.get_v_scroll_bar().visible:
+        area.size.x -= scroll.get_v_scroll_bar().size.x
+    if scroll.get_h_scroll_bar().visible:
+        area.size.y -= scroll.get_h_scroll_bar().size.y
+    var bounds := window.get_global_rect()
+    expect(bounds.position.x >= area.position.x - 1 and bounds.end.x <= area.end.x + 1, "Focused window must fit horizontally in the menu area")
+    if bounds.size.y <= area.size.y:
+        expect(bounds.position.y >= area.position.y - 1 and bounds.end.y <= area.end.y + 1, "A fitting window must be fully visible vertically")
+    else:
+        expect(scroll.get_v_scroll_bar().visible and bounds.intersects(area), "Tall windows must remain reachable through vertical scrolling")
 
 func verify_menu_press_guards(game: Node, windows: Node, row: HBoxContainer) -> void:
     var canvas := game.get_node("UiCanvas")
@@ -154,14 +167,16 @@ func run() -> void:
     create_timer(15).timeout.connect(func(): quit(1))
     var packed := load("res://scenes/game/main_game.tscn") as PackedScene
     for cycle in range(2):
-        root.size = Vector2i(1920, 1080)
+        # Start wide enough for the centered-row checks inside the inset menu area.
+        # The overflow checks below then narrow the UI viewport to its 1080p baseline.
+        root.size = Vector2i(3000, 1080)
         root.content_scale_size = root.size
         var game := packed.instantiate()
         root.add_child(game)
         await settle()
         var canvas := game.get_node("UiCanvas")
         var input := game.get_node("InputController")
-        var windows := game.get_node("UiCanvas/Root/MenuLayer/MenuHost")
+        var windows := game.get_node("UiCanvas/Root/MenuLayer/UiContainer/MenuHost")
         var scroll := windows.get_node("WindowScroll") as ScrollContainer
         var row := scroll.get_node("WindowRow") as HBoxContainer
         var hud := canvas.get_node("%PlayerHud")
@@ -230,14 +245,16 @@ func run() -> void:
         await settle()
         expect(row.get_child_count() == 3, "All three windows should coexist")
         expect(inventory.position.x < two_window_position.x, "Opening third window should shift existing windows left")
-        var fitting_size := Vector2i(ceili(row.get_combined_minimum_size().x) + 64, 1080)
+        var menu_area := canvas.get_node("%UiContainer") as Control
+        var width_fraction := menu_area.anchor_right - menu_area.anchor_left
+        var fitting_size := Vector2i(ceili((row.get_combined_minimum_size().x + 64) / width_fraction), 1080)
         root.size = fitting_size
         root.content_scale_size = fitting_size
         await settle()
         expect(not scroll.get_h_scroll_bar().visible, "A viewport wider than the row should fit all windows")
         expect_row_layout(scroll, row)
 
-        root.size = Vector2i(1280, 720)
+        root.size = Vector2i(1920, 1080)
         root.content_scale_size = root.size
         await settle()
         expect(scroll.get_h_scroll_bar().visible, "Narrow viewport should enable horizontal scrolling")

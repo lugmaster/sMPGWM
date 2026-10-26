@@ -36,12 +36,14 @@ public partial class UiWindowManager : Control
         _scrollContainer = GetNode<ScrollContainer>("WindowScroll");
         _windowRow = GetNode<HBoxContainer>("WindowScroll/WindowRow");
         _windowRow.SortChildren += QueueEnsureFocusedWindowVisible;
+        _windowRow.MinimumSizeChanged += RefreshScrollExtent;
         _scrollContainer.Resized += QueueEnsureFocusedWindowVisible;
     }
 
     public override void _ExitTree()
     {
         _windowRow.SortChildren -= QueueEnsureFocusedWindowVisible;
+        _windowRow.MinimumSizeChanged -= RefreshScrollExtent;
         _scrollContainer.Resized -= QueueEnsureFocusedWindowVisible;
         _pressedMenuActions.Clear();
         CloseAll();
@@ -189,6 +191,15 @@ public partial class UiWindowManager : Control
     }
 
     private void QueueEnsureFocusedWindowVisible() => CallDeferred(nameof(EnsureFocusedWindowVisible));
+
+    private void RefreshScrollExtent()
+    {
+        // With both axes scrollable, the scroll container's minimum can stay zero
+        // while its content grows. Refresh the content extent before sorting it.
+        _scrollContainer.GetMinimumSize();
+        _scrollContainer.QueueSort();
+        QueueEnsureFocusedWindowVisible();
+    }
 
     private void EnsureFocusedWindowVisible()
     {

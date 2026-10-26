@@ -80,7 +80,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
             Require(!canEdit, "Focus loss must revoke inventoryImpl editing.");
             canvas.Notification((int)Node.NotificationApplicationFocusIn);
             Require(canEdit, "Focus recovery must authorize a fresh inventoryImpl edit session.");
-            var row = canvas.GetNode<HBoxContainer>("Root/MenuLayer/MenuHost/WindowScroll/WindowRow");
+            var row = canvas.GetNode<HBoxContainer>("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow");
             var menu = row.GetChild<InventoryMenu>(0);
             var grid = menu.GetNode<InventoryContainer>("%InventoryContainer")
                 .GetNode<ItemGrid>("%ItemGrid").GetNode<GridContainer>("%SlotGrid");

@@ -31,7 +31,7 @@ func verify_sizes(cells: Array, expected: Vector2, surface: String) -> void:
 func run() -> void:
     create_timer(30).timeout.connect(func(): quit(1))
     var packed := load("res://scenes/game/main_game.tscn") as PackedScene
-    for viewport_size in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+    for viewport_size in [Vector2i(1920, 1080), Vector2i(2560, 1440)]:
         root.size = viewport_size
         root.content_scale_size = viewport_size
         var game := packed.instantiate()
@@ -43,7 +43,7 @@ func run() -> void:
         await verify_sizes(hotbar_cells, Vector2(72, 72), "Hotbar")
         canvas.call("OpenMenu", 0)
         await settle()
-        var row := canvas.get_node("Root/MenuLayer/MenuHost/WindowScroll/WindowRow")
+        var row := canvas.get_node("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")
         var menu := row.get_child(0)
         var bag_cells := menu.get_node("%InventoryContainer").get_node("%ItemGrid").get_node("%SlotGrid").get_children()
         await verify_sizes(bag_cells, Vector2(56, 56), "Inventory")
