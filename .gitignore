@@ -7,6 +7,7 @@ mono/
 !addons/**
 addons/~*
 addons/**/~*
+/artifacts
 
 # Mono and C# build files
 *.userprefs
