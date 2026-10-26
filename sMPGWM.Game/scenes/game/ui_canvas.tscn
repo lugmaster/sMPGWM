@@ -40,6 +40,15 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="ModalBlocker" type="Control" parent="Root/MenuLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
 [node name="UiContainer" type="Control" parent="Root/MenuLayer" unique_id=934827777]
 unique_name_in_owner = true
 clip_contents = true
@@ -72,13 +81,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 follow_focus = true
+horizontal_scroll_mode = 0
 
-[node name="WindowRow" type="HBoxContainer" parent="Root/MenuLayer/UiContainer/MenuHost/WindowScroll" unique_id=1898803086]
+[node name="WindowRow" type="HFlowContainer" parent="Root/MenuLayer/UiContainer/MenuHost/WindowScroll" unique_id=1898803086]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_vertical = 4
 mouse_filter = 2
-theme_override_constants/separation = 20
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
 alignment = 1
 
 [node name="ItemPointerOverlay" parent="Root" unique_id=1695225049 instance=ExtResource("4_pointer")]

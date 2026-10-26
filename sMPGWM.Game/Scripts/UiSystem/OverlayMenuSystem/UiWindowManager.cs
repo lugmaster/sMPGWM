@@ -17,8 +17,9 @@ public partial class UiWindowManager : Control
     private readonly Dictionary<UiWindowId, GameOverlayMenu> _windows = new();
     private readonly Dictionary<UiWindowId, Action> _closeHandlers = new();
     private ScrollContainer _scrollContainer = null!;
-    private HBoxContainer _windowRow = null!;
+    private HFlowContainer _windowRow = null!;
     private bool _navigationEnabled;
+    private Control _modalBlocker = null!;
 
     internal bool HasBlockingWindow => _registry.HasBlockingWindow;
     internal event Action<UiWindowId, GameOverlayMenu>? WindowOpening;
@@ -33,8 +34,9 @@ public partial class UiWindowManager : Control
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
+        _modalBlocker = GetNode<Control>("../../ModalBlocker");
         _scrollContainer = GetNode<ScrollContainer>("WindowScroll");
-        _windowRow = GetNode<HBoxContainer>("WindowScroll/WindowRow");
+        _windowRow = GetNode<HFlowContainer>("WindowScroll/WindowRow");
         _windowRow.SortChildren += QueueEnsureFocusedWindowVisible;
         _windowRow.MinimumSizeChanged += RefreshScrollExtent;
         _scrollContainer.Resized += QueueEnsureFocusedWindowVisible;
@@ -62,11 +64,14 @@ public partial class UiWindowManager : Control
     internal void Open(UiWindowId id)
     {
         if (!_navigationEnabled) return;
+        if (id != UiWindowId.MainMenu && _registry.IsOpen(UiWindowId.MainMenu)) return;
         if (_registry.IsOpen(id))
         {
             Focus(id);
             return;
         }
+
+        if (id == UiWindowId.MainMenu) CloseAll();
 
         var window = CreateWindow(id);
         WindowOpening?.Invoke(id, window);
@@ -77,6 +82,7 @@ public partial class UiWindowManager : Control
         _scrollContainer.Show();
         _windowRow.AddChild(window);
         _registry.Open(id);
+        _modalBlocker.Visible = _registry.IsOpen(UiWindowId.MainMenu);
         window.GrabWindowFocus();
         QueueEnsureFocusedWindowVisible();
     }
@@ -90,6 +96,7 @@ public partial class UiWindowManager : Control
         _windowRow.RemoveChild(window);
         window.QueueFree();
         _registry.Close(id);
+        _modalBlocker.Visible = _registry.IsOpen(UiWindowId.MainMenu);
         WindowClosed?.Invoke(id);
         _scrollContainer.Visible = _windows.Count > 0;
         FocusTopmost();
@@ -116,6 +123,7 @@ public partial class UiWindowManager : Control
         _windows.Clear();
         _closeHandlers.Clear();
         _registry.CloseAll();
+        _modalBlocker.Hide();
         _scrollContainer.Hide();
     }
 
@@ -124,7 +132,8 @@ public partial class UiWindowManager : Control
         foreach (var (action, actionName) in MenuActions)
             if (@event.IsActionReleased(actionName)) _pressedMenuActions.Remove(action);
 
-        if (_navigationEnabled && GetViewport().GuiGetFocusOwner() is LineEdit)
+        // Escape must run before focused buttons or text fields can consume ui_cancel.
+        if (_navigationEnabled)
             foreach (var (action, actionName) in MenuActions)
                 if (action == UiWindowId.MainMenu && @event.IsActionPressed(actionName, true))
                 {
@@ -134,7 +143,7 @@ public partial class UiWindowManager : Control
 
         if (!_navigationEnabled || @event is not InputEventMouseButton { Pressed: true } mouse) return;
         if (!_scrollContainer.GetGlobalRect().HasPoint(mouse.Position)) return;
-        var scrollbar = _scrollContainer.GetHScrollBar();
+        var scrollbar = _scrollContainer.GetVScrollBar();
         if (scrollbar.Visible && scrollbar.GetGlobalRect().HasPoint(mouse.Position)) return;
 
         var order = _registry.FocusOrder;
@@ -157,6 +166,7 @@ public partial class UiWindowManager : Control
             if (action != UiWindowId.MainMenu && GetViewport().GuiGetFocusOwner() is LineEdit) return;
             GetViewport().SetInputAsHandled();
             if (@event.IsEcho() || !_pressedMenuActions.Add(action)) return;
+            if (action != UiWindowId.MainMenu && _registry.IsOpen(UiWindowId.MainMenu)) return;
 
             if (action == UiWindowId.MainMenu)
             {
@@ -194,8 +204,7 @@ public partial class UiWindowManager : Control
 
     private void RefreshScrollExtent()
     {
-        // With both axes scrollable, the scroll container's minimum can stay zero
-        // while its content grows. Refresh the content extent before sorting it.
+        // Refresh the wrapped content height before updating the vertical scroll extent.
         _scrollContainer.GetMinimumSize();
         _scrollContainer.QueueSort();
         QueueEnsureFocusedWindowVisible();

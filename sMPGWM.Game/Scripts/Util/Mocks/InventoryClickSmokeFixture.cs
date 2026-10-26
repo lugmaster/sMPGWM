@@ -46,7 +46,7 @@ public partial class InventoryClickSmokeFixture : RefCounted
         _canvas.OpenMenu(UiWindowId.InventoryMenu);
     }
 
-    public bool Carrying() => _canvas.GetNode<HBoxContainer>("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")
+    public bool Carrying() => _canvas.GetNode<HFlowContainer>("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")
         .GetChildren().OfType<InventoryMenu>().Any(menu => menu.IsCarrying);
 
     public bool EngineEquipped() => _equipment.Snapshot.Slots[0]?.Id == _engine;

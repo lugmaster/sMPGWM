@@ -57,7 +57,7 @@ func click_at(position: Vector2) -> void:
     event.pressed = false
     root.push_input(event, true)
 
-func expect_row_layout(scroll: ScrollContainer, row: HBoxContainer, centered: bool = true) -> void:
+func expect_row_layout(scroll: ScrollContainer, row: HFlowContainer, centered: bool = true) -> void:
     var children := row.get_children()
     for index in range(children.size()):
         var window := children[index] as Control
@@ -91,7 +91,7 @@ func expect_window_visible(scroll: ScrollContainer, window: Control) -> void:
     else:
         expect(scroll.get_v_scroll_bar().visible and bounds.intersects(area), "Tall windows must remain reachable through vertical scrolling")
 
-func verify_menu_press_guards(game: Node, windows: Node, row: HBoxContainer) -> void:
+func verify_menu_press_guards(game: Node, windows: Node, row: HFlowContainer) -> void:
     var canvas := game.get_node("UiCanvas")
     menu_key(KEY_ESCAPE, true, 0, true)
     expect(row.get_child_count() == 0, "Auto-repeat without an initial press should not open a menu")
@@ -178,7 +178,7 @@ func run() -> void:
         var input := game.get_node("InputController")
         var windows := game.get_node("UiCanvas/Root/MenuLayer/UiContainer/MenuHost")
         var scroll := windows.get_node("WindowScroll") as ScrollContainer
-        var row := scroll.get_node("WindowRow") as HBoxContainer
+        var row := scroll.get_node("WindowRow") as HFlowContainer
         var hud := canvas.get_node("%PlayerHud")
         var hotbar := hud.get_node("%HotbarControl")
         var buttons := hotbar.get_node("%ButtonContainer")
@@ -240,51 +240,37 @@ func run() -> void:
         panel.custom_minimum_size = original_minimum
         await settle()
 
-        var two_window_position: Vector2 = inventory.position
-        canvas.call("OpenMenu", 2)
-        await settle()
-        expect(row.get_child_count() == 3, "All three windows should coexist")
-        expect(inventory.position.x < two_window_position.x, "Opening third window should shift existing windows left")
-        var menu_area := canvas.get_node("%UiContainer") as Control
-        var width_fraction := menu_area.anchor_right - menu_area.anchor_left
-        var fitting_size := Vector2i(ceili((row.get_combined_minimum_size().x + 64) / width_fraction), 1080)
-        root.size = fitting_size
-        root.content_scale_size = fitting_size
-        await settle()
-        expect(not scroll.get_h_scroll_bar().visible, "A viewport wider than the row should fit all windows")
-        expect_row_layout(scroll, row)
-
+        var inventory_size := inventory.size
+        var map_panel := map.get_node("CenterContainer/MenuPanel") as Control
+        var map_minimum := map_panel.custom_minimum_size
+        map_panel.custom_minimum_size = Vector2(800, 500)
         root.size = Vector2i(1920, 1080)
         root.content_scale_size = root.size
         await settle()
-        expect(scroll.get_h_scroll_bar().visible, "Narrow viewport should enable horizontal scrolling")
-        expect_row_layout(scroll, row, false)
-        expect_window_visible(scroll, row.get_child(2))
+        expect(not scroll.get_h_scroll_bar().visible, "Wrapped menus must never scroll horizontally")
+        expect(map.position.y >= inventory.position.y + inventory.size.y + 19, "Map must wrap beneath inventory when the pair cannot fit")
+        expect(inventory.size == inventory_size, "Wrapping must preserve window size")
+        expect(scroll.get_v_scroll_bar().visible, "Wrapped windows must scroll vertically when needed")
         canvas.call("OpenMenu", 0)
         await settle()
         expect_window_visible(scroll, inventory)
-        expect(row.get_child(0) == inventory, "Scrolling to focused window should preserve row order")
-        canvas.call("OpenMenu", 2)
+        canvas.call("OpenMenu", 1)
         await settle()
-        expect_window_visible(scroll, row.get_child(2))
-        root.size = fitting_size
-        root.content_scale_size = fitting_size
+        expect_window_visible(scroll, map)
+        expect(row.get_child(0) == inventory, "Scrolling must preserve opening order")
+        map_panel.custom_minimum_size = map_minimum
+        root.size = Vector2i(3000, 1080)
+        root.content_scale_size = root.size
         await settle()
-        expect(not scroll.get_h_scroll_bar().visible, "Wider viewport should remove unnecessary scrollbar")
         expect_row_layout(scroll, row)
 
         canvas.call("CloseMenu", 1)
         await settle()
-        expect(row.get_child_count() == 2, "Closing middle window should leave two windows")
+        expect(row.get_child_count() == 1, "Closing map should leave inventory")
         expect_row_layout(scroll, row)
         canvas.call("OpenMenu", 1)
         await settle()
-        map = row.get_child(2) as Control
-        expect(map != inventory, "Reopening map should append a new instance")
-        expect_row_layout(scroll, row)
-        canvas.call("CloseMenu", 2)
-        await settle()
-        expect(row.get_child(0) == inventory and row.get_child(1) == map, "Closing main menu should preserve remaining order")
+        map = row.get_child(1) as Control
         expect_row_layout(scroll, row)
 
         inventory.get_node("%CloseButton").emit_signal("pressed")
@@ -294,9 +280,8 @@ func run() -> void:
         expect_row_layout(scroll, row)
 
         canvas.call("OpenMenu", 0)
-        canvas.call("OpenMenu", 2)
         await settle()
-        expect(row.get_child_count() == 3, "All three windows should be open before Escape")
+        expect(row.get_child_count() == 2, "Both ordinary windows should be open before Escape")
         menu_key(KEY_ESCAPE, true, 94)
         menu_key(KEY_ESCAPE, true)
         menu_key(KEY_ESCAPE, false)
@@ -322,12 +307,10 @@ func run() -> void:
         await settle()
         expect(not input.get("ActionButtonPressed"), "Mouse input over hotbar should not attack the world")
         Input.action_release("Action")
-        click_at(Vector2(8, 8))
+        menu_key(KEY_ESCAPE, true)
+        menu_key(KEY_ESCAPE, false)
         await settle()
-
-        menu_action("MainMenu")
-        await settle()
-        expect(row.get_child_count() == 1, "Escape with no windows should open main menu")
+        expect(row.get_child_count() == 1, "First Escape after clicking hotbar must open main menu")
         expect(row.get_child(0).get_script().resource_path.ends_with("/MainMenu.cs"), "Escape should open only the main menu")
         menu_action("MainMenu")
         await settle()
@@ -338,7 +321,21 @@ func run() -> void:
         await settle()
         menu_action("InventoryMenu")
         await settle()
-        expect(row.get_child_count() == 1, "Inventory shortcut should toggle only inventory")
+        menu_action("MapMenu")
+        canvas.call("OpenMenu", 0)
+        canvas.call("ToggleMenu", 1)
+        await settle()
+        expect(row.get_child_count() == 1 and row.get_child(0).get_script().resource_path.ends_with("/MainMenu.cs"), "Main menu must reject shortcuts and API requests for other menus")
+        expect(buttons.get_child(0).disabled, "Main menu must disable hotbar interaction")
+        var blocker := canvas.get_node("Root/MenuLayer/ModalBlocker") as Control
+        expect(blocker.visible and blocker.get_global_rect().has_point(buttons.get_child(0).get_global_rect().get_center()), "Modal blocker must cover HUD outside menu area")
+        menu_action("MainMenu")
+        await settle()
+        canvas.call("OpenMenu", 0)
+        canvas.call("OpenMenu", 1)
+        canvas.call("OpenMenu", 2)
+        await settle()
+        expect(row.get_child_count() == 1 and row.get_child(0).get_script().resource_path.ends_with("/MainMenu.cs"), "Opening main menu through API must replace other windows")
 
         game.call("SetGameState", 1)
         expect(row.get_child_count() == 0, "Inactive session should close all windows")

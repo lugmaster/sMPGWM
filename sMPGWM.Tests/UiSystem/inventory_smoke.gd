@@ -514,34 +514,37 @@ func verify_cells(menu: Node, pointer_overlay: Control) -> void:
     await settle()
     expect(bag.scroll_vertical > 0, "Inventory must scroll to trailing empty cells")
 
-func verify_window_overflow(canvas: Node, row: HBoxContainer) -> void:
+func verify_window_overflow(canvas: Node, row: HFlowContainer) -> void:
     var scroll := row.get_parent() as ScrollContainer
     var inventory := row.get_child(0) as Control
     var inventory_size := inventory.size
     canvas.call("OpenMenu", 1)
-    canvas.call("OpenMenu", 2)
     await settle()
-    var row_available_width := scroll.size.x
+    expect(not scroll.get_h_scroll_bar().visible, "Menus must never scroll horizontally")
+    expect(inventory.size == inventory_size, "Wrapping must preserve inventory size")
+    var map := row.get_child(1) as Control
+    var available_width := scroll.size.x
     if scroll.get_v_scroll_bar().visible:
-        row_available_width -= scroll.get_v_scroll_bar().size.x
-    expect(scroll.get_h_scroll_bar().visible == (row.get_combined_minimum_size().x > row_available_width),
-        "Horizontal scrolling must match whether the smaller windows fit in the menu area")
-    expect(inventory.size == inventory_size, "Horizontal overflow must not shrink inventory")
-    for index in [2, 0, 1]:
+        available_width -= scroll.get_v_scroll_bar().size.x
+    if inventory.size.x + map.size.x + 20 > available_width:
+        expect(map.position.y >= inventory.position.y + inventory.size.y + 19, "Menu must wrap beneath inventory when there is insufficient width")
+    else:
+        expect(map.position.x >= inventory.position.x + inventory.size.x + 19, "Menus must stay adjacent when they fit")
+    for index in [0, 1]:
         canvas.call("OpenMenu", index)
         await settle()
         var area := scroll.get_global_rect()
         if scroll.get_v_scroll_bar().visible:
             area.size.x -= scroll.get_v_scroll_bar().size.x
         var bounds: Rect2 = row.get_child(index).get_global_rect()
-        expect(bounds.position.x >= area.position.x - 1 and bounds.end.x <= area.end.x + 1, "Focusing an overflowing row must reveal the selected window horizontally")
-        expect(bounds.intersects(area), "Focused windows must remain reachable within UiContainer")
+        expect(bounds.position.x >= area.position.x - 1 and bounds.end.x <= area.end.x + 1, "Wrapped windows must fit horizontally")
+        expect(bounds.intersects(area), "Focused windows must remain reachable vertically")
     await capture_visual("window-overflow")
     canvas.call("CloseMenu", 1)
     canvas.call("CloseMenu", 2)
     await settle()
     expect(not scroll.get_h_scroll_bar().visible, "Closing extra windows must remove horizontal overflow")
-    var available_width := scroll.size.x
+    available_width = scroll.size.x
     if scroll.get_v_scroll_bar().visible:
         available_width -= scroll.get_v_scroll_bar().size.x
     expect(absf(inventory.get_global_rect().get_center().x - scroll.global_position.x - available_width / 2) <= 1, "Single inventory must recenter in the usable menu area after overflow")
