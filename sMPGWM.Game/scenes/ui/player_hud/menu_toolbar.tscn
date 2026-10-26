@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://cgn2pypx344h0"]
+
+[ext_resource type="Script" uid="uid://jd1h8iboe46b" path="res://Scripts/UiSystem/HudSystem/MenuToolbarControl.cs" id="1_kpmch"]
+[ext_resource type="PackedScene" uid="uid://cwxygnsnchh73" path="res://scenes/ui/base/notification_icon.tscn" id="1_s5idj"]
+[ext_resource type="PackedScene" uid="uid://bxfy1glfrrw6a" path="res://scenes/ui/base/clickable_icon.tscn" id="2_b2eiw"]
+
+[node name="MenuToolbar" type="PanelContainer" unique_id=28515710]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 8
+script = ExtResource("1_kpmch")
+
+[node name="ButtonContainer" type="HBoxContainer" parent="." unique_id=338071028]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="NotificationContainer" type="HBoxContainer" parent="ButtonContainer" unique_id=1246533900]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="NotificationIcon" parent="ButtonContainer/NotificationContainer" unique_id=2048931584 instance=ExtResource("1_s5idj")]
+layout_mode = 2
+
+[node name="MenuSeparator" type="VSeparator" parent="ButtonContainer" unique_id=1731836242]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="MenuButtonContainer" type="HBoxContainer" parent="ButtonContainer" unique_id=148930760]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="InventoryButton" parent="ButtonContainer/MenuButtonContainer" unique_id=624773793 instance=ExtResource("2_b2eiw")]
+layout_mode = 2
+
+[node name="MapButton" parent="ButtonContainer/MenuButtonContainer" unique_id=1888368745 instance=ExtResource("2_b2eiw")]
+layout_mode = 2
+
+[node name="MainMenuButton" parent="ButtonContainer/MenuButtonContainer" unique_id=1338918763 instance=ExtResource("2_b2eiw")]
+layout_mode = 2

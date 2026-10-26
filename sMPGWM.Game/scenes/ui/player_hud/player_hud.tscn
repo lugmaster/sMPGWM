@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://b01bucnvb0gog" path="res://scenes/ui/player_hud/player_stats_panel.tscn" id="1_stats"]
 [ext_resource type="PackedScene" uid="uid://bx0y6mgnv4sxp" path="res://scenes/ui/player_hud/radar_control.tscn" id="2_radar"]
 [ext_resource type="PackedScene" uid="uid://dp0ih827sy63x" path="res://scenes/ui/player_hud/hotbar_control.tscn" id="3_adh7x"]
+[ext_resource type="PackedScene" uid="uid://cgn2pypx344h0" path="res://scenes/ui/player_hud/menu_toolbar.tscn" id="5_emtwj"]
 
 [node name="PlayerHud" type="Control" unique_id=530051118]
 layout_mode = 3
@@ -76,6 +77,7 @@ mouse_filter = 2
 
 [node name="HotbarControl" parent="HotbarAnchor" unique_id=1756593433 instance=ExtResource("3_adh7x")]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(640, 80)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -84,3 +86,25 @@ offset_right = 0.0
 offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="MenuToolbarAnchor" type="Control" parent="." unique_id=2110197295]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -560.0
+offset_bottom = 48.0
+grow_horizontal = 0
+mouse_filter = 2
+
+[node name="MenuToolbar" parent="MenuToolbarAnchor" unique_id=28515710 instance=ExtResource("5_emtwj")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_bottom = 0.0
+offset_left = -220.0
+offset_bottom = 48.0
+grow_horizontal = 0
+grow_vertical = 1

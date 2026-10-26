@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://cotbsfufjg4u8"]
+
+[ext_resource type="Script" uid="uid://tetf0xgwgjsb" path="res://Scripts/UiSystem/MessageStackSystem/MessageListItem.cs" id="1_fq1i6"]
+
+[node name="MessageListItem" type="Button" unique_id=203454938]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fq1i6")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1129192990]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="UnreadIndicator" type="Label" parent="HBoxContainer" unique_id=1751547921]
+layout_mode = 2
+
+[node name="TitelLabel" type="Label" parent="HBoxContainer" unique_id=755340295]
+layout_mode = 2

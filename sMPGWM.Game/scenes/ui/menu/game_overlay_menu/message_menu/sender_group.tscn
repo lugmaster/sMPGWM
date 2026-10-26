@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://b7jflq63ki5vw"]
+
+[ext_resource type="Script" uid="uid://fq37larltvm4" path="res://Scripts/UiSystem/MessageStackSystem/SenderGroup.cs" id="1_mnn5g"]
+[ext_resource type="PackedScene" uid="uid://cotbsfufjg4u8" path="res://scenes/ui/menu/game_overlay_menu/message_menu/message_list_item.tscn" id="1_pruyv"]
+
+[node name="SenderGroup" type="VBoxContainer" unique_id=1602030905]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mnn5g")
+
+[node name="SenderButton" type="Button" parent="." unique_id=1734903420]
+layout_mode = 2
+
+[node name="MessageList" type="VBoxContainer" parent="SenderButton" unique_id=309881122]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MessageListItem" parent="SenderButton/MessageList" unique_id=203454938 instance=ExtResource("1_pruyv")]
+layout_mode = 2

@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://cuv42wybm36aq"]
+
+[ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_ve5mf"]
+[ext_resource type="Script" uid="uid://bblhvhp3uku8a" path="res://Scripts/UiSystem/MessageStackSystem/MessageMenu.cs" id="2_2esi3"]
+[ext_resource type="PackedScene" uid="uid://b7jflq63ki5vw" path="res://scenes/ui/menu/game_overlay_menu/message_menu/sender_group.tscn" id="2_xbyma"]
+[ext_resource type="PackedScene" uid="uid://b225027x658r2" path="res://scenes/ui/menu/game_overlay_menu/message_menu/message_entry.tscn" id="2_xyw6g"]
+
+[node name="GameOverlayMenu" unique_id=1431156458 instance=ExtResource("1_ve5mf")]
+script = ExtResource("2_2esi3")
+
+[node name="MessageContainer" type="HSplitContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=335202504]
+layout_mode = 2
+
+[node name="MessageList" type="ScrollContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer" index="0" unique_id=861009832]
+layout_mode = 2
+
+[node name="SenderList" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer/MessageList" index="0" unique_id=292851001]
+layout_mode = 2
+
+[node name="SenderGroup" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer/MessageList/SenderList" index="0" unique_id=1602030905 instance=ExtResource("2_xbyma")]
+layout_mode = 2
+
+[node name="MessageEntry" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer" index="1" unique_id=1738057739 instance=ExtResource("2_xyw6g")]
+layout_mode = 2

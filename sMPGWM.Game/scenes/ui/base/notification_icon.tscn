@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://cwxygnsnchh73"]
+
+[ext_resource type="Script" uid="uid://cdqk61d82qqan" path="res://Scripts/Util/UiComponents/NotificationIcon.cs" id="1_vkvfo"]
+
+[node name="NotificationIcon" type="Button" unique_id=2048931584]
+custom_minimum_size = Vector2(48, 48)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+expand_icon = true
+script = ExtResource("1_vkvfo")
+
+[node name="QuantityLabel" type="Label" parent="." unique_id=2091475939]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -44.0
+offset_top = -18.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 2
