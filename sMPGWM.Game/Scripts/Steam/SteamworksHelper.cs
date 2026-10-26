@@ -1,6 +1,7 @@
 ﻿using System;
 using Godot;
 using GodotSteam;
+using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
@@ -10,8 +11,6 @@ namespace sMPGWM.Scripts.Steam;
 public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 {
     private const uint SteamAppId = 480;
-    private bool _runSteamEx = true;
-
 
     protected override void OnEnterTree()
     {
@@ -26,7 +25,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
         {
             Logger.Debug(GodotSteam.Steam.IsSteamRunning() ? "Steam is running" : "Steam is not running");
 
-            if (_runSteamEx)
+            if (GameConfig.RunSteamEx)
             {
                 Logger.Debug("Using Steam.SteamInitEx().");
                 InitializeSteamEx();

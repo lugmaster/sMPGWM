@@ -93,6 +93,7 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
             using var defaultFile = FileAccess.Open(FilePaths.SystemConfigPath, FileAccess.ModeFlags.Read);
             using var userFile = FileAccess.Open(FilePaths.UserConfigPath, FileAccess.ModeFlags.Write);
             userFile.StoreString(defaultFile.GetAsText());
+            userFile.Flush();
             
             var loaded = _userConfig.Load(FilePaths.UserConfigPath);
             if (loaded != Error.Ok)

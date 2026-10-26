@@ -16,9 +16,10 @@ config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 
 [autoload]
 
+GameFlowManager="*uid://dnk44tr6vs3ar"
+ConfigLoader="*res://Scripts/GameConfigSystem/ConfigLoader.cs"
 IconDefinitions="*res://Scripts/Util/UiComponents/IconDefinitions.cs"
 SteamworksHelper="*uid://cwgdwq3g3khns"
-GameFlowManager="*uid://dnk44tr6vs3ar"
 
 [display]
 
