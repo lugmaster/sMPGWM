@@ -1,6 +1,6 @@
 # Epic: Inventory, Character Equipment, and Item Hotbar Links
 
-Status: implementation started. INV-01 item metadata/startup category YAML loading, INV-02 inventory state/growth, and INV-03 equipment/atomic transfers are implemented; all 281 NUnit tests pass. INV-04 through INV-10 remain pending. The headless UI architecture smoke previously failed layout assertions; it was not rerun for these domain increments. See the implementation plan for validation details.
+Status: INV-01 through INV-05 are implemented; all 303 NUnit tests and the inventory scene smoke pass. INV-06 through INV-10 remain pending. The headless UI architecture smoke still fails its previously recorded layout assertions. See the implementation plan for validation details.
 
 All ten stories have completed planning refinement. See [inventory-ui-implementation-plan.md](inventory-ui-implementation-plan.md) for story outputs, technical decisions, examples, implementation progress, and checks. Refined does not mean implemented. The implementation plan resolves presentation and interaction details within the requirements below.
 
@@ -8,7 +8,7 @@ All ten stories have completed planning refinement. See [inventory-ui-implementa
 
 Refine the existing inventory and character screen, with domain-owned state and rules, familiar click placement and drag-and-drop, tooltips, stack counts, and hotbar links. Implement metadata and the minimum state operations needed by these interactions; defer actual item gameplay.
 
-INV-01 added the extensible item metadata and domain model. INV-02 added game-owned inventory, immutable storage snapshots, atomic bulk additions, and automatic growth. INV-03 added game-owned equipment and atomic transfer coordination with revision/entity/session validation. INV-04 binds these services to disposable inventory views, generates eight labeled equipment cells and initially 128 empty bag cells, and maintains compact address-preserving projections as state changes. `ItemGrid/SlotGrid` retains six columns and replaces its twelve editor preview cells at runtime. Equipment previews now contain all eight labels. Empty cells have no mock texture, and the shared icon scene has a hidden quantity label prepared for INV-05. Item visuals, pointer interactions, and category/search/sort behavior remain pending.
+INV-01 added the extensible item metadata and domain model. INV-02 added game-owned inventory, immutable storage snapshots, atomic bulk additions, and automatic growth. INV-03 added game-owned equipment and atomic transfer coordination with revision/entity/session validation. INV-04 binds these services to disposable inventory views, generates eight labeled equipment cells and initially 128 empty bag cells, and maintains compact address-preserving projections as state changes. `ItemGrid/SlotGrid` retains six columns and replaces its twelve editor preview cells at runtime. Equipment previews now contain all eight labels. INV-05 renders cached item textures with missing-asset placeholders, delayed tooltips, and bottom-right stack quantities. Empty cells clear prior item display fields. Pointer placement and category/search/sort behavior remain pending.
 
 The existing HUD routes activation through `PlayerActionController` and the player-input policy. Preserve that integration and the existing overlay window system.
 
@@ -157,6 +157,8 @@ Acceptance criteria:
 ### INV-05: Render items, tooltips, and stack counts
 
 Dependencies: INV-01, INV-04.
+
+Implementation: complete. See the implementation plan for formatting, opt-in fixtures, and validation details.
 
 Acceptance criteria:
 - Existing icon controls render supplied item visuals and tooltip content.

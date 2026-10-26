@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using System;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 
 namespace sMPGWM.Scripts.Util.UiComponents;
@@ -19,7 +20,7 @@ public partial class ItemGrid: ScrollContainer
         }
     }
 
-    internal void Render<TBinding>(IReadOnlyList<TBinding> bindings)
+    internal void Render<TBinding>(IReadOnlyList<TBinding> bindings, Action<ClickableIcon, TBinding> render)
     {
         while (_cells.Count > bindings.Count)
         {
@@ -39,8 +40,7 @@ public partial class ItemGrid: ScrollContainer
             }
 
             _cells[index].Binding = bindings[index];
-            _cells[index].IconTexture = null;
-            _cells[index].TooltipText = "";
+            render(_cells[index], bindings[index]);
         }
     }
 }

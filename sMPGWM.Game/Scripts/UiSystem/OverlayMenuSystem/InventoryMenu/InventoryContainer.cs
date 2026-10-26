@@ -35,8 +35,9 @@ public partial class InventoryContainer : VBoxContainer
         _viewState = null!;
     }
 
-    internal void Render(InventorySnapshot snapshot) =>
-        GetNode<ItemGrid>("%ItemGrid").Render(InventoryProjection.Create(snapshot));
+    internal void Render(InventorySnapshot snapshot, ItemVisuals visuals) =>
+        GetNode<ItemGrid>("%ItemGrid").Render(InventoryProjection.Create(snapshot),
+            (icon, binding) => visuals.Apply(icon, binding.Entity));
 
     public override void _ExitTree() => Unbind();
 

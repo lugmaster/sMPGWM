@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-04 implemented. INV-05 through INV-10 remain pending.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-05 implemented. INV-06 through INV-10 remain pending.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -153,6 +153,12 @@ Likely files: existing inventory menu scripts, `ItemGrid`, `IconWithLabel`, fact
 ## INV-05 — Item visuals, tooltips, and quantities
 
 Refinement: complete. Dependencies: INV-01, INV-04.
+
+Implementation: complete (2026-10-26). Shared icons accept generic tooltip/optional `long` quantity display data, with bottom-right badges including one and zero. Decimal truncation abbreviates K/M/B/T/Q/E through `long.MaxValue` without rounding above the quantity. Item presenters supply exact quantities, category/name/description, and configured stack limits; omitted limits read “No configured limit.” A per-window texture cache resolves item paths and supplies a neutral placeholder for missing assets. Empty/rebound cells clear all prior display data. Delayed Godot tooltip popups use a themed, input-ignoring label so visible popups can be explicitly dismissed on rebinding, closure, focus loss, and future placement. Disabled activation retains tooltips.
+
+The opt-in `InventoryVisualSmokeFixture` supplies all eight categories, separate stacks of duplicate definitions, limited/unlimited stacks, a missing icon, and resource quantities totaling `4294967294`. It is loaded only by the inventory smoke script; production startup remains empty. Click placement, drag-and-drop, hotbar composition, and browsing remain subsequent stories.
+
+Validation: all 17 `ItemDisplayTests` and the full 303-case NUnit suite passed; solution build passed with existing warnings. Inventory scene smoke passed at 1280x720 and 1920x1080 across two game lifetimes, checking badge layout/reset, actual pointer hover/click through quantity overlays, delayed tooltips on disabled buttons, and dismissal on focus loss, source rebinding, and closure. Architecture smoke was rerun and still fails its previously recorded window visibility, horizontal centering, and unnecessary scrollbar assertions. Interactive visual inspection was not performed. Logs: `artifacts/inventory-inv05-*.log`.
 
 ### Output and implementation steps
 
@@ -316,7 +322,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-02 Inventory state | Complete | Complete |
 | INV-03 Equipment/transfers | Complete | Complete |
 | INV-04 Scenes/empty slots | Complete | Complete |
-| INV-05 Tooltips/counts | Complete | Not started |
+| INV-05 Tooltips/counts | Complete | Complete |
 | INV-06 Click placement | Complete | Not started |
 | INV-07 Drag-and-drop | Complete | Not started |
 | INV-08 Hotbar links | Complete | Not started |

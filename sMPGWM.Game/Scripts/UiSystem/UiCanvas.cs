@@ -92,6 +92,7 @@ public partial class UiCanvas : CanvasLayer
         if (what == NotificationApplicationFocusOut || what == NotificationWMWindowFocusOut)
         {
             _hasApplicationFocus = false;
+            _inventoryMenu?.DismissTooltips();
             InventoryEditAvailabilityChanged?.Invoke(false);
         }
         else if (what == NotificationApplicationFocusIn || what == NotificationWMWindowFocusIn)

@@ -19,7 +19,7 @@ public partial class EquipmentContainer : GridContainer
         }
     }
 
-    internal void Render(IReadOnlyList<EquipmentSlotDefinition> definitions, EquipmentSnapshot snapshot)
+    internal void Render(IReadOnlyList<EquipmentSlotDefinition> definitions, EquipmentSnapshot snapshot, ItemVisuals visuals)
     {
         for (var index = 0; index < definitions.Count; index++)
         {
@@ -34,8 +34,7 @@ public partial class EquipmentContainer : GridContainer
 
             var icon = _cells[index].Cell;
             icon.Binding = new EquipmentCellBinding(definition.Key, snapshot.Slots[index], snapshot.Revision);
-            icon.IconTexture = null;
-            icon.TooltipText = definition.DisplayName;
+            visuals.Apply(icon, snapshot.Slots[index], definition.DisplayName);
         }
     }
 }

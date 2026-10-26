@@ -15,6 +15,73 @@ func settle() -> void:
     for frame in range(6):
         await process_frame
 
+func tooltip_visible(node: Node) -> bool:
+    if node is Label and node.is_visible_in_tree() and node.text.contains("Development visual fixture."):
+        return true
+    for child in node.get_children(true):
+        if tooltip_visible(child):
+            return true
+    return false
+
+func verify_visual_pointer(canvas: Node, row: Node, fixture: RefCounted) -> void:
+    var grid := row.get_child(0).get_node("%InventoryContainer").get_node("%ItemGrid").get_node("%SlotGrid")
+    var cell := grid.get_child(7) as Button
+    var overlay := cell.get_node("QuantityLabel") as Label
+    var motion := InputEventMouseMotion.new()
+    motion.position = overlay.get_global_rect().get_center()
+    root.push_input(motion)
+    await settle()
+    expect(root.gui_get_hovered_control() == cell, "Quantity overlay must pass pointer hover to its icon")
+    await create_timer(1.0).timeout
+    expect(tooltip_visible(root), "Hover must display the standard delayed item tooltip")
+    canvas.notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+    await settle()
+    expect(not tooltip_visible(root), "Focus loss must dismiss the visible item tooltip")
+    canvas.notification(NOTIFICATION_APPLICATION_FOCUS_IN)
+    motion.position = Vector2.ZERO
+    root.push_input(motion)
+    await settle()
+    motion.position = cell.get_global_rect().get_center()
+    root.push_input(motion)
+    cell.disabled = true
+    await create_timer(1.0).timeout
+    expect(tooltip_visible(root), "Disabled activation must retain tooltip availability after focus recovery")
+    cell.disabled = false
+    var presses := [0]
+    cell.pressed.connect(func(): presses[0] += 1)
+    var click := InputEventMouseButton.new()
+    click.position = overlay.get_global_rect().get_center()
+    click.button_index = MOUSE_BUTTON_LEFT
+    click.pressed = true
+    root.push_input(click)
+    click = click.duplicate()
+    click.pressed = false
+    root.push_input(click)
+    await settle()
+    expect(presses[0] == 1, "Quantity overlay must allow a single native button click")
+    motion.position = Vector2.ZERO
+    root.push_input(motion)
+    await settle()
+    motion.position = cell.get_global_rect().get_center()
+    root.push_input(motion)
+    await create_timer(1.0).timeout
+    expect(tooltip_visible(root), "Tooltip must remain available after clicking")
+    expect(fixture.call("MoveSource"), "Source move fixture must commit")
+    await settle()
+    expect(not tooltip_visible(root), "Rebinding a hovered source must dismiss its old tooltip")
+    motion.position = Vector2.ZERO
+    root.push_input(motion)
+    await settle()
+    motion.position = cell.get_global_rect().get_center()
+    root.push_input(motion)
+    await create_timer(1.0).timeout
+    expect(tooltip_visible(root), "Rebound cell must show the new item's tooltip")
+    canvas.call("CloseMenu", 0)
+    await settle()
+    expect(not tooltip_visible(root), "Closing inventory must dismiss the visible item tooltip")
+    canvas.call("OpenMenu", 0)
+    await settle()
+
 func verify_cells(menu: Node) -> void:
     var equipment := menu.get_node("%EquipmentContainer")
     var bag := menu.get_node("%InventoryContainer").get_node("%ItemGrid")
@@ -74,6 +141,12 @@ func run() -> void:
         await verify_cells(row.get_child(0))
         var fixture = load("res://Scripts/Util/Mocks/InventorySlotSmokeFixture.cs").new()
         expect(fixture.call("Run", game), "Live growth, compact transfer bindings, and detached subscriptions must pass")
+        var visuals = load("res://Scripts/Util/Mocks/InventoryVisualSmokeFixture.cs").new()
+        visuals.call("Show", game)
+        await settle()
+        await verify_visual_pointer(canvas, row, visuals)
+        expect(visuals.call("Verify", game), "Item visuals, quantity layout, and display reset must pass")
+        visuals.call("Restore", game)
         game.queue_free()
         await settle()
     if failures == 0:

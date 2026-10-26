@@ -15,6 +15,7 @@ public partial class InventoryMenu : GameOverlayMenu
     private InventoryViewState _viewState = null!;
     private InventoryContainer _inventoryView = null!;
     private EquipmentContainer _equipmentView = null!;
+    private ItemVisuals _visuals = null!;
 
     internal void Bind(InventoryImpl inventoryImpl, EquipmentImpl equipmentImpl,
         InventoryViewState state)
@@ -22,6 +23,7 @@ public partial class InventoryMenu : GameOverlayMenu
         Unbind();
         _inventory = inventoryImpl;
         _equipment = equipmentImpl;
+        _visuals = new ItemVisuals(inventoryImpl.Catalog);
         _viewState = state;
         if (IsNodeReady()) BindViews();
     }
@@ -45,11 +47,19 @@ public partial class InventoryMenu : GameOverlayMenu
 
     internal void Unbind()
     {
+        DismissTooltips();
         if (_inventory != null) _inventory.Changed -= RefreshInventory;
         if (_equipment != null) _equipment.Changed -= RefreshEquipment;
         _inventoryView?.Unbind();
         _inventory = null;
         _equipment = null;
+    }
+
+    internal void DismissTooltips()
+    {
+        if (!IsNodeReady()) return;
+        foreach (var icon in FindChildren("*", "Button", true, false))
+            if (icon is ClickableIcon cell) cell.DismissTooltip();
     }
 
     public override void _ExitTree()
@@ -58,6 +68,6 @@ public partial class InventoryMenu : GameOverlayMenu
         base._ExitTree();
     }
 
-    private void RefreshInventory(InventorySnapshot snapshot) => _inventoryView.Render(snapshot);
-    private void RefreshEquipment(EquipmentSnapshot snapshot) => _equipmentView.Render(_equipment!.Definitions, snapshot);
+    private void RefreshInventory(InventorySnapshot snapshot) => _inventoryView.Render(snapshot, _visuals);
+    private void RefreshEquipment(EquipmentSnapshot snapshot) => _equipmentView.Render(_equipment!.Definitions, snapshot, _visuals);
 }

@@ -28,7 +28,7 @@
 
 Windows use an `HBoxContainer` inside a `ScrollContainer`. The row is centered horizontally with a 24-pixel gap, and each window is centered vertically. Windows remain in opening order; closing and reopening one appends it on the right. Opening, closing, content size changes, and viewport resizing automatically update placement. Rows wider than the viewport scroll horizontally without shrinking windows; focused windows scroll into view. Empty rows are hidden so the scroll container does not intercept HUD or world input.
 
-Placement changes are immediate. Dragging, resizing, modal dialogs, and item dragging are deferred.
+Placement changes are immediate. Window dragging, resizing, and modal dialogs are deferred. Item pointer placement follows in INV-06/INV-07.
 
 ## Inventory view binding
 
@@ -36,7 +36,9 @@ Placement changes are immediate. Dragging, resizing, modal dialogs, and item dra
 
 `InventoryProjection` packs occupied entries in storage order, followed by genuine empty addresses. Each cell retains an immutable binding with its actual address/slot key, entity expectation, and revision. `ItemGrid` reuses controls during refresh and appends cells on growth. Equipment labels come from domain slot definitions through the existing labeled-icon scene/provider. Generic icons accept opaque bindings without querying gameplay services.
 
-Inventory-specific lifecycle and application focus authorize/revoke domain edit sessions independently of other blocking windows. Map alone does not authorize inventory edits. The public canvas boundary remains its four menu operations. INV-04 prepares empty cells and quantity-label nodes; item visuals, placement, and category/search/sort behavior follow in subsequent stories. The opt-in `InventorySlotSmokeFixture` is loaded only by `sMPGWM.Tests/UiSystem/inventory_smoke.gd`; normal startup remains empty.
+Inventory-specific lifecycle and application focus authorize/revoke domain edit sessions independently of other blocking windows. Map alone does not authorize inventory edits. The public canvas boundary remains its four menu operations. INV-05 adds cached item textures, neutral missing-icon placeholders, tooltips, and bottom-right quantities through generic `ClickableIcon.SetDisplay` input. Stackable items show quantities including one; nonstackable and empty cells have no badge. Large counts truncate to compact labels through the full `long` range, while tooltips retain exact quantities and configured stack-limit information. The delayed Godot popup uses an input-ignoring themed label and is dismissed on rebinding, focus loss, or closure; `DismissTooltip` is available for subsequent placement integration. Tooltip data remains available with activation disabled.
+
+The opt-in `InventorySlotSmokeFixture` and `InventoryVisualSmokeFixture` are loaded only by `sMPGWM.Tests/UiSystem/inventory_smoke.gd`; normal startup remains empty. The visual fixture includes every category, limited and unlimited stacks, duplicate definitions in separate stacks, missing icons, and quantities beyond `int.MaxValue`. Placement and category/search/sort behavior follow in subsequent stories.
 
 ## Adding features
 
