@@ -1,6 +1,7 @@
 using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Tests.FileLoader;
 
@@ -13,7 +14,12 @@ public sealed class ItemCategoryLoadingTests
         var result = Load(ReadGameData("ItemCategoryDefinitions.yml"));
 
         Assert.That(result.IsSuccess, Is.True, result.Error?.ToDisplayString());
-        Assert.That(result.Value!.All, Is.EqualTo(ItemCategories.CreateDefault().All));
+        Assert.That(result.Value!.All.Select(category =>
+                (category.Id, category.DisplayName, category.DisplayOrder, category.CanStack)),
+            Is.EqualTo(ItemCategories.CreateDefault().All.Select(category =>
+                (category.Id, category.DisplayName, category.DisplayOrder, category.CanStack))));
+        Assert.That(result.Value.All.All(category => Icons.IsDefined(category.IconKey!)), Is.True);
+        Assert.That(result.Value.Get(ItemCategories.Resource).IconKey, Is.EqualTo("Alchemy.Arsenic"));
     }
 
     [Test]
@@ -97,6 +103,48 @@ public sealed class ItemCategoryLoadingTests
         Assert.That(first.Value!.Get(ItemCategories.Engine).DisplayName, Is.EqualTo("Engine"));
         Assert.That(second.Value!.Get(ItemCategories.Engine).DisplayName, Is.EqualTo("Modified Engine"));
         Assert.That(second.Value, Is.Not.SameAs(first.Value));
+    }
+
+    [TestCase("Alchemy.Arsenic", true)]
+    [TestCase("Travel.CarVeichleEngine", true)]
+    [TestCase("Alchemy.Unknown", false)]
+    [TestCase("Unknown.Arsenic", false)]
+    [TestCase("alchemy.Arsenic", false)]
+    [TestCase("Icons.Alchemy.Arsenic", false)]
+    [TestCase("Alchemy", false)]
+    [TestCase("Alchemy.", false)]
+    [TestCase("", false)]
+    [TestCase(null, false)]
+    public void IconKeys_MatchPublicRegistryPropertiesExactly(string? key, bool expected)
+    {
+        Assert.That(Icons.IsDefined(key!), Is.EqualTo(expected));
+        if (!expected)
+            Assert.Throws<ArgumentException>(() => Icons.Get(key!));
+    }
+
+    [TestCase("Arsenic")]
+    [TestCase("Alchemy.")]
+    [TestCase(" ")]
+    public void MalformedIconKey_FailsSchemaValidation(string key)
+    {
+        var data = PackagedToken();
+        data["Categories"]![0]!["Icon"] = key;
+
+        AssertLoadFailure(data.ToString());
+    }
+
+    [Test]
+    public void OptionalIcon_CanBeOmittedOrNull()
+    {
+        var data = PackagedToken();
+        ((JObject)data["Categories"]![0]!).Remove("Icon");
+        data["Categories"]![1]!["Icon"] = JValue.CreateNull();
+
+        var result = Load(data.ToString());
+
+        Assert.That(result.IsSuccess, Is.True, result.Error?.ToDisplayString());
+        Assert.That(result.Value!.Get(ItemCategories.Engine).IconKey, Is.Null);
+        Assert.That(result.Value.Get(ItemCategories.Hull).IconKey, Is.Null);
     }
 
     private static LoadResult<ItemCategories> Load(string yaml)

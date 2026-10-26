@@ -12,6 +12,7 @@ public sealed record ItemCategory
     public string DisplayName { get; }
     public int DisplayOrder { get; }
     public string? IconAssetPath { get; }
+    public string? IconKey { get; init; }
     public bool CanStack { get; }
 
     public ItemCategory(ItemCategoryId id, string displayName, int displayOrder, bool canStack,

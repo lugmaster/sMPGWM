@@ -41,6 +41,8 @@ Category loading follow-up (2026-10-26): `assets/game_data/ItemCategoryDefinitio
 
 Follow-up validation: all 16 `ItemCategoryLoadingTests` passed; the full NUnit suite passed all 168 cases. The headless `ui_architecture_smoke.gd` run confirmed successful default copying and startup loading across game lifetimes, but exited with window visibility, horizontal centering, and scrollbar assertion failures. These UI layout assertions remain unresolved; category loading produced no errors.
 
+Category icon follow-up: YAML accepts optional `Icon: Alchemy.Arsenic` references to the public nested properties in `Icons`. All eight packaged categories now specify icons. Startup resolves these references into `GamePlayManager.CategoryIcons`, keyed by category ID, before publishing the loaded catalogs or activating gameplay. Unknown keys abort loading with category/source details. Domain categories retain only the string `IconKey`, keeping textures in the integration layer. Existing user YAML files are preserved: add the new `Icon` entries there or enable `config.reload_config_on_start` to copy updated defaults. Validation: all 30 category-loading cases and all 182 NUnit cases passed; `git diff --check` passed. No new scene smoke run was performed for this follow-up.
+
 ### Output and implementation steps
 
 1. Replace the enum-only category vocabulary with a small immutable category catalog. Use stable string-backed category IDs, not enum ordinals or display labels. Initial IDs: `engine`, `hull`, `shield_generator`, `reactor`, `light_weapon`, `heavy_weapon`, `consumable`, `resource`.

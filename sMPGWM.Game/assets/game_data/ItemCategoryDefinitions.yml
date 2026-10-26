@@ -1,33 +1,41 @@
 Categories:
   - Id: engine
     DisplayName: Engine
+    Icon: Travel.CarVeichleEngine
     DisplayOrder: 0
     CanStack: false
   - Id: hull
     DisplayName: Hull
+    Icon: Travel.SpaceshipJetShooter
     DisplayOrder: 1
     CanStack: false
   - Id: shield_generator
     DisplayName: Shield Generator
+    Icon: RPG.ItemStatShieldDefenseArmor
     DisplayOrder: 2
     CanStack: false
   - Id: reactor
     DisplayName: Reactor
+    Icon: Weather.AtomicEnergyNuclearPowerPlant
     DisplayOrder: 3
     CanStack: false
   - Id: light_weapon
     DisplayName: Light Weapon
+    Icon: Warfare.WeaponPistolGunSidearm
     DisplayOrder: 4
     CanStack: false
   - Id: heavy_weapon
     DisplayName: Heavy Weapon
+    Icon: Warfare.WeaponRocketLauncherRPG
     DisplayOrder: 5
     CanStack: false
   - Id: consumable
     DisplayName: Consumable
+    Icon: Alchemy.PotionVialBottleHeartHealthLifeFull
     DisplayOrder: 6
     CanStack: true
   - Id: resource
     DisplayName: Resource
+    Icon: Alchemy.Arsenic
     DisplayOrder: 7
     CanStack: true

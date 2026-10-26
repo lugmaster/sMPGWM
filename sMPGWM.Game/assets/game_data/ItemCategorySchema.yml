@@ -30,3 +30,6 @@ properties:
           type: boolean
         IconAssetPath:
           type: [string, 'null']
+        Icon:
+          type: [string, 'null']
+          pattern: '^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$'

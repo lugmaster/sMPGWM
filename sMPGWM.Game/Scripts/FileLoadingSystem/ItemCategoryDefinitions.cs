@@ -11,7 +11,10 @@ public sealed record ItemCategoryDefinition(
     string DisplayName,
     int DisplayOrder,
     bool CanStack,
-    string? IconAssetPath = null);
+    string? IconAssetPath = null)
+{
+    public string? Icon { get; init; }
+}
 
 public sealed record ItemCategoryDefinitions(ItemCategoryDefinition[] Categories)
 {
@@ -22,7 +25,10 @@ public sealed record ItemCategoryDefinitions(ItemCategoryDefinition[] Categories
             ArgumentNullException.ThrowIfNull(Categories);
             return LoadResult<ItemCategories>.Success(new ItemCategories(Categories.Select(definition =>
                 new ItemCategory(new ItemCategoryId(definition.Id), definition.DisplayName,
-                    definition.DisplayOrder, definition.CanStack, definition.IconAssetPath))));
+                    definition.DisplayOrder, definition.CanStack, definition.IconAssetPath)
+                {
+                    IconKey = definition.Icon
+                })));
         }
         catch (ArgumentException exception)
         {

@@ -1,7 +1,35 @@
+#nullable enable
+
+using System;
+using System.Reflection;
+
 namespace sMPGWM.Scripts.Util.UiComponents;
 
 public static class Icons
 {
+    public static bool IsDefined(string key) => FindProperty(key) != null;
+
+    public static IconDefinition Get(string key)
+    {
+        var property = FindProperty(key)
+            ?? throw new ArgumentException($"Unknown icon key: {key}.", nameof(key));
+        return property.GetMethod!.CreateDelegate<Func<IconDefinition>>()();
+    }
+
+    private static PropertyInfo? FindProperty(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return null;
+
+        var separator = key.IndexOf('.');
+        if (separator <= 0 || separator == key.Length - 1)
+            return null;
+
+        var group = typeof(Icons).GetNestedType(key[..separator], BindingFlags.Public);
+        var property = group?.GetProperty(key[(separator + 1)..], BindingFlags.Public | BindingFlags.Static);
+        return property?.PropertyType == typeof(IconDefinition) ? property : null;
+    }
+
     internal static IconDefinition[] LoadDefinitions(out IconAtlasProvider atlasProvider)
     {
         atlasProvider = new IconAtlasProvider(

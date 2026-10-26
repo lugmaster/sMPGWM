@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Godot;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
@@ -6,6 +8,7 @@ using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
+using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
@@ -21,6 +24,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     public MainGameState GameState => _gameState;
     public ItemCategories ItemCategories { get; private set; } = null!;
+    public IReadOnlyDictionary<ItemCategoryId, IconDefinition> CategoryIcons { get; private set; } = null!;
 
     protected override void OnReady()
     {
@@ -40,7 +44,27 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
             return;
         }
 
-        ItemCategories = categoriesResult.Value!;
+        var categoryIcons = new Dictionary<ItemCategoryId, IconDefinition>();
+        foreach (var category in categoriesResult.Value!.All)
+        {
+            if (category.IconKey is null)
+                continue;
+
+            try
+            {
+                categoryIcons.Add(category.Id, Icons.Get(category.IconKey));
+            }
+            catch (ArgumentException exception)
+            {
+                FileLoader.AbortLoad(new DataLoadError("Invalid category icon",
+                    $"Category {category.Id}: {exception.Message}", FilePaths.UserItemCategoryDataYaml,
+                    FilePaths.ItemCategoryDataYamlSchema, exception));
+                return;
+            }
+        }
+
+        ItemCategories = categoriesResult.Value;
+        CategoryIcons = new ReadOnlyDictionary<ItemCategoryId, IconDefinition>(categoryIcons);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
         _inputController = InputController.Instance;
@@ -64,6 +88,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     protected override void OnExitTree()
     {
         ItemCategories = null!;
+        CategoryIcons = null!;
         if (_playerActions is null)
             return;
 
