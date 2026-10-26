@@ -15,10 +15,10 @@ script = ExtResource("1_i0le5")
 
 [node name="Label" type="Label" parent="." unique_id=1236882631]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(128, 44)
+custom_minimum_size = Vector2(107, 37)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "Label"
 horizontal_alignment = 1
 vertical_alignment = 1

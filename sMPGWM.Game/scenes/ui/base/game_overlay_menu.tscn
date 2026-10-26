@@ -3,12 +3,29 @@
 [ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/base/base_menu.tscn" id="1_u3tyy"]
 [ext_resource type="Script" uid="uid://xdhj3fyro68e" path="res://Scripts/Util/UiComponents/GameOverlayMenu.cs" id="2_u7kbo"]
 
+[sub_resource type="Theme" id="Theme_overlay"]
+default_font_size = 13
+
 [node name="GameOverlayMenu" unique_id=1431156458 instance=ExtResource("1_u3tyy")]
+theme = SubResource("Theme_overlay")
 script = ExtResource("2_u7kbo")
+
+[node name="MarginContainer" parent="CenterContainer/MenuPanel" index="0"]
+theme_override_constants/margin_left = 27
+theme_override_constants/margin_top = 27
+theme_override_constants/margin_right = 27
+theme_override_constants/margin_bottom = 27
+
+[node name="RootContent" parent="CenterContainer/MenuPanel/MarginContainer" index="0"]
+custom_minimum_size = Vector2(433, 0)
+theme_override_constants/separation = 20
+
+[node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0"]
+theme_override_font_sizes/font_size = 35
 
 [node name="CloseButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="1" unique_id=334895891]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "X"

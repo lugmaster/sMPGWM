@@ -44,7 +44,7 @@ public partial class InventoryContainer : VBoxContainer
             _tabs.AddTab(category.DisplayName, ItemIconResolver.Category(category));
             var index = _tabs.TabCount - 1;
             _tabs.SetTabMetadata(index, category.Id.Value);
-            _tabs.SetTabIconMaxWidth(index, 16);
+            _tabs.SetTabIconMaxWidth(index, 14);
         }
         state.SelectedTab = Math.Clamp(state.SelectedTab, 0, _tabs.TabCount - 1);
         _sort.Clear();

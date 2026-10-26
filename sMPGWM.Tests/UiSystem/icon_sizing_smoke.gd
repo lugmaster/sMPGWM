@@ -40,18 +40,18 @@ func run() -> void:
         var canvas := game.get_node("UiCanvas")
         var hotbar := canvas.get_node("%PlayerHud").get_node("%HotbarControl")
         var hotbar_cells := hotbar.get_node("%ButtonContainer").get_children()
-        await verify_sizes(hotbar_cells, Vector2(72, 72), "Hotbar")
+        await verify_sizes(hotbar_cells, Vector2(64, 64), "Hotbar")
         canvas.call("OpenMenu", 0)
         await settle()
         var row := canvas.get_node("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")
         var menu := row.get_child(0)
         var bag_cells := menu.get_node("%InventoryContainer").get_node("%ItemGrid").get_node("%SlotGrid").get_children()
-        await verify_sizes(bag_cells, Vector2(56, 56), "Inventory")
+        await verify_sizes(bag_cells, Vector2(48, 48), "Inventory")
         var equipment_cells: Array = []
         for slot in menu.get_node("%EquipmentContainer").get_children():
             equipment_cells.append(slot.get_node("%ClickableIcon"))
-        await verify_sizes(equipment_cells, Vector2(56, 56), "Equipment")
-        await verify_sizes(hotbar_cells, Vector2(72, 72), "Hotbar with inventory open")
+        await verify_sizes(equipment_cells, Vector2(48, 48), "Equipment")
+        await verify_sizes(hotbar_cells, Vector2(64, 64), "Hotbar with inventory open")
         game.queue_free()
         await settle()
     if failures == 0:

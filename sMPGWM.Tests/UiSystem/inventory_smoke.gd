@@ -521,7 +521,11 @@ func verify_window_overflow(canvas: Node, row: HBoxContainer) -> void:
     canvas.call("OpenMenu", 1)
     canvas.call("OpenMenu", 2)
     await settle()
-    expect(scroll.get_h_scroll_bar().visible, "Three windows must overflow horizontally at both supported resolutions")
+    var row_available_width := scroll.size.x
+    if scroll.get_v_scroll_bar().visible:
+        row_available_width -= scroll.get_v_scroll_bar().size.x
+    expect(scroll.get_h_scroll_bar().visible == (row.get_combined_minimum_size().x > row_available_width),
+        "Horizontal scrolling must match whether the smaller windows fit in the menu area")
     expect(inventory.size == inventory_size, "Horizontal overflow must not shrink inventory")
     for index in [2, 0, 1]:
         canvas.call("OpenMenu", index)

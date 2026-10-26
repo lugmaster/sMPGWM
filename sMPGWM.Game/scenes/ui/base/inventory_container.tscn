@@ -11,7 +11,7 @@ script = ExtResource("1_74jvx")
 [node name="CategoryTabs" type="TabBar" parent="." unique_id=552793215]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/icon_max_width = 20
+theme_override_constants/icon_max_width = 17
 current_tab = 0
 tab_count = 1
 tab_0/title = "All"
@@ -21,5 +21,5 @@ layout_mode = 2
 
 [node name="ItemGrid" parent="." unique_id=931566361 instance=ExtResource("4_otley")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(404, 400)
+custom_minimum_size = Vector2(337, 333)
 layout_mode = 2

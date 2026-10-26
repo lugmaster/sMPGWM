@@ -9,9 +9,9 @@ public static class IconSizeExtensions
     {
         return size switch
         {
-            IconSize.Small => 32,
-            IconSize.Medium => 48,
-            IconSize.Large => 64,
+            IconSize.Small => 24,
+            IconSize.Medium => 40,
+            IconSize.Large => 56,
             _ => throw new ArgumentOutOfRangeException(nameof(size), size, null)
         };
     }

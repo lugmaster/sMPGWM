@@ -65,7 +65,7 @@ func expect_row_layout(scroll: ScrollContainer, row: HBoxContainer, centered: bo
         expect(absf(window.position.y + window.size.y / 2 - row.size.y / 2) <= 1, "Window should be vertically centered")
         if index > 0:
             var previous := children[index - 1] as Control
-            expect(absf(window.position.x - previous.position.x - previous.size.x - 24) <= 1, "Adjacent windows should have a 24-pixel gap")
+            expect(absf(window.position.x - previous.position.x - previous.size.x - 20) <= 1, "Adjacent windows should have a 20-pixel gap")
             expect(not previous.get_rect().intersects(window.get_rect()), "Windows should never overlap")
         if centered:
             expect_window_visible(scroll, window)

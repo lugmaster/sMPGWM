@@ -15,22 +15,22 @@ text = "Inventory"
 [node name="MainLayout" type="HBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=523829343]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 24
+theme_override_constants/separation = 20
 
 [node name="CharacterSection" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout" index="0" unique_id=219675959]
 layout_mode = 2
 
 [node name="EquipmentTitle" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection" index="0" unique_id=547703707]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 17
 text = "Equipment"
 horizontal_alignment = 1
 
 [node name="EquipmentContainer" type="GridContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MainLayout/CharacterSection" index="1" unique_id=133865936]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 16
-theme_override_constants/v_separation = 12
+theme_override_constants/h_separation = 13
+theme_override_constants/v_separation = 10
 columns = 2
 script = ExtResource("3_tkc35")
 
