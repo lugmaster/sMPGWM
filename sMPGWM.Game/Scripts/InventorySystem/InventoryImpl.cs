@@ -150,6 +150,8 @@ public sealed class InventoryImpl : IDisposable
             try { observer(Snapshot); }
             catch (Exception exception)
             {
+                // TODO: Add subscriber recovery through its owner (rebuild or disable a failed view).
+                // Preserve committed state and remaining notifications; also surface error-reporter failures.
                 try { _reportObserverError?.Invoke(exception); }
                 catch (Exception) { }
             }

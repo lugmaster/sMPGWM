@@ -267,6 +267,36 @@ public class EquipmentTransferTests
         Assert.That(notifications, Is.EqualTo(2));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    [NonParallelizable]
+    public void EquipmentObserverFailure_WritesFallbackAndContinuesNotifications(bool reporterThrows)
+    {
+        var observerFailure = new InvalidOperationException("equipment subscriber failed");
+        var reporterFailure = new InvalidOperationException("equipment reporter failed");
+        using var equipment = new EquipmentImpl(_catalog,
+            reporterThrows ? _ => throw reporterFailure : null);
+        var notified = false;
+        equipment.Changed += _ => throw observerFailure;
+        equipment.Changed += snapshot => notified = ReferenceEquals(snapshot, equipment.Snapshot);
+        var originalError = Console.Error;
+        using var output = new System.IO.StringWriter();
+        try
+        {
+            Console.SetError(output);
+            Assert.DoesNotThrow(equipment.NotifyObservers);
+        }
+        finally
+        {
+            Console.SetError(originalError);
+        }
+
+        Assert.That(notified, Is.True);
+        Assert.That(output.ToString(), Does.Contain(observerFailure.ToString()));
+        if (reporterThrows)
+            Assert.That(output.ToString(), Does.Contain(reporterFailure.ToString()));
+    }
+
     [Test]
     public void FullInventory_RejectsIllegalSwapWithoutGrowingOrAutoRouting()
     {

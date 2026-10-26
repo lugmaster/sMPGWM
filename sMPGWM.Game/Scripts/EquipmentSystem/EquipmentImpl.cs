@@ -68,8 +68,22 @@ public sealed class EquipmentImpl : IDisposable
             try { observer(Snapshot); }
             catch (Exception exception)
             {
-                try { _reportObserverError?.Invoke(exception); }
-                catch (Exception) { }
+                // TODO: Add subscriber recovery through its owner (rebuild or disable a failed view).
+                // Reporting alone does not recover it; preserve committed state and notify remaining subscribers.
+                // State is already committed; a broken subscriber must not prevent other notifications.
+                if (_reportObserverError is null)
+                {
+                    Console.Error.WriteLine($"Equipment observer failed: {exception}");
+                    continue;
+                }
+
+                try { _reportObserverError(exception); }
+                catch (Exception reportingException)
+                {
+                    // Bypass the failed reporter and preserve both exceptions for diagnosis.
+                    Console.Error.WriteLine($"Equipment observer failed: {exception}{Environment.NewLine}" +
+                        $"Equipment observer error reporter also failed: {reportingException}");
+                }
             }
         }
     }
