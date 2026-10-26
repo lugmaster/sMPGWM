@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-06 implemented. INV-07 through INV-10 remain pending.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-07 implemented. INV-08 through INV-10 remain pending.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -207,6 +207,10 @@ Validation: the focused `ItemInteractionControllerTests` passed all 10 cases; th
 
 Refinement: complete. Dependency: INV-06.
 
+Implementation: complete (2026-10-26). Inventory/equipment icons forward native drag callbacks to the menu adapter through `SetDragForwarding`, keeping reusable icons independent of item services. The interaction controller retains the typed source and issues opaque single-use tokens; hover validation is read-only, and drop commits revalidate session, revisions, identities, and compatibility through the existing transfer coordinator. Godot owns the drag threshold and pointer-ignoring preview. All drag ends clear carrying; view/state/session changes cancel native dragging immediately. Drag releases do not also pick up or press a button. Wheel scrolling remains available. Inventory keeps the user-selected eight-column layout; smoke expectations and epic defaults now match it.
+
+Validation: all 18 `ItemInteractionControllerTests` and the full 321-case NUnit suite passed; solution build and `git diff --check` passed. Native scene smoke passed at 1280x720 and 1920x1080 across two game lifetimes, using real pointer movement across the Godot drag threshold. It covers valid equipment placement, incompatible slots, full-stack rejection, partial merges, single commit/no button release, outside cancellation, focus loss, mapping changes, wheel scrolling during dragging, close/reopen, and Escape, alongside existing click/visual/lifecycle checks. Architecture smoke was rerun and retains its existing window visibility, horizontal centering, and unnecessary scrollbar failures. Interactive visual inspection was not performed. Logs: `artifacts/inventory-inv07-*.log`.
+
 ### Output and implementation steps
 
 1. Adapt Godot `_GetDragData`, `_CanDropData`, and `_DropData` through a small item-slot-specific adapter around the existing icon controls. Keep reusable `ClickableIcon` free of inventory/equipment service dependencies; use a presentation adapter/subclass or forwarded delegates rather than another unrelated widget system.
@@ -328,7 +332,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-04 Scenes/empty slots | Complete | Complete |
 | INV-05 Tooltips/counts | Complete | Complete |
 | INV-06 Click placement | Complete | Complete |
-| INV-07 Drag-and-drop | Complete | Not started |
+| INV-07 Drag-and-drop | Complete | Complete |
 | INV-08 Hotbar links | Complete | Not started |
 | INV-09 Browsing/compact results | Complete | Not started |
 | INV-10 Integration checks | Complete | Not started |

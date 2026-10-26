@@ -53,6 +53,76 @@ public class ItemInteractionControllerTests
         _controller.Click(target, _inventory.Revision, _equipment.Revision, mapping);
 
     [Test]
+    public void NativeDrag_HoverIsReadOnlyAndTokenCommitsOnlyOnce()
+    {
+        Seed(("engine", 1));
+        var before = _inventory.Snapshot;
+        var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+        Assert.That(token, Is.Not.EqualTo(Guid.Empty));
+        for (var index = 0; index < 3; index++)
+        {
+            Assert.That(_controller.ValidateDrag(token, Slot("hull")), Is.EqualTo(TransferResult.IncompatiblePlacement));
+            Assert.That(_controller.ValidateDrag(token, Slot("engine")), Is.EqualTo(TransferResult.Success));
+        }
+        Assert.That(_inventory.Snapshot, Is.SameAs(before));
+        Assert.That(_controller.Drop(token, Slot("engine")), Is.EqualTo(TransferResult.Success));
+        Assert.That(_controller.Drop(token, Bag(1)), Is.Null);
+        Assert.That(_inventory.Revision, Is.EqualTo(before.Revision + 1));
+        Assert.That(_controller.IsCarrying, Is.False);
+    }
+
+    [TestCase("hull", TransferResult.IncompatiblePlacement)]
+    [TestCase("engine", TransferResult.Success)]
+    public void NativeDrag_AlwaysEndsCarrying(string slot, TransferResult expected)
+    {
+        Seed(("engine", 1));
+        var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+        Assert.That(_controller.Drop(token, Slot(slot)), Is.EqualTo(expected));
+        Assert.That(_controller.IsCarrying, Is.False);
+        Assert.That(_inventory.Snapshot.Slots[0] != null, Is.EqualTo(expected != TransferResult.Success));
+    }
+
+    [TestCase("cancel")]
+    [TestCase("session")]
+    [TestCase("mapping")]
+    [TestCase("revision")]
+    public void NativeDrag_InvalidatedTokensCannotCommit(string reason)
+    {
+        Seed(("engine", 1));
+        var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+        switch (reason)
+        {
+            case "cancel": _controller.Cancel(); break;
+            case "session": _controller.SetSession(_transfers.OpenEditSession()); break;
+            case "mapping": _controller.Refresh(_inventory.Revision, _equipment.Revision, 1); break;
+            case "revision": _inventory.Add(new ItemDefinitionId("engine"), 1); break;
+        }
+        var before = _inventory.Snapshot;
+        Assert.That(_controller.Drop(token, Slot("engine")), Is.Not.EqualTo(TransferResult.Success));
+        Assert.That(_inventory.Snapshot, Is.SameAs(before));
+    }
+
+    [Test]
+    public void NativeDrag_RejectsForeignAndRevokedTokensAndRevalidatesTarget()
+    {
+        Seed(("potion", 7), ("potion", 8));
+        var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+        Assert.That(_controller.ValidateDrag(Guid.NewGuid(), Bag(1)), Is.Null);
+        Assert.That(_controller.Drop(Guid.NewGuid(), Bag(1)), Is.Null);
+        Assert.That(_controller.Drop(token, Bag(1)), Is.EqualTo(TransferResult.Success));
+        Assert.That(_inventory.Snapshot.Slots[0]!.Count, Is.EqualTo(5));
+        Assert.That(_inventory.Snapshot.Slots[1]!.Count, Is.EqualTo(10));
+        token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+        Assert.That(_controller.Drop(token, Bag(2) with { Revision = -1 }), Is.EqualTo(TransferResult.StaleRevision));
+        token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
+        _transfers.RevokeEditSession();
+        Assert.That(_controller.ValidateDrag(token, Bag(2)), Is.EqualTo(TransferResult.InvalidSession));
+        Assert.That(_controller.IsCarrying, Is.True);
+        Assert.That(_controller.Drop(token, Bag(2)), Is.EqualTo(TransferResult.InvalidSession));
+        Assert.That(_controller.IsCarrying, Is.False);
+    }
+
+    [Test]
     public void PickupValidateAndEquip_PreserveSourceUntilCommit()
     {
         Seed(("engine", 1));

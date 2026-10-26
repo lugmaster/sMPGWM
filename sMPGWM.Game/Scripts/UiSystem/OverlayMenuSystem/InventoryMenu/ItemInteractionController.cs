@@ -22,6 +22,7 @@ internal sealed class ItemInteractionController(InventoryEquipmentTransferServic
     private long _inventoryRevision;
     private long _equipmentRevision;
     private long _mappingVersion;
+    private Guid _dragToken;
 
     internal ItemPointerBinding? Source { get; private set; }
     internal bool IsCarrying => Source != null;
@@ -37,6 +38,26 @@ internal sealed class ItemInteractionController(InventoryEquipmentTransferServic
     {
         Source = null;
         Feedback = null;
+        _dragToken = Guid.Empty;
+    }
+
+    internal Guid BeginDrag(ItemPointerBinding source, long inventoryRevision, long equipmentRevision, long mappingVersion)
+    {
+        Cancel();
+        Click(source, inventoryRevision, equipmentRevision, mappingVersion);
+        if (!IsCarrying) return Guid.Empty;
+        _dragToken = Guid.NewGuid();
+        return _dragToken;
+    }
+
+    internal TransferResult? ValidateDrag(Guid token, ItemPointerBinding target) =>
+        token != Guid.Empty && token == _dragToken && Source != null ? transfers.Validate(Request(target)) : null;
+
+    internal TransferResult? Drop(Guid token, ItemPointerBinding target)
+    {
+        if (token == Guid.Empty || token != _dragToken || Source == null) return null;
+        try { return transfers.Transfer(Request(target)); }
+        finally { Cancel(); }
     }
 
     internal void Refresh(long inventoryRevision, long equipmentRevision, long mappingVersion)

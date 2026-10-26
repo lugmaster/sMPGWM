@@ -38,7 +38,121 @@ func pointer_click(position: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
     root.push_input(click)
     await settle()
 
+func begin_drag(position: Vector2, context := "placement") -> void:
+    var motion := InputEventMouseMotion.new()
+    motion.position = position
+    root.push_input(motion)
+    await process_frame
+    var press := InputEventMouseButton.new()
+    press.position = position
+    press.button_index = MOUSE_BUTTON_LEFT
+    press.pressed = true
+    root.push_input(press)
+    await process_frame
+    motion = InputEventMouseMotion.new()
+    motion.position = position + Vector2(24, 0)
+    motion.relative = Vector2(24, 0)
+    motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+    root.push_input(motion)
+    await settle()
+    expect(root.gui_is_dragging(), "Real mouse motion across threshold must start native dragging (%s) at %s (hover: %s)" % [context, position, root.gui_get_hovered_control()])
+
+func finish_drag(position: Vector2) -> void:
+    var motion := InputEventMouseMotion.new()
+    motion.position = position
+    motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+    root.push_input(motion)
+    await settle()
+    var release := InputEventMouseButton.new()
+    release.position = position
+    release.button_index = MOUSE_BUTTON_LEFT
+    release.pressed = false
+    root.push_input(release)
+    await settle()
+    expect(not root.gui_is_dragging(), "Release must end native dragging")
+
+func verify_native_drag(game: Node, canvas: Node, row: Node) -> void:
+    var previous_failures := failures
+    var fixture = load("res://Scripts/Util/Mocks/InventoryClickSmokeFixture.cs").new()
+    fixture.call("Show", game)
+    await settle()
+    var menu := row.get_child(0)
+    var grid := menu.get_node("%InventoryContainer").get_node("%ItemGrid").get_node("%SlotGrid")
+    var equipment := menu.get_node("%EquipmentContainer")
+    var revision: int = fixture.call("Revision")
+    var presses := [0]
+    grid.get_child(0).pressed.connect(func(): presses[0] += 1)
+    equipment.get_child(0).get_node("%ClickableIcon").pressed.connect(func(): presses[0] += 1)
+    await begin_drag(grid.get_child(0).get_global_rect().get_center())
+    expect(fixture.call("Revision") == revision and fixture.call("CountAt", 0) == 1, "Native pickup must retain authoritative source")
+    await finish_drag(equipment.get_child(1).get_node("%ClickableIcon").get_global_rect().get_center())
+    expect(fixture.call("Revision") == revision and not fixture.call("Carrying"), "Invalid native drop must cancel without mutation")
+    await begin_drag(grid.get_child(0).get_global_rect().get_center())
+    await finish_drag(equipment.get_child(0).get_node("%ClickableIcon").get_global_rect().get_center())
+    expect(fixture.call("EngineEquipped") and fixture.call("Revision") == revision + 1 and not fixture.call("Carrying"), "Native equipment drop must commit exactly once without click pickup")
+    expect(presses[0] == 0, "Drag release must not emit source or target button presses")
+    await begin_drag(grid.get_child(0).get_global_rect().get_center())
+    await finish_drag(grid.get_child(2).get_global_rect().get_center())
+    expect(fixture.call("Revision") == revision + 1 and not fixture.call("Carrying"), "Full stack native drop must end carrying without mutation")
+    await begin_drag(grid.get_child(0).get_global_rect().get_center())
+    await finish_drag(grid.get_child(1).get_global_rect().get_center())
+    expect(fixture.call("CountAt", 1) == 5 and fixture.call("CountAt", 2) == 10 and not fixture.call("Carrying"), "Native merge must preserve overflow and end carrying")
+    revision = fixture.call("Revision")
+    await begin_drag(grid.get_child(0).get_global_rect().get_center())
+    await finish_drag(Vector2(5, 5))
+    expect(fixture.call("Revision") == revision and not fixture.call("Carrying"), "Outside drag must cancel without click pickup")
+    await begin_drag(grid.get_child(0).get_global_rect().get_center())
+    canvas.notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+    await finish_drag(grid.get_child(3).get_global_rect().get_center())
+    expect(fixture.call("Revision") == revision and not fixture.call("Carrying"), "Focus loss must invalidate native token")
+    canvas.notification(NOTIFICATION_APPLICATION_FOCUS_IN)
+    await begin_drag(grid.get_child(0).get_global_rect().get_center())
+    var search := menu.get_node("%InventoryContainer").get_node("FilterToolbar/LineEdit") as LineEdit
+    search.text = "changed"
+    search.text_changed.emit(search.text)
+    await finish_drag(grid.get_child(3).get_global_rect().get_center())
+    expect(fixture.call("Revision") == revision and not fixture.call("Carrying"), "Mapping changes must invalidate native token")
+    await begin_drag(grid.get_child(0).get_global_rect().get_center(), "scroll")
+    var scroll := menu.get_node("%InventoryContainer").get_node("%ItemGrid") as ScrollContainer
+    var wheel := InputEventMouseButton.new()
+    wheel.position = grid.get_child(0).get_global_rect().get_center()
+    wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+    wheel.pressed = true
+    root.push_input(wheel)
+    wheel = wheel.duplicate()
+    wheel.pressed = false
+    root.push_input(wheel)
+    await settle()
+    expect(scroll.scroll_vertical > 0 and root.gui_is_dragging(), "Wheel scrolling must remain available during native drag")
+    await finish_drag(Vector2(5, 5))
+    scroll.scroll_vertical = 0
+    await settle()
+    await begin_drag(grid.get_child(0).get_global_rect().get_center(), "close")
+    canvas.call("CloseMenu", 0)
+    canvas.call("OpenMenu", 0)
+    await settle()
+    await finish_drag(Vector2(5, 5))
+    expect(fixture.call("Revision") == revision and not fixture.call("Carrying"), "Close/reopen must invalidate native token")
+    menu = row.get_child(0)
+    grid = menu.get_node("%InventoryContainer").get_node("%ItemGrid").get_node("%SlotGrid")
+    await begin_drag(grid.get_child(0).get_global_rect().get_center(), "escape")
+    var escape := InputEventKey.new()
+    escape.keycode = KEY_ESCAPE
+    escape.physical_keycode = KEY_ESCAPE
+    escape.pressed = true
+    root.push_input(escape)
+    escape = escape.duplicate()
+    escape.pressed = false
+    root.push_input(escape)
+    await settle()
+    await finish_drag(Vector2(5, 5))
+    expect(row.get_child_count() == 0 and fixture.call("Revision") == revision and not fixture.call("Carrying"), "Escape during native drag must close windows and preserve ownership")
+    fixture.call("Restore", game)
+    if failures == previous_failures:
+        print("Inventory native drag checks passed (%s)." % root.size)
+
 func verify_click_placement(game: Node, canvas: Node, row: Node) -> void:
+    await verify_native_drag(game, canvas, row)
     var previous_failures := failures
     var fixture = load("res://Scripts/Util/Mocks/InventoryClickSmokeFixture.cs").new()
     fixture.call("Show", game)
@@ -174,7 +288,7 @@ func verify_cells(menu: Node) -> void:
     var grid := bag.get_node("%SlotGrid")
     expect(equipment.get_child_count() == 8, "Equipment must replace previews with eight slots")
     expect(grid.get_child_count() == 128, "Bag must replace previews with 128 cells")
-    expect(grid.columns == 6, "Bag must retain six columns")
+    expect(grid.columns == 8, "Bag must retain eight columns")
     for index in range(equipment.get_child_count()):
         var cell := equipment.get_child(index)
         var label := cell.get_node("%Label") as Label

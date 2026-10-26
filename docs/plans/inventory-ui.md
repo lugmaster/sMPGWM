@@ -95,7 +95,7 @@ Keep current scripts attached. Runtime behavior follows in the stories below.
 
 1. In `scenes/ui/menu/game_overlay_menu/inventory_menu.tscn`, retain the inherited overlay, `MainLayout`, `CharacterSection`, `EquipmentContainer`, and inventory section.
 2. Preview eight `icon_with_label.tscn` instances under `EquipmentContainer` using the agreed labels. Choose columns and spacing visually. These children are editor previews; runtime clears and regenerates them from domain slot definitions.
-3. In `scenes/ui/base/item_grid.tscn`, preserve the `ItemGrid` scroll root and its structural child `SlotGrid`. Keep six columns initially. Runtime clears cells inside `SlotGrid`, not the grid itself. Do not manually create 128 preview cells.
+3. In `scenes/ui/base/item_grid.tscn`, preserve the `ItemGrid` scroll root and its structural child `SlotGrid`. Keep eight columns (updated by user preference). Runtime clears cells inside `SlotGrid`, not the grid itself. Do not manually create 128 preview cells.
 4. In `scenes/ui/base/clickable_icon.tscn`, retain the Button root and script. Prepare an empty-slot visual and remove the default mock compass from item presentation. Existing consumers must still display explicitly supplied icons.
 5. Add a child Label named `QuantityLabel`, anchored bottom-right, with a small readable font and Mouse Filter set to Ignore. Hide it initially. Allow large counts without increasing cell size; runtime controls its text and visibility.
 6. In `scenes/ui/base/icon_with_label.tscn`, retain `Label` and `ClickableIcon`. Check that long equipment labels fit without covering neighboring cells.
@@ -184,6 +184,8 @@ Acceptance criteria:
 
 Dependency: INV-06.
 
+Implementation: complete. See the implementation plan for native drag, cancellation, and validation details.
+
 Acceptance criteria:
 - Inventory and equipment use native Godot dragging with the same domain commands as click placement.
 - Hover feedback is read-only; commit revalidates current state.
@@ -232,4 +234,4 @@ Acceptance criteria:
 
 Defer item gameplay effects, equipment bonuses, combat, cooldowns, persistence, networking, world drops, trading, manual stack splitting, production YAML definition loading/schema, and a general item scripting framework.
 
-Defaults for otherwise unspecified presentation details: retain six inventory columns and existing hotbar capacity; place quantity labels bottom-right; use standard Godot tooltips and presentation-only name sorting. Capacity remains expanded during the game instance. These defaults do not add category-specific UI rules.
+Defaults for otherwise unspecified presentation details: retain eight inventory columns (updated by user preference) and existing hotbar capacity; place quantity labels bottom-right; use standard Godot tooltips and presentation-only name sorting. Capacity remains expanded during the game instance. These defaults do not add category-specific UI rules.

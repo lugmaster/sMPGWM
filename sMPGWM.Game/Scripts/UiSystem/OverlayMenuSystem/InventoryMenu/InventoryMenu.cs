@@ -27,6 +27,8 @@ public partial class InventoryMenu : GameOverlayMenu
     private Label? _feedback;
     private ClickableIcon? _sourceIcon;
     private ClickableIcon? _hoverIcon;
+    private bool _nativeDrag;
+    private bool _dropping;
     internal bool IsCarrying => _interaction?.IsCarrying == true;
 
     internal void SetInteraction(InventoryEquipmentTransferService? transfers, Guid session)
@@ -106,12 +108,69 @@ public partial class InventoryMenu : GameOverlayMenu
     {
         OnViewChanging();
         _inventoryView.Render(snapshot, _visuals);
+        BindDragAdapters();
     }
 
     private void RefreshEquipment(EquipmentSnapshot snapshot)
     {
         OnViewChanging();
         _equipmentView.Render(_equipment!.Definitions, snapshot, _visuals);
+        BindDragAdapters();
+    }
+
+    private void BindDragAdapters()
+    {
+        foreach (var node in FindChildren("*", "Button", true, false))
+        {
+            if (node is not ClickableIcon icon || ItemPointerBinding.From(icon.Binding) == null) continue;
+            icon.SetDragForwarding(
+                Callable.From<Vector2, Variant>(_ => BeginNativeDrag(icon)),
+                Callable.From<Vector2, Variant, bool>((_, data) => CanDrop(icon, data)),
+                Callable.From<Vector2, Variant>((_, data) => Drop(icon, data)));
+        }
+    }
+
+    private Variant BeginNativeDrag(ClickableIcon icon)
+    {
+        var source = ItemPointerBinding.From(icon.Binding);
+        if (_interaction == null || _inventory == null || _equipment == null || source == null ||
+            _pressedVersion != _mappingVersion || _pressedTarget?.Location != source.Location) return default;
+        var token = _interaction.BeginDrag(source, _inventory.Revision, _equipment.Revision, _mappingVersion);
+        if (token == Guid.Empty) return default;
+        DismissTooltips();
+        _pressedTarget = null;
+        _consumeRelease = true;
+        _nativeDrag = true;
+        icon.SetDragPreview(new TextureRect { Texture = icon.IconTexture, MouseFilter = MouseFilterEnum.Ignore,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, CustomMinimumSize = new Vector2(40, 40),
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered });
+        return token.ToString();
+    }
+
+    private static Guid DragToken(Variant data) =>
+        data.VariantType == Variant.Type.String && Guid.TryParse(data.AsString(), out var token) ? token : Guid.Empty;
+
+    private bool CanDrop(ClickableIcon icon, Variant data)
+    {
+        var target = ItemPointerBinding.From(icon.Binding);
+        return target != null && _interaction?.ValidateDrag(DragToken(data), target) == TransferResult.Success;
+    }
+
+    private void Drop(ClickableIcon icon, Variant data)
+    {
+        var target = ItemPointerBinding.From(icon.Binding);
+        if (target == null) return;
+        _dropping = true;
+        try { _interaction?.Drop(DragToken(data), target); }
+        finally { _dropping = false; }
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what != NotificationDragEnd || !_nativeDrag) return;
+        _nativeDrag = false;
+        _pressedTarget = null;
+        CancelInteraction();
     }
 
     private void OnViewChanging()
@@ -126,6 +185,7 @@ public partial class InventoryMenu : GameOverlayMenu
         ClearHighlights();
         _preview?.Hide();
         _feedback?.Hide();
+        if (_nativeDrag && !_dropping && IsInsideTree()) GetViewport().GuiCancelDrag();
     }
 
     private void ClearHighlights()
@@ -150,6 +210,11 @@ public partial class InventoryMenu : GameOverlayMenu
             return;
         }
         if (mouse.ButtonIndex != MouseButton.Left) return;
+        if (_nativeDrag)
+        {
+            if (!mouse.Pressed) { _pressedTarget = null; _consumeRelease = false; }
+            return;
+        }
         var hovered = GetViewport().GuiGetHoveredControl();
         var icon = hovered as ClickableIcon;
         var target = icon != null && IsAncestorOf(icon) ? ItemPointerBinding.From(icon.Binding) : null;
@@ -223,7 +288,7 @@ public partial class InventoryMenu : GameOverlayMenu
             null => "Choose a slot • Right-click to cancel",
             _ => "Placement unavailable"
         };
-        _preview.Show();
+        _preview.Visible = !_nativeDrag;
         _feedback.Show();
     }
 }
