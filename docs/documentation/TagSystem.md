@@ -1870,6 +1870,30 @@ Item.Equipment.ShieldGenerator
 
 Item tags do not equip, unequip, consume, stack, or mutate inventory by themselves.
 
+#### Classification convention: branch independent dimensions
+
+Whenever a classification problem has independent dimensions, give each dimension its own branch. Use deeper ancestry for genuine subtype relationships. Apply this convention across domains, not only to items. Do not duplicate one dimension underneath every value of another dimension.
+
+For example, weapon size and technology vary independently:
+
+```text
+Light laser:
+  Item.Weapon.Size.Light
+  Item.Weapon.Technology.Laser
+
+Heavy laser:
+  Item.Weapon.Size.Heavy
+  Item.Weapon.Technology.Laser
+```
+
+Both items match `Item.Weapon` through expanded membership. A laser query matches both; a light-weapon query matches only the first. A query requiring both `Item.Weapon.Size.Heavy` and `Item.Weapon.Technology.Laser` selects heavy lasers. Avoid parallel names such as `Item.Weapon.Light.Laser` and `Item.Weapon.Heavy.Laser`, which duplicate technology across size branches.
+
+A genuine resource subtype hierarchy may use `Item.Resource.Ore.Iron`, `Item.Resource.Ore.Copper`, and `Item.Resource.Gas.Helium`. Independent resource properties should use separate branches rather than duplicating this hierarchy. A definition can carry multiple assignments within its domain; strict dot-path ancestry still gives each tag exactly one parent.
+
+Tags alone do not enforce exclusive dimensions or required assignments. Consumer validation must enforce rules such as exactly one weapon size where equipment compatibility requires it. Presentation groups and tabs select items through queries; stacking and state-changing operations remain explicit consumer policies.
+
+The planned item/inventory integration is defined in [Tag-driven item classification and inventory views](../plans/tag-inventory-integration.md). It is not implemented by this documentation change.
+
 ### 12.6 Target Classifications
 
 Target classification tags describe target concepts and target-filter metadata.

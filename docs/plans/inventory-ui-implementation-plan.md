@@ -4,6 +4,26 @@ Status: planning refinement and implementation complete for INV-01 through INV-1
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
+## Planned successor: tag-driven classification
+
+The next epic is [Tag-driven item classification and inventory views](tag-inventory-integration.md), with the tag contract in [TagSystem.md](../documentation/TagSystem.md). Status: proposed; implementation has not started. Existing INV completion records below describe the current implementation. The successor replaces category-owned classification, stacking policy, and eligibility only as its stories are implemented.
+
+Use independent branches whenever a classification problem has independent dimensions. Preserve deeper ancestry for genuine subtype relationships. The agreed weapon example is:
+
+```text
+Light laser:
+  Item.Weapon.Size.Light
+  Item.Weapon.Technology.Laser
+
+Heavy laser:
+  Item.Weapon.Size.Heavy
+  Item.Weapon.Technology.Laser
+```
+
+Both match `Item.Weapon`; technology and size remain independently queryable. Do not duplicate lasers beneath light and heavy branches. Apply the same reasoning whenever future classifications are introduced, including resources and classifications outside ItemSystem.
+
+Inventory tabs become ordered, labeled query views: one Weapons tab contains light and heavy weapons. Item definitions own classification tags and explicit stack settings. Equipment keeps separate light/heavy slots and validates eligibility through queries. Category IDs cease to be mandatory item classification references after migration. The successor epic specifies loading, presentation fallbacks, validation, compatibility, and regression requirements.
+
 ## Reference games and design decisions
 
 Use familiar interaction conventions, while retaining this project's explicit requirements. The following are verified reference behaviors, not claims that these games use the proposed internal architecture:
