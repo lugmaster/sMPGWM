@@ -1,6 +1,6 @@
 # Inventory UI implementation plan
 
-Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-08 implemented. INV-09 and INV-10 remain pending.
+Status: planning refinement complete for INV-01 through INV-10; INV-01 through INV-09 implemented. INV-10 remains pending.
 
 Epic: [inventory-ui.md](inventory-ui.md). This file records each completed story refinement and implementation progress. Proposed type names are implementation guidance; responsibilities and observable behavior are the contract.
 
@@ -264,6 +264,10 @@ Likely files: item hotbar binding model/state in `ItemSystem`, gameplay composit
 
 Refinement: complete. Dependencies: INV-04, INV-05; INV-06/INV-07 integration required.
 
+Implementation: complete (2026-10-26). Catalog-derived tab descriptors provide All plus every registered category. The plain projection combines category and trimmed ordinal case-insensitive name search, defaults to ascending names, and supports descending names with definition/entity identity tie-breakers. Results retain genuine storage addresses and append only actual empty addresses. Empty matches display a message, including when a full bag has no drop targets. Toolbar changes refresh synchronously and cancel pending click/native placements; choices survive transfers and reopen. Search text receives Inventory/Map shortcut keys, while Escape uses the existing close-all path before text entry can consume it. Existing release tracking remains active. Godot's scroll container preserves and clamps scrolling as results change.
+
+Validation: solution build passed; all 12 `InventoryProjectionTests` and all 345 NUnit cases passed. Inventory scene smoke assertions passed at 1280x720 and 1920x1080 across two game lifetimes, covering filtered click/native placement into real addresses, empty/full results, preserved choices, typing shortcuts, Escape, and release tracking. Existing fixtures now account for deterministic name/entity ordering. The architecture smoke retains the same 14 visibility, centering, and unnecessary-scrollbar assertions recorded for INV-08. Existing compiler warnings remain. `git diff --check` passed. Logs: `artifacts/inventory-inv09-*.log`. Interactive visual inspection remains for INV-10.
+
 ### Output and implementation steps
 
 1. `InventoryContainer` owns UI orchestration through a plain presentation model; `CategoryTab` is a display descriptor, not an authoritative category definition. Generate All plus eight category tabs from the catalog, preserving stable category display order. Empty categories remain selectable; All is a presentation option, not a ninth category.
@@ -340,7 +344,7 @@ Implement INV-01 through INV-10 in numeric order, completing the editor checklis
 | INV-06 Click placement | Complete | Complete |
 | INV-07 Drag-and-drop | Complete | Complete |
 | INV-08 Hotbar links | Complete | Complete |
-| INV-09 Browsing/compact results | Complete | Not started |
+| INV-09 Browsing/compact results | Complete | Complete |
 | INV-10 Integration checks | Complete | Not started |
 
 No unresolved product questions block these stories. Defaults inferred during refinement are recorded explicitly above; future item-definition YAML schema/loading and actual item effects remain outside the epic. Category YAML loading was added by explicit follow-up request.

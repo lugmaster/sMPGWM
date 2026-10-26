@@ -97,8 +97,9 @@ public partial class InventoryMenu : GameOverlayMenu
 
     private void BindViews()
     {
-        _inventoryView.Bind(_viewState);
+        _inventoryView.Bind(_viewState, _inventory!.Catalog);
         _inventoryView.ViewChanging += OnViewChanging;
+        _inventoryView.ViewChanged += RefreshView;
         _inventory!.Changed += RefreshInventory;
         _equipment!.Changed += RefreshEquipment;
         RefreshInventory(_inventory.Snapshot);
@@ -122,6 +123,7 @@ public partial class InventoryMenu : GameOverlayMenu
         if (_inventoryView != null)
         {
             _inventoryView.ViewChanging -= OnViewChanging;
+            _inventoryView.ViewChanged -= RefreshView;
             _inventoryView.Unbind();
         }
         _inventory = null;
@@ -147,6 +149,8 @@ public partial class InventoryMenu : GameOverlayMenu
         _inventoryView.Render(snapshot, _visuals);
         BindDragAdapters();
     }
+
+    private void RefreshView() => RefreshInventory(_inventory!.Snapshot);
 
     private void RefreshEquipment(EquipmentSnapshot snapshot)
     {

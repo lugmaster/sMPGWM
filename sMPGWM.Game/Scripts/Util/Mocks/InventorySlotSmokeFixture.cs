@@ -52,7 +52,8 @@ public partial class InventorySlotSmokeFixture : RefCounted
                 ItemLocation.Equipment("engine"), null, inventory.Revision, equipment.Revision);
             Require(transfers.Transfer(request) == TransferResult.Success, "Fixture equip failed.");
             var binding = (InventoryCellBinding)grid.GetChild<ClickableIcon>(2).Binding!;
-            Require(binding.Address == 3 && binding.Entity == inventory.Snapshot.Slots[3],
+            var projected = InventoryProjection.Create(inventory.Snapshot, catalog, new InventoryViewState());
+            Require(binding == projected[2],
                 "Compacted cells must retain their real address and entity expectation.");
             var emptyBinding = (InventoryCellBinding)grid.GetChild<ClickableIcon>(128).Binding!;
             Require(emptyBinding.Address == 2 && emptyBinding.Entity == null,

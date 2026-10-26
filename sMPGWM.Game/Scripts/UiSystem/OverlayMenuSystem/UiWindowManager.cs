@@ -122,6 +122,14 @@ public partial class UiWindowManager : Control
         foreach (var (action, actionName) in MenuActions)
             if (@event.IsActionReleased(actionName)) _pressedMenuActions.Remove(action);
 
+        if (_navigationEnabled && GetViewport().GuiGetFocusOwner() is LineEdit)
+            foreach (var (action, actionName) in MenuActions)
+                if (action == UiWindowId.MainMenu && @event.IsActionPressed(actionName, true))
+                {
+                    _UnhandledInput(@event);
+                    return;
+                }
+
         if (!_navigationEnabled || @event is not InputEventMouseButton { Pressed: true } mouse) return;
         if (!_scrollContainer.GetGlobalRect().HasPoint(mouse.Position)) return;
         var scrollbar = _scrollContainer.GetHScrollBar();
@@ -144,6 +152,7 @@ public partial class UiWindowManager : Control
         foreach (var (action, actionName) in MenuActions)
         {
             if (!@event.IsActionPressed(actionName, true)) continue;
+            if (action != UiWindowId.MainMenu && GetViewport().GuiGetFocusOwner() is LineEdit) return;
             GetViewport().SetInputAsHandled();
             if (@event.IsEcho() || !_pressedMenuActions.Add(action)) return;
 

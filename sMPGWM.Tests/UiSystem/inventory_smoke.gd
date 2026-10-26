@@ -112,6 +112,9 @@ func verify_native_drag(game: Node, canvas: Node, row: Node) -> void:
     search.text_changed.emit(search.text)
     await finish_drag(grid.get_child(3).get_global_rect().get_center())
     expect(fixture.call("Revision") == revision and not fixture.call("Carrying"), "Mapping changes must invalidate native token")
+    search.text = ""
+    search.text_changed.emit(search.text)
+    await settle()
     await begin_drag(grid.get_child(0).get_global_rect().get_center(), "scroll")
     var scroll := menu.get_node("%InventoryContainer").get_node("%ItemGrid") as ScrollContainer
     var wheel := InputEventMouseButton.new()
@@ -150,6 +153,73 @@ func verify_native_drag(game: Node, canvas: Node, row: Node) -> void:
     fixture.call("Restore", game)
     if failures == previous_failures:
         print("Inventory native drag checks passed (%s)." % root.size)
+
+func send_key(key: Key, character := 0) -> void:
+    var event := InputEventKey.new()
+    event.keycode = key
+    event.physical_keycode = key
+    event.unicode = character
+    event.pressed = true
+    root.push_input(event)
+    event = event.duplicate()
+    event.pressed = false
+    root.push_input(event)
+    await settle()
+
+func verify_browsing(game: Node, canvas: Node, row: Node) -> void:
+    var previous_failures := failures
+    var fixture = load("res://Scripts/Util/Mocks/InventoryClickSmokeFixture.cs").new()
+    fixture.call("Show", game)
+    await settle()
+    var menu := row.get_child(0)
+    var container := menu.get_node("%InventoryContainer")
+    var grid := container.get_node("%ItemGrid").get_node("%SlotGrid")
+    var search := container.get_node("FilterToolbar/LineEdit") as LineEdit
+    var tabs := container.get_node("%CategoryTabs") as TabBar
+    var sort := container.get_node("FilterToolbar/SortSelector") as OptionButton
+    var revision: int = fixture.call("Revision")
+    expect(tabs.tab_count == 9 and tabs.get_tab_title(8) == "Resource", "Tabs must enumerate all catalog categories")
+    expect(sort.item_count == 2 and sort.selected == 0, "Name ascending must be the default with descending available")
+    search.text = " ENGINE "
+    search.text_changed.emit(search.text)
+    await settle()
+    expect(grid.get_child_count() == 125 and grid.get_child(0).tooltip_text.begins_with("Click Engine"), "Trimmed case-insensitive filtering must show M + C - N cells")
+    await pointer_click(grid.get_child(0).get_global_rect().get_center())
+    await pointer_click(grid.get_child(1).get_global_rect().get_center())
+    expect(fixture.call("CountAt", 0) == 0 and fixture.call("CountAt", 4) == 1, "Filtered empty placement must target genuine address 4")
+    expect(grid.get_child(0).tooltip_text.begins_with("Click Engine") and search.text == " ENGINE ", "Placement must repack results and retain search")
+    await begin_drag(grid.get_child(0).get_global_rect().get_center(), "filtered placement")
+    await finish_drag(grid.get_child(1).get_global_rect().get_center())
+    expect(fixture.call("CountAt", 0) == 1 and fixture.call("CountAt", 4) == 0, "Filtered native placement must use newly projected genuine empty address 0")
+    tabs.current_tab = 8
+    await settle()
+    expect(grid.get_child_count() == 124 and container.get_node("EmptyResult").visible, "Empty categories must keep only genuine empty destinations and show a message")
+    sort.select(1)
+    sort.item_selected.emit(1)
+    canvas.call("CloseMenu", 0)
+    canvas.call("OpenMenu", 0)
+    await settle()
+    container = row.get_child(0).get_node("%InventoryContainer")
+    search = container.get_node("FilterToolbar/LineEdit")
+    expect(search.text == " ENGINE " and container.get_node("%CategoryTabs").current_tab == 8 and container.get_node("FilterToolbar/SortSelector").selected == 1, "All browsing choices must survive reopen")
+    expect(fixture.call("Revision") == revision + 2, "Browsing must not mutate domain revisions")
+    fixture.call("Fill")
+    await settle()
+    grid = container.get_node("%ItemGrid").get_node("%SlotGrid")
+    expect(grid.get_child_count() == 0 and container.get_node("EmptyResult").visible, "Full inventory with no matches must expose no drop targets")
+    var bag := container.get_node("%ItemGrid") as ScrollContainer
+    expect(bag.scroll_vertical == 0, "Empty results must clamp the scroll position")
+    await pointer_click(search.get_global_rect().get_center())
+    await send_key(KEY_I, 105)
+    await send_key(KEY_M, 109)
+    expect(row.get_child_count() == 1 and search.text.contains("im"), "Typing inventory/map shortcuts must edit search without navigating")
+    await send_key(KEY_ESCAPE)
+    expect(row.get_child_count() == 0, "Escape must close all while search has focus")
+    await send_key(KEY_I)
+    expect(row.get_child_count() == 1, "Shortcut release tracking must allow reopening after search closes")
+    fixture.call("Restore", game)
+    if failures == previous_failures:
+        print("Inventory browsing checks passed (%s)." % root.size)
 
 func verify_hotbar(game: Node, canvas: Node, row: Node) -> void:
     var previous_failures := failures
@@ -418,6 +488,7 @@ func run() -> void:
         expect(visuals.call("Verify", game), "Item visuals, quantity layout, and display reset must pass")
         visuals.call("Restore", game)
         await verify_click_placement(game, canvas, row)
+        await verify_browsing(game, canvas, row)
         await verify_hotbar(game, canvas, row)
         game.queue_free()
         await settle()

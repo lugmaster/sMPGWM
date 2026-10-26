@@ -1,8 +1,6 @@
 [gd_scene format=3 uid="uid://bc4wl8fu0vbyw"]
 
 [ext_resource type="Script" uid="uid://chesnv6r5jcmq" path="res://Scripts/UiSystem/OverlayMenuSystem/InventoryMenu/InventoryContainer.cs" id="1_74jvx"]
-[ext_resource type="Texture2D" uid="uid://druwktt2cvrna" path="res://assets/mocks/hammer.png" id="1_vdxge"]
-[ext_resource type="Texture2D" uid="uid://ciipc64a22d77" path="res://assets/mocks/Dumbbell-02.png" id="2_74jvx"]
 [ext_resource type="PackedScene" uid="uid://bvlnfjbd1dmhy" path="res://scenes/ui/base/filter_toolbar.tscn" id="3_0bofs"]
 [ext_resource type="PackedScene" uid="uid://j88ps3ai1b35" path="res://scenes/ui/base/item_grid.tscn" id="4_otley"]
 
@@ -15,13 +13,8 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/icon_max_width = 20
 current_tab = 0
-tab_count = 2
+tab_count = 1
 tab_0/title = "All"
-tab_0/tooltip = "Tooltip for All"
-tab_0/icon = ExtResource("1_vdxge")
-tab_1/title = "Engine"
-tab_1/tooltip = "Tooltip for Engine"
-tab_1/icon = ExtResource("2_74jvx")
 
 [node name="FilterToolbar" parent="." unique_id=307463620 instance=ExtResource("3_0bofs")]
 layout_mode = 2

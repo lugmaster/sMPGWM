@@ -1,8 +1,15 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using sMPGWM.Scripts.ItemSystem;
+
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
-public class CategoryTab
+internal sealed record CategoryTab(ItemCategoryId? CategoryId, string Title)
 {
-    // title
-    // tooltip
-    // icon
+    internal static IReadOnlyList<CategoryTab> Create(ItemCategories categories) =>
+        Array.AsReadOnly(new[] { new CategoryTab(null, "All") }
+            .Concat(categories.All.Select(category => new CategoryTab(category.Id, category.DisplayName))).ToArray());
 }

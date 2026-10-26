@@ -35,9 +35,10 @@ public partial class InventoryClickSmokeFixture : RefCounted
         var slots = _inventory.Snapshot.Slots.ToArray();
         slots[0] = catalog.CreateEntity(engine);
         _engine = slots[0]!.Id;
-        slots[1] = catalog.CreateEntity(potion, 7);
-        slots[2] = catalog.CreateEntity(potion, 8);
-        slots[3] = catalog.CreateEntity(potion, 10);
+        var stacks = Enumerable.Range(0, 3).Select(_ => catalog.CreateEntity(potion)).OrderBy(entity => entity.Id.Value).ToArray();
+        slots[1] = new ItemEntity(stacks[0].Id, potion, 7);
+        slots[2] = new ItemEntity(stacks[1].Id, potion, 8);
+        slots[3] = new ItemEntity(stacks[2].Id, potion, 10);
         _inventory.Install(_inventory.PrepareChange(slots));
         _canvas = game.GetNode<UiCanvas>("UiCanvas");
         _canvas.CloseAllMenus();
@@ -51,6 +52,7 @@ public partial class InventoryClickSmokeFixture : RefCounted
     public bool EngineEquipped() => _equipment.Snapshot.Slots[0]?.Id == _engine;
     public int CountAt(int address) => _inventory.Snapshot.Slots[address]?.Count ?? 0;
     public long Revision() => _inventory.Revision;
+    public void Fill() => _inventory.Add(new ItemDefinitionId("click_engine"), 124);
 
     public void Restore(GamePlayManager game)
     {
