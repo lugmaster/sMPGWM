@@ -4,19 +4,19 @@ namespace sMPGWM.Scripts.StartMenuSystem;
 
 public partial class JoinGameMenu : BaseStartMenu
 {
-    private Button _startGameButton = null!;
+    private Button _joinGameButton = null!;
     protected override string ScreenTitle => "Join Game";
 
     protected override void OnEnterTree()
     {
         base.OnEnterTree();
-        _startGameButton = GetNode<Button>("%StartGameButton");
+        _joinGameButton = GetNode<Button>("%JoinGameButton");
     }
 
     protected override void OnReady()
     {
         base.OnReady();
-        _startGameButton.Pressed += OnJoinButtonPressed;
+        _joinGameButton.Pressed += OnJoinButtonPressed;
     }
 
     private void OnJoinButtonPressed()
