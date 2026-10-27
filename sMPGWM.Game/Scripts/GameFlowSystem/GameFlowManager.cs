@@ -1,5 +1,8 @@
+using System;
 using System.Threading.Tasks;
 using Godot;
+using sMPGWM.scripts.Network;
+using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -9,8 +12,17 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 {
     private GameFlowState _gameFlowState = GameFlowState.StartMenu;
     private GameFlowState _pendingGameFlowState = GameFlowState.StartMenu;
+    private NetworkRole _networkRole;
+    private NetworkType _networkType;
+    private ulong _lobbyId;
+    
+    // TODO use this to handle SuddenExits and inform other systems
+    public event Action OnSuddenExit;
     
     public GameFlowState GameFlowState => _gameFlowState;
+    public NetworkRole NetworkRole => _networkRole;
+    public NetworkType NetworkType => _networkType;
+    public ulong LobbyId => _lobbyId;
 
     protected override void OnEnterTree()
     {
@@ -83,6 +95,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void StartGame()
     {
+        // TODO set NetworkRole and NetworkType, so that other systems can it read
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(StartGame)} starting game.");
         ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.InGame);
     }
