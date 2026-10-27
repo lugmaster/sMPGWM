@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://43kjh0i14jca"]
+
+[ext_resource type="PackedScene" uid="uid://csfidmr8pe45n" path="res://scenes/ui/base/base_start_menu.tscn" id="1_am8rv"]
+[ext_resource type="Script" uid="uid://c37l7h3w6sby" path="res://Scripts/StartMenuSystem/HostSteamGameMenu.cs" id="2_am8rv"]
+
+[node name="HostSteamGameMenu" unique_id=1431156458 instance=ExtResource("1_am8rv")]
+script = ExtResource("2_am8rv")
+
+[node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
+text = "Host Steam Game"
+
+[node name="ButtonList" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=632171537]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="HostSteamGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="0" unique_id=1170985844]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 64)
+layout_mode = 2
+text = "Host Steam Game"

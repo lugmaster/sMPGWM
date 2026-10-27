@@ -1,97 +1,23 @@
-[gd_scene format=3 uid="uid://mnu6t8uobbrn"]
+[gd_scene format=3 uid="uid://qvgvfvsjxjne"]
 
 [ext_resource type="PackedScene" uid="uid://csfidmr8pe45n" path="res://scenes/ui/base/base_start_menu.tscn" id="1_v8ild"]
 [ext_resource type="Script" uid="uid://c6gs8fkf6y86m" path="res://Scripts/StartMenuSystem/JoinGameMenu.cs" id="2_rrtd0"]
-[ext_resource type="PackedScene" uid="uid://bvlnfjbd1dmhy" path="res://scenes/ui/base/filter_toolbar.tscn" id="3_tbubv"]
-[ext_resource type="PackedScene" uid="uid://bu458ks2ey5sj" path="res://scenes/ui/menu/start_menu/lobby_list_entry.tscn" id="4_nvrhj"]
 
 [node name="JoinGameMenu" unique_id=1431156458 instance=ExtResource("1_v8ild")]
 script = ExtResource("2_rrtd0")
 
-[node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
-text = "Join Game"
-
-[node name="FilterToolbar" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=307463620 instance=ExtResource("3_tbubv")]
+[node name="ButtonList" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=68950629]
 layout_mode = 2
+theme_override_constants/separation = 24
 
-[node name="LobbyListPanel" type="PanelContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="1" unique_id=2119488882]
-custom_minimum_size = Vector2(0, 250)
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel" index="0" unique_id=1925388050]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="LobbyListHeader" type="HBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer" index="0" unique_id=111829906]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="LobbyNameHeaderLabel" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyListHeader" index="0" unique_id=1408562863]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-text = "LobbyNameHeader"
-
-[node name="HostNameHeaderLabel" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyListHeader" index="1" unique_id=1119932178]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "HostNameHeader"
-
-[node name="PlayerCountHeaderLabel" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyListHeader" index="2" unique_id=1210451228]
-layout_mode = 2
-size_flags_horizontal = 8
-text = "PlayerCountHeader"
-horizontal_alignment = 2
-vertical_alignment = 1
-
-[node name="LobbyScroll" type="ScrollContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer" index="1" unique_id=1304535966]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="LobbyEntries" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll" index="0" unique_id=400465751]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 4
-
-[node name="LobbyListEntry" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="0" unique_id=1991051388 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry2" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="1" unique_id=199916919 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry3" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="2" unique_id=1299516438 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry4" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="3" unique_id=711698686 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry5" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="4" unique_id=532455779 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry6" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="5" unique_id=1199069268 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry7" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="6" unique_id=1968862626 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry8" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="7" unique_id=1440089742 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry9" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="8" unique_id=812152800 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry10" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="9" unique_id=1863013466 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry11" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="10" unique_id=2011099376 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="LobbyListEntry12" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="11" unique_id=223104523 instance=ExtResource("4_nvrhj")]
-layout_mode = 2
-
-[node name="JoinGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="2" unique_id=728622055]
+[node name="JoinLanGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="0" unique_id=544397088]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 64)
 layout_mode = 2
-text = "Join Game"
+text = "Join Lan Game"
+
+[node name="JoinSteamGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="1" unique_id=743448741]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 64)
+layout_mode = 2
+text = "Join Steam Game"

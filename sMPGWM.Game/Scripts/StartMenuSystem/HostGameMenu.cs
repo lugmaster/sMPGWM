@@ -4,24 +4,22 @@ namespace sMPGWM.Scripts.StartMenuSystem;
 
 public partial class HostGameMenu : BaseStartMenu
 {
-    protected override string ScreenTitle => "HostGameMenu Game";
+    protected override string ScreenTitle => "Host Game";
 
-    private Button _hostGameButton = null!;
+    private Button _hostLanGameButton = null!;
+    private Button _hostSteamGameButton = null!;
 
     protected override void OnEnterTree()
     {
         base.OnEnterTree();
-        _hostGameButton = GetNode<Button>("%HostGameButton");
+        _hostLanGameButton = GetNode<Button>("%HostLanGameButton");
+        _hostSteamGameButton = GetNode<Button>("%HostSteamGameButton");
     }
 
     protected override void OnReady()
     {
         base.OnReady();
-        _hostGameButton.Pressed += OnHostButtonPressed;
-    }
-
-    private void OnHostButtonPressed()
-    {
-        StartMenuManager.Instance.InitializeGame();
+        _hostLanGameButton.Pressed += StartMenuManager.Instance.ShowHostLanGameMenu;
+        _hostSteamGameButton.Pressed += StartMenuManager.Instance.ShowHostSteamGameMenu;
     }
 }

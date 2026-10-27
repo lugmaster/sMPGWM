@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
+using sMPGWM.scripts.Network;
+using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -15,10 +17,34 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
         NavigateTo(StartMenuProvider.CreateJoinGameMenu());
     }
     
+    public void ShowJoinLanGameMenu()
+    {
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowJoinLanGameMenu)} requested.");
+        NavigateTo(StartMenuProvider.CreateJoinLanGameMenu());
+    }
+    
+    public void ShowJoinSteamGameMenu()
+    {
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowJoinSteamGameMenu)} requested.");
+        NavigateTo(StartMenuProvider.CreateJoinSteamGameMenu());
+    }
+    
     public void ShowHostGameMenu()
     {
         Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowHostGameMenu)} requested.");
         NavigateTo(StartMenuProvider.CreateHostGameMenu());
+    }
+    
+    public void ShowHostLanGameMenu()
+    {
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowHostLanGameMenu)} requested.");
+        NavigateTo(StartMenuProvider.CreateHostLanGameMenu());
+    }
+    
+    public void ShowHostSteamGameMenu()
+    {
+        Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowHostSteamGameMenu)} requested.");
+        NavigateTo(StartMenuProvider.CreateHostSteamGameMenu());
     }
 
     public void ShowSettingsMenu()
@@ -27,9 +53,9 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
         NavigateTo(StartMenuProvider.CreateSettingsMenu());
     }
 
-    public void InitializeGame()
+    public void InitializeGame(NetworkRole networkRole, NetworkType networkType)
     {
-        GameFlowManager.Instance.StartGame();
+        GameFlowManager.Instance.StartGame(networkRole, networkType);
     }
     
     private readonly Stack<Control> _screenHistory = new();

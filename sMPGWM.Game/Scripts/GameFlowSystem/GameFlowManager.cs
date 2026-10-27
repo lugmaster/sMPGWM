@@ -93,7 +93,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         CallDeferred(nameof(QuitToStartMenuInternal));
     }
 
-    public void StartGame()
+    public void StartGame(NetworkRole networkRole, NetworkType networkType)
     {
         // TODO set NetworkRole and NetworkType, so that other systems can it read
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(StartGame)} starting game.");

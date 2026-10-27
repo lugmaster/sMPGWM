@@ -13,8 +13,14 @@ text = "Host Game"
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="HostGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="0" unique_id=1612630148]
+[node name="HostLanGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="0" unique_id=1612630148]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 64)
 layout_mode = 2
-text = "Host Game"
+text = "Host Lan Game"
+
+[node name="HostSteamGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/ButtonList" index="1" unique_id=1170985844]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 64)
+layout_mode = 2
+text = "Host Steam Game"
