@@ -115,7 +115,7 @@ public partial class UiWindowManager : Control
         _windowRow.AddChild(window);
         _registry.Open(id);
         _modalBlocker.Visible = _requiredMessage;
-        window.GrabWindowFocus();
+        window.ReleaseExternalFocus();
         QueueEnsureFocusedWindowVisible();
     }
 
@@ -177,6 +177,10 @@ public partial class UiWindowManager : Control
                 }
 
         if (!_navigationEnabled || @event is not InputEventMouseButton { Pressed: true } mouse) return;
+        if (mouse.ButtonIndex is not (MouseButton.Left or MouseButton.Right)) return;
+        var focused = GetViewport().GuiGetFocusOwner();
+        if (focused != null && !focused.GetGlobalRect().HasPoint(mouse.Position))
+            focused.ReleaseFocus();
         if (!_scrollContainer.GetGlobalRect().HasPoint(mouse.Position)) return;
         var scrollbar = _scrollContainer.GetVScrollBar();
         if (scrollbar.Visible && scrollbar.GetGlobalRect().HasPoint(mouse.Position)) return;
@@ -216,7 +220,7 @@ public partial class UiWindowManager : Control
     private void Focus(UiWindowId id)
     {
         _registry.Focus(id);
-        _windows[id].GrabWindowFocus();
+        _windows[id].ReleaseExternalFocus();
         QueueEnsureFocusedWindowVisible();
     }
 

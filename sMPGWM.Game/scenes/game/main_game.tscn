@@ -19,6 +19,7 @@ unique_name_in_owner = true
 
 [node name="WorldViewPortContainer" type="SubViewportContainer" parent="." unique_id=622524254]
 layout_mode = 0
+focus_mode = 0
 
 [node name="WorldViewport" type="SubViewport" parent="WorldViewPortContainer" unique_id=938755890]
 transparent_bg = true

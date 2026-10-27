@@ -223,13 +223,38 @@ func run() -> void:
         expect(row.get_child_count() == 2, "Reopening inventory should reuse its instance")
         expect(row.get_child(0) == inventory, "Focusing inventory should preserve opening order")
         expect(inventory.position == inventory_position and map.position == map_position, "Focus should not move windows")
-        expect(root.gui_get_focus_owner() == inventory.get_node("%CloseButton"), "Reopening should focus the selected window")
+        expect(root.gui_get_focus_owner() == null, "Reopening must not force keyboard focus onto Close")
 
         canvas.call("OpenMenu", 1)
         click_at(inventory.get_global_rect().position + Vector2(8, 8))
         await settle()
-        expect(root.gui_get_focus_owner() == inventory.get_node("%CloseButton"), "Clicking inventory should focus it")
+        expect(root.gui_get_focus_owner() == null, "Clicking window background must not focus Close")
         expect(inventory.position == inventory_position and map.position == map_position, "Clicking should not reorder the row")
+
+        var search := inventory.find_child("LineEdit", true, false) as LineEdit
+        click_at(search.get_global_rect().get_center())
+        expect(search.has_focus(), "Clicking search must give it text focus")
+        canvas.call("OpenMenu", 0)
+        expect(search.has_focus(), "Activating the current window must preserve text focus")
+        click_at(search.get_global_rect().get_center())
+        expect(search.has_focus(), "Repeated search clicks must retain focus")
+        click_at(inventory.get_global_rect().position + Vector2(8, 8))
+        expect(root.gui_get_focus_owner() == null, "Clicking background must end text entry")
+        click_at(search.get_global_rect().get_center())
+        menu_key(KEY_TAB, true)
+        menu_key(KEY_TAB, false)
+        await settle()
+        expect(root.gui_get_focus_owner() != null and root.gui_get_focus_owner() != search, "Tab must move keyboard focus to the next control")
+        if root.gui_get_focus_owner() != null:
+            expect(root.gui_get_focus_owner().has_focus(true), "Keyboard navigation must show its focus indicator")
+        click_at(search.get_global_rect().get_center())
+        canvas.call("OpenMenu", 1)
+        expect(root.gui_get_focus_owner() == null, "Activating another window must release stale text focus")
+        click_at(search.get_global_rect().get_center())
+        await settle()
+        click_at(Vector2(5, 5))
+        await settle()
+        expect(root.gui_get_focus_owner() == null, "Clicking outside menus must release text focus (owner: %s)" % root.gui_get_focus_owner())
 
         var panel := inventory.get_node("CenterContainer/MenuPanel") as Control
         var original_minimum := panel.custom_minimum_size

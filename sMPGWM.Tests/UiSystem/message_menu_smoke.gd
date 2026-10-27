@@ -131,6 +131,7 @@ func run() -> void:
         expect(fixture.call("Selected") == "ordinary-two" and fixture.call("Unread") == 1, "Explicit open reads only first unread")
         var group := menu.get_node("%SenderList").get_child(0)
         await click(group.get_node("SenderButton"))
+        expect(not group.get_node("SenderButton").has_focus(true), "Mouse selection must hide keyboard focus styling")
         expect(not group.get_node("MessageList").visible, "Header folds sibling rows")
         fixture.call("Receive", "ordinary-three", false)
         await settle()

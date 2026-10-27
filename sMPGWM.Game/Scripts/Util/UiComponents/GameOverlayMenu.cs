@@ -42,10 +42,11 @@ public partial class GameOverlayMenu : BaseMenu
 
     private void UpdateWindowMinimumSize() => CustomMinimumSize = _menuPanel.GetCombinedMinimumSize();
 
-    internal void GrabWindowFocus()
+    internal void ReleaseExternalFocus()
     {
-        if (_closeButton.IsVisibleInTree()) _closeButton.GrabFocus();
-        else { FocusMode = FocusModeEnum.All; GrabFocus(); }
+        var focused = GetViewport().GuiGetFocusOwner();
+        if (focused != null && focused != this && !IsAncestorOf(focused))
+            focused.ReleaseFocus();
     }
 
     protected void RequestClose()
