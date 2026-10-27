@@ -6,16 +6,15 @@ using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.EquipmentSystem;
-
-public sealed class InventoryEquipmentTransferService : IDisposable
+public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransfers
 {
-    private readonly InventoryImpl _inventoryImpl;
-    private readonly EquipmentImpl _equipmentImpl;
+    private readonly InventoryController _inventoryImpl;
+    private readonly EquipmentController _equipmentImpl;
     private Guid _session;
     private bool _disposed;
     private bool _publishing;
 
-    public InventoryEquipmentTransferService(InventoryImpl inventoryImpl, EquipmentImpl equipmentImpl)
+    public InventoryEquipmentTransferService(InventoryController inventoryImpl, EquipmentController equipmentImpl)
     {
         ArgumentNullException.ThrowIfNull(inventoryImpl);
         ArgumentNullException.ThrowIfNull(equipmentImpl);

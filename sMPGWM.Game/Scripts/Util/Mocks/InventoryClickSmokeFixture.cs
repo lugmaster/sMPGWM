@@ -14,8 +14,8 @@ namespace sMPGWM.Scripts.Util.Mocks;
 
 public partial class InventoryClickSmokeFixture : RefCounted
 {
-    private InventoryImpl _inventory = null!;
-    private EquipmentImpl _equipment = null!;
+    private InventoryController _inventory = null!;
+    private EquipmentController _equipment = null!;
     private InventoryEquipmentTransferService _transfers = null!;
     private UiCanvas _canvas = null!;
     private ItemEntityId _engine;
@@ -29,8 +29,8 @@ public partial class InventoryClickSmokeFixture : RefCounted
             new ItemDefinition(engine, "Click Engine", ItemCategories.Engine),
             new ItemDefinition(potion, "Click Potion", ItemCategories.Consumable, maximumStackSize: 10)
         });
-        _inventory = new InventoryImpl(catalog);
-        _equipment = new EquipmentImpl(catalog);
+        _inventory = new InventoryController(catalog);
+        _equipment = new EquipmentController(catalog);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         var slots = _inventory.Snapshot.Slots.ToArray();
         slots[0] = catalog.CreateEntity(engine);
@@ -42,7 +42,7 @@ public partial class InventoryClickSmokeFixture : RefCounted
         _inventory.Install(_inventory.PrepareChange(slots));
         _canvas = game.GetNode<UiCanvas>("UiCanvas");
         _canvas.CloseAllMenus();
-        _canvas.BindInventory(_inventory, _equipment, _transfers);
+        game.BindInventoryPresentation(_inventory, _equipment, catalog, _transfers);
         _canvas.OpenMenu(UiWindowId.InventoryMenu);
     }
 
@@ -57,7 +57,7 @@ public partial class InventoryClickSmokeFixture : RefCounted
     public void Restore(GamePlayManager game)
     {
         _canvas.CloseAllMenus();
-        _canvas.BindInventory(game.InventoryImpl, game.EquipmentImpl, game.ItemTransfers);
+        game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.Items, game.ItemTransfers);
         _transfers.Dispose();
         _equipment.Dispose();
         _inventory.Dispose();

@@ -53,7 +53,7 @@ public partial class PlayerMock: AbstractSingleton<PlayerMock>
             catalog.Get(id);
     }
 
-    public void PopulateInventory(InventoryImpl inventory)
+    public void PopulateInventory(InventoryController inventory)
     {
         // Resolve every reference before the first addition, so missing definitions cannot partially seed a player.
         ValidateInventoryDefinitions(inventory.Catalog);

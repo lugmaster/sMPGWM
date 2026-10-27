@@ -8,8 +8,8 @@ namespace sMPGWM.Tests.EquipmentSystem;
 public class EquipmentTransferTests
 {
     private ItemCatalog _catalog = null!;
-    private InventoryImpl _inventoryImpl = null!;
-    private EquipmentImpl _equipmentImpl = null!;
+    private InventoryController _inventoryImpl = null!;
+    private EquipmentController _equipmentImpl = null!;
     private InventoryEquipmentTransferService _transfers = null!;
     private Guid _session;
 
@@ -22,8 +22,8 @@ public class EquipmentTransferTests
             definitions.Add(new ItemDefinition(new ItemDefinitionId(category.Id.Value), category.DisplayName,
                 category.Id, maximumStackSize: category.CanStack ? 10 : null));
         _catalog = new ItemCatalog(categories, definitions);
-        _inventoryImpl = new InventoryImpl(_catalog);
-        _equipmentImpl = new EquipmentImpl(_catalog);
+        _inventoryImpl = new InventoryController(_catalog);
+        _equipmentImpl = new EquipmentController(_catalog);
         _transfers = new InventoryEquipmentTransferService(_inventoryImpl, _equipmentImpl);
         _session = _transfers.OpenEditSession();
     }
@@ -57,7 +57,7 @@ public class EquipmentTransferTests
 
     private static IEnumerable<TestCaseData> CompatibilityCases()
     {
-        var equipment = new EquipmentImpl(new ItemCatalog(ItemCategories.CreateDefault(), Array.Empty<ItemDefinition>()));
+        var equipment = new EquipmentController(new ItemCatalog(ItemCategories.CreateDefault(), Array.Empty<ItemDefinition>()));
         foreach (var category in ItemCategories.CreateDefault().All)
         foreach (var slot in equipment.Definitions)
             yield return new TestCaseData(category.Id.Value, slot.Key, category.Id == slot.AcceptedCategory);
@@ -251,8 +251,8 @@ public class EquipmentTransferTests
     public void ObserverAndLoggingFailures_DoNotStopRemainingNotifications()
     {
         var errors = 0;
-        using var inventory = new InventoryImpl(_catalog, _ => { errors++; throw new Exception("logging"); });
-        using var equipment = new EquipmentImpl(_catalog, _ => { errors++; throw new Exception("logging"); });
+        using var inventory = new InventoryController(_catalog, _ => { errors++; throw new Exception("logging"); });
+        using var equipment = new EquipmentController(_catalog, _ => { errors++; throw new Exception("logging"); });
         using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
         inventory.Add(new ItemDefinitionId("engine"), 1);
         var request = new TransferRequest(transfers.OpenEditSession(), ItemLocation.Inventory(0),
@@ -274,7 +274,7 @@ public class EquipmentTransferTests
     {
         var observerFailure = new InvalidOperationException("equipment subscriber failed");
         var reporterFailure = new InvalidOperationException("equipment reporter failed");
-        using var equipment = new EquipmentImpl(_catalog,
+        using var equipment = new EquipmentController(_catalog,
             reporterThrows ? _ => throw reporterFailure : null);
         var notified = false;
         equipment.Changed += _ => throw observerFailure;
@@ -321,8 +321,8 @@ public class EquipmentTransferTests
         if (owner == "equipmentImpl") _equipmentImpl.Dispose();
         if (owner == "coordinator") _transfers.Dispose();
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Disposed));
-        using var nextInventory = new InventoryImpl(_catalog);
-        using var nextEquipment = new EquipmentImpl(_catalog);
+        using var nextInventory = new InventoryController(_catalog);
+        using var nextEquipment = new EquipmentController(_catalog);
         using var nextTransfers = new InventoryEquipmentTransferService(nextInventory, nextEquipment);
         nextTransfers.OpenEditSession();
         Assert.That(nextTransfers.Transfer(request), Is.EqualTo(TransferResult.InvalidSession));

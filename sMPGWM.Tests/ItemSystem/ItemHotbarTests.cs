@@ -9,8 +9,8 @@ namespace sMPGWM.Tests.ItemSystem;
 public class ItemHotbarTests
 {
     private ItemCatalog _catalog = null!;
-    private InventoryImpl _inventory = null!;
-    private EquipmentImpl _equipment = null!;
+    private InventoryController _inventory = null!;
+    private EquipmentController _equipment = null!;
     private InventoryEquipmentTransferService _transfers = null!;
     private ItemHotbarState _state = null!;
     private ItemHotbarAdapter _adapter = null!;
@@ -24,8 +24,8 @@ public class ItemHotbarTests
             new ItemDefinition(new ItemDefinitionId(category.Id.Value), category.DisplayName, category.Id,
                 maximumStackSize: category.CanStack ? 10 : null)).Append(
             new ItemDefinition(new ItemDefinitionId("other_potion"), "Other potion", ItemCategories.Consumable)));
-        _inventory = new InventoryImpl(_catalog);
-        _equipment = new EquipmentImpl(_catalog);
+        _inventory = new InventoryController(_catalog);
+        _equipment = new EquipmentController(_catalog);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
         _adapter = new ItemHotbarAdapter(_state, _inventory, _equipment, _transfers);
@@ -88,8 +88,8 @@ public class ItemHotbarTests
         {
             new ItemDefinition(new ItemDefinitionId("large"), "Large", ItemCategories.Consumable)
         });
-        using var inventory = new InventoryImpl(largeCatalog);
-        using var equipment = new EquipmentImpl(largeCatalog);
+        using var inventory = new InventoryController(largeCatalog);
+        using var equipment = new EquipmentController(largeCatalog);
         using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
         using var state = new ItemHotbarState();
         var session = transfers.OpenEditSession();

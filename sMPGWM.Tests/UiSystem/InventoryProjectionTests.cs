@@ -14,7 +14,7 @@ public class InventoryProjectionTests
             new ItemCategory(new ItemCategoryId("extra"), "Extra", -1, false)));
         var id = new ItemDefinitionId("extra");
         var catalog = new ItemCatalog(categories, new[] { new ItemDefinition(id, "Extra item", new("extra")) });
-        using var inventory = new InventoryImpl(catalog);
+        using var inventory = new InventoryController(catalog);
         inventory.Add(id, 1);
         var state = new InventoryViewState { SelectedTab = 1 };
         Assert.That(InventoryProjection.Create(inventory.Snapshot, catalog, state)[0].Entity?.DefinitionId, Is.EqualTo(id));
@@ -34,7 +34,7 @@ public class InventoryProjectionTests
             new ItemDefinition(Engine, "ENGINE", ItemCategories.Engine),
             new ItemDefinition(resource, "Ore", ItemCategories.Resource)
         });
-        using var inventory = new InventoryImpl(catalog);
+        using var inventory = new InventoryController(catalog);
         var slots = new ItemEntity?[128];
         for (var index = 0; index < occupied; index++)
             slots[index] = catalog.CreateEntity(index < 3 ? Engine : resource);
@@ -61,7 +61,7 @@ public class InventoryProjectionTests
             new ItemDefinition(new("alpha_a"), "alpha", ItemCategories.Engine),
             new ItemDefinition(new("zulu"), "Zulu", ItemCategories.Engine)
         });
-        using var inventory = new InventoryImpl(catalog);
+        using var inventory = new InventoryController(catalog);
         inventory.Add(new("zulu"), 1);
         inventory.Add(new("alpha_b"), 2);
         inventory.Add(new("alpha_a"), 2);
@@ -85,7 +85,7 @@ public class InventoryProjectionTests
     [Test]
     public void EmptyInventory_Projects128GenuineAddresses()
     {
-        using var inventory = new InventoryImpl(Catalog);
+        using var inventory = new InventoryController(Catalog);
         var cells = InventoryProjection.Create(inventory.Snapshot);
         Assert.That(cells.Count, Is.EqualTo(128));
         for (var index = 0; index < cells.Count; index++)
@@ -99,7 +99,7 @@ public class InventoryProjectionTests
     [Test]
     public void Holes_PackOccupiedCellsThenTrueEmptiesWithoutMutatingStorage()
     {
-        using var inventory = new InventoryImpl(Catalog);
+        using var inventory = new InventoryController(Catalog);
         var slots = new ItemEntity?[128];
         slots[0] = Catalog.CreateEntity(Engine);
         slots[3] = Catalog.CreateEntity(Engine);
@@ -125,7 +125,7 @@ public class InventoryProjectionTests
     [TestCase(257, 320)]
     public void GrowthAndFullInventories_KeepExactCapacityAndIdentity(int count, int capacity)
     {
-        using var inventory = new InventoryImpl(Catalog);
+        using var inventory = new InventoryController(Catalog);
         var before = InventoryProjection.Create(inventory.Snapshot);
         inventory.Add(Engine, count);
         var cells = InventoryProjection.Create(inventory.Snapshot);

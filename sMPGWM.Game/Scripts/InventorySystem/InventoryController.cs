@@ -6,8 +6,7 @@ using System.Linq;
 using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.InventorySystem;
-
-public sealed class InventoryImpl : IDisposable
+public sealed class InventoryController : IDisposable, IInventoryView
 {
     public const int InitialCapacity = 128;
     public const int GrowthChunk = 64;
@@ -25,7 +24,7 @@ public sealed class InventoryImpl : IDisposable
     internal InventoryResult Availability => _disposed ? InventoryResult.Disposed :
         _publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
 
-    public InventoryImpl(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
+    public InventoryController(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         _catalog = catalog;

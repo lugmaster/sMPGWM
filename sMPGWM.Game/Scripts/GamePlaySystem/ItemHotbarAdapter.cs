@@ -11,7 +11,7 @@ public sealed record ActionHotbarBinding(string ActionKey) : HotbarBinding;
 public sealed record HotbarAvailability(ItemDefinitionId? DefinitionId, long? Quantity, string Label, bool Available);
 public sealed record ItemHotbarActivationRequest(int Position, HotbarBinding Binding, ItemDefinitionId DefinitionId, long? Quantity);
 
-public sealed class ItemHotbarAdapter(ItemHotbarState state, InventoryImpl inventory, EquipmentImpl equipment,
+public sealed class ItemHotbarAdapter(ItemHotbarState state, InventoryController inventory, EquipmentController equipment,
     InventoryEquipmentTransferService transfers)
 {
     public HotbarResult Assign(Guid session, long hotbarRevision, int position, ItemLocation source,

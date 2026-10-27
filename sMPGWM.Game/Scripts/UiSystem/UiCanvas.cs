@@ -68,7 +68,7 @@ public partial class UiCanvas : CanvasLayer
     internal void PresentRequiredMessage(PlayerMessage? message)
     {
         _requiredMessageId = message?.Id;
-        if (message != null) SetInventoryEditing(false);
+        if (message != null) InventoryEditAvailabilityChanged?.Invoke(false);
         _windowManager.SetRequiredMessage(message != null);
         _messageMenu?.SetRequired(message?.Id);
         if (message == null) _windowManager.Close(UiWindowId.MessageMenu);
@@ -77,9 +77,10 @@ public partial class UiCanvas : CanvasLayer
     private PlayerHud _playerHud = null!;
     private UiWindowManager _windowManager = null!;
     private ItemPointerOverlay _itemPointerOverlay = null!;
-    private InventoryImpl? _inventory;
-    private EquipmentImpl? _equipment;
-    private InventoryEquipmentTransferService? _transfers;
+    private IInventoryView? _inventory;
+    private IEquipmentView? _equipment;
+    private IItemTransfers? _transfers;
+    private ItemCatalog? _inventoryCatalog;
     private InventoryViewState _inventoryViewState = new();
     private InventoryMenu? _inventoryMenu;
     private bool _hasApplicationFocus = true;
@@ -122,15 +123,17 @@ public partial class UiCanvas : CanvasLayer
         _windowManager.WindowClosed -= OnWindowClosed;
     }
 
-    internal void BindInventory(InventoryImpl inventory, EquipmentImpl equipment,
-        InventoryEquipmentTransferService? transfers = null)
+    internal void BindInventory(IInventoryView inventory, IEquipmentView equipment,
+        ItemCatalog catalog,
+        IItemTransfers? transfers = null)
     {
         UnbindInventory();
         _inventory = inventory;
         _equipment = equipment;
         _transfers = transfers;
+        _inventoryCatalog = catalog;
         _inventoryViewState = new InventoryViewState();
-        _inventoryMenu?.Bind(inventory, equipment, _inventoryViewState);
+        _inventoryMenu?.Bind(inventory, equipment, _inventoryViewState, catalog);
         InventoryEditAvailabilityChanged?.Invoke(_inventoryMenu != null && _hasApplicationFocus);
     }
 
@@ -143,15 +146,14 @@ public partial class UiCanvas : CanvasLayer
         _inventory = null;
         _equipment = null;
         _transfers = null;
+        _inventoryCatalog = null;
         _playerHud.Hotbar.Unbind();
         _hotbar = null;
         _hotbarAdapter = null;
     }
 
-    internal void SetInventoryEditing(bool available)
+    internal void SetInventoryEditSession(Guid session)
     {
-        _transfers?.RevokeEditSession();
-        var session = available && _transfers != null ? _transfers.OpenEditSession() : Guid.Empty;
         _hotbar?.SetEditSession(session);
         _playerHud.Hotbar.SetEditing(session != Guid.Empty);
         _inventoryMenu?.SetInteraction(_transfers, session);
@@ -187,7 +189,7 @@ public partial class UiCanvas : CanvasLayer
         _inventoryMenu.SetPointerOverlay(_itemPointerOverlay);
         if (_inventory != null && _equipment != null)
         {
-            _inventoryMenu.Bind(_inventory, _equipment, _inventoryViewState);
+            _inventoryMenu.Bind(_inventory, _equipment, _inventoryViewState, _inventoryCatalog!);
             InventoryEditAvailabilityChanged?.Invoke(_hasApplicationFocus);
         }
     }

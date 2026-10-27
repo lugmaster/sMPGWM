@@ -5,8 +5,7 @@ using System.Collections.Generic;
 using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.EquipmentSystem;
-
-public sealed class EquipmentImpl : IDisposable
+public sealed class EquipmentController : IDisposable, IEquipmentView
 {
     private readonly Action<Exception>? _reportObserverError;
     private bool _disposed;
@@ -20,7 +19,7 @@ public sealed class EquipmentImpl : IDisposable
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :
         _publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
 
-    public EquipmentImpl(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
+    public EquipmentController(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         Catalog = catalog;

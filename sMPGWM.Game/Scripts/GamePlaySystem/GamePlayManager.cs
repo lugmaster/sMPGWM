@@ -17,6 +17,7 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
     private UiCanvas _canvas = null!;
+    private InventoryEquipmentTransferService? _presentationTransfers;
     private InputController _inputController = null!;
     private PlayerActionController _playerActions = null!;
     private readonly PlayerInputPolicy _inputPolicy = new();
@@ -27,8 +28,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public MainGameState GameState => _gameState;
     public ItemCategories ItemCategories { get; private set; } = null!;
     public ItemCatalog Items { get; private set; } = null!;
-    public InventoryImpl InventoryImpl { get; private set; } = null!;
-    public EquipmentImpl EquipmentImpl { get; private set; } = null!;
+    public InventoryController InventoryController { get; private set; } = null!;
+    public EquipmentController EquipmentController { get; private set; } = null!;
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
     public ItemHotbarState ItemHotbar { get; private set; } = null!;
     public ItemHotbarAdapter HotbarAdapter { get; private set; } = null!;
@@ -99,12 +100,12 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ItemCategories = categoriesResult.Value;
         var player = PlayerMock.Instance;
         Items = catalogResult.Value!;
-        InventoryImpl = new InventoryImpl(Items,
+        InventoryController = new InventoryController(Items,
             exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
-        if (PopulateMockInventory) player.PopulateInventory(InventoryImpl);
-        EquipmentImpl = new EquipmentImpl(Items,
+        if (PopulateMockInventory) player.PopulateInventory(InventoryController);
+        EquipmentController = new EquipmentController(Items,
             exception => LoggingSystem.Logger.Error($"Equipment observer failed: {exception}"));
-        ItemTransfers = new InventoryEquipmentTransferService(InventoryImpl, EquipmentImpl);
+        ItemTransfers = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
         Messages = new MessageStore(exception => LoggingSystem.Logger.Error($"Message observer failed: {exception}"));
@@ -115,13 +116,13 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         Messages.Receive("welcome", "system", "Welcome", "Welcome, this is test message", MessageType.NonBlocking);
         _canvas.BindMessages(Messages);
         _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
-        _canvas.BindInventory(InventoryImpl, EquipmentImpl, ItemTransfers);
+        BindInventoryPresentation(InventoryController, EquipmentController, Items, ItemTransfers);
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var actions = player.GetHotBarSkills();
         ItemHotbar = new ItemHotbarState(
             exception => LoggingSystem.Logger.Error($"Hotbar observer failed: {exception}"));
-        HotbarAdapter = new ItemHotbarAdapter(ItemHotbar, InventoryImpl, EquipmentImpl, ItemTransfers);
+        HotbarAdapter = new ItemHotbarAdapter(ItemHotbar, InventoryController, EquipmentController, ItemTransfers);
         _playerActions = new PlayerActionController(
             _inputPolicy, position => HotbarAdapter.Activate(position,
                 key => player.OnHotbarSlotPressed(int.Parse(key)),
@@ -152,15 +153,16 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
             _canvas.UnbindInventory();
             _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
         }
+        _presentationTransfers = null;
         ItemTransfers?.Dispose();
         ItemHotbar?.Dispose();
         ItemHotbar = null!;
         HotbarAdapter = null!;
-        EquipmentImpl?.Dispose();
-        InventoryImpl?.Dispose();
+        EquipmentController?.Dispose();
+        InventoryController?.Dispose();
         ItemTransfers = null!;
-        EquipmentImpl = null!;
-        InventoryImpl = null!;
+        EquipmentController = null!;
+        InventoryController = null!;
         Items = null!;
         ItemCategories = null!;
         if (_playerActions is null)
@@ -173,9 +175,20 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     private void Start() => SetGameState(MainGameState.Active);
 
+    internal void BindInventoryPresentation(InventoryController inventory, EquipmentController equipment, ItemCatalog catalog,
+        InventoryEquipmentTransferService? transfers = null)
+    {
+        _canvas.UnbindInventory();
+        _presentationTransfers = transfers;
+        _canvas.BindInventory(inventory, equipment, catalog, transfers);
+    }
+
     private void SetInventoryEditing(bool available)
     {
-        _canvas.SetInventoryEditing(available && GameState == MainGameState.Active);
+        _presentationTransfers?.RevokeEditSession();
+        var session = available && GameState == MainGameState.Active && _presentationTransfers != null
+            ? _presentationTransfers.OpenEditSession() : Guid.Empty;
+        _canvas.SetInventoryEditSession(session);
     }
 
     public void SetGameState(MainGameState newGameState)

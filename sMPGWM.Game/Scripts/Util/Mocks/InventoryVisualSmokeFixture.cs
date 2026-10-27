@@ -17,8 +17,8 @@ namespace sMPGWM.Scripts.Util.Mocks;
 
 public partial class InventoryVisualSmokeFixture : RefCounted
 {
-    private InventoryImpl? _inventory;
-    private EquipmentImpl? _equipment;
+    private InventoryController? _inventory;
+    private EquipmentController? _equipment;
 
     public void Show(GamePlayManager game)
     {
@@ -30,8 +30,8 @@ public partial class InventoryVisualSmokeFixture : RefCounted
         definitions.Add(new ItemDefinition(new ItemDefinitionId("missing_icon"), "Missing icon", ItemCategories.Resource,
             "Identity remains visible with a placeholder.", "res://missing-fixture-icon.png"));
         var catalog = new ItemCatalog(categories, definitions);
-        _inventory = new InventoryImpl(catalog);
-        _equipment = new EquipmentImpl(catalog);
+        _inventory = new InventoryController(catalog);
+        _equipment = new EquipmentController(catalog);
         foreach (var definition in definitions)
         {
             var count = definition.CategoryId == ItemCategories.Resource && definition.Id.Value != "missing_icon"
@@ -41,7 +41,7 @@ public partial class InventoryVisualSmokeFixture : RefCounted
         }
         var canvas = game.GetNode<UiCanvas>("UiCanvas");
         canvas.CloseAllMenus();
-        canvas.BindInventory(_inventory, _equipment);
+        game.BindInventoryPresentation(_inventory, _equipment, catalog);
         canvas.OpenMenu(UiWindowId.InventoryMenu);
     }
 
@@ -139,7 +139,7 @@ public partial class InventoryVisualSmokeFixture : RefCounted
     {
         var canvas = game.GetNode<UiCanvas>("UiCanvas");
         canvas.CloseAllMenus();
-        canvas.BindInventory(game.InventoryImpl, game.EquipmentImpl, game.ItemTransfers);
+        game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.Items, game.ItemTransfers);
         _equipment?.Dispose();
         _inventory?.Dispose();
         _equipment = null;

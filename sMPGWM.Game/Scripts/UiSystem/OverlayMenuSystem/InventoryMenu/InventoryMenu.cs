@@ -17,8 +17,9 @@ public partial class InventoryMenu : GameOverlayMenu
 {
     protected override string ScreenTitle => "InventoryMenu";
     private readonly HashSet<ClickableIcon> _cells = new();
-    private InventoryImpl? _inventory;
-    private EquipmentImpl? _equipment;
+    private IInventoryView? _inventory;
+    private IEquipmentView? _equipment;
+    private ItemCatalog _catalog = null!;
     private InventoryViewState _viewState = null!;
     private InventoryContainer _inventoryView = null!;
     private EquipmentContainer _equipmentView = null!;
@@ -52,19 +53,21 @@ public partial class InventoryMenu : GameOverlayMenu
         foreach (var icon in view.Icons) RegisterCell(icon);
     }
 
-    internal void SetInteraction(InventoryEquipmentTransferService? transfers, Guid session)
+    internal void SetInteraction(IItemTransfers? transfers, Guid session)
     {
         CancelInteraction();
         _interaction = transfers == null ? null : new ItemInteractionController(transfers);
         _interaction?.SetSession(session);
     }
 
-    internal void Bind(InventoryImpl inventoryImpl, EquipmentImpl equipmentImpl, InventoryViewState state)
+    internal void Bind(IInventoryView inventoryImpl, IEquipmentView equipmentImpl, InventoryViewState state,
+        ItemCatalog catalog)
     {
         Unbind();
         _inventory = inventoryImpl;
         _equipment = equipmentImpl;
-        _visuals = new ItemVisuals(inventoryImpl.Catalog);
+        _catalog = catalog;
+        _visuals = new ItemVisuals(catalog);
         _viewState = state;
         if (IsNodeReady()) BindViews();
     }
@@ -79,14 +82,14 @@ public partial class InventoryMenu : GameOverlayMenu
 
     private void BindViews()
     {
-        _inventoryView.Bind(_viewState, _inventory!.Catalog);
+        _inventoryView.Bind(_viewState, _catalog);
         _inventoryView.CellCreated += RegisterCell;
         _equipmentView.CellCreated += RegisterCell;
         foreach (var cell in _inventoryView.Cells) RegisterCell(cell);
         foreach (var cell in _equipmentView.Cells) RegisterCell(cell);
         _inventoryView.ViewChanging += OnViewChanging;
         _inventoryView.ViewChanged += RefreshView;
-        _inventory.Changed += RefreshInventory;
+        _inventory!.Changed += RefreshInventory;
         _equipment!.Changed += RefreshEquipment;
         RefreshInventory(_inventory.Snapshot);
         RefreshEquipment(_equipment.Snapshot);
@@ -150,7 +153,7 @@ public partial class InventoryMenu : GameOverlayMenu
     {
         if (_interaction == null || _inventory == null || _equipment == null || icon != _pressedIcon ||
             _pressedVersion != _mappingVersion || icon.Binding is not ItemCellBinding binding || binding != _pressedBinding) return default;
-        var token = _interaction.BeginDrag(binding, _inventory.Revision, _equipment.Revision, _mappingVersion);
+        var token = _interaction.BeginDrag(binding, _inventory.Snapshot.Revision, _equipment.Snapshot.Revision, _mappingVersion);
         if (token == Guid.Empty) return default;
         _nativeDrag = true;
         _pressedIcon = null;
@@ -250,7 +253,7 @@ public partial class InventoryMenu : GameOverlayMenu
         }
         _pressedIcon = null;
         DismissTooltips();
-        _interaction.Click(binding, _inventory.Revision, _equipment.Revision, _mappingVersion);
+        _interaction.Click(binding, _inventory.Snapshot.Revision, _equipment.Snapshot.Revision, _mappingVersion);
         if (_interaction.Source == binding) _sourceIcon = icon;
         if (!IsCarrying) CancelInteraction();
         else UpdateFeedback(icon);

@@ -7,7 +7,7 @@ using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
-internal sealed class ItemInteractionController(InventoryEquipmentTransferService transfers)
+internal sealed class ItemInteractionController(IItemTransfers transfers)
 {
     internal enum PlacementMode { Idle, Click, NativeDrag }
 

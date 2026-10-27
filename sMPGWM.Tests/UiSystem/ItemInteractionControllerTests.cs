@@ -9,8 +9,8 @@ namespace sMPGWM.Tests.UiSystem;
 [TestFixture]
 public class ItemInteractionControllerTests
 {
-    private InventoryImpl _inventory = null!;
-    private EquipmentImpl _equipment = null!;
+    private InventoryController _inventory = null!;
+    private EquipmentController _equipment = null!;
     private InventoryEquipmentTransferService _transfers = null!;
     private ItemInteractionController _controller = null!;
     private ItemCatalog _catalog = null!;
@@ -24,8 +24,8 @@ public class ItemInteractionControllerTests
             new ItemDefinition(new ItemDefinitionId("weapon"), "Weapon", ItemCategories.LightWeapon),
             new ItemDefinition(new ItemDefinitionId("potion"), "Potion", ItemCategories.Consumable, maximumStackSize: 10)
         });
-        _inventory = new InventoryImpl(_catalog);
-        _equipment = new EquipmentImpl(_catalog);
+        _inventory = new InventoryController(_catalog);
+        _equipment = new EquipmentController(_catalog);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _controller = new ItemInteractionController(_transfers);
         _controller.SetSession(_transfers.OpenEditSession());
