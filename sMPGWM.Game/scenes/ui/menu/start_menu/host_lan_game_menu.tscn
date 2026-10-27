@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bm7a0se7f455l"]
 
 [ext_resource type="PackedScene" uid="uid://csfidmr8pe45n" path="res://scenes/ui/base/base_start_menu.tscn" id="1_3hiwx"]
-[ext_resource type="Script" uid="uid://bbnlcn78h4ymo" path="res://Scripts/StartMenuSystem/HostGameMenu.cs" id="2_6knt6"]
+[ext_resource type="Script" uid="uid://crlnsbaxwkrgm" path="res://Scripts/StartMenuSystem/HostLanGameMenu.cs" id="2_6knt6"]
 
 [node name="HostLanGameMenu" unique_id=1431156458 instance=ExtResource("1_3hiwx")]
 script = ExtResource("2_6knt6")
