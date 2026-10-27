@@ -52,6 +52,26 @@ public class MessageStoreTests
     }
 
     [Test]
+    public void SenderUnreadTotals_AreIndependentInEachSnapshot()
+    {
+        using var store = Create();
+        store.Receive("a1", "a", "", "", MessageType.NonBlocking);
+        store.Receive("a2", "a", "", "", MessageType.NonBlocking);
+        store.Receive("b1", "b", "", "", MessageType.NonBlocking);
+        var beforeRead = store.Snapshot;
+        store.MarkRead("a1");
+        var afterFirstRead = store.Snapshot;
+        store.MarkRead("a2");
+
+        Assert.That(beforeRead.UnreadForSender("a"), Is.EqualTo(2));
+        Assert.That(afterFirstRead.UnreadForSender("a"), Is.EqualTo(1));
+        Assert.That(store.Snapshot.UnreadForSender("a"), Is.Zero);
+        Assert.That(store.Snapshot.UnreadForSender("b"), Is.EqualTo(1));
+        Assert.That(store.Snapshot.UnreadForSender("unknown"), Is.Zero);
+        Assert.That(store.Snapshot.UnreadCount, Is.EqualTo(1));
+    }
+
+    [Test]
     public void InvalidInputs_DoNotPublish()
     {
         using var store = Create();

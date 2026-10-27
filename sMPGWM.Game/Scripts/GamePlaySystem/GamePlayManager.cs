@@ -145,7 +145,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (_canvas != null)
         {
             _canvas.MessageAcknowledged -= AcknowledgeMessage;
-            _canvas.UnbindMessages();
+            _canvas.EndMessageSession();
             _acknowledgements?.Dispose();
             Messages?.Dispose();
             _inputPolicy.SetHasPendingAcknowledgement(false);

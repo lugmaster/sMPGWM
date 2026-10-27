@@ -6,6 +6,7 @@ namespace sMPGWM.Scripts.MessageSystem;
 
 public sealed class MessageSnapshot
 {
+    private readonly Dictionary<string, int> _unreadBySender = new(StringComparer.Ordinal);
     public IReadOnlyList<PlayerMessage> Messages { get; }
     public int UnreadCount { get; }
 
@@ -13,7 +14,13 @@ public sealed class MessageSnapshot
     {
         Array.Sort(messages, Compare);
         Messages = Array.AsReadOnly(messages);
-        foreach (var message in messages) if (!message.IsRead) UnreadCount++;
+        foreach (var message in messages)
+        {
+            if (message.IsRead) continue;
+            UnreadCount++;
+            _unreadBySender.TryGetValue(message.Sender.Id, out var count);
+            _unreadBySender[message.Sender.Id] = count + 1;
+        }
     }
 
     public PlayerMessage? Find(string? id)
@@ -24,9 +31,7 @@ public sealed class MessageSnapshot
 
     public int UnreadForSender(string id)
     {
-        var count = 0;
-        foreach (var message in Messages) if (message.Sender.Id == id && !message.IsRead) count++;
-        return count;
+        return _unreadBySender.TryGetValue(id, out var count) ? count : 0;
     }
 
     private static int Compare(PlayerMessage a, PlayerMessage b)

@@ -50,8 +50,21 @@ public partial class MessageSmokeFixture : RefCounted
     }
     public void BindEmpty()
     {
-        _empty = new MessageStore();
-        _game.GetNode<UiCanvas>("UiCanvas").BindMessages(_empty);
+        var empty = new MessageStore();
+        try { _game.GetNode<UiCanvas>("UiCanvas").BindMessages(empty); }
+        catch { empty.Dispose(); throw; }
+        _empty?.Dispose();
+        _empty = empty;
+    }
+    public bool TryBindEmpty()
+    {
+        try { BindEmpty(); return true; }
+        catch (InvalidOperationException) { return false; }
+    }
+    public bool TryUnbindMessages()
+    {
+        try { _game.GetNode<UiCanvas>("UiCanvas").UnbindMessages(); return true; }
+        catch (InvalidOperationException) { return false; }
     }
     public void Restore()
     {

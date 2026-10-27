@@ -27,6 +27,11 @@ public partial class UiCanvas : CanvasLayer
 
     internal void BindMessages(MessageStore store)
     {
+        if (_requiredMessageId != null)
+        {
+            if (ReferenceEquals(_messages, store)) return;
+            throw new InvalidOperationException("Cannot replace messages while acknowledgement is required.");
+        }
         UnbindMessages();
         _messages = store;
         _messageViewState = new MessageViewState();
@@ -37,14 +42,21 @@ public partial class UiCanvas : CanvasLayer
 
     internal void UnbindMessages()
     {
+        if (_requiredMessageId != null)
+            throw new InvalidOperationException("Cannot unbind messages while acknowledgement is required.");
         if (_messages != null) _messages.Changed -= RefreshMessages;
         _messages = null;
         _messageMenu?.SetRequired(null);
         _messageMenu?.Unbind();
         _messageViewState = new MessageViewState();
+        _playerHud.SetUnreadMessages(0);
+    }
+
+    internal void EndMessageSession()
+    {
         _requiredMessageId = null;
         _windowManager.SetRequiredMessage(false);
-        _playerHud.SetUnreadMessages(0);
+        UnbindMessages();
     }
 
     private void RefreshMessages(MessageSnapshot snapshot) => _playerHud.SetUnreadMessages(snapshot.UnreadCount);
@@ -99,7 +111,7 @@ public partial class UiCanvas : CanvasLayer
 
     public override void _ExitTree()
     {
-        UnbindMessages();
+        EndMessageSession();
         UnbindInventory();
         _playerHud.MenuRequested -= ActivateMenu;
         _windowManager.MessagesActivated -= SelectFirstUnread;
