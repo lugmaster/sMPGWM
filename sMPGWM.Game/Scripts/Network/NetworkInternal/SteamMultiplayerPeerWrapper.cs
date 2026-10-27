@@ -1,6 +1,8 @@
 ﻿using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
 
+using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+
 namespace sMPGWM.scripts.Network.NetworkInternal;
 
 public class SteamMultiplayerPeerWrapper
@@ -9,7 +11,8 @@ public class SteamMultiplayerPeerWrapper
 
     public SteamMultiplayerPeerWrapper()
     {
-        Logger.Log("Creating SteamMultiplayerPeerWrapper", 0);
+        Logger.Debug(
+            $"{nameof(SteamMultiplayerPeerWrapper)} creating Steam multiplayer peer wrapper.");
         _nativePeer = (GodotObject)ClassDB.Instantiate("SteamMultiplayerPeer");
         if (_nativePeer == null)
         {
@@ -19,7 +22,8 @@ public class SteamMultiplayerPeerWrapper
 
     public Error CreateHost(int port)
     {
-        Logger.Log($"Creating SteamMultiplayerPeerWrapper Host for virtual {port}", 0);
+        Logger.Debug(
+            $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(CreateHost)} creating host with virtual {nameof(port)}={port}.");
         var result = _nativePeer.Call("create_host", port);
 
         if (result.VariantType == Variant.Type.Int)
@@ -27,13 +31,15 @@ public class SteamMultiplayerPeerWrapper
             return (Error)result.AsInt32();
         }
 
-        Logger.Error("SteamMultiplayerWrapper: Unexpected return levelEnum from create_host! Expected an integer.");
+        Logger.Error(
+            $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(CreateHost)} unexpected return type from create_host with {nameof(result.VariantType)}={result.VariantType}; expected an integer.");
         return Error.Failed;
     }
 
     public Error CreateClient(ulong steamId, int port)
     {
-        Logger.Log($"Creating SteamMultiplayerPeerWrapper Client for User {steamId} on virtual port {port}", 0);
+        Logger.Debug(
+            $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(CreateClient)} creating client with {nameof(steamId)}={steamId}, virtual {nameof(port)}={port}.");
         var result = _nativePeer.Call("create_client", steamId, port);
 
         if (result.VariantType == Variant.Type.Int)
@@ -41,7 +47,8 @@ public class SteamMultiplayerPeerWrapper
             return (Error)result.AsInt32();
         }
 
-        Logger.Error("SteamMultiplayerWrapper: Unexpected return levelEnum from create_client! Expected an integer.");
+        Logger.Error(
+            $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(CreateClient)} unexpected return type from create_client with {nameof(result.VariantType)}={result.VariantType}; expected an integer.");
         return Error.Failed;
     }
 
@@ -52,22 +59,26 @@ public class SteamMultiplayerPeerWrapper
 
     public GodotObject GetPeer()
     {
-        Logger.Log("Return SteamMultiplayerPeerWrapper as _nativePeer", 0);
+        Logger.Debug(
+            $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(GetPeer)} returning {nameof(_nativePeer)}.");
         return _nativePeer;
     }
 
     public void Cleanup()
     {
-        Logger.Log("SteamMultiplayerPeerWrapper: Cleanup started", 0);
+        Logger.Debug(
+            $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(Cleanup)} cleanup started.");
 
         if (_nativePeer?.HasMethod("close") == true)
         {
-            Logger.Log("SteamMultiplayerPeerWrapper: Calling close() on native peer", 0);
+            Logger.Debug(
+                $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(Cleanup)} calling close() on native peer.");
             _nativePeer.Call("close");
         }
 
         _nativePeer = null;
 
-        Logger.Log("SteamMultiplayerPeerWrapper: Cleanup finished", 0);
+        Logger.Debug(
+            $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(Cleanup)} cleanup finished.");
     }
 }

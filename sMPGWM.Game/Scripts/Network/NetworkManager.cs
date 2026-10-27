@@ -1,14 +1,13 @@
 ﻿using System;
-using sMPGWM.scripts.Autoloads;
-using sMPGWM.scripts.Constants;
-using sMPGWM.scripts.Helpers;
-using sMPGWM.scripts.Network.NetworkInternal;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.Network;
+using sMPGWM.scripts.Network.NetworkInternal;
 using static Godot.MultiplayerPeer;
 using BaseNetwork = sMPGWM.Scripts.Network.NetworkInternal.BaseNetwork;
+
+using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.scripts.Network;
 
@@ -16,17 +15,18 @@ public partial class NetworkManager : Node
 {
     public static event Action OnNetworkReady;
     private IActiveNetwork _activeNetwork;
-    private const int LogClassLevel = 0;
 
     public override void _Ready()
     {
-        Logger.Log($"Creating NetworkManager", LogClassLevel);
+        Logger.Debug(
+            $"{nameof(NetworkManager)}.{nameof(_Ready)} creating network manager.");
         BaseNetwork.OnConnected += OnNetworkConnected;
     }
 
     private void OnNetworkConnected(bool connected, string reason)
     {
-        Logger.Log($"OnNetworkConnected: {connected}, reason: {reason}", LogClassLevel);
+        Logger.Debug(
+            $"{nameof(NetworkManager)}.{nameof(OnNetworkConnected)} connection result with {nameof(connected)}={connected}, {nameof(reason)}={reason}.");
         if (_activeNetwork != null && _activeNetwork.GetNode().IsInsideTree() && connected)
         {
             Initialize();
@@ -39,16 +39,19 @@ public partial class NetworkManager : Node
 
     public void CreateNetwork()
     {
-        Logger.Log($"Creating Network", LogClassLevel);
+        Logger.Debug(
+            $"{nameof(NetworkManager)}.{nameof(CreateNetwork)} creating network.");
         switch (GameFlowManager.Instance.NetworkType)
         {
             case NetworkType.Steam:
                 _activeNetwork = new SteamNetwork();
-                Logger.Log("Creating Steam Network", LogClassLevel);
+                Logger.Debug(
+                    $"{nameof(NetworkManager)}.{nameof(CreateNetwork)} creating Steam network.");
                 break;
             case NetworkType.Lan:
                 _activeNetwork = new EnetNetwork();
-                Logger.Log("Creating Enet Network", LogClassLevel);
+                Logger.Debug(
+                    $"{nameof(NetworkManager)}.{nameof(CreateNetwork)} creating ENet network.");
                 break;
             default:
                 GameFlowManager.Instance.QuitToStartMenuBlocking($"Invalid NetworkType: {GameFlowManager.Instance.NetworkType}");
@@ -60,15 +63,18 @@ public partial class NetworkManager : Node
 
     public void AssignRole()
     {
-        Logger.Log($"Assigning Role", LogClassLevel);
+        Logger.Debug(
+            $"{nameof(NetworkManager)}.{nameof(AssignRole)} assigning role.");
         switch (GameFlowManager.Instance.NetworkRole)
         {
             case NetworkRole.Host:
-                Logger.Log("Setting MultiplayerRole to Host", LogClassLevel);
+                Logger.Debug(
+                    $"{nameof(NetworkManager)}.{nameof(AssignRole)} setting role to host.");
                 _activeNetwork.BecomeHost(GameConfig.MaxPlayers);
                 break;
             case NetworkRole.Client:
-                Logger.Log("Setting MultiplayerRole to Client", LogClassLevel);
+                Logger.Debug(
+                    $"{nameof(NetworkManager)}.{nameof(AssignRole)} setting role to client.");
                 _activeNetwork.BecomeClient(GameFlowManager.Instance.LobbyId);
                 break;
             default:
@@ -79,7 +85,8 @@ public partial class NetworkManager : Node
 
     private void Initialize()
     {
-        Logger.Log($"Initializing NetworkManager", LogClassLevel);
+        Logger.Debug(
+            $"{nameof(NetworkManager)}.{nameof(Initialize)} initializing network manager.");
         if (GameFlowManager.Instance.NetworkRole == NetworkRole.Host && !IsHost())
         {
             GameFlowManager.Instance.QuitToStartMenuBlocking($"{nameof(NetworkManager)}.{nameof(Initialize)}: Network Role failed. Exiting...");
@@ -110,13 +117,15 @@ public partial class NetworkManager : Node
 
     private static void InvokeNetworkReady()
     {
-        Logger.Log("Invoking NetworkReady", LogClassLevel);
+        Logger.Debug(
+            $"{nameof(NetworkManager)}.{nameof(InvokeNetworkReady)} invoking {nameof(OnNetworkReady)}.");
         OnNetworkReady?.Invoke();
     }
 
     public void Cleanup()
     {
-        Logger.Log($"Cleaning up activeNetwork", LogClassLevel);
+        Logger.Debug(
+            $"{nameof(NetworkManager)}.{nameof(Cleanup)} cleaning up {nameof(_activeNetwork)}.");
         _activeNetwork?.Cleanup();
     }
 }

@@ -5,6 +5,8 @@ using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.Network.NetworkInternal;
 using static Godot.MultiplayerPeer;
 
+using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+
 namespace sMPGWM.scripts.Network.NetworkInternal;
 
 public partial class EnetNetwork : BaseNetwork, IActiveNetwork
@@ -13,7 +15,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
 
     public override void _Ready()
     {
-        Logger.Log("Setting up EnetNetwork(IActiveNetwork)", 0);
+        Logger.Debug(
+            $"{nameof(EnetNetwork)}.{nameof(_Ready)} setting up ENet network.");
         _peer = new ENetMultiplayerPeer();
     }
 
@@ -21,7 +24,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
     {
         try
         {
-            Logger.Log("EnetNetwork(IActiveNetwork): Become Host", 0);
+            Logger.Debug(
+                $"{nameof(EnetNetwork)}.{nameof(BecomeHost)} becoming host.");
             var result = _peer.CreateServer(GameConfig.Port, maxConnections);
 
             if (result != Error.Ok)
@@ -30,9 +34,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
                 return;
             }
 
-            Logger.Log(
-                $"EnetNetwork(IActiveNetwork): Server started on port {GameConfig.Port} with a max of {maxConnections} connections.",
-                0);
+            Logger.Debug(
+                $"{nameof(EnetNetwork)}.{nameof(BecomeHost)} server started with {nameof(GameConfig.Port)}={GameConfig.Port}, {nameof(maxConnections)}={maxConnections}.");
             Multiplayer.MultiplayerPeer = _peer;
 
             var success = await WaitForConnectionStatus(ConnectionStatus.Connecting);
@@ -42,7 +45,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
                 return;
             }
 
-            Logger.Log("EnetNetwork(IActiveNetwork): Server successfully started.", 0);
+            Logger.Debug(
+                $"{nameof(EnetNetwork)}.{nameof(BecomeHost)} server successfully started.");
             EmitConnected(true);
         }
         catch (Exception e)
@@ -55,7 +59,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
     {
         try
         {
-            Logger.Log("EnetNetwork(IActiveNetwork): Attempting to become client", 0);
+            Logger.Debug(
+                $"{nameof(EnetNetwork)}.{nameof(BecomeClient)} attempting to become client.");
 
             _peer.CreateClient(GameConfig.ServerIpAddress, GameConfig.Port);
             Multiplayer.MultiplayerPeer = _peer;
@@ -68,9 +73,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
                 return;
             }
 
-            Logger.Log(
-                $"EnetNetwork(IActiveNetwork): Client successfully connected with peerId: {Multiplayer.GetUniqueId()}",
-                0);
+            Logger.Debug(
+                $"{nameof(EnetNetwork)}.{nameof(BecomeClient)} client successfully connected with peerId={Multiplayer.GetUniqueId()}.");
             EmitConnected(true);
         }
         catch (Exception e)
@@ -81,13 +85,15 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
 
     public Node GetNode()
     {
-        Logger.Log("EnetNetwork(IActiveNetwork) GetNode", 0);
+        Logger.Debug(
+            $"{nameof(EnetNetwork)}.{nameof(GetNode)} returning network node.");
         return this;
     }
 
     private async Task<bool> WaitForConnectionStatus(ConnectionStatus status)
     {
-        Logger.Log($"EnetNetwork(IActiveNetwork) WaitForConnectionStatus {status}...", 0);
+        Logger.Debug(
+            $"{nameof(EnetNetwork)}.{nameof(WaitForConnectionStatus)} waiting for connection to leave {nameof(status)}={status}.");
         var elapsed = 0;
 
         while (_peer.GetConnectionStatus() == status)
@@ -102,7 +108,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
         }
 
         var connected = _peer.GetConnectionStatus() == ConnectionStatus.Connected;
-        Logger.Log($"EnetNetwork(IActiveNetwork): SocketStatus = {connected}", 0);
+        Logger.Debug(
+            $"{nameof(EnetNetwork)}.{nameof(WaitForConnectionStatus)} completed with {nameof(connected)}={connected}.");
         return connected;
     }
 
@@ -118,11 +125,13 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
 
     public override void Cleanup()
     {
-        Logger.Log("EnetNetwork(IActiveNetwork): Cleaning up ENet peer", 0);
+        Logger.Debug(
+            $"{nameof(EnetNetwork)}.{nameof(Cleanup)} cleaning up ENet peer.");
 
         if (_peer != null && GetConnectionStatus() != ConnectionStatus.Disconnected)
         {
-            Logger.Log("EnetNetwork(IActiveNetwork): Closing ENet peer", 0);
+            Logger.Debug(
+                $"{nameof(EnetNetwork)}.{nameof(Cleanup)} closing ENet peer.");
             _peer.Close();
         }
 
