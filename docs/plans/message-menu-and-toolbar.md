@@ -19,14 +19,12 @@ The following message behavior is confirmed:
 - Messages have two types: blocking and nonblocking.
 - A nonblocking arrival updates the notification without opening a menu, changing selection, or affecting gameplay.
 - Opening Messages through its menu button, input action, or notification icon selects the first unread message, displays its content, and marks that message read. Other unread messages require individual selection. Displaying content in the menu content area is the read transition; folding a group or merely receiving a message never reads it.
-- A blocking arrival closes every existing menu and opens the message menu with that message displayed. Only clicking the footer's `OK` button acknowledges it and permits the game to resume. Reading and acknowledgement are separate states.
+- A blocking arrival closes every existing menu and opens the message menu with that message displayed. Only clicking the footer's `OK` button acknowledges it and permits local player controls to resume, subject to the remaining acknowledgement queue and input policy. Reading and acknowledgement are separate states.
+- The target is multiplayer: the world continues running during all message presentation, including blocking messages. Blocking suspends only local player controls; it never pauses the simulation or other players. The message UI remains responsive. World activity can continue to affect the player while they read.
 - Unrecoverable errors may use this blocking presentation later; error handling and recovery are outside this epic.
 - Message lifetime is session-based. Each new game clears prior messages, read flags, pending acknowledgements, and message view state, then adds exactly one unread, nonblocking test message. Use subject `Welcome`, body `Welcome, this is test message`, and a stable system sender such as `System`. This startup message updates the notification to yellow with a count of one without opening Messages or interrupting gameplay. Opening or closing menus never reseeds it. Save/load persistence is outside this epic.
 
-The following choices remain open:
-
-- Whether blocking messages pause the whole simulation or only suspend player control while the world continues. The message UI must remain responsive in either case.
-- Whether first unread means the oldest unread globally or the first unread in the displayed sender/message order.
+First unread means the first unread in the displayed sender/message order.
 
 Use these proposed defaults for remaining presentation details unless changed during refinement:
 
@@ -73,11 +71,11 @@ During ordinary browsing, Inventory, Map, and Messages can coexist. Every one bl
 
 A blocking arrival takes precedence over every ordinary menu, including Main Menu. Cancel pending inventory click/drag interactions, close all windows, and open the message menu with the required message selected. The modal input barrier covers the HUD and underlying game. Hide or disable the close control and show an `OK` button in the inherited footer. Prevent Escape, menu shortcuts, toolbar actions, outside clicks, and ordinary programmatic close/toggle requests from dismissing or replacing this window. Session teardown remains able to release it safely.
 
-Keep the required message displayed until OK; disable browsing other messages during acknowledgement. Mark the message read when its content is shown, but retain the mandatory block independently of its read flag. A notification count reaching zero cannot resume gameplay. Only the footer button's click acknowledges the current blocking message; shortcut dismissal or implicit acknowledgement through close is not permitted.
+Keep the required message displayed until OK; disable browsing other messages during acknowledgement. Mark the message read when its content is shown, but retain the mandatory block independently of its read flag. A notification count reaching zero cannot restore local player controls. Only the footer button's click acknowledges the current blocking message; shortcut dismissal or implicit acknowledgement through close is not permitted.
 
-Proposed queue behavior: if more blocking messages arrive, queue them by arrival sequence without replacing the current content. Each OK acknowledges one message and displays the next; resume only after the queue is empty. Do not restore menus that were closed by the interruption. Nonblocking arrivals during this flow update stored messages and counts without stealing the required selection.
+If more blocking messages arrive, queue them by arrival sequence without replacing the current content. Each OK acknowledges one message and displays the next; allow local player controls to resume only after the queue is empty and the input policy permits it. Do not restore menus that were closed by the interruption. Nonblocking arrivals during this flow update stored messages and counts without stealing the required selection.
 
-The implementation must represent pending acknowledgement independently from ordinary window blocking. Releasing it restores gameplay only if the surrounding game/session policy permits it. Resolve simulation pause scope before implementing this gate; do not equate closing windows with permission to resume or reuse an inactive-session transition that would disable the required UI.
+The implementation must represent pending acknowledgement independently from ordinary window blocking. Releasing it restores local player controls only if the surrounding game/session policy permits it. Keep the session active and world processing running throughout acknowledgement; do not pause the scene tree or request a multiplayer simulation pause. Do not equate closing windows with permission to restore controls or reuse an inactive-session transition that would disable the required UI. Networking implementation is outside this epic.
 
 Keyboard auto-repeat and duplicate press suppression remain at the keyboard boundary, with release tracking and focus-loss clearing. Shortcut letters remain available to focused text fields. Clicking a toolbar button deliberately activates it even if a text field previously had focus. Consume pointer activation so it cannot also trigger gameplay attacks or item placement.
 
@@ -148,7 +146,7 @@ Acceptance: the actual menu and all child scenes instantiate without missing res
 
 ### MSG02 Add message state and arrival types
 
-Depends on: first-unread ordering refinement; can precede MSG01. Implement identities, sender descriptors, immutable messages/snapshots, blocking/nonblocking types, receive, mark-read, and deterministic ordering. Wire per-session ownership and internal binding lifecycle. Start each new game with a fresh store and exactly the specified unread, nonblocking welcome test message. Do not seed additional messages outside opt-in test fixtures; omit save/load persistence.
+Depends on: none; can precede MSG01. Implement identities, sender descriptors, immutable messages/snapshots, blocking/nonblocking types, receive, mark-read, and deterministic ordering. Wire per-session ownership and internal binding lifecycle. Start each new game with a fresh store and exactly the specified unread, nonblocking welcome test message. Do not seed additional messages outside opt-in test fixtures; omit save/load persistence.
 
 Acceptance: new messages start unread; duplicate IDs cannot duplicate counts or acknowledgement requests; marking read twice emits one change; sender totals sum to the global total; snapshots cannot mutate the store. Each new game contains exactly one unread, nonblocking welcome test message and no previous messages. It does not open a menu or affect gameplay. Reading it and reopening Messages cannot reseed it. Tests cover both types, invalid inputs, same-name senders, deterministic timestamp ties, and fresh state across game sessions.
 
@@ -172,9 +170,9 @@ Acceptance: zero is grey with no badge; one is yellow with `1`; larger totals us
 
 ### MSG07 Enforce blocking message acknowledgement
 
-Depends on: MSG01 through MSG04 and the simulation pause decision. Implement required-message presentation, menu preemption, modal navigation guards, explicit footer acknowledgement, and the proposed queue after its refinement. Keep read and acknowledgement state separate and integrate the resume gate with gameplay policy. Keep this enforcement below individual buttons so public canvas calls cannot bypass it.
+Depends on: MSG01 through MSG04. Implement required-message presentation, menu preemption, modal navigation guards, explicit footer acknowledgement, and the arrival-ordered queue. Keep read and acknowledgement state separate and integrate the local player control gate with gameplay policy while the world continues running. Keep this enforcement below individual buttons so public canvas calls cannot bypass it.
 
-Acceptance: a blocking arrival closes Map, Inventory, or Main Menu and displays itself. Its content becomes read while gameplay remains suspended. Close, Escape, toolbar, key actions, and programmatic navigation cannot dismiss it. Only clicking footer OK acknowledges it. Multiple queued messages require separate acknowledgements and prevent early resumption. A nonblocking arrival cannot replace the displayed blocking message. Teardown cannot leave the game paused or subscriptions attached. Validate world pause behavior according to the agreed scope. Unrecoverable-error handling remains excluded.
+Acceptance: a blocking arrival closes Map, Inventory, or Main Menu and displays itself. Its content becomes read while local player controls remain suspended and the world continues running. Close, Escape, toolbar, key actions, and programmatic navigation cannot dismiss it. Only clicking footer OK acknowledges it. Multiple queued messages require separate acknowledgements and prevent early restoration of controls. A nonblocking arrival cannot replace the displayed blocking message. Verify world processing advances and message UI remains responsive throughout acknowledgement, including queued messages. Teardown cannot leave a control gate or subscriptions attached. Unrecoverable-error handling remains excluded.
 
 ### MSG06 Verify integration and document behavior
 
@@ -182,7 +180,7 @@ Depends on: MSG01 through MSG05 and MSG07. Add focused state tests and Godot sce
 
 Acceptance: all checks below pass and captured UI images show the toolbar and message menu at both supported test resolutions. Record exact commands, outcomes, and any remaining limitations when implementation is complete.
 
-Delivery order: resolve open refinement choices; MSG01 and MSG02; MSG03 and MSG04; MSG05 and MSG07; MSG06. Story IDs remain stable even though MSG07 precedes final integration checks.
+Delivery order: MSG01 and MSG02; MSG03 and MSG04; MSG05 and MSG07; MSG06. Story IDs remain stable even though MSG07 precedes final integration checks.
 
 ## Verification and completion criteria
 
