@@ -33,14 +33,8 @@ public partial class UiWindowManager : Control
             if (id == UiWindowId.MessageMenu) Focus(id);
             return;
         }
-        if (id != UiWindowId.MainMenu && _registry.IsOpen(UiWindowId.MainMenu)) return;
         MenuActivating?.Invoke();
-        if (id == UiWindowId.MainMenu)
-        {
-            if (_registry.Topmost != null) CloseAll();
-            else Open(id);
-        }
-        else if (id == UiWindowId.MessageMenu)
+        if (id == UiWindowId.MessageMenu)
         {
             Open(id);
             MessagesActivated?.Invoke();
@@ -53,7 +47,7 @@ public partial class UiWindowManager : Control
         if (required && !_requiredMessage) CloseAll();
         _requiredMessage = required;
         if (required) Open(UiWindowId.MessageMenu);
-        _modalBlocker.Visible = required || _registry.IsOpen(UiWindowId.MainMenu);
+        _modalBlocker.Visible = required;
     }
 
     internal bool HasBlockingWindow => _registry.HasBlockingWindow;
@@ -102,7 +96,7 @@ public partial class UiWindowManager : Control
     {
         if (!_navigationEnabled) return;
         if (_requiredMessage && id != UiWindowId.MessageMenu) return;
-        if (id != UiWindowId.MainMenu && _registry.IsOpen(UiWindowId.MainMenu)) return;
+        if (id != UiWindowId.MainMenu) Close(UiWindowId.MainMenu);
         if (_registry.IsOpen(id))
         {
             Focus(id);
@@ -120,7 +114,7 @@ public partial class UiWindowManager : Control
         _scrollContainer.Show();
         _windowRow.AddChild(window);
         _registry.Open(id);
-        _modalBlocker.Visible = _requiredMessage || _registry.IsOpen(UiWindowId.MainMenu);
+        _modalBlocker.Visible = _requiredMessage;
         window.GrabWindowFocus();
         QueueEnsureFocusedWindowVisible();
     }
@@ -135,7 +129,7 @@ public partial class UiWindowManager : Control
         _windowRow.RemoveChild(window);
         window.QueueFree();
         _registry.Close(id);
-        _modalBlocker.Visible = _requiredMessage || _registry.IsOpen(UiWindowId.MainMenu);
+        _modalBlocker.Visible = _requiredMessage;
         WindowClosed?.Invoke(id);
         _scrollContainer.Visible = _windows.Count > 0;
         FocusTopmost();

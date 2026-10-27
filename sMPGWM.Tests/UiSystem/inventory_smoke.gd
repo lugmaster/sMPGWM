@@ -167,7 +167,7 @@ func verify_native_drag(game: Node, canvas: Node, row: Node) -> void:
     root.push_input(escape)
     await settle()
     await finish_drag(Vector2(5, 5))
-    expect(row.get_child_count() == 0 and fixture.call("Revision") == revision and not fixture.call("Carrying"), "Escape during native drag must close windows and preserve ownership")
+    expect(row.get_child_count() == 1 and row.get_child(0).name == "MainMenu" and fixture.call("Revision") == revision and not fixture.call("Carrying"), "Escape during native drag must replace inventory with Main Menu and preserve ownership")
     fixture.call("Restore", game)
     if failures == previous_failures:
         print("Inventory native drag checks passed (%s)." % root.size)
@@ -233,7 +233,7 @@ func verify_browsing(game: Node, canvas: Node, row: Node) -> void:
     await send_key(KEY_M, 109)
     expect(row.get_child_count() == 1 and search.text.contains("im"), "Typing inventory/map shortcuts must edit search without navigating")
     await send_key(KEY_ESCAPE)
-    expect(row.get_child_count() == 0, "Escape must close all while search has focus")
+    expect(row.get_child_count() == 1 and row.get_child(0).name == "MainMenu", "Escape must replace inventory with Main Menu while search has focus")
     await send_key(KEY_I)
     expect(row.get_child_count() == 1, "Shortcut release tracking must allow reopening after search closes")
     fixture.call("Restore", game)
@@ -415,7 +415,7 @@ func verify_click_placement(game: Node, canvas: Node, row: Node) -> void:
     escape.pressed = false
     root.push_input(escape)
     await settle()
-    expect(row.get_child_count() == 0 and not fixture.call("Carrying"), "Escape must close all windows and clear carrying")
+    expect(row.get_child_count() == 1 and row.get_child(0).name == "MainMenu" and not fixture.call("Carrying"), "Escape must replace inventory with Main Menu and clear carrying")
     expect(not pointer_overlay.visible, "Closing all windows must hide the shared pointer overlay")
     expect(fixture.call("Revision") == revision, "Cancellation paths must preserve inventory revision")
     fixture.call("Restore", game)
