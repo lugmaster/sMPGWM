@@ -11,10 +11,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 8
+mouse_filter = 2
 script = ExtResource("1_kpmch")
 
 [node name="ButtonContainer" type="HBoxContainer" parent="." unique_id=338071028]
 layout_mode = 2
+mouse_filter = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
 theme_override_constants/separation = 8
@@ -22,6 +24,7 @@ alignment = 2
 
 [node name="NotificationContainer" type="HBoxContainer" parent="ButtonContainer" unique_id=1246533900]
 layout_mode = 2
+mouse_filter = 2
 size_flags_horizontal = 0
 
 [node name="NotificationIcon" parent="ButtonContainer/NotificationContainer" unique_id=2048931584 instance=ExtResource("1_s5idj")]
@@ -30,10 +33,12 @@ layout_mode = 2
 [node name="MenuSeparator" type="VSeparator" parent="ButtonContainer" unique_id=1731836242]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
+mouse_filter = 2
 size_flags_vertical = 4
 
 [node name="MenuButtonContainer" type="HBoxContainer" parent="ButtonContainer" unique_id=148930760]
 layout_mode = 2
+mouse_filter = 2
 size_flags_horizontal = 8
 
 [node name="InventoryButton" parent="ButtonContainer/MenuButtonContainer" unique_id=624773793 instance=ExtResource("2_b2eiw")]

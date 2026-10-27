@@ -9,7 +9,7 @@
 | `UiCanvas` | Exposes four public menu operations and forwards UI requests; receives data through internal gameplay integration methods. |
 | `UiWindowManager` | Creates, closes, and focuses windows in centered, wrapping rows; handles menu shortcuts and scrolls focused windows into view. |
 | `UiWindowRegistry` | Tracks open window identities, focus order, and whether any window blocks player controls. Contains no Godot dependencies. |
-| `PlayerInputPolicy` | Derives `CanControlPlayer` from an active session and no blocking windows. Contains no Godot dependencies. |
+| `PlayerInputPolicy` | Derives `CanControlPlayer` from an active session, no blocking windows, and no pending message acknowledgement. Contains no Godot dependencies. |
 | `InputController` | Gates continuous movement/combat input, clears outputs when blocked or unfocused, and suppresses mouse attacks over UI. |
 | `PlayerActionController` | Accepts hotbar activation requests and checks policy and current input availability before invoking gameplay. |
 
@@ -19,7 +19,7 @@
 
 `MenuLayer/UiContainer` defines the maximum visible area for overlay menus using proportional anchors: left 15%, top 11%, right 85%, bottom 88% of the UI root. This centers the menu area horizontally with equal 15% side margins and leaves space for HUD elements and follows the marked reference layout when the window resizes. The supported UI baseline is 1920x1080; smaller UI windows are outside the current support target. The world SubViewport remains 1280x720 independently of the UI resolution. It clips its descendants; the menu host and window scroll surface fill this rectangle. Windows wrap into another row when they cannot fit beside the previous window. Tall content scrolls vertically within this area; horizontal scrolling is disabled. This layout boundary keeps inventory-to-hotbar click and native drag editing available without elevating the hotbar above menus. Adjust the container's anchors to change the allowed menu area.
 
-- Inventory and map can coexist. Main menu is exclusive: opening it closes other windows, rejects other menu requests until closed, and covers the UI root with a mouse input blocker beneath the menu. Each menu blocks player controls.
+- Inventory, Map, and Messages can coexist. Main menu is exclusive: opening it closes other windows, rejects other menu requests until closed, and covers the UI root with a mouse input blocker beneath the menu. Each menu blocks player controls.
 - `UiCanvas.OpenMenu(id)` creates one instance or gives the existing instance keyboard focus and scrolls it into view.
 - `UiCanvas.CloseMenu(id)` closes that window; `ToggleMenu(id)` opens or closes it. Close buttons close their own window.
 - `UiCanvas.CloseAllMenus()` closes every window.
@@ -63,13 +63,33 @@ The opt-in `InventorySlotSmokeFixture`, `InventoryVisualSmokeFixture`, `Inventor
 
 `UiCanvas` owns a reusable `ItemPointerOverlay` Control as the last child of its shared UI root, drawing above menus and the hotbar within the same canvas. The overlay owns the carried-item icon, placement label, cursor tracking, and native drag preview construction using Godot's `SetDragPreview`. `InventoryMenu` supplies the icon and contextual text after validating the hovered target, and clears the overlay when interaction ends. Closing or reopening inventory reuses the overlay without retaining the previous pickup. Placement rules and slot highlighting remain in the inventory interaction code.
 
+## Messages and HUD toolbar
+
+The upper-right toolbar reads left to right as Messages (including the unread badge), separator, Inventory, Map, Main Menu. All controls use medium icons and named tooltips with configured shortcuts. `MessageMenu` is intentionally unbound in Input Map. The HUD forwards activation through `UiCanvas` to the same internal `UiWindowManager.Activate` operation used by keyboard dispatch. Keyboard repeat/release and text-entry guards stay at the keyboard boundary. Main Menu activation closes all existing windows, then opens Main Menu on the next activation. Its modal barrier prevents toolbar interaction. Empty HUD anchor space ignores mouse input.
+
+`GamePlayManager.Messages` owns a fresh plain C# `MessageStore` for each game lifetime. Register a `MessageSender` once, then call `Messages.Receive(id, senderId, subject, body, MessageType.NonBlocking)` (or `Blocking`) on the game thread. Unknown senders and missing identities are rejected. Duplicate IDs are no-ops. Immutable snapshots group by sender ID, sort by display name and sender ID, then newest received time and arrival sequence. Sender and global unread totals derive from the committed snapshot. Publication rejects nested writes and isolates observer/reporting failures; views defer their selected-message read until rendering completes.
+
+Startup receives exactly one nonblocking System message: `Welcome` / `Welcome, this is test message`. It turns the notification yellow with badge `1` without opening a window. There is no persistence or automatic reseeding on menu open. Each explicit Messages action selects and reveals the first unread in display order, displays its content, and marks only that message read. Without unread messages it retains a valid selection, or picks the newest message. Rows can also be selected individually. Nonblocking arrivals update counts and rows without changing selection, folding, detail scrolling, or gameplay. Zero unread keeps the notification clickable, grey, and without a badge; larger badges use shared compact quantity formatting with exact totals in the tooltip.
+
+`UiCanvas` subscribes to the store for the HUD independently of menu lifetime. It binds recreated windows before tree entry and owns `MessageViewState` (stable selection ID, collapsed sender IDs, and pane scroll positions). Windows subscribe before rendering, detach on close/rebind, and guard deferred work after disposal. A new selection resets body scrolling; unrelated refreshes preserve it. Sender headers and rows are siblings. Long subjects use ellipsis/full-text tooltips; bodies wrap in an independently bounded vertical scroll pane. Empty or unavailable bindings clear both panes.
+
+`MessageAcknowledgements`, owned by gameplay, tracks blocking arrivals independently of read flags. The pending gate in `PlayerInputPolicy` is set before ordinary menus close. Blocking arrival cancels inventory carrying/native drag, closes every menu (including Main Menu), and displays the arrival with a full HUD/world input barrier. Subsequent blockers queue by arrival sequence; nonblocking arrivals cannot steal selection. Browsing and the ordinary close control are disabled. Manager-level guards reject Escape, shortcuts, toolbar actions, and public canvas close/toggle/replacement attempts. Only an actual pointer click on the footer OK acknowledges one message; keyboard button activation cannot acknowledge. Each OK advances the queue, and the final OK closes Messages without restoring interrupted menus. Controls resume only when session/window policy also allows them. The session stays active, world physics keeps running, and the tree never pauses. Teardown detaches the queue/store subscriptions and releases the gate.
+
+The opt-in `MessageSmokeFixture` supplies Station Command, Trading Guild, Security Office, same-name sender, long-text, empty-binding, large-count, and blocking cases. Normal startup uses only the welcome message. `message_menu_smoke.gd` exercises real pointer/keyboard events at 1920x1080 and 2560x1440 over the unchanged 1280x720 world viewport, including inventory navigation while carrying and dragging. For rendered evidence:
+
+```powershell
+& $godotExecutable --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/message_menu_smoke.gd -- --capture-visuals
+```
+
+Captures go to `artifacts/messages-*.png`. Keep the OS pointer idle during a rendered run. Headless mode runs the same assertions without screenshots. See the completion record in `docs/plans/message-menu-and-toolbar.md` for commands and outcomes.
+
 ## Adding features
 
 The public window boundary is `UiCanvas.OpenMenu`, `CloseMenu`, `ToggleMenu`, and `CloseAllMenus`. Window manager operations, HUD configuration, and gameplay integration members are internal; event-forwarding helpers are private. Godot lifecycle overrides remain public. The registry and scene provider are internal, with `InternalsVisibleTo` granting NUnit access to the registry's state logic.
 
-Window identities and Godot Input Map actions share exactly the same names: `UiWindowId.InventoryMenu`, `MapMenu`, and `MainMenu`. The manager enumerates the enum to derive cached `StringName` values and tracks held actions using enum values. There is no separate action-name list or string switch.
+Window identities and Godot Input Map actions share exactly the same names: `UiWindowId.InventoryMenu`, `MapMenu`, `MainMenu`, and `MessageMenu`. The manager enumerates the enum to derive cached `StringName` values and tracks held actions using enum values. There is no separate action-name list or string switch.
 
-To add a menu, create an inherited `game_overlay_menu.tscn` scene and a script extending `GameOverlayMenu`. Add its enum value (for example, `SkillTreeMenu`), its scene creation method and factory case, and an identically named Input Map action with the desired hotkey. Normal menu actions automatically toggle the matching window; `MainMenu` retains Escape's close-all behavior. When renaming an enum value, update the Input Map entry too; the configuration test checks their alignment. Keep window navigation inside the UI. The registry supports nonblocking windows, although all current factory cases use blocking windows.
+To add a menu, create an inherited `game_overlay_menu.tscn` scene and a script extending `GameOverlayMenu`. Add its enum value (for example, `SkillTreeMenu`), its scene creation method and factory case, and an identically named Input Map action with the desired hotkey. Inventory and Map actions toggle the matching window; Messages opens/focuses and selects the first unread message; `MainMenu` retains Escape's close-all behavior. When renaming an enum value, update the Input Map entry too; the configuration test checks their alignment. Keep window navigation inside the UI. The registry supports nonblocking windows, although all current factory cases use blocking windows.
 
 For example, gameplay code holding a canvas reference opens inventory with `canvas.OpenMenu(UiWindowId.InventoryMenu)`.
 

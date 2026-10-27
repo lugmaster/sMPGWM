@@ -1,24 +1,36 @@
 [gd_scene format=3 uid="uid://cuv42wybm36aq"]
 
-[ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_ve5mf"]
-[ext_resource type="Script" uid="uid://bblhvhp3uku8a" path="res://Scripts/UiSystem/MessageStackSystem/MessageMenu.cs" id="2_2esi3"]
-[ext_resource type="PackedScene" uid="uid://b7jflq63ki5vw" path="res://scenes/ui/menu/game_overlay_menu/message_menu/sender_group.tscn" id="2_xbyma"]
-[ext_resource type="PackedScene" uid="uid://b225027x658r2" path="res://scenes/ui/menu/game_overlay_menu/message_menu/message_entry.tscn" id="2_xyw6g"]
+[ext_resource type="PackedScene" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1"]
+[ext_resource type="Script" path="res://Scripts/UiSystem/MessageStackSystem/MessageMenu.cs" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu/game_overlay_menu/message_menu/message_entry.tscn" id="3"]
 
-[node name="GameOverlayMenu" unique_id=1431156458 instance=ExtResource("1_ve5mf")]
-script = ExtResource("2_2esi3")
+[node name="MessageMenu" instance=ExtResource("1")]
+script = ExtResource("2")
 
-[node name="MessageContainer" type="HSplitContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=335202504]
+[node name="MessageContainer" type="HSplitContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" index="0"]
+custom_minimum_size = Vector2(720, 420)
+layout_mode = 2
+split_offset = 270
+
+[node name="MessageList" type="ScrollContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer" index="0"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 420)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="SenderList" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer/MessageList" index="0"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MessageEntry" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer" index="1" instance=ExtResource("3")]
+unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MessageList" type="ScrollContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer" index="0" unique_id=861009832]
+[node name="AcknowledgeButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/FooterContainer" index="0"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
-
-[node name="SenderList" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer/MessageList" index="0" unique_id=292851001]
-layout_mode = 2
-
-[node name="SenderGroup" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer/MessageList/SenderList" index="0" unique_id=1602030905 instance=ExtResource("2_xbyma")]
-layout_mode = 2
-
-[node name="MessageEntry" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/MessageContainer" index="1" unique_id=1738057739 instance=ExtResource("2_xyw6g")]
-layout_mode = 2
+custom_minimum_size = Vector2(120, 40)
+focus_mode = 0
+text = "OK"

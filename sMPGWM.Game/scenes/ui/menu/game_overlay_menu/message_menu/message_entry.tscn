@@ -1,36 +1,33 @@
 [gd_scene format=3 uid="uid://b225027x658r2"]
-
-[node name="MessageEntry" type="VBoxContainer" unique_id=1738057739]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_right = 106.0
-offset_bottom = 23.0
-grow_horizontal = 2
-grow_vertical = 2
+[ext_resource type="Script" path="res://Scripts/UiSystem/MessageStackSystem/MessageEntry.cs" id="1"]
+[node name="MessageEntry" type="VBoxContainer"]
+custom_minimum_size = Vector2(430, 420)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 8
-
-[node name="Heading" type="Label" parent="." unique_id=911091968]
-custom_minimum_size = Vector2(300, 0)
+script = ExtResource("1")
+mouse_filter = 2
+[node name="Heading" type="Label" parent="."]
 layout_mode = 2
-size_flags_vertical = 0
-text = "Message Heading"
 autowrap_mode = 3
-
-[node name="BodyScrollContainer" type="ScrollContainer" parent="." unique_id=1009968415]
-custom_minimum_size = Vector2(300, 0)
+max_lines_visible = 2
+text_overrun_behavior = 3
+text = "No message selected"
+mouse_filter = 2
+[node name="SenderLabel" type="Label" parent="."]
+layout_mode = 2
+autowrap_mode = 3
+mouse_filter = 2
+[node name="Separator" type="HSeparator" parent="."]
+layout_mode = 2
+mouse_filter = 2
+[node name="BodyScrollContainer" type="ScrollContainer" parent="."]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
-
-[node name="BodyLabel" type="Label" parent="BodyScrollContainer" unique_id=1370027834]
-custom_minimum_size = Vector2(300, 0)
+[node name="BodyLabel" type="Label" parent="BodyScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-text = "Test"
 autowrap_mode = 3
+mouse_filter = 2

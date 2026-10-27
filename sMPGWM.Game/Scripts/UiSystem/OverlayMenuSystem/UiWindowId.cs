@@ -4,5 +4,6 @@ public enum UiWindowId
 {
     InventoryMenu,
     MapMenu,
-    MainMenu
+    MainMenu,
+    MessageMenu
 }

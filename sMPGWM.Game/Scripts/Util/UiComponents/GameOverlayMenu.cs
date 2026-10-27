@@ -44,7 +44,8 @@ public partial class GameOverlayMenu : BaseMenu
 
     internal void GrabWindowFocus()
     {
-        _closeButton.GrabFocus();
+        if (_closeButton.IsVisibleInTree()) _closeButton.GrabFocus();
+        else { FocusMode = FocusModeEnum.All; GrabFocus(); }
     }
 
     protected void RequestClose()

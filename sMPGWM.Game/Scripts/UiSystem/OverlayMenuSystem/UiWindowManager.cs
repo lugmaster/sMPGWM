@@ -21,6 +21,41 @@ public partial class UiWindowManager : Control
     private bool _navigationEnabled;
     private Control _modalBlocker = null!;
 
+    private bool _requiredMessage;
+    internal event Action? MessagesActivated;
+    internal event Action? MenuActivating;
+
+    internal void Activate(UiWindowId id)
+    {
+        if (!_navigationEnabled) return;
+        if (_requiredMessage)
+        {
+            if (id == UiWindowId.MessageMenu) Focus(id);
+            return;
+        }
+        if (id != UiWindowId.MainMenu && _registry.IsOpen(UiWindowId.MainMenu)) return;
+        MenuActivating?.Invoke();
+        if (id == UiWindowId.MainMenu)
+        {
+            if (_registry.Topmost != null) CloseAll();
+            else Open(id);
+        }
+        else if (id == UiWindowId.MessageMenu)
+        {
+            Open(id);
+            MessagesActivated?.Invoke();
+        }
+        else Toggle(id);
+    }
+
+    internal void SetRequiredMessage(bool required)
+    {
+        if (required && !_requiredMessage) CloseAll();
+        _requiredMessage = required;
+        if (required) Open(UiWindowId.MessageMenu);
+        _modalBlocker.Visible = required || _registry.IsOpen(UiWindowId.MainMenu);
+    }
+
     internal bool HasBlockingWindow => _registry.HasBlockingWindow;
     internal event Action<UiWindowId, GameOverlayMenu>? WindowOpening;
     internal event Action<UiWindowId>? WindowClosed;
@@ -48,6 +83,7 @@ public partial class UiWindowManager : Control
         _windowRow.MinimumSizeChanged -= RefreshScrollExtent;
         _scrollContainer.Resized -= QueueEnsureFocusedWindowVisible;
         _pressedMenuActions.Clear();
+        _requiredMessage = false;
         CloseAll();
     }
 
@@ -57,6 +93,7 @@ public partial class UiWindowManager : Control
         if (!enabled)
         {
             _pressedMenuActions.Clear();
+            _requiredMessage = false;
             CloseAll();
         }
     }
@@ -64,6 +101,7 @@ public partial class UiWindowManager : Control
     internal void Open(UiWindowId id)
     {
         if (!_navigationEnabled) return;
+        if (_requiredMessage && id != UiWindowId.MessageMenu) return;
         if (id != UiWindowId.MainMenu && _registry.IsOpen(UiWindowId.MainMenu)) return;
         if (_registry.IsOpen(id))
         {
@@ -82,13 +120,14 @@ public partial class UiWindowManager : Control
         _scrollContainer.Show();
         _windowRow.AddChild(window);
         _registry.Open(id);
-        _modalBlocker.Visible = _registry.IsOpen(UiWindowId.MainMenu);
+        _modalBlocker.Visible = _requiredMessage || _registry.IsOpen(UiWindowId.MainMenu);
         window.GrabWindowFocus();
         QueueEnsureFocusedWindowVisible();
     }
 
     internal void Close(UiWindowId id)
     {
+        if (_requiredMessage) return;
         if (!_windows.Remove(id, out var window)) return;
         window.OnMenuClosed -= _closeHandlers[id];
         _closeHandlers.Remove(id);
@@ -96,7 +135,7 @@ public partial class UiWindowManager : Control
         _windowRow.RemoveChild(window);
         window.QueueFree();
         _registry.Close(id);
-        _modalBlocker.Visible = _registry.IsOpen(UiWindowId.MainMenu);
+        _modalBlocker.Visible = _requiredMessage || _registry.IsOpen(UiWindowId.MainMenu);
         WindowClosed?.Invoke(id);
         _scrollContainer.Visible = _windows.Count > 0;
         FocusTopmost();
@@ -104,12 +143,14 @@ public partial class UiWindowManager : Control
 
     internal void Toggle(UiWindowId id)
     {
+        if (_requiredMessage) return;
         if (_registry.IsOpen(id)) Close(id);
         else Open(id);
     }
 
     internal void CloseAll()
     {
+        if (_requiredMessage) return;
         foreach (var entry in _windows)
         {
             var window = entry.Value;
@@ -163,17 +204,10 @@ public partial class UiWindowManager : Control
         foreach (var (action, actionName) in MenuActions)
         {
             if (!@event.IsActionPressed(actionName, true)) continue;
-            if (action != UiWindowId.MainMenu && GetViewport().GuiGetFocusOwner() is LineEdit) return;
+            if (action != UiWindowId.MainMenu && GetViewport().GuiGetFocusOwner() is LineEdit or TextEdit) return;
             GetViewport().SetInputAsHandled();
             if (@event.IsEcho() || !_pressedMenuActions.Add(action)) return;
-            if (action != UiWindowId.MainMenu && _registry.IsOpen(UiWindowId.MainMenu)) return;
-
-            if (action == UiWindowId.MainMenu)
-            {
-                if (_registry.Topmost != null) CloseAll();
-                else Open(UiWindowId.MainMenu);
-            }
-            else Toggle(action);
+            Activate(action);
 
             return;
         }
@@ -220,6 +254,7 @@ public partial class UiWindowManager : Control
     {
         UiWindowId.InventoryMenu => GameOverlayProvider.CreateInventoryMenu(),
         UiWindowId.MapMenu => GameOverlayProvider.CreateMapMenu(),
+        UiWindowId.MessageMenu => GameOverlayProvider.CreateMessageMenu(),
         UiWindowId.MainMenu => GameOverlayProvider.CreateMainMenu(),
         _ => throw new ArgumentOutOfRangeException(nameof(id), id, null)
     };

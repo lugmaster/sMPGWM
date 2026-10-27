@@ -182,7 +182,7 @@ public partial class InventoryMenu : GameOverlayMenu
         CancelInteraction();
     }
 
-    private void CancelInteraction()
+    internal void CancelInteraction()
     {
         _interaction?.Cancel();
         _pressedIcon = null;
@@ -210,6 +210,12 @@ public partial class InventoryMenu : GameOverlayMenu
         }
         var hovered = GetViewport().GuiGetHoveredControl();
         if (hovered is ClickableIcon icon && _cells.Contains(icon)) return;
+        for (var ancestor = hovered; ancestor != null; ancestor = ancestor.GetParent() as Control)
+            if (ancestor is sMPGWM.Scripts.UiSystem.HudSystem.MenuToolbarControl)
+            {
+                CancelInteraction();
+                return;
+            }
         if (!IsCarrying) return;
         CancelInteraction();
         if (hovered == null || !_inventoryView.IsToolbarControl(hovered)) GetViewport().SetInputAsHandled();

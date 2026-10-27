@@ -1,6 +1,9 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Godot;
+using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -9,6 +12,11 @@ namespace sMPGWM.Scripts.UiSystem.HudSystem;
 public partial class PlayerHud : Control
 {
     internal event Action<int>? HotbarSlotPressed;
+    internal event Action<UiWindowId>? MenuRequested;
+    private MenuToolbarControl _toolbar = null!;
+    internal void SetNavigationEnabled(bool enabled) => _toolbar.SetNavigationEnabled(enabled);
+    internal void SetUnreadMessages(int count) => _toolbar.PresentNotification(NotificationKind.UnreadMessages, count);
+    private void RequestMenu(UiWindowId id) => MenuRequested?.Invoke(id);
 
     private Control _statsAnchor = null!;
     private Control _radarAnchor = null!;
@@ -23,6 +31,7 @@ public partial class PlayerHud : Control
     public override void _EnterTree()
     {
         Logger.Trace($"{nameof(PlayerHud)}.{nameof(_EnterTree)} called.");
+        _toolbar = GetNode<MenuToolbarControl>("%MenuToolbar");
         _statsAnchor = GetNode<Control>("%StatsAnchor");
         _radarAnchor = GetNode<Control>("%RadarAnchor");
         _hotbarAnchor = GetNode<Control>("%HotbarAnchor");
@@ -34,6 +43,7 @@ public partial class PlayerHud : Control
     public override void _Ready()
     {
         Logger.Trace($"{nameof(PlayerHud)}.{nameof(_Ready)} called.");
+        _toolbar.MenuRequested += RequestMenu;
         _hotbarControl.SlotPressed += OnHotbarSlotPressed;
 
         GetViewport().SizeChanged += ApplyLayout;
@@ -44,6 +54,7 @@ public partial class PlayerHud : Control
     public override void _ExitTree()
     {
         Logger.Trace($"{nameof(PlayerHud)}.{nameof(_ExitTree)} called.");
+        _toolbar.MenuRequested -= RequestMenu;
         if (_hotbarControl != null)
             _hotbarControl.SlotPressed -= OnHotbarSlotPressed;
 

@@ -1,6 +1,6 @@
 # Message menu and HUD toolbar implementation plan
 
-Status: refined proposal. Implementation has not started.
+Status: implemented and verified on 2026-10-27. MSG01 through MSG07 are complete.
 
 Starting point: `6e7e7ea314da28ca9ab04747dde86bec08b9fe9a` (`MessageSystem init.`), which is the inspected HEAD. Build on its scenes and scripts. Existing UI behavior is documented in [UI and player input](../../sMPGWM.Game/Scripts/UiSystem/README.md).
 
@@ -193,3 +193,36 @@ Check nonblocking arrivals both closed and open, read/count consistency, folding
 Use UI viewports of 1920x1080 and 2560x1440 with the existing 1280x720 world viewport. Inspect rendered captures for upper-right placement, grey/yellow artwork, badge readability, separator alignment, row/selection/unread distinction, clipping, scroll behavior, and compatibility with the other HUD elements. Keep the existing shared-canvas ordering and menu-area anchors.
 
 The epic is complete when all seven stories meet their acceptance criteria, the regressions pass, and the supplied scenes form a usable toolbar/message flow with the agreed message lifetime and mandatory acknowledgement behavior.
+
+
+## Implementation completion record (2026-10-27)
+
+All seven stories are implemented. `MessageStore` publishes immutable committed snapshots, and gameplay owns a separate arrival-ordered acknowledgement queue and local-control gate. The HUD uses the shared icon sizing and quantity formatter. The repaired scenes bind runtime groups and details, preserve browsing state, and share menu activation policy with keyboard input. `UiCanvas` retains its four public operations. No new autoload, simulation pause, save persistence, or normal-startup fixture messages were added.
+
+Verification used this project's Godot .NET/Steam executable:
+
+```powershell
+$godotExecutable = 'C:/Users/lober/godot_engine/Godot_v4.6.2_mono_steam/editor/godot.windows.editor.x86_64.mono.console.exe'
+dotnet build sMPGWM.sln
+dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj
+& $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/ui_architecture_smoke.gd
+& $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/icon_sizing_smoke.gd
+& $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/inventory_smoke.gd
+& $godotExecutable --headless --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/message_menu_smoke.gd
+& $godotExecutable --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/message_menu_smoke.gd -- --capture-visuals
+```
+
+| Check | Outcome |
+| --- | --- |
+| Solution build | Passed, zero errors; existing nullable/source-generator warnings remain. |
+| NUnit suite | Passed, 416 tests including message state, ordering, validation, snapshot immutability, observer isolation, acknowledgement queue, independent control gating, and the four-method canvas boundary. |
+| UI architecture | Passed across two scene lifetimes, including key-repeat/release guards, text entry, focus, coexistence/wrapping, and Main Menu exclusivity. |
+| Icon sizing | Passed at both resolutions; extended to toolbar and notification targets with 16/64/256-pixel, rectangular, and empty textures. |
+| Inventory regression | Passed at both resolutions across two game lifetimes, including click/native drag, hotbar editing, cancellation, layout, and teardown. |
+| Message headless and rendered smoke | Passed with zero failures at 1920x1080 and 2560x1440; world viewport remains 1280x720. |
+
+Message smoke uses actual pointer and keyboard events. It verifies the single welcome seed in each new session; toolbar icons/tooltips/focus and attack suppression; explicit first-unread reads without cascades; live arrivals, folding, read-history reopening and scroll preservation; independent close controls and three-window coexistence; Main Menu action rules; same-name sender identities; long subjects and bodies; exact/compact counts; empty/rebound stores; inactive navigation; and teardown with a required message pending. Inventory click carrying and native drag navigation cancel without changing ownership or leaving previews. Blocking cases preempt ordinary menus and Main Menu, reject public API and shortcut dismissal attempts, require individual pointer OK acknowledgements, retain selection through nonblocking arrivals, and restore controls only after the queue drains. A physics-processing probe inside the actual world scene advances during acknowledgement while movement and combat remain blocked.
+
+Rendered captures were generated and inspected for toolbar placement, badge colors/readability, pane clipping, long-title ellipsis, selection/unread distinction, scrolling, and compatibility with the HUD. Local evidence is in ignored `artifacts/messages-{welcome,blocking,groups,large-count,empty}-{1920x1080,2560x1440}.png`. Build/unit logs are `artifacts/message-build.log` and `artifacts/message-unit-tests.log`; regression logs are `artifacts/message-final-{architecture,icon-sizing,inventory,rendered}.log`, with the final headless message run in `artifacts/message-reopen.log`.
+
+A separate manual gameplay playthrough was not performed. Network transport and save/load behavior remain outside this epic's scope, as planned.

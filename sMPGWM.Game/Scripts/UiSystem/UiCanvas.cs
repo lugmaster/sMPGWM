@@ -1,6 +1,8 @@
 #nullable enable
 
 using System;
+using sMPGWM.Scripts.MessageSystem;
+using sMPGWM.Scripts.UiSystem.MessageStackSystem;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -17,6 +19,49 @@ namespace sMPGWM.Scripts.UiSystem;
 
 public partial class UiCanvas : CanvasLayer
 {
+    private MessageStore? _messages;
+    private MessageMenu? _messageMenu;
+    private MessageViewState _messageViewState = new();
+    private string? _requiredMessageId;
+    internal event Action? MessageAcknowledged;
+
+    internal void BindMessages(MessageStore store)
+    {
+        UnbindMessages();
+        _messages = store;
+        _messageViewState = new MessageViewState();
+        store.Changed += RefreshMessages;
+        _messageMenu?.Bind(store, _messageViewState);
+        RefreshMessages(store.Snapshot);
+    }
+
+    internal void UnbindMessages()
+    {
+        if (_messages != null) _messages.Changed -= RefreshMessages;
+        _messages = null;
+        _messageMenu?.SetRequired(null);
+        _messageMenu?.Unbind();
+        _messageViewState = new MessageViewState();
+        _requiredMessageId = null;
+        _windowManager.SetRequiredMessage(false);
+        _playerHud.SetUnreadMessages(0);
+    }
+
+    private void RefreshMessages(MessageSnapshot snapshot) => _playerHud.SetUnreadMessages(snapshot.UnreadCount);
+    private void CancelItemInteraction() => _inventoryMenu?.CancelInteraction();
+    private void ActivateMenu(UiWindowId id) => _windowManager.Activate(id);
+    private void SelectFirstUnread() => _messageMenu?.SelectFirstUnread();
+    private void AcknowledgeMessage() => MessageAcknowledged?.Invoke();
+
+    internal void PresentRequiredMessage(PlayerMessage? message)
+    {
+        _requiredMessageId = message?.Id;
+        if (message != null) SetInventoryEditing(false);
+        _windowManager.SetRequiredMessage(message != null);
+        _messageMenu?.SetRequired(message?.Id);
+        if (message == null) _windowManager.Close(UiWindowId.MessageMenu);
+    }
+
     private PlayerHud _playerHud = null!;
     private UiWindowManager _windowManager = null!;
     private ItemPointerOverlay _itemPointerOverlay = null!;
@@ -43,6 +88,9 @@ public partial class UiCanvas : CanvasLayer
 
     public override void _Ready()
     {
+        _playerHud.MenuRequested += ActivateMenu;
+        _windowManager.MessagesActivated += SelectFirstUnread;
+        _windowManager.MenuActivating += CancelItemInteraction;
         _playerHud.HotbarSlotPressed += RequestHotbarAction;
         _windowManager.BlockingChanged += OnBlockingChanged;
         _windowManager.WindowOpening += OnWindowOpening;
@@ -51,7 +99,11 @@ public partial class UiCanvas : CanvasLayer
 
     public override void _ExitTree()
     {
+        UnbindMessages();
         UnbindInventory();
+        _playerHud.MenuRequested -= ActivateMenu;
+        _windowManager.MessagesActivated -= SelectFirstUnread;
+        _windowManager.MenuActivating -= CancelItemInteraction;
         _playerHud.HotbarSlotPressed -= RequestHotbarAction;
         _windowManager.BlockingChanged -= OnBlockingChanged;
         _windowManager.WindowOpening -= OnWindowOpening;
@@ -108,6 +160,16 @@ public partial class UiCanvas : CanvasLayer
 
     private void OnWindowOpening(UiWindowId id, GameOverlayMenu window)
     {
+        CancelItemInteraction();
+        if (id == UiWindowId.MessageMenu)
+        {
+            _messageMenu = (MessageMenu)window;
+            _messageMenu.Bind(_messages, _messageViewState);
+            _messageMenu.SetRequired(_requiredMessageId);
+            _messageMenu.SelectFirstUnread();
+            _messageMenu.Acknowledged += AcknowledgeMessage;
+            return;
+        }
         if (id != UiWindowId.InventoryMenu) return;
         _inventoryMenu = (InventoryMenu)window;
         _inventoryMenu.SetPointerOverlay(_itemPointerOverlay);
@@ -120,6 +182,16 @@ public partial class UiCanvas : CanvasLayer
 
     private void OnWindowClosed(UiWindowId id)
     {
+        if (id == UiWindowId.MessageMenu)
+        {
+            if (_messageMenu != null)
+            {
+                _messageMenu.Acknowledged -= AcknowledgeMessage;
+                _messageMenu.Unbind();
+            }
+            _messageMenu = null;
+            return;
+        }
         if (id != UiWindowId.InventoryMenu) return;
         _inventoryMenu?.Unbind();
         _inventoryMenu = null;
@@ -152,7 +224,11 @@ public partial class UiCanvas : CanvasLayer
 
     internal void SetHotbarIcons(IReadOnlyList<IconDefinition> icons) => _playerHud.SetHotbarIcons(icons);
 
-    internal void SetNavigationEnabled(bool enabled) => _windowManager.SetNavigationEnabled(enabled);
+    internal void SetNavigationEnabled(bool enabled)
+    {
+        _windowManager.SetNavigationEnabled(enabled);
+        _playerHud.SetNavigationEnabled(enabled);
+    }
 
     internal void SetGameplayInputEnabled(bool enabled) => _playerHud.SetGameplayInputEnabled(enabled);
 

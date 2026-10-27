@@ -41,6 +41,15 @@ func run() -> void:
         var hotbar := canvas.get_node("%PlayerHud").get_node("%HotbarControl")
         var hotbar_cells := hotbar.get_node("%ButtonContainer").get_children()
         await verify_sizes(hotbar_cells, Vector2(64, 64), "Hotbar")
+        var toolbar := canvas.get_node("%PlayerHud/%MenuToolbar")
+        var toolbar_cells := toolbar.get_node("ButtonContainer/MenuButtonContainer").get_children()
+        toolbar_cells.append(toolbar.get_node("ButtonContainer/NotificationContainer/NotificationIcon"))
+        for sample in [texture(16, 16), texture(64, 64), texture(256, 256), texture(256, 64), null]:
+            for cell in toolbar_cells:
+                cell.set("IconTexture", sample)
+            await settle()
+            for cell in toolbar_cells:
+                expect(cell.size.is_equal_approx(Vector2(48, 48)), "Toolbar and notification use stable medium icon targets")
         canvas.call("OpenMenu", 0)
         await settle()
         var row := canvas.get_node("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")

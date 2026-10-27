@@ -35,7 +35,7 @@ public partial class FilePaths : AbstractSingleton<FilePaths>
 
     // Scenes
     public const string GameCanvasScenePath = "res://scenes/game_overlay/game_canvas.tscn";
-    public const string MessageEntryScene = "res://scenes/ui/message_entry.tscn";
+    public const string MessageEntryScene = "res://scenes/ui/menu/game_overlay_menu/message_menu/message_entry.tscn";
     public const string MainGameScenePath = "res://scenes/main_game.tscn";
     public const string MainMenuScenePath = "res://scenes/ui/main_menu.tscn";
     

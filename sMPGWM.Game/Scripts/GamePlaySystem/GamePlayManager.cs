@@ -1,4 +1,5 @@
 using System;
+using sMPGWM.Scripts.MessageSystem;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -31,6 +32,18 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
     public ItemHotbarState ItemHotbar { get; private set; } = null!;
     public ItemHotbarAdapter HotbarAdapter { get; private set; } = null!;
+
+    public MessageStore Messages { get; private set; } = null!;
+    private MessageAcknowledgements _acknowledgements = null!;
+
+    private void RefreshAcknowledgement()
+    {
+        var required = _acknowledgements.Current;
+        _inputPolicy.SetHasPendingAcknowledgement(required != null);
+        if (GameState == MainGameState.Active) _canvas.PresentRequiredMessage(required);
+    }
+
+    private void AcknowledgeMessage() => _acknowledgements.AcknowledgeCurrent();
 
     [Export] public bool PopulateMockInventory { get; set; } = true;
 
@@ -94,6 +107,13 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ItemTransfers = new InventoryEquipmentTransferService(InventoryImpl, EquipmentImpl);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
+        Messages = new MessageStore(exception => LoggingSystem.Logger.Error($"Message observer failed: {exception}"));
+        _acknowledgements = new MessageAcknowledgements(Messages);
+        _acknowledgements.Changed += RefreshAcknowledgement;
+        _canvas.MessageAcknowledged += AcknowledgeMessage;
+        Messages.RegisterSender(new MessageSender("system", "System"));
+        Messages.Receive("welcome", "system", "Welcome", "Welcome, this is test message", MessageType.NonBlocking);
+        _canvas.BindMessages(Messages);
         _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
         _canvas.BindInventory(InventoryImpl, EquipmentImpl, ItemTransfers);
         _inputController = InputController.Instance;
@@ -124,6 +144,11 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     {
         if (_canvas != null)
         {
+            _canvas.MessageAcknowledged -= AcknowledgeMessage;
+            _canvas.UnbindMessages();
+            _acknowledgements?.Dispose();
+            Messages?.Dispose();
+            _inputPolicy.SetHasPendingAcknowledgement(false);
             _canvas.UnbindInventory();
             _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
         }
@@ -163,6 +188,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (newGameState != MainGameState.Active) SetInventoryEditing(false);
         _inputPolicy.SetSessionActive(newGameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(newGameState == MainGameState.Active);
+        if (newGameState == MainGameState.Active) RefreshAcknowledgement();
         OnGameStateChanged?.Invoke(newGameState);
     }
 
