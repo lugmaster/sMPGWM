@@ -94,12 +94,12 @@ public partial class HotbarControl : PanelContainer
         SetGameplayInputEnabled(_isProcessingInput);
     }
 
-    internal void Bind(ItemHotbarState state, ItemHotbarAdapter adapter, ItemCatalog catalog, IReadOnlyList<IconDefinition> actions)
+    internal void Bind(ItemHotbarState state, ItemHotbarAdapter adapter, IReadOnlyList<IconDefinition> actions)
     {
         Unbind();
         _state = state;
         _adapter = adapter;
-        _visuals = new ItemVisuals(catalog);
+        _visuals = new ItemVisuals();
         _actions = actions;
         SetIcons(actions);
         state.Changed += Refresh;

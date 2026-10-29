@@ -16,32 +16,28 @@ namespace sMPGWM.Scripts.Util.Mocks;
 
 public partial class InventorySlotSmokeFixture : RefCounted
 {
-    private ItemCatalog? _loadedCatalog;
-    private ulong _gameId;
+    private ItemDefinition? _loadedDefinition;
 
     public bool VerifyLoadedItems(GamePlayManager game, bool seeded)
     {
         try
         {
-            Require(game.Items.Definitions.Count == 16, "Startup must load all packaged item definitions even without seeding.");
-            Require(ReferenceEquals(game.Items, game.InventoryController.Catalog), "Inventory must reference the game catalog.");
-            Require(ReferenceEquals(game.ItemCategories, game.Items.Categories), "Items must reference the loaded categories.");
-            if (_loadedCatalog != null)
-                Require(ReferenceEquals(_loadedCatalog, game.Items) == (_gameId == game.GetInstanceId()),
-                    "Menu reopen must reuse the catalog; another game must get an independent catalog.");
-            _loadedCatalog = game.Items;
-            _gameId = game.GetInstanceId();
+            Require(ItemRegistry.GetAll().Count == 16, "Startup must load all packaged item definitions even without seeding.");
+            var first = ItemRegistry.GetAll()[0];
+            if (_loadedDefinition != null)
+                Require(ReferenceEquals(_loadedDefinition, first), "Definitions must be shared for the application lifetime.");
+            _loadedDefinition = first;
             Require(game.InventoryController.Snapshot.Occupied.Count == (seeded ? 34 : 0),
                 "Mock seeding must remain optional.");
             if (seeded)
             {
-                foreach (var definition in game.Items.Definitions)
+                foreach (var definition in ItemRegistry.GetAll())
                 {
                     var counts = game.InventoryController.Snapshot.Occupied
                         .Where(entry => entry.Entity.DefinitionId == definition.Id)
                         .Select(entry => entry.Entity.Count).ToArray();
-                    var expected = game.ItemCategories.Get(definition.CategoryId).CanStack
-                        ? definition.Id.Value.StartsWith("mock_standard_", StringComparison.Ordinal)
+                    var expected = definition.CanStack
+                        ? definition.Id.StartsWith("mock_standard_", StringComparison.Ordinal)
                             ? new[] { 10, 10, 7 } : new[] { 1000, 250 }
                         : new[] { 1, 1 };
                     Require(counts.SequenceEqual(expected), $"Unexpected mock stacks for {definition.Id}.");
@@ -59,13 +55,9 @@ public partial class InventorySlotSmokeFixture : RefCounted
     public bool Run(GamePlayManager game)
     {
         var canvas = game.GetNode<UiCanvas>("UiCanvas");
-        var engine = new ItemDefinitionId("smoke_engine");
-        var catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[]
-        {
-            new ItemDefinition(engine, "Smoke Engine", ItemCategories.Engine)
-        });
-        using var inventory = new InventoryController(catalog);
-        using var equipment = new EquipmentController(catalog);
+        var engine = "mock_standard_engine";
+        using var inventory = new InventoryController();
+        using var equipment = new EquipmentController();
         using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
         var canEdit = false;
         Action<bool> trackEditing = available => canEdit = available;
@@ -73,7 +65,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
         try
         {
             canvas.CloseAllMenus();
-            game.BindInventoryPresentation(inventory, equipment, catalog);
+            game.BindInventoryPresentation(inventory, equipment);
             canvas.OpenMenu(UiWindowId.InventoryMenu);
             Require(canEdit, "Opening inventoryImpl must authorize editing.");
             canvas.Notification((int)Node.NotificationApplicationFocusOut);
@@ -93,7 +85,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
                 ItemLocation.Equipment("engine"), null, inventory.Revision, equipment.Revision);
             Require(transfers.Transfer(request) == TransferResult.Success, "Fixture equip failed.");
             var binding = (ItemCellBinding)grid.GetChild<ClickableIcon>(2).Binding!;
-            var projected = InventoryProjection.Create(inventory.Snapshot, catalog, new InventoryViewState());
+            var projected = InventoryProjection.Create(inventory.Snapshot, new InventoryViewState());
             Require(binding == projected[2],
                 "Compacted cells must retain their real address and entity expectation.");
             var emptyBinding = (ItemCellBinding)grid.GetChild<ClickableIcon>(128).Binding!;
@@ -117,7 +109,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
             Require(reopenedGrid.GetChildCount() == 192, "Reopen must retain expanded capacity.");
             Require(((ItemCellBinding)reopenedGrid.GetChild<ClickableIcon>(128).Binding!).Entity != null,
                 "Reopen must immediately render additions made while closed.");
-            game.BindInventoryPresentation(inventory, equipment, catalog);
+            game.BindInventoryPresentation(inventory, equipment);
             Require(reopenedGrid.GetChildCount() == 192, "Rebinding a ready view must not duplicate cells.");
             return true;
         }
@@ -130,7 +122,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
         {
             canvas.InventoryEditAvailabilityChanged -= trackEditing;
             canvas.CloseAllMenus();
-            game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.Items, game.ItemTransfers);
+            game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.ItemTransfers);
         }
     }
 

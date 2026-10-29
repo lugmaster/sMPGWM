@@ -10,14 +10,8 @@ internal static class ItemIconResolver
 {
     private static Texture2D? _placeholder;
 
-    internal static Texture2D Item(ItemCatalog catalog, ItemDefinition definition) =>
-        Load(definition.IconAssetPath) ?? Category(catalog.Categories.Get(definition.CategoryId)) ?? Placeholder();
-
-    internal static Texture2D? Category(ItemCategory category) => Load(category.IconAssetPath) ??
-        (category.IconKey == null ? null : Icons.Get(category.IconKey).IconTexture);
-
-    private static Texture2D? Load(string? path) => !string.IsNullOrWhiteSpace(path) && ResourceLoader.Exists(path, "Texture2D")
-        ? ResourceLoader.Load<Texture2D>(path) : null;
+    internal static Texture2D Item(ItemDefinition definition) => definition.Icon.IconTexture;
+    internal static Texture2D Category(ItemCategoryDefinition category) => category.Icon.IconTexture;
 
     internal static Texture2D Placeholder()
     {

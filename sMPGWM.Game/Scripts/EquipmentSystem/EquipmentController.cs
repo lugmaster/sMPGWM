@@ -11,7 +11,6 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     private bool _disposed;
     private bool _publishing;
 
-    internal ItemCatalog Catalog { get; }
     public IReadOnlyList<EquipmentSlotDefinition> Definitions { get; }
     public EquipmentSnapshot Snapshot { get; private set; } = new(0, new ItemEntity?[EquipmentSlotDefinition.Defaults.Count]);
     public long Revision => Snapshot.Revision;
@@ -19,14 +18,12 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :
         _publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
 
-    public EquipmentController(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
+    public EquipmentController(Action<Exception>? reportObserverError = null)
     {
-        ArgumentNullException.ThrowIfNull(catalog);
-        Catalog = catalog;
         _reportObserverError = reportObserverError;
         Definitions = EquipmentSlotDefinition.Defaults;
         foreach (var definition in Definitions)
-            catalog.Categories.Get(definition.AcceptedCategory);
+            ItemRegistry.GetCategoryById(definition.AcceptedCategory);
     }
 
     public int FindSlot(string key)
@@ -36,10 +33,10 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
         return -1;
     }
 
-    public bool CanPlace(string key, ItemDefinitionId definitionId)
+    public bool CanPlace(string key, string definitionId)
     {
         var index = FindSlot(key);
-        return index >= 0 && Catalog.Get(definitionId).CategoryId == Definitions[index].AcceptedCategory;
+        return index >= 0 && ItemRegistry.GetById(definitionId).CategoryName == ItemRegistry.GetCategoryById(Definitions[index].AcceptedCategory).DisplayName;
     }
 
     internal EquipmentSnapshot PrepareChange(ItemEntity?[] slots)

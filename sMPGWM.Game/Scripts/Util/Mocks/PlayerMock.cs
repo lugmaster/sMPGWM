@@ -27,36 +27,36 @@ public partial class PlayerMock: AbstractSingleton<PlayerMock>
         return Array.Empty<IconDefinition>();
     }
 
-    private static readonly (ItemDefinitionId Id, long Quantity)[] InventoryExamples =
+    private static readonly (string Id, long Quantity)[] InventoryExamples =
     [
-        (new("mock_standard_engine"), 2),
-        (new("mock_advanced_engine"), 2),
-        (new("mock_standard_hull"), 2),
-        (new("mock_advanced_hull"), 2),
-        (new("mock_standard_shield_generator"), 2),
-        (new("mock_advanced_shield_generator"), 2),
-        (new("mock_standard_reactor"), 2),
-        (new("mock_advanced_reactor"), 2),
-        (new("mock_standard_light_weapon"), 2),
-        (new("mock_advanced_light_weapon"), 2),
-        (new("mock_standard_heavy_weapon"), 2),
-        (new("mock_advanced_heavy_weapon"), 2),
-        (new("mock_standard_consumable"), 27),
-        (new("mock_advanced_consumable"), 1250),
-        (new("mock_standard_resource"), 27),
-        (new("mock_advanced_resource"), 1250),
+        ("mock_standard_engine", 2),
+        ("mock_advanced_engine", 2),
+        ("mock_standard_hull", 2),
+        ("mock_advanced_hull", 2),
+        ("mock_standard_shield_generator", 2),
+        ("mock_advanced_shield_generator", 2),
+        ("mock_standard_reactor", 2),
+        ("mock_advanced_reactor", 2),
+        ("mock_standard_light_weapon", 2),
+        ("mock_advanced_light_weapon", 2),
+        ("mock_standard_heavy_weapon", 2),
+        ("mock_advanced_heavy_weapon", 2),
+        ("mock_standard_consumable", 27),
+        ("mock_advanced_consumable", 1250),
+        ("mock_standard_resource", 27),
+        ("mock_advanced_resource", 1250),
     ];
 
-    internal static void ValidateInventoryDefinitions(ItemCatalog catalog)
+    internal static void ValidateInventoryDefinitions()
     {
         foreach (var (id, _) in InventoryExamples)
-            catalog.Get(id);
+            ItemRegistry.GetById(id);
     }
 
     public void PopulateInventory(InventoryController inventory)
     {
         // Resolve every reference before the first addition, so missing definitions cannot partially seed a player.
-        ValidateInventoryDefinitions(inventory.Catalog);
+        ValidateInventoryDefinitions();
         foreach (var (id, quantity) in InventoryExamples)
         {
             var result = inventory.Add(id, quantity);

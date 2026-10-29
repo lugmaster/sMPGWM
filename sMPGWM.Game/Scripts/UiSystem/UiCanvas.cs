@@ -80,7 +80,6 @@ public partial class UiCanvas : CanvasLayer
     private IInventoryView? _inventory;
     private IEquipmentView? _equipment;
     private IItemTransfers? _transfers;
-    private ItemCatalog? _inventoryCatalog;
     private InventoryViewState _inventoryViewState = new();
     private InventoryMenu? _inventoryMenu;
     private bool _hasApplicationFocus = true;
@@ -124,16 +123,14 @@ public partial class UiCanvas : CanvasLayer
     }
 
     internal void BindInventory(IInventoryView inventory, IEquipmentView equipment,
-        ItemCatalog catalog,
         IItemTransfers? transfers = null)
     {
         UnbindInventory();
         _inventory = inventory;
         _equipment = equipment;
         _transfers = transfers;
-        _inventoryCatalog = catalog;
         _inventoryViewState = new InventoryViewState();
-        _inventoryMenu?.Bind(inventory, equipment, _inventoryViewState, catalog);
+        _inventoryMenu?.Bind(inventory, equipment, _inventoryViewState);
         InventoryEditAvailabilityChanged?.Invoke(_inventoryMenu != null && _hasApplicationFocus);
     }
 
@@ -146,7 +143,6 @@ public partial class UiCanvas : CanvasLayer
         _inventory = null;
         _equipment = null;
         _transfers = null;
-        _inventoryCatalog = null;
         _playerHud.Hotbar.Unbind();
         _hotbar = null;
         _hotbarAdapter = null;
@@ -160,11 +156,11 @@ public partial class UiCanvas : CanvasLayer
         _inventoryMenu?.BindHotbar(_hotbar, _hotbarAdapter, _playerHud.Hotbar, session);
     }
 
-    internal void BindHotbar(ItemHotbarState state, ItemHotbarAdapter adapter, ItemCatalog catalog, IReadOnlyList<IconDefinition> actions)
+    internal void BindHotbar(ItemHotbarState state, ItemHotbarAdapter adapter, IReadOnlyList<IconDefinition> actions)
     {
         _hotbar = state;
         _hotbarAdapter = adapter;
-        _playerHud.Hotbar.Bind(state, adapter, catalog, actions);
+        _playerHud.Hotbar.Bind(state, adapter, actions);
         _inventory!.Changed += RefreshHotbarInventory;
         _equipment!.Changed += RefreshHotbarEquipment;
     }
@@ -189,7 +185,7 @@ public partial class UiCanvas : CanvasLayer
         _inventoryMenu.SetPointerOverlay(_itemPointerOverlay);
         if (_inventory != null && _equipment != null)
         {
-            _inventoryMenu.Bind(_inventory, _equipment, _inventoryViewState, _inventoryCatalog!);
+            _inventoryMenu.Bind(_inventory, _equipment, _inventoryViewState);
             InventoryEditAvailabilityChanged?.Invoke(_hasApplicationFocus);
         }
     }

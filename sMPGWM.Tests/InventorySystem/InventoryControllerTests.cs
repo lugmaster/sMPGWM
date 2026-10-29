@@ -4,22 +4,17 @@ using sMPGWM.Scripts.ItemSystem;
 namespace sMPGWM.Tests.InventorySystem;
 
 [TestFixture]
+[Category("Godot")]
 public class InventoryControllerTests
 {
-    private static readonly ItemDefinitionId Engine = new("engine");
-    private static readonly ItemDefinitionId Repair = new("repair");
-    private static readonly ItemDefinitionId Resource = new("resource");
-    private static readonly ItemCatalog Catalog = new(ItemCategories.CreateDefault(), new[]
-    {
-        new ItemDefinition(Engine, "Engine", ItemCategories.Engine),
-        new ItemDefinition(Repair, "Repair", ItemCategories.Consumable, maximumStackSize: 10),
-        new ItemDefinition(Resource, "Resource", ItemCategories.Resource)
-    });
+    private static readonly string Engine = "mock_standard_engine";
+    private static readonly string Repair = "mock_standard_consumable";
+    private static readonly string Resource = "mock_standard_resource";
 
     [Test]
     public void NewInventory_Has128GenuineEmptyAddresses()
     {
-        using var inventory = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
         Assert.That(inventory.Capacity, Is.EqualTo(128));
         Assert.That(inventory.Revision, Is.Zero);
         Assert.That(inventory.Snapshot.Occupied, Is.Empty);
@@ -34,7 +29,7 @@ public class InventoryControllerTests
     [TestCase(257, 320)]
     public void BulkAdd_GrowsInMinimum64CellChunks(int quantity, int capacity)
     {
-        using var inventory = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
         var notifications = 0;
         InventorySnapshot? observed = null;
         inventory.Changed += snapshot =>
@@ -57,11 +52,11 @@ public class InventoryControllerTests
     [Test]
     public void Add_FillsPartialStacksBeforeHolesInStorageOrderAndPreservesIds()
     {
-        using var inventory = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
         var slots = inventory.Snapshot.Slots.ToArray();
-        slots[3] = Catalog.CreateEntity(Repair, 7);
-        slots[7] = Catalog.CreateEntity(Repair, 5);
-        slots[9] = Catalog.CreateEntity(Engine);
+        slots[3] = ItemRegistry.CreateEntity(Repair, 7);
+        slots[7] = ItemRegistry.CreateEntity(Repair, 5);
+        slots[9] = ItemRegistry.CreateEntity(Engine);
         inventory.Install(inventory.PrepareChange(slots));
         var before = inventory.Snapshot;
 
@@ -84,7 +79,7 @@ public class InventoryControllerTests
     [Test]
     public void FullStacks_AllocateNextStackAndRetainExistingIdentity()
     {
-        using var inventory = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
         inventory.Add(Repair, 1280);
         var before = inventory.Snapshot;
         inventory.Add(Repair, 1);
@@ -95,17 +90,18 @@ public class InventoryControllerTests
     }
 
     [Test]
-    public void LargeStackQuantities_UseLongArithmetic()
+    public void BulkAddition_CrossesStackBoundariesWithoutLosingQuantity()
     {
-        using var inventory = new InventoryController(Catalog);
-        var quantity = (long)int.MaxValue * 2 + 3;
+        using var inventory = new InventoryController();
+        var limit = ItemRegistry.GetById(Resource).StackLimit;
+        var quantity = (long)limit * 2 + 3;
         inventory.Add(Resource, quantity);
         Assert.That(inventory.Snapshot.Occupied.Select(entry => entry.Entity.Count),
-            Is.EqualTo(new[] { int.MaxValue, int.MaxValue, 3 }));
+            Is.EqualTo(new[] { limit, limit, 3 }));
         Assert.That(inventory.Snapshot.Occupied.Sum(entry => (long)entry.Entity.Count), Is.EqualTo(quantity));
-        inventory.Add(Resource, int.MaxValue);
+        inventory.Add(Resource, limit);
         Assert.That(inventory.Snapshot.Occupied.Sum(entry => (long)entry.Entity.Count),
-            Is.EqualTo(quantity + int.MaxValue));
+            Is.EqualTo(quantity + limit));
     }
 
     [TestCase(-1, InventoryResult.NegativeQuantity)]
@@ -114,7 +110,7 @@ public class InventoryControllerTests
     [TestCase((long)int.MaxValue, InventoryResult.CapacityExceeded)]
     public void InvalidOrNoopAdd_PreservesExactSnapshotAndPublishesNothing(long quantity, InventoryResult expected)
     {
-        using var inventory = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
         inventory.Add(Repair, 7);
         var before = inventory.Snapshot;
         var notifications = 0;
@@ -130,17 +126,17 @@ public class InventoryControllerTests
     [Test]
     public void UnknownDefinitions_AreRejectedIncludingDefaultAndZeroQuantity()
     {
-        using var inventory = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
         var before = inventory.Snapshot;
-        Assert.That(inventory.Add(default, 1), Is.EqualTo(InventoryResult.UnknownDefinition));
-        Assert.That(inventory.Add(new ItemDefinitionId("missing"), 0), Is.EqualTo(InventoryResult.UnknownDefinition));
+        Assert.Throws<ArgumentNullException>(() => inventory.Add(null!, 1));
+        Assert.That(inventory.Add("missing", 0), Is.EqualTo(InventoryResult.UnknownDefinition));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
     }
 
     [Test]
     public void RemovalThroughInternalPlan_LeavesHolesAndNeverShrinks()
     {
-        using var inventory = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
         inventory.Add(Engine, 129);
         var slots = inventory.Snapshot.Slots.ToArray();
         var retained = slots[128];
@@ -158,9 +154,9 @@ public class InventoryControllerTests
     [Test]
     public void SnapshotsAndPreparedPlans_DoNotExposeWritableStorage()
     {
-        using var inventory = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
         var slots = inventory.Snapshot.Slots.ToArray();
-        slots[2] = Catalog.CreateEntity(Engine);
+        slots[2] = ItemRegistry.CreateEntity(Engine);
         var plan = inventory.PrepareChange(slots);
         slots[2] = null;
         inventory.Install(plan);
@@ -173,12 +169,12 @@ public class InventoryControllerTests
     [Test]
     public void InternalPlans_RejectDuplicatesStalePlansOtherOwnersAndNoops()
     {
-        using var inventory = new InventoryController(Catalog);
-        using var other = new InventoryController(Catalog);
+        using var inventory = new InventoryController();
+        using var other = new InventoryController();
         var slots = inventory.Snapshot.Slots.ToArray();
         var noop = inventory.PrepareChange(slots);
         Assert.That(inventory.Install(noop), Is.EqualTo(InventoryResult.NoChange));
-        slots[0] = Catalog.CreateEntity(Engine);
+        slots[0] = ItemRegistry.CreateEntity(Engine);
         var plan = inventory.PrepareChange(slots);
         Assert.That(other.Install(plan), Is.EqualTo(InventoryResult.StaleRevision));
         Assert.That(inventory.Install(plan), Is.EqualTo(InventoryResult.Success));
@@ -193,7 +189,7 @@ public class InventoryControllerTests
     public void Notifications_IsolateFailuresAndRejectReentrantMutation()
     {
         var errors = new List<Exception>();
-        using var inventory = new InventoryController(Catalog, exception =>
+        using var inventory = new InventoryController( exception =>
         {
             errors.Add(exception);
             throw new InvalidOperationException("Logging also failed");
@@ -218,14 +214,14 @@ public class InventoryControllerTests
     [Test]
     public void Disposal_RevokesMutationsAndNewGameHasIndependentEmptyStorage()
     {
-        var inventory = new InventoryController(Catalog);
+        var inventory = new InventoryController();
         inventory.Add(Engine, 129);
         var before = inventory.Snapshot;
         inventory.Dispose();
         inventory.Dispose();
         Assert.That(inventory.Add(Engine, 1), Is.EqualTo(InventoryResult.Disposed));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
-        using var nextGame = new InventoryController(Catalog);
+        using var nextGame = new InventoryController();
         Assert.That(nextGame.Capacity, Is.EqualTo(128));
         Assert.That(nextGame.Snapshot.Occupied, Is.Empty);
         Assert.That(nextGame.Revision, Is.Zero);

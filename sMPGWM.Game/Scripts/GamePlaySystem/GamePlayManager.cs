@@ -7,7 +7,6 @@ using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
-using sMPGWM.Scripts.ItemSystem.Definitions;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
@@ -27,8 +26,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public event Action<MainGameState>? OnGameStateChanged;
 
     public MainGameState GameState => _gameState;
-    public ItemCategories ItemCategories { get; private set; } = null!;
-    public ItemCatalog Items { get; private set; } = null!;
     public InventoryController InventoryController { get; private set; } = null!;
     public EquipmentController EquipmentController { get; private set; } = null!;
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
@@ -51,61 +48,10 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     protected override void OnReady()
     {
-        // TODO pack initialization into speaking methods to make the start up more understandable
-        var definitionsResult = FileLoader.LoadYamlDefinition<ItemCategoryDefinitions>(
-            FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYaml, FilePaths.ItemCategoryDataYamlSchema);
-        if (!definitionsResult.IsSuccess)
-        {
-            FileLoader.AbortLoad(definitionsResult.Error!);
-            return;
-        }
-
-        var categoriesResult = definitionsResult.Value!.ToCategories(
-            FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYamlSchema);
-        if (!categoriesResult.IsSuccess)
-        {
-            FileLoader.AbortLoad(categoriesResult.Error!);
-            return;
-        }
-
-        var itemsResult = FileLoader.LoadYamlDefinition<ItemDefinitions>(
-            FilePaths.UserItemDataYaml, FilePaths.ItemDataYaml, FilePaths.ItemDataYamlSchema);
-        if (!itemsResult.IsSuccess)
-        {
-            FileLoader.AbortLoad(itemsResult.Error!);
-            return;
-        }
-
-        var catalogResult = itemsResult.Value!.ToCatalog(categoriesResult.Value!,
-            FilePaths.UserItemDataYaml, FilePaths.ItemDataYamlSchema);
-        if (!catalogResult.IsSuccess)
-        {
-            FileLoader.AbortLoad(catalogResult.Error!);
-            return;
-        }
-
-        if (PopulateMockInventory)
-        {
-            try
-            {
-                PlayerMock.ValidateInventoryDefinitions(catalogResult.Value!);
-            }
-            catch (ArgumentException exception)
-            {
-                FileLoader.AbortLoad(new DataLoadError("Invalid mock inventory definitions", exception.Message,
-                    FilePaths.UserItemDataYaml, FilePaths.ItemDataYamlSchema, exception));
-                return;
-            }
-        }
-
-        ItemCategories = categoriesResult.Value;
         var player = PlayerMock.Instance;
-        Items = catalogResult.Value!;
-        InventoryController = new InventoryController(Items,
-            exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
+        InventoryController = new InventoryController(exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
         if (PopulateMockInventory) player.PopulateInventory(InventoryController);
-        EquipmentController = new EquipmentController(Items,
-            exception => LoggingSystem.Logger.Error($"Equipment observer failed: {exception}"));
+        EquipmentController = new EquipmentController(exception => LoggingSystem.Logger.Error($"Equipment observer failed: {exception}"));
         ItemTransfers = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
@@ -117,7 +63,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         Messages.Receive("welcome", "system", "Welcome", "Welcome, this is test message", MessageType.NonBlocking);
         _canvas.BindMessages(Messages);
         _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
-        BindInventoryPresentation(InventoryController, EquipmentController, Items, ItemTransfers);
+        BindInventoryPresentation(InventoryController, EquipmentController, ItemTransfers);
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var actions = player.GetHotBarSkills();
@@ -134,7 +80,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _canvas.BlockingChanged += _inputPolicy.SetHasBlockingWindow;
         _inputPolicy.CanControlPlayerChanged += ApplyPlayerInputAvailability;
 
-        _canvas.BindHotbar(ItemHotbar, HotbarAdapter, Items, actions);
+        _canvas.BindHotbar(ItemHotbar, HotbarAdapter, actions);
         _inputPolicy.SetHasBlockingWindow(_canvas.HasBlockingWindow);
         _inputPolicy.SetSessionActive(GameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(GameState == MainGameState.Active);
@@ -164,8 +110,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ItemTransfers = null!;
         EquipmentController = null!;
         InventoryController = null!;
-        Items = null!;
-        ItemCategories = null!;
         if (_playerActions is null)
             return;
 
@@ -176,12 +120,11 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     private void Start() => SetGameState(MainGameState.Active);
 
-    internal void BindInventoryPresentation(InventoryController inventory, EquipmentController equipment, ItemCatalog catalog,
-        InventoryEquipmentTransferService? transfers = null)
+    internal void BindInventoryPresentation(InventoryController inventory, EquipmentController equipment, InventoryEquipmentTransferService? transfers = null)
     {
         _canvas.UnbindInventory();
         _presentationTransfers = transfers;
-        _canvas.BindInventory(inventory, equipment, catalog, transfers);
+        _canvas.BindInventory(inventory, equipment, transfers);
     }
 
     private void SetInventoryEditing(bool available)

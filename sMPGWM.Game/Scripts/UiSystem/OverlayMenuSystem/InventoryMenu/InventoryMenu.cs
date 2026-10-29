@@ -20,7 +20,6 @@ public partial class InventoryMenu : GameOverlayMenu
     private readonly HashSet<ClickableIcon> _cells = new();
     private IInventoryView? _inventory;
     private IEquipmentView? _equipment;
-    private ItemCatalog _catalog = null!;
     private InventoryViewState _viewState = null!;
     private InventoryContainer _inventoryView = null!;
     private EquipmentContainer _equipmentView = null!;
@@ -61,14 +60,12 @@ public partial class InventoryMenu : GameOverlayMenu
         _interaction?.SetSession(session);
     }
 
-    internal void Bind(IInventoryView inventoryImpl, IEquipmentView equipmentImpl, InventoryViewState state,
-        ItemCatalog catalog)
+    internal void Bind(IInventoryView inventoryImpl, IEquipmentView equipmentImpl, InventoryViewState state)
     {
         Unbind();
         _inventory = inventoryImpl;
         _equipment = equipmentImpl;
-        _catalog = catalog;
-        _visuals = new ItemVisuals(catalog);
+        _visuals = new ItemVisuals();
         _viewState = state;
         if (IsNodeReady()) BindViews();
     }
@@ -83,7 +80,7 @@ public partial class InventoryMenu : GameOverlayMenu
 
     private void BindViews()
     {
-        _inventoryView.Bind(_viewState, _catalog);
+        _inventoryView.Bind(_viewState);
         _inventoryView.CellCreated += RegisterCell;
         _equipmentView.CellCreated += RegisterCell;
         foreach (var cell in _inventoryView.Cells) RegisterCell(cell);

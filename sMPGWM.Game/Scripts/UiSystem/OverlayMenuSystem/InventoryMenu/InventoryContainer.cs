@@ -15,7 +15,6 @@ public partial class InventoryContainer : VBoxContainer
     private LineEdit _search = null!;
     private TabBar _tabs = null!;
     private OptionButton _sort = null!;
-    private ItemCatalog _catalog = null!;
     private Label _emptyResult = null!;
     private ItemGrid _grid = null!;
     internal System.Collections.Generic.IReadOnlyList<ClickableIcon> Cells => _grid.Cells;
@@ -27,11 +26,10 @@ public partial class InventoryContainer : VBoxContainer
         control == _tabs || _tabs.IsAncestorOf(control) ||
         GetNode<Control>("FilterToolbar").IsAncestorOf(control);
 
-    internal void Bind(InventoryViewState state, ItemCatalog catalog)
+    internal void Bind(InventoryViewState state)
     {
         Unbind();
         _viewState = state;
-        _catalog = catalog;
         _search = GetNode<LineEdit>("FilterToolbar/LineEdit");
         _sort = GetNode<OptionButton>("FilterToolbar/SortSelector");
         _tabs = GetNode<TabBar>("%CategoryTabs");
@@ -39,11 +37,11 @@ public partial class InventoryContainer : VBoxContainer
         _grid.CellCreated += OnCellCreated;
         _tabs.ClearTabs();
         _tabs.AddTab("All");
-        foreach (var category in catalog.Categories.All)
+        foreach (var category in ItemRegistry.GetAllCategories())
         {
             _tabs.AddTab(category.DisplayName, ItemIconResolver.Category(category));
             var index = _tabs.TabCount - 1;
-            _tabs.SetTabMetadata(index, category.Id.Value);
+            _tabs.SetTabMetadata(index, category.Id);
             _tabs.SetTabIconMaxWidth(index, 14);
         }
         state.SelectedTab = Math.Clamp(state.SelectedTab, 0, _tabs.TabCount - 1);
@@ -77,7 +75,7 @@ public partial class InventoryContainer : VBoxContainer
 
     internal void Render(InventorySnapshot snapshot, ItemVisuals visuals)
     {
-        var cells = InventoryProjection.Create(snapshot, _catalog, _viewState);
+        var cells = InventoryProjection.Create(snapshot, _viewState);
         _emptyResult.Visible = cells.Count == snapshot.EmptyAddresses.Count;
         _grid.Render(cells,
             (icon, binding) => visuals.Apply(icon, binding.Entity));

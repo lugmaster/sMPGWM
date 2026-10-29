@@ -29,45 +29,43 @@ public class ItemDisplayTests
         Assert.Throws<ArgumentOutOfRangeException>(() => IconDisplayData.FormatQuantity(-1));
 
     [Test]
+    [Category("Godot")]
     public void Tooltip_UsesExactQuantityAndConfiguredLimit()
     {
-        var definition = new ItemDefinition(new ItemDefinitionId("limited"), "Repair", ItemCategories.Consumable,
-            "Repairs a ship.", maximumStackSize: 10);
-        var catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[] { definition });
-        var display = ItemDisplayFormatter.Create(catalog, catalog.CreateEntity(definition.Id));
+        var definition = ItemRegistry.GetById("mock_standard_consumable");
+        var display = ItemDisplayFormatter.Create( ItemRegistry.CreateEntity(definition.Id));
         Assert.That(display.Quantity, Is.EqualTo(1));
-        Assert.That(display.Tooltip, Is.EqualTo("Repair\nConsumable\nRepairs a ship.\nQuantity: 1\nStack limit: 10"));
+        Assert.That(display.Tooltip, Is.EqualTo($"{definition.DisplayName}\n{definition.CategoryName}\n{definition.Description}\nQuantity: 1\nStack limit: 10"));
     }
 
     [Test]
-    public void UnlimitedTooltip_PreservesExactLargeQuantity()
+    [Category("Godot")]
+    public void Tooltip_PreservesExactAggregateQuantityBeyondIndividualStackLimit()
     {
-        var definition = new ItemDefinition(new ItemDefinitionId("unlimited"), "Ore", ItemCategories.Resource);
-        var catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[] { definition });
-        var display = ItemDisplayFormatter.Create(catalog, catalog.CreateEntity(definition.Id, int.MaxValue));
-        Assert.That(display.Tooltip, Does.Contain("2147483647").And.Contain("No configured limit"));
+        var definition = ItemRegistry.GetById("mock_advanced_resource");
+        var display = ItemDisplayFormatter.Create(definition.Id, int.MaxValue);
+        Assert.That(display.Tooltip, Does.Contain("2147483647"));
     }
 
     [TestCase(0L)]
     [TestCase(4294967294L)]
+    [Category("Godot")]
     public void HotbarTooltipSupportsZeroAndAggregateQuantities(long quantity)
     {
-        var definition = new ItemDefinition(new ItemDefinitionId("linked"), "Repair", ItemCategories.Consumable,
-            maximumStackSize: 10);
-        var catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[] { definition });
-        var display = ItemDisplayFormatter.Create(catalog, definition.Id, quantity);
+        var definition = ItemRegistry.GetById("mock_standard_consumable");
+        var display = ItemDisplayFormatter.Create( definition.Id, quantity);
         Assert.That(display.Quantity, Is.EqualTo(quantity));
         Assert.That(display.Tooltip, Does.Contain($"Quantity: {quantity}").And.Contain("Stack limit: 10"));
     }
 
     [Test]
+    [Category("Godot")]
     public void EmptyAndNonstackableDisplays_HaveNoQuantity()
     {
-        var definition = new ItemDefinition(new ItemDefinitionId("engine"), "Engine", ItemCategories.Engine);
-        var catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[] { definition });
-        var display = ItemDisplayFormatter.Create(catalog, catalog.CreateEntity(definition.Id));
+        var definition = ItemRegistry.GetById("mock_standard_engine");
+        var display = ItemDisplayFormatter.Create( ItemRegistry.CreateEntity(definition.Id));
         Assert.That(display.Quantity, Is.Null);
         Assert.That(display.Tooltip, Does.Not.Contain("Quantity").And.Not.Contain("Stack limit"));
-        Assert.That(ItemDisplayFormatter.Create(catalog, null), Is.EqualTo(new IconDisplayData()));
+        Assert.That(ItemDisplayFormatter.Create( null), Is.EqualTo(new IconDisplayData()));
     }
 }

@@ -11,7 +11,6 @@ public sealed class InventoryController : IDisposable, IInventoryView
     public const int InitialCapacity = 128;
     public const int GrowthChunk = 64;
 
-    private readonly ItemCatalog _catalog;
     private readonly Action<Exception>? _reportObserverError;
     private bool _publishing;
     private bool _disposed;
@@ -20,28 +19,28 @@ public sealed class InventoryController : IDisposable, IInventoryView
     public int Capacity => Snapshot.Capacity;
     public long Revision => Snapshot.Revision;
     public event Action<InventorySnapshot>? Changed;
-    internal ItemCatalog Catalog => _catalog;
     internal InventoryResult Availability => _disposed ? InventoryResult.Disposed :
         _publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
 
-    public InventoryController(ItemCatalog catalog, Action<Exception>? reportObserverError = null)
+    public InventoryController(Action<Exception>? reportObserverError = null)
     {
-        ArgumentNullException.ThrowIfNull(catalog);
-        _catalog = catalog;
         _reportObserverError = reportObserverError;
     }
 
-    public InventoryResult Add(ItemDefinitionId definitionId, long quantity)
+    // why not pass the item entity that is added directly? An Inventory should not be capable of creating new ItemEntities!
+    public InventoryResult Add(string definitionId, long quantity)
     {
         if (_disposed) return InventoryResult.Disposed;
         if (_publishing) return InventoryResult.PublicationInProgress;
         if (quantity < 0) return InventoryResult.NegativeQuantity;
-        if (!_catalog.Definitions.Any(definition => definition.Id == definitionId))
+        // Throw Exception when id is not present. this is clearly a run time exception that is not recoverable
+        if (!ItemRegistry.TryGetById(definitionId, out var definition))
             return InventoryResult.UnknownDefinition;
+        // Throw Exception. The caller should get feedback right away if quantity is 0
         if (quantity == 0) return InventoryResult.NoChange;
         if (Revision == long.MaxValue) return InventoryResult.CapacityExceeded;
 
-        var limit = _catalog.GetStackLimit(definitionId);
+        var limit = definition.StackLimit;
         var remaining = quantity;
         foreach (var entry in Snapshot.Occupied)
         {
@@ -70,7 +69,7 @@ public sealed class InventoryController : IDisposable, IInventoryView
                 if (entity.DefinitionId != definitionId) continue;
                 var added = (int)Math.Min(remaining, (long)limit - entity.Count);
                 if (added == 0) continue;
-                slots[entry.Address] = new ItemEntity(entity.Id, definitionId, entity.Count + added);
+                slots[entry.Address] = new ItemEntity(entity.Id, entity.Definition, entity.Count + added);
                 remaining -= added;
             }
 
@@ -78,7 +77,7 @@ public sealed class InventoryController : IDisposable, IInventoryView
             {
                 if (slots[address] is not null) continue;
                 var count = (int)Math.Min(remaining, limit);
-                slots[address] = _catalog.CreateEntity(definitionId, count);
+                slots[address] = ItemRegistry.CreateEntity(definitionId, count);
                 remaining -= count;
             }
 
@@ -103,7 +102,7 @@ public sealed class InventoryController : IDisposable, IInventoryView
         {
             if (entity is null) continue;
             if (entity.Id == default || !identities.Add(entity.Id) || entity.Count <= 0 ||
-                entity.Count > _catalog.GetStackLimit(entity.DefinitionId))
+                entity.Count > entity.Definition.StackLimit)
                 throw new ArgumentException("Invalid inventoryImpl entity or duplicate identity.", nameof(slots));
         }
 

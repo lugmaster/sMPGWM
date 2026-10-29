@@ -18,8 +18,6 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
     {
         ArgumentNullException.ThrowIfNull(inventoryImpl);
         ArgumentNullException.ThrowIfNull(equipmentImpl);
-        if (!ReferenceEquals(inventoryImpl.Catalog, equipmentImpl.Catalog))
-            throw new ArgumentException("State owners must share their item catalog.", nameof(equipmentImpl));
         _inventoryImpl = inventoryImpl;
         _equipmentImpl = equipmentImpl;
     }
@@ -51,9 +49,9 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
             var nextSource = evaluation.SourceCount == 0 ? null : evaluation.Source!;
             var nextDestination = evaluation.Destination!;
             if (nextSource != null && nextSource.Count != evaluation.SourceCount)
-                nextSource = new ItemEntity(nextSource.Id, nextSource.DefinitionId, evaluation.SourceCount);
+                nextSource = new ItemEntity(nextSource.Id, nextSource.Definition, evaluation.SourceCount);
             if (nextDestination.Count != evaluation.DestinationCount)
-                nextDestination = new ItemEntity(nextDestination.Id, nextDestination.DefinitionId, evaluation.DestinationCount);
+                nextDestination = new ItemEntity(nextDestination.Id, nextDestination.Definition, evaluation.DestinationCount);
             (request.Source.InventoryAddress.HasValue ? inventorySlots! : equipmentSlots!)[evaluation.SourceIndex] = nextSource;
             (request.Destination.InventoryAddress.HasValue ? inventorySlots! : equipmentSlots!)[evaluation.DestinationIndex] = nextDestination;
             var identities = new HashSet<ItemEntityId>();
@@ -113,9 +111,9 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
         var nextDestination = source;
         var sourceCount = destination?.Count ?? 0;
         var destinationCount = source.Count;
-        if (destination is not null && _inventoryImpl.Catalog.CanStackTogether(source.DefinitionId, destination.DefinitionId))
+        if (destination is not null && (source.Definition == destination.Definition && source.Definition.CanStack))
         {
-            var moved = Math.Min(source.Count, _inventoryImpl.Catalog.GetStackLimit(destination.DefinitionId) - destination.Count);
+            var moved = Math.Min(source.Count, ItemRegistry.GetById(destination.DefinitionId).StackLimit - destination.Count);
             if (moved == 0) return TransferResult.NoChange;
             nextSource = source;
             nextDestination = destination;

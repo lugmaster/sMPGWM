@@ -8,20 +8,24 @@ namespace sMPGWM.Scripts.UiSystem.Items;
 
 internal static class ItemDisplayFormatter
 {
-    internal static IconDisplayData Create(ItemCatalog catalog, ItemEntity? entity)
+    internal static IconDisplayData Create(ItemEntity? entity)
     {
         if (entity == null) return new IconDisplayData();
-        return Create(catalog, entity.DefinitionId, entity.Count);
+        return Create(entity.Definition, entity.Count);
     }
 
-    internal static IconDisplayData Create(ItemCatalog catalog, ItemDefinitionId definitionId, long? quantity)
+    internal static IconDisplayData Create(string definitionId, long? quantity)
     {
-        var data = catalog.GetTooltip(definitionId);
+        return Create(ItemRegistry.GetById(definitionId), quantity);
+    }
+
+    private static IconDisplayData Create(ItemDefinition data, long? quantity)
+    {
         var tooltip = $"{data.DisplayName}\n{data.CategoryName}";
         if (data.Description.Length > 0) tooltip += $"\n{data.Description}";
         if (data.CanStack)
         {
-            var limit = data.ConfiguredStackLimit?.ToString(CultureInfo.InvariantCulture) ?? "No configured limit";
+            var limit = data.StackLimit.ToString(CultureInfo.InvariantCulture);
             tooltip += $"\nQuantity: {quantity.GetValueOrDefault().ToString(CultureInfo.InvariantCulture)}\nStack limit: {limit}";
         }
         return new IconDisplayData(tooltip, data.CanStack ? quantity : null);

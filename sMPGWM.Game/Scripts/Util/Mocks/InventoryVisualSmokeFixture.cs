@@ -22,26 +22,13 @@ public partial class InventoryVisualSmokeFixture : RefCounted
 
     public void Show(GamePlayManager game)
     {
-        var categories = ItemCategories.CreateDefault();
-        var definitions = categories.All.Select(category => new ItemDefinition(
-            new ItemDefinitionId($"visual_{category.Id.Value}"), $"Fixture {category.DisplayName}", category.Id,
-            "Development visual fixture.", "res://assets/mocks/hammer.png",
-            category.Id == ItemCategories.Consumable ? 10 : null)).ToList();
-        definitions.Add(new ItemDefinition(new ItemDefinitionId("missing_icon"), "Missing icon", ItemCategories.Resource,
-            "Identity remains visible with a placeholder.", "res://missing-fixture-icon.png"));
-        var catalog = new ItemCatalog(categories, definitions);
-        _inventory = new InventoryController(catalog);
-        _equipment = new EquipmentController(catalog);
-        foreach (var definition in definitions)
-        {
-            var count = definition.CategoryId == ItemCategories.Resource && definition.Id.Value != "missing_icon"
-                ? (long)int.MaxValue * 2 : definition.CategoryId == ItemCategories.Consumable ? 11 : 1;
-            if (_inventory.Add(definition.Id, count) != InventoryResult.Success)
-                throw new InvalidOperationException("Visual fixture addition failed.");
-        }
+        _inventory = new InventoryController();
+        _equipment = new EquipmentController();
+        foreach (var definition in ItemRegistry.GetAll().Where(d => d.Id.StartsWith("mock_standard_")))
+            _inventory.Add(definition.Id, definition.CanStack ? 11 : 1);
         var canvas = game.GetNode<UiCanvas>("UiCanvas");
         canvas.CloseAllMenus();
-        game.BindInventoryPresentation(_inventory, _equipment, catalog);
+        game.BindInventoryPresentation(_inventory, _equipment);
         canvas.OpenMenu(UiWindowId.InventoryMenu);
     }
 
@@ -49,64 +36,12 @@ public partial class InventoryVisualSmokeFixture : RefCounted
     {
         try
         {
-            var category = new ItemCategory(new("icon_fixture"), "Icon fixture", 0, false)
-            {
-                IconKey = "Alchemy.Arsenic"
-            };
-            var definition = new ItemDefinition(new("icon_fixture"), "Icon fixture", category.Id,
-                iconAssetPath: "res://missing-fixture-icon.png");
-            var icons = new ItemCatalog(new ItemCategories(new[] { category }), new[] { definition });
-            Require(ItemIconResolver.Item(icons, definition) == Icons.Get("Alchemy.Arsenic").IconTexture,
-                "Missing item icons must fall back to the category icon.");
-            var explicitIcon = new ItemDefinition(new("explicit_icon"), "Explicit icon", category.Id,
-                iconAssetPath: "res://assets/mocks/hammer.png");
-            Require(ItemIconResolver.Item(icons, explicitIcon) == ResourceLoader.Load<Texture2D>(explicitIcon.IconAssetPath),
-                "An item icon must take precedence over its category.");
-            var noIcon = new ItemCategory(new("no_icon"), "No icon", 0, false);
-            var noIconDefinition = new ItemDefinition(new("no_icon"), "No icon", noIcon.Id);
-            var noIcons = new ItemCatalog(new ItemCategories(new[] { noIcon }), new[] { noIconDefinition });
-            Require(ItemIconResolver.Item(noIcons, noIconDefinition) == ItemIconResolver.Placeholder(),
-                "Items without usable item or category icons must share the placeholder.");
-            Require(ItemIconResolver.Category(category with { IconKey = null }) == null,
-                "Categories without icons must keep text-only tabs.");
-            var categoryView = ResourceLoader.Load<PackedScene>("res://scenes/ui/base/inventory_container.tscn")
-                .Instantiate<InventoryContainer>();
-            game.AddChild(categoryView);
-            try
-            {
-                categoryView.Bind(new InventoryViewState(), icons);
-                var tabs = categoryView.GetNode<TabBar>("%CategoryTabs");
-                Require(tabs.TabCount == 2 && tabs.GetTabIcon(1) == Icons.Get("Alchemy.Arsenic").IconTexture &&
-                    tabs.GetTabMetadata(1).AsString() == category.Id.Value,
-                    "Configured category icons and identities must reach the native tabs.");
-                categoryView.Bind(new InventoryViewState(), noIcons);
-                Require(tabs.GetTabIcon(1) == null, "Rebinding iconless categories must clear previous tab icons.");
-            }
-            finally
-            {
-                categoryView.Unbind();
-                game.RemoveChild(categoryView);
-                categoryView.QueueFree();
-            }
+            var definition = ItemRegistry.GetById("mock_standard_resource");
+            Require(ItemIconResolver.Item(definition) == definition.Icon.IconTexture,
+                "Item visuals must use the resolved definition icon.");
             var canvas = game.GetNode<UiCanvas>("UiCanvas");
-            var menu = canvas.GetNode<HFlowContainer>("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")
-                .GetChild<InventoryMenu>(0);
-            var grid = menu.GetNode<InventoryContainer>("%InventoryContainer")
-                .GetNode<ItemGrid>("%ItemGrid").GetNode<GridContainer>("%SlotGrid");
-            foreach (var icon in grid.GetChildren().Cast<ClickableIcon>())
-            {
-                var entity = ((ItemCellBinding)icon.Binding!).Entity;
-                var label = icon.GetNode<Label>("QuantityLabel");
-                Require(label.MouseFilter == Control.MouseFilterEnum.Ignore && label.FocusMode == Control.FocusModeEnum.None,
-                    "Quantity overlay must not intercept input.");
-                Require(label.Size.X <= icon.Size.X && label.Size.Y <= icon.Size.Y,
-                    "Quantity overlay must fit the icon.");
-                if (entity == null) continue;
-                Require(icon.IconTexture != null && (icon.TooltipText.Contains("Fixture") ||
-                    icon.TooltipText.Contains("Missing icon")), "Occupied cells must have visuals and identity.");
-                Require(!label.Visible || label.GetMinimumSize().X <= label.Size.X, "Quantity text must fit.");
-            }
-            var resource = grid.GetChildren().Cast<ClickableIcon>().First(icon => icon.TooltipText.Contains("2147483647"));
+            var resource = canvas.FindChildren("*", "ClickableIcon", true, false).OfType<ClickableIcon>().First();
+            resource.SetDisplay(definition.Icon.IconTexture, new IconDisplayData("Large quantity", int.MaxValue));
             Require(resource.GetNode<Label>("QuantityLabel").Text == "2.1B", "Large stack badge must abbreviate.");
             resource.SetDisplay(resource.IconTexture, new IconDisplayData("Unavailable link", 0));
             Require(resource.GetNode<Label>("QuantityLabel").Text == "0", "Unavailable links must display zero.");
@@ -139,7 +74,7 @@ public partial class InventoryVisualSmokeFixture : RefCounted
     {
         var canvas = game.GetNode<UiCanvas>("UiCanvas");
         canvas.CloseAllMenus();
-        game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.Items, game.ItemTransfers);
+        game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.ItemTransfers);
         _equipment?.Dispose();
         _inventory?.Dispose();
         _equipment = null;

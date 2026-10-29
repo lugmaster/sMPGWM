@@ -7,7 +7,7 @@ using System.Linq;
 namespace sMPGWM.Scripts.ItemSystem;
 
 public abstract record HotbarBinding;
-public sealed record ConsumableHotbarBinding(ItemDefinitionId DefinitionId) : HotbarBinding;
+public sealed record ConsumableHotbarBinding(string DefinitionId) : HotbarBinding;
 public sealed record WeaponHotbarBinding(string SlotKey) : HotbarBinding;
 
 public enum HotbarResult
@@ -26,8 +26,8 @@ public enum HotbarResult
 
 public static class ItemHotbarPolicy
 {
-    public static bool IsConsumable(ItemCategoryId category) => category == ItemCategories.Consumable;
-    public static bool IsWeapon(ItemCategoryId category) => category == ItemCategories.LightWeapon || category == ItemCategories.HeavyWeapon;
+    public static bool IsConsumable(string category) => category == ItemRegistry.GetCategoryById("consumable").DisplayName;
+    public static bool IsWeapon(string category) => category == ItemRegistry.GetCategoryById("light_weapon").DisplayName || category == ItemRegistry.GetCategoryById("heavy_weapon").DisplayName;
 }
 
 public sealed class ItemHotbarState : IDisposable

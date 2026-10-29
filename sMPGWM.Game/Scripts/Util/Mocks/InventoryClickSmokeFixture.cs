@@ -22,27 +22,22 @@ public partial class InventoryClickSmokeFixture : RefCounted
 
     public void Show(GamePlayManager game)
     {
-        var engine = new ItemDefinitionId("click_engine");
-        var potion = new ItemDefinitionId("click_potion");
-        var catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[]
-        {
-            new ItemDefinition(engine, "Click Engine", ItemCategories.Engine),
-            new ItemDefinition(potion, "Click Potion", ItemCategories.Consumable, maximumStackSize: 10)
-        });
-        _inventory = new InventoryController(catalog);
-        _equipment = new EquipmentController(catalog);
+        var engine = "mock_standard_engine";
+        var potion = "mock_standard_consumable";
+        _inventory = new InventoryController();
+        _equipment = new EquipmentController();
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         var slots = _inventory.Snapshot.Slots.ToArray();
-        slots[0] = catalog.CreateEntity(engine);
+        slots[0] = ItemRegistry.CreateEntity(engine);
         _engine = slots[0]!.Id;
-        var stacks = Enumerable.Range(0, 3).Select(_ => catalog.CreateEntity(potion)).OrderBy(entity => entity.Id.Value).ToArray();
-        slots[1] = new ItemEntity(stacks[0].Id, potion, 7);
-        slots[2] = new ItemEntity(stacks[1].Id, potion, 8);
-        slots[3] = new ItemEntity(stacks[2].Id, potion, 10);
+        var stacks = Enumerable.Range(0, 3).Select(_ => ItemRegistry.CreateEntity(potion)).OrderBy(entity => entity.Id.Value).ToArray();
+        slots[1] = new ItemEntity(stacks[0].Id, ItemRegistry.GetById(potion), 7);
+        slots[2] = new ItemEntity(stacks[1].Id, ItemRegistry.GetById(potion), 8);
+        slots[3] = new ItemEntity(stacks[2].Id, ItemRegistry.GetById(potion), 10);
         _inventory.Install(_inventory.PrepareChange(slots));
         _canvas = game.GetNode<UiCanvas>("UiCanvas");
         _canvas.CloseAllMenus();
-        game.BindInventoryPresentation(_inventory, _equipment, catalog, _transfers);
+        game.BindInventoryPresentation(_inventory, _equipment, _transfers);
         _canvas.OpenMenu(UiWindowId.InventoryMenu);
     }
 
@@ -52,12 +47,12 @@ public partial class InventoryClickSmokeFixture : RefCounted
     public bool EngineEquipped() => _equipment.Snapshot.Slots[0]?.Id == _engine;
     public int CountAt(int address) => _inventory.Snapshot.Slots[address]?.Count ?? 0;
     public long Revision() => _inventory.Revision;
-    public void Fill() => _inventory.Add(new ItemDefinitionId("click_engine"), 124);
+    public void Fill() => _inventory.Add("mock_standard_engine", 124);
 
     public void Restore(GamePlayManager game)
     {
         _canvas.CloseAllMenus();
-        game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.Items, game.ItemTransfers);
+        game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.ItemTransfers);
         _transfers.Dispose();
         _equipment.Dispose();
         _inventory.Dispose();

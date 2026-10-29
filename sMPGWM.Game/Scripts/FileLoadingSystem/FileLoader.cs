@@ -1,48 +1,22 @@
 ﻿using Godot;
 using Newtonsoft.Json.Linq;
+using System;
 using sMPGWM.Scripts.GameConfigSystem;
-using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.GameFlowSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.FileLoadingSystem;
 
-public partial class FileLoader : AbstractSingleton<FileLoader>
+public static class FileLoader
 {
-    protected static LoadResult<JToken> LoadJsonAndValidate(
-        string userPath,
-        string defaultPath,
-        string schemaPath)
+    public static void AbortLoad(DataLoadError error)
     {
-        var filesResult = PrepareAndReadFiles(
-            userPath, defaultPath, schemaPath, "JSON", "JSON schema");
-
-        if (!filesResult.IsSuccess)
-            return LoadResult<JToken>.Failure(filesResult.Error!);
-
-        var files = filesResult.Value!;
-        return JsonParser.ValidateAndReturn(
-            files.DefinitionText, files.SchemaText, userPath, schemaPath);
+        var message = error.ToDisplayString();
+        Logger.Info(message);
+        GameFlowManager.Instance.QuitToStartMenuBlocking(message);
     }
-
-    protected static LoadResult<TDefinition> LoadJsonDefinition<TDefinition>(
-        string userPath,
-        string defaultPath,
-        string schemaPath)
-        where TDefinition : class
-    {
-        var filesResult = PrepareAndReadFiles(
-            userPath, defaultPath, schemaPath, "JSON", "JSON schema");
-
-        if (!filesResult.IsSuccess)
-            return LoadResult<TDefinition>.Failure(filesResult.Error!);
-
-        var files = filesResult.Value!;
-        return JsonParser.ValidateAndDeserialize<TDefinition>(
-            files.DefinitionText, files.SchemaText, userPath, schemaPath);
-    }
-
-    protected static LoadResult<JToken> LoadYamlAndValidate(
+    
+    private static LoadResult<JToken> LoadYamlAndValidate(
         string userPath,
         string defaultPath,
         string schemaPath)
@@ -58,29 +32,15 @@ public partial class FileLoader : AbstractSingleton<FileLoader>
             files.DefinitionText, files.SchemaText, userPath, schemaPath);
     }
 
-    public static LoadResult<TDefinition> LoadYamlDefinition<TDefinition>(
-        string userPath,
-        string defaultPath,
-        string schemaPath)
-        where TDefinition : class
+    public static JObject LoadYaml(string userPath, string defaultPath, string schemaPath)
     {
-        var filesResult = PrepareAndReadFiles(
-            userPath, defaultPath, schemaPath, "YAML", "YAML schema");
-
-        if (!filesResult.IsSuccess)
-            return LoadResult<TDefinition>.Failure(filesResult.Error!);
-
-        var files = filesResult.Value!;
-        return YamlParser.ValidateAndDeserialize<TDefinition>(
-            files.DefinitionText, files.SchemaText, userPath, schemaPath);
+        var result = LoadYamlAndValidate(userPath, defaultPath, schemaPath);
+        if (result.IsSuccess) return (JObject)result.Value!;
+        AbortLoad(result.Error!);
+        throw new InvalidOperationException(result.Error!.ToDisplayString());
     }
 
-    public static void AbortLoad(DataLoadError error)
-    {
-        var message = error.ToDisplayString();
-        Logger.Info(message);
-        GameFlowManager.Instance.QuitToStartMenuBlocking(message);
-    }
+    
 
     private static LoadResult<DefinitionFileContents> PrepareAndReadFiles(
         string userPath,

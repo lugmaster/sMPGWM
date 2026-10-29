@@ -1,0 +1,6 @@
+<RunSettings>
+  <RunConfiguration>
+    <!-- These cases run inside Godot through GodotIntegrationTests, in the same command. -->
+    <TestCaseFilter>TestCategory!=Godot</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

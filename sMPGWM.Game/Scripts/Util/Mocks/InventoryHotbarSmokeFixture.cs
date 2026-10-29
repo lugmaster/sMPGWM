@@ -24,30 +24,25 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
 
     public void Show(GamePlayManager game)
     {
-        var potion = new ItemDefinitionId("hotbar_potion");
-        var weapon = new ItemDefinitionId("hotbar_weapon");
-        var catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[]
-        {
-            new ItemDefinition(potion, "Hotbar Potion", ItemCategories.Consumable, maximumStackSize: 10),
-            new ItemDefinition(weapon, "Hotbar Weapon", ItemCategories.LightWeapon)
-        });
-        _inventory = new InventoryController(catalog);
-        _equipment = new EquipmentController(catalog);
+        var potion = "mock_standard_consumable";
+        var weapon = "mock_standard_light_weapon";
+        _inventory = new InventoryController();
+        _equipment = new EquipmentController();
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
         _adapter = new ItemHotbarAdapter(_state, _inventory, _equipment, _transfers);
         var slots = _inventory.Snapshot.Slots.ToArray();
-        slots[0] = catalog.CreateEntity(potion, 7);
-        slots[1] = catalog.CreateEntity(potion, 8);
-        slots[2] = catalog.CreateEntity(weapon);
+        slots[0] = ItemRegistry.CreateEntity(potion, 7);
+        slots[1] = ItemRegistry.CreateEntity(potion, 8);
+        slots[2] = ItemRegistry.CreateEntity(weapon);
         _inventory.Install(_inventory.PrepareChange(slots));
         var equipment = _equipment.Snapshot.Slots.ToArray();
-        equipment[4] = catalog.CreateEntity(weapon);
+        equipment[4] = ItemRegistry.CreateEntity(weapon);
         _equipment.Install(_equipment.PrepareChange(equipment));
         _canvas = game.GetNode<UiCanvas>("UiCanvas");
         _canvas.CloseAllMenus();
-        game.BindInventoryPresentation(_inventory, _equipment, catalog, _transfers);
-        _canvas.BindHotbar(_state, _adapter, catalog, PlayerMock.Instance.GetHotBarSkills());
+        game.BindInventoryPresentation(_inventory, _equipment, _transfers);
+        _canvas.BindHotbar(_state, _adapter, PlayerMock.Instance.GetHotBarSkills());
         _canvas.OnRequestHotbarAction += OnActivation;
         _canvas.OpenMenu(UiWindowId.InventoryMenu);
     }
@@ -87,8 +82,8 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
     {
         _canvas.CloseAllMenus();
         _canvas.OnRequestHotbarAction -= OnActivation;
-        game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.Items, game.ItemTransfers);
-        _canvas.BindHotbar(game.ItemHotbar, game.HotbarAdapter, game.Items, PlayerMock.Instance.GetHotBarSkills());
+        game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.ItemTransfers);
+        _canvas.BindHotbar(game.ItemHotbar, game.HotbarAdapter, PlayerMock.Instance.GetHotBarSkills());
         _state.Dispose();
         _transfers.Dispose();
         _equipment.Dispose();

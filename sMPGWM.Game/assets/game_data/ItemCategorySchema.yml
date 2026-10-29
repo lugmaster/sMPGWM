@@ -13,8 +13,7 @@ properties:
       required:
         - Id
         - DisplayName
-        - DisplayOrder
-        - CanStack
+        - Icon
       properties:
         Id:
           type: string
@@ -22,14 +21,6 @@ properties:
         DisplayName:
           type: string
           pattern: '\S'
-        DisplayOrder:
-          type: integer
-          minimum: -2147483648
-          maximum: 2147483647
-        CanStack:
-          type: boolean
-        IconAssetPath:
-          type: [string, 'null']
         Icon:
-          type: [string, 'null']
+          type: string
           pattern: '^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$'

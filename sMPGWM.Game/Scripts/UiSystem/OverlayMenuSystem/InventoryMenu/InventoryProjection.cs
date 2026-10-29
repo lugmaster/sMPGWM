@@ -7,24 +7,24 @@ namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
 internal static class InventoryProjection
 {
-    internal static IReadOnlyList<ItemCellBinding> Create(InventorySnapshot snapshot, ItemCatalog catalog, InventoryViewState state)
+    internal static IReadOnlyList<ItemCellBinding> Create(InventorySnapshot snapshot, InventoryViewState state)
     {
-        ItemCategoryId? category = state.SelectedTab > 0 && state.SelectedTab <= catalog.Categories.All.Count
-            ? catalog.Categories.All[state.SelectedTab - 1].Id : null;
+        string? category = state.SelectedTab > 0 && state.SelectedTab <= ItemRegistry.GetAllCategories().Count
+            ? ItemRegistry.GetAllCategories()[state.SelectedTab - 1].DisplayName : null;
         var search = state.SearchText.Trim();
         var matches = new List<InventoryEntry>();
         foreach (var entry in snapshot.Occupied)
         {
-            var definition = catalog.Get(entry.Entity.DefinitionId);
-            if ((category == null || definition.CategoryId == category) &&
+            var definition = entry.Entity.Definition;
+            if ((category == null || definition.CategoryName == category) &&
                 definition.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)) matches.Add(entry);
         }
         matches.Sort((left, right) =>
         {
-            var order = StringComparer.OrdinalIgnoreCase.Compare(catalog.Get(left.Entity.DefinitionId).DisplayName,
-                catalog.Get(right.Entity.DefinitionId).DisplayName);
+            var order = StringComparer.OrdinalIgnoreCase.Compare(left.Entity.Definition.DisplayName,
+                right.Entity.Definition.DisplayName);
             if (order != 0) return state.SelectedSort == 1 ? -order : order;
-            order = StringComparer.Ordinal.Compare(left.Entity.DefinitionId.Value, right.Entity.DefinitionId.Value);
+            order = StringComparer.Ordinal.Compare(left.Entity.DefinitionId, right.Entity.DefinitionId);
             return order != 0 ? order : left.Entity.Id.Value.CompareTo(right.Entity.Id.Value);
         });
         var cells = new ItemCellBinding[matches.Count + snapshot.EmptyAddresses.Count];

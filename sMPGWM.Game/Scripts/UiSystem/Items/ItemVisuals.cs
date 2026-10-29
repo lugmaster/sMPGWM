@@ -6,7 +6,7 @@ using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.UiSystem.Items;
 
-internal sealed class ItemVisuals(ItemCatalog catalog)
+internal sealed class ItemVisuals
 {
     internal void Apply(ClickableIcon icon, ItemEntity? entity, string emptyTooltip = "")
     {
@@ -18,20 +18,20 @@ internal sealed class ItemVisuals(ItemCatalog catalog)
             return;
         }
 
-        var definition = catalog.Get(entity.DefinitionId);
-        icon.SetDisplay(ItemIconResolver.Item(catalog, definition), ItemDisplayFormatter.Create(catalog, entity));
+        var definition = entity.Definition;
+        icon.SetDisplay(ItemIconResolver.Item(definition), ItemDisplayFormatter.Create(entity));
     }
 
-    internal void ApplyDefinition(ClickableIcon icon, ItemDefinitionId? definitionId, long? quantity, string label,
+    internal void ApplyDefinition(ClickableIcon icon, string? definitionId, long? quantity, string label,
         bool available, bool showPlaceholder = false)
     {
         if (definitionId == null)
             icon.SetDisplay(showPlaceholder ? ItemIconResolver.Placeholder() : null, new IconDisplayData(label));
         else
         {
-            var definition = catalog.Get(definitionId.Value);
-            icon.SetDisplay(ItemIconResolver.Item(catalog, definition),
-                ItemDisplayFormatter.Create(catalog, definition.Id, quantity));
+            var definition = ItemRegistry.GetById(definitionId);
+            icon.SetDisplay(ItemIconResolver.Item(definition),
+                ItemDisplayFormatter.Create(definition.Id, quantity));
         }
         icon.DisplayModulate = available ? Colors.White : new Color(0.6f, 0.6f, 0.6f);
         icon.Modulate = icon.DisplayModulate;

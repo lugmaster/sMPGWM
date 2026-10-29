@@ -13,6 +13,8 @@ properties:
         - Id
         - DisplayName
         - CategoryId
+        - CanStack
+        - StackLimit
       properties:
         Id:
           type: string
@@ -25,9 +27,11 @@ properties:
           pattern: '\S'
         Description:
           type: string
-        IconAssetPath:
+        CanStack:
+          type: boolean
+        Icon:
           type: [string, 'null']
-        MaximumStackSize:
-          type: [integer, 'null']
+        StackLimit:
+          type: integer
           minimum: 1
           maximum: 2147483647

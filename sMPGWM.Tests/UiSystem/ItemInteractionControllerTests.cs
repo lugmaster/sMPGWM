@@ -7,25 +7,19 @@ using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 namespace sMPGWM.Tests.UiSystem;
 
 [TestFixture]
+[Category("Godot")]
 public class ItemInteractionControllerTests
 {
     private InventoryController _inventory = null!;
     private EquipmentController _equipment = null!;
     private InventoryEquipmentTransferService _transfers = null!;
     private ItemInteractionController _controller = null!;
-    private ItemCatalog _catalog = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _catalog = new ItemCatalog(ItemCategories.CreateDefault(), new[]
-        {
-            new ItemDefinition(new ItemDefinitionId("engine"), "Engine", ItemCategories.Engine),
-            new ItemDefinition(new ItemDefinitionId("weapon"), "Weapon", ItemCategories.LightWeapon),
-            new ItemDefinition(new ItemDefinitionId("potion"), "Potion", ItemCategories.Consumable, maximumStackSize: 10)
-        });
-        _inventory = new InventoryController(_catalog);
-        _equipment = new EquipmentController(_catalog);
+        _inventory = new InventoryController();
+        _equipment = new EquipmentController();
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _controller = new ItemInteractionController(_transfers);
         _controller.SetSession(_transfers.OpenEditSession());
@@ -43,7 +37,7 @@ public class ItemInteractionControllerTests
     {
         var slots = _inventory.Snapshot.Slots.ToArray();
         for (var index = 0; index < entries.Length; index++)
-            slots[index] = _catalog.CreateEntity(new ItemDefinitionId(entries[index].Definition), entries[index].Count);
+            slots[index] = ItemRegistry.CreateEntity(entries[index].Definition, entries[index].Count);
         _inventory.Install(_inventory.PrepareChange(slots));
     }
 
@@ -57,7 +51,7 @@ public class ItemInteractionControllerTests
     [Test]
     public void NativeDrag_HoverIsReadOnlyAndTokenCommitsOnlyOnce()
     {
-        Seed(("engine", 1));
+        Seed(("mock_standard_engine", 1));
         var before = _inventory.Snapshot;
         var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
         Assert.That(token, Is.Not.EqualTo(Guid.Empty));
@@ -77,7 +71,7 @@ public class ItemInteractionControllerTests
     [TestCase("engine", TransferResult.Success)]
     public void NativeDrag_AlwaysEndsCarrying(string slot, TransferResult expected)
     {
-        Seed(("engine", 1));
+        Seed(("mock_standard_engine", 1));
         var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
         Assert.That(_controller.Drop(token, Slot(slot)), Is.EqualTo(expected));
         Assert.That(_controller.IsCarrying, Is.False);
@@ -90,14 +84,14 @@ public class ItemInteractionControllerTests
     [TestCase("revision")]
     public void NativeDrag_InvalidatedTokensCannotCommit(string reason)
     {
-        Seed(("engine", 1));
+        Seed(("mock_standard_engine", 1));
         var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
         switch (reason)
         {
             case "cancel": _controller.Cancel(); break;
             case "session": _controller.SetSession(_transfers.OpenEditSession()); break;
             case "mapping": _controller.Refresh(_inventory.Revision, _equipment.Revision, 1); break;
-            case "revision": _inventory.Add(new ItemDefinitionId("engine"), 1); break;
+            case "revision": _inventory.Add("mock_standard_engine", 1); break;
         }
         var before = _inventory.Snapshot;
         Assert.That(_controller.Drop(token, Slot("engine")), Is.Not.EqualTo(TransferResult.Success));
@@ -107,7 +101,7 @@ public class ItemInteractionControllerTests
     [Test]
     public void NativeDrag_RejectsForeignAndRevokedTokensAndRevalidatesTarget()
     {
-        Seed(("potion", 7), ("potion", 8));
+        Seed(("mock_standard_consumable", 7), ("mock_standard_consumable", 8));
         var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
         Assert.That(_controller.ValidateDrag(Guid.NewGuid(), Bag(1)), Is.Null);
         Assert.That(_controller.Drop(Guid.NewGuid(), Bag(1)), Is.Null);
@@ -127,7 +121,7 @@ public class ItemInteractionControllerTests
     [Test]
     public void PickupValidateAndEquip_PreserveSourceUntilCommit()
     {
-        Seed(("engine", 1));
+        Seed(("mock_standard_engine", 1));
         var source = Bag(0);
         var before = _inventory.Snapshot;
         Click(source);
@@ -148,7 +142,7 @@ public class ItemInteractionControllerTests
     {
         Click(Bag(0));
         Assert.That(_controller.IsCarrying, Is.False);
-        Seed(("engine", 1));
+        Seed(("mock_standard_engine", 1));
         var before = _inventory.Snapshot;
         Click(Bag(0));
         Click(Bag(0));
@@ -162,7 +156,7 @@ public class ItemInteractionControllerTests
     [Test]
     public void InvalidTargetRetainsCarrying_AndNextValidTargetWorks()
     {
-        Seed(("engine", 1));
+        Seed(("mock_standard_engine", 1));
         var before = _inventory.Snapshot;
         Click(Bag(0));
         Click(Slot("hull"));
@@ -178,7 +172,7 @@ public class ItemInteractionControllerTests
     [TestCase(10, 7, true)]
     public void MergeEndsCarryingExceptFullStack(int destinationCount, int remaining, bool carrying)
     {
-        Seed(("potion", 7), ("potion", destinationCount));
+        Seed(("mock_standard_consumable", 7), ("mock_standard_consumable", destinationCount));
         var source = Bag(0).Entity!;
         var destination = Bag(1).Entity!;
         Click(Bag(0));
@@ -193,9 +187,9 @@ public class ItemInteractionControllerTests
     [TestCase(false)]
     public void ChangedRevisionOrMapping_CancelsWithoutPickingUpTarget(bool revision)
     {
-        Seed(("engine", 1), ("engine", 1));
+        Seed(("mock_standard_engine", 1), ("mock_standard_engine", 1));
         Click(Bag(0));
-        if (revision) _inventory.Add(new ItemDefinitionId("engine"), 1);
+        if (revision) _inventory.Add("mock_standard_engine", 1);
         var before = _inventory.Snapshot;
         Click(Bag(1), revision ? 0 : 1);
         Assert.That(_controller.IsCarrying, Is.False);
@@ -205,7 +199,7 @@ public class ItemInteractionControllerTests
     [Test]
     public void RevokedSessionAndStaleDisplayedTarget_CancelWithoutMutation()
     {
-        Seed(("engine", 1));
+        Seed(("mock_standard_engine", 1));
         Click(Bag(0));
         _transfers.RevokeEditSession();
         Click(Bag(2));
@@ -221,7 +215,7 @@ public class ItemInteractionControllerTests
     [Test]
     public void ReopenSessionAndEquipmentRefresh_ClearPendingSource()
     {
-        Seed(("engine", 1));
+        Seed(("mock_standard_engine", 1));
         Click(Bag(0));
         _controller.SetSession(_transfers.OpenEditSession());
         Assert.That(_controller.IsCarrying, Is.False);
@@ -246,7 +240,7 @@ public class ItemInteractionControllerTests
     [TestCase(true)]
     public void UnifiedPlacement_AssignsConsumableWithoutMovingItems(bool drag)
     {
-        Seed(("potion", 7));
+        Seed(("mock_standard_consumable", 7));
         using var hotbar = ConfigureHotbar();
         var before = _inventory.Snapshot;
         var target = ItemCellBinding.Hotbar(1, hotbar.Revision);
@@ -258,7 +252,7 @@ public class ItemInteractionControllerTests
             Assert.That(_controller.Drop(token, target), Is.Null);
         }
         else { Click(Bag(0)); Click(target); }
-        Assert.That(hotbar.Entries[1], Is.EqualTo(new ConsumableHotbarBinding(new("potion"))));
+        Assert.That(hotbar.Entries[1], Is.EqualTo(new ConsumableHotbarBinding(new("mock_standard_consumable"))));
         Assert.That(_inventory.Snapshot, Is.SameAs(before));
         Assert.That(_controller.Mode, Is.EqualTo(ItemInteractionController.PlacementMode.Idle));
     }
@@ -267,7 +261,7 @@ public class ItemInteractionControllerTests
     [TestCase(true)]
     public void UnifiedPlacement_MovesAndSwapsHotbarActions(bool drag)
     {
-        Seed(("potion", 1));
+        Seed(("mock_standard_consumable", 1));
         using var hotbar = ConfigureHotbar();
         Click(Bag(0));
         Click(ItemCellBinding.Hotbar(1, hotbar.Revision));
@@ -292,7 +286,7 @@ public class ItemInteractionControllerTests
     [TestCase(true)]
     public void UnifiedPlacement_RejectsStaleHotbarTargetAndRevokedSession(bool drag)
     {
-        Seed(("potion", 3));
+        Seed(("mock_standard_consumable", 3));
         using var hotbar = ConfigureHotbar();
         var target = ItemCellBinding.Hotbar(1, -1);
         if (drag)
@@ -312,9 +306,9 @@ public class ItemInteractionControllerTests
     [Test]
     public void NativeDrag_NewerBagTargetCannotAuthorizeAnOlderSource()
     {
-        Seed(("potion", 3));
+        Seed(("mock_standard_consumable", 3));
         var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
-        _inventory.Add(new("potion"), 1);
+        _inventory.Add(new("mock_standard_consumable"), 1);
         var before = _inventory.Snapshot;
         Assert.That(_controller.Drop(token, Bag(1)), Is.EqualTo(TransferResult.StaleRevision));
         Assert.That(_inventory.Snapshot, Is.SameAs(before));
@@ -329,11 +323,11 @@ public class ItemInteractionControllerTests
     [TestCase("ineligible", TransferResult.IncompatiblePlacement, true)]
     public void HotbarSourceRejectionsApplyPickupPolicy(string reason, TransferResult expected, bool retained)
     {
-        Seed(("potion", 3), ("engine", 1));
+        Seed(("mock_standard_consumable", 3), ("mock_standard_engine", 1));
         using var hotbar = ConfigureHotbar();
         var source = reason == "ineligible" ? Bag(1) : Bag(0);
         if (reason == "location") source = source with { Location = ItemLocation.Inventory(_inventory.Capacity) };
-        if (reason == "entity") source = source with { Entity = _catalog.CreateEntity(new("potion"), 3) };
+        if (reason == "entity") source = source with { Entity = ItemRegistry.CreateEntity(new("mock_standard_consumable"), 3) };
         void Invalidate()
         {
             switch (reason)
@@ -341,7 +335,7 @@ public class ItemInteractionControllerTests
                 case "disposed": _transfers.Dispose(); break;
                 case "publication": _inventory.SetPublicationInProgress(true); break;
                 case "session": _transfers.RevokeEditSession(); break;
-                case "revision": _inventory.Add(new("potion"), 1); break;
+                case "revision": _inventory.Add(new("mock_standard_consumable"), 1); break;
             }
         }
         Click(source);
@@ -382,7 +376,7 @@ public class ItemInteractionControllerTests
     [TestCase(true, true)]
     public void HotbarNoOpsRetainClickPickupAndEndNativeDrag(bool weapon, bool move)
     {
-        Seed(("potion", 3), ("potion", 4), ("weapon", 1));
+        Seed(("mock_standard_consumable", 3), ("mock_standard_consumable", 4), ("mock_standard_light_weapon", 1));
         using var hotbar = ConfigureHotbar();
         if (weapon)
         {

@@ -3,13 +3,14 @@ namespace sMPGWM.Scripts.ItemSystem;
 public sealed record ItemEntity
 {
     public ItemEntityId Id { get; }
-    public ItemDefinitionId DefinitionId { get; }
+    public ItemDefinition Definition { get; }
+    public string DefinitionId => Definition.Id;
     public int Count { get; }
 
-    internal ItemEntity(ItemEntityId id, ItemDefinitionId definitionId, int count)
+    internal ItemEntity(ItemEntityId id, ItemDefinition definition, int count)
     {
         Id = id;
-        DefinitionId = definitionId;
+        Definition = definition;
         Count = count;
     }
 }

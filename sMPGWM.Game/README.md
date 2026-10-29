@@ -42,3 +42,11 @@ sMPGWM is a **2D top-down multiplayer space shooter** developed in **Godot 4.6 w
 - **Client dummy:** The representation of a client in another player's local context.
 
 These conventions should be used consistently in architecture discussions, implementation plans, and code examples.
+
+## Tests
+
+Run `dotnet test sMPGWM.Tests` from the repository root. The NUnit project targets .NET 8 to match the game assembly. Set `GODOT_BIN` to a Godot 4.6 .NET console executable if it is not available as `godot` on PATH (the local `godot_engine/Godot_v4.6.2_mono_steam` installation is also detected).
+
+The command runs standalone tests directly and runs the `Godot` category through `GodotIntegrationTests` in a separate headless engine process. These cases use the real static registry, packaged YAML, and imported icon atlas. A temporary project and user-data directory keep test runs separate from gameplay, Steam, and player configuration. The engine runs tests on its main thread and writes individual NUnit results to `godot-results.xml`, attached to the orchestration test. Engine failures, skipped cases, or a timeout fail the orchestration test. Run the orchestration test in Rider to execute this category; directly launching an individual engine-dependent case through the ordinary .NET test host does not supply Godot bindings.
+
+The equipment compatibility test checks every category/slot combination in one matrix test with fresh inventory and equipment owners per combination. Stack tests derive bulk quantities from loaded limits rather than assuming test-only unlimited stacks. The existing explicit stress benchmark remains an opt-in performance run.
