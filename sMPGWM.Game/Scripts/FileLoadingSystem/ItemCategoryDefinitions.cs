@@ -7,6 +7,8 @@ using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.FileLoadingSystem;
 
+// Newtonsoft.Json instantiates these records when deserializing category YAML through DefinitionDeserializer.
+// ReSharper disable once ClassNeverInstantiated.Global
 public sealed record ItemCategoryDefinitions(ItemCategoryDefinition[] Categories)
 {
     public LoadResult<ItemCategories> ToCategories(string sourcePath, string schemaPath)
