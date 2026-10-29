@@ -2,10 +2,10 @@
 
 using System;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.Util.UiComponents;
-using sMPGWM.Scripts.ItemSystem;
 
-namespace sMPGWM.Scripts.FileLoadingSystem;
+namespace sMPGWM.Scripts.ItemSystem;
 
 // Newtonsoft.Json instantiates these records when deserializing category YAML through DefinitionDeserializer.
 // ReSharper disable once ClassNeverInstantiated.Global

@@ -28,4 +28,11 @@
     <Folder Include="TestResults\" />
   </ItemGroup>
 
+  <!-- Godot generators flow in through the game reference but require a Godot project. -->
+  <Target Name="RemoveGodotSourceGenerators" BeforeTargets="CoreCompile" DependsOnTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'Godot.SourceGenerators'" />
+    </ItemGroup>
+  </Target>
+
 </Project>

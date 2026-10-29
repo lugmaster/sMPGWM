@@ -8,6 +8,7 @@ using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
+using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.Util.UiComponents;
 

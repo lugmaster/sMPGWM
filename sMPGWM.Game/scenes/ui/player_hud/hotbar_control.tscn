@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dp0ih827sy63x"]
 
-[ext_resource type="Script" uid="uid://cdnr3xi6qagm5" path="res://Scripts/UiSystem/HudSystem/HotbarControl.cs" id="1_6j8mg"]
+[ext_resource type="Script" uid="uid://cdnr3xi6qagm5" path="res://Scripts/UiSystem/HudSystem/HotbarSystem/HotbarControl.cs" id="1_2ryyu"]
 [ext_resource type="PackedScene" uid="uid://bxfy1glfrrw6a" path="res://scenes/ui/base/clickable_icon.tscn" id="2_2ryyu"]
 
 [node name="HotbarControl" type="PanelContainer" unique_id=1772562676]
@@ -8,7 +8,7 @@ custom_minimum_size = Vector2(560, 70)
 offset_right = 560.0
 offset_bottom = 70.0
 mouse_filter = 2
-script = ExtResource("1_6j8mg")
+script = ExtResource("1_2ryyu")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=493446499]
 layout_mode = 2

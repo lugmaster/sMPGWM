@@ -1,11 +1,12 @@
 #nullable enable
 
 using System;
-using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.FileLoadingSystem;
 
-namespace sMPGWM.Scripts.FileLoadingSystem;
+namespace sMPGWM.Scripts.ItemSystem;
 
-// YAML transport records; the domain catalog owns cross-reference and stacking validation.
+// Newtonsoft.Json instantiates these records when deserializing category YAML through DefinitionDeserializer.
+// ReSharper disable once ClassNeverInstantiated.Global
 public sealed record ItemDefinitionData(
     string Id,
     string DisplayName,
