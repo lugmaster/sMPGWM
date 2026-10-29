@@ -2,7 +2,6 @@
 
 [ext_resource type="PackedScene" uid="uid://csfidmr8pe45n" path="res://scenes/ui/base/base_start_menu.tscn" id="1_lh57r"]
 [ext_resource type="Script" uid="uid://7qktnjcqjlhi" path="res://Scripts/StartMenuSystem/JoinSteamGameMenu.cs" id="2_qrs2d"]
-[ext_resource type="PackedScene" uid="uid://bvlnfjbd1dmhy" path="res://scenes/ui/base/filter_toolbar.tscn" id="4_te183"]
 [ext_resource type="PackedScene" uid="uid://bu458ks2ey5sj" path="res://scenes/ui/menu/start_menu/lobby_list_entry.tscn" id="5_e0inx"]
 
 [node name="JoinSteamGameMenu" unique_id=1431156458 instance=ExtResource("1_lh57r")]
@@ -11,10 +10,7 @@ script = ExtResource("2_qrs2d")
 [node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
 text = "Join Game"
 
-[node name="FilterToolbar" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=307463620 instance=ExtResource("4_te183")]
-layout_mode = 2
-
-[node name="LobbyListPanel" type="PanelContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="1" unique_id=2119488882]
+[node name="LobbyListPanel" type="PanelContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=2119488882]
 custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
 
@@ -90,7 +86,7 @@ layout_mode = 2
 [node name="LobbyListEntry12" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyScroll/LobbyEntries" index="11" unique_id=223104523 instance=ExtResource("5_e0inx")]
 layout_mode = 2
 
-[node name="JoinSteamGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="2" unique_id=728622055]
+[node name="JoinSteamGameButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="1" unique_id=728622055]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 64)
 layout_mode = 2

@@ -1,5 +1,3 @@
-#nullable enable
-
 using System;
 
 namespace sMPGWM.Scripts.ItemSystem;
@@ -20,6 +18,8 @@ public sealed record ItemCategory
             throw new ArgumentException("A category ID is required.", nameof(id));
         if (string.IsNullOrWhiteSpace(displayName))
             throw new ArgumentException("A category display name is required.", nameof(displayName));
+        // if (string.IsNullOrWhiteSpace(iconAssetPath))
+        //     throw new ArgumentException("An icon asset path is required.", nameof(displayName));
 
         Id = id;
         DisplayName = displayName;

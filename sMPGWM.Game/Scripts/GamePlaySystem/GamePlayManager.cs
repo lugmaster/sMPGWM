@@ -7,6 +7,7 @@ using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.ItemSystem.Definitions;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;

@@ -1,4 +1,4 @@
-#nullable enable
+
 
 using Godot;
 using sMPGWM.Scripts.MessageSystem;

@@ -2,3 +2,6 @@ root = true
 
 [*]
 charset = utf-8
+
+[addons/godotsteam_csharpbindings/**/*.cs]
+generated_code = true

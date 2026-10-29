@@ -1,4 +1,4 @@
-#nullable enable
+
 using Godot;
 
 namespace sMPGWM.Scripts.Util.UiComponents;

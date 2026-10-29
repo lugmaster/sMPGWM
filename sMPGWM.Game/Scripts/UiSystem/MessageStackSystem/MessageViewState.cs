@@ -1,4 +1,4 @@
-#nullable enable
+
 using System.Collections.Generic;
 namespace sMPGWM.Scripts.UiSystem.MessageStackSystem;
 internal sealed class MessageViewState
