@@ -1,3 +1,5 @@
+using sMPGWM.Scripts.Util.Mocks;
+using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
@@ -20,19 +22,17 @@ public class ItemHotbarTests
     public void SetUp()
     {
         _inventory = new InventoryController();
-        _equipment = new EquipmentController();
+        _equipment = new EquipmentController(_inventory.Items);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
         _adapter = new ItemHotbarAdapter(_state, _inventory, _equipment, _transfers);
         _session = _transfers.OpenEditSession();
         _state.SetEditSession(_session);
-        var slots = _inventory.Snapshot.Slots.ToArray();
-        slots[0] = ItemRegistry.CreateEntity("mock_standard_consumable", 7);
-        slots[1] = ItemRegistry.CreateEntity("mock_standard_consumable", 8);
-        slots[2] = ItemRegistry.CreateEntity("mock_advanced_consumable", 9);
-        slots[3] = ItemRegistry.CreateEntity("mock_standard_light_weapon");
-        slots[4] = ItemRegistry.CreateEntity("mock_standard_engine");
-        _inventory.Install(_inventory.PrepareChange(slots));
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 0, "mock_standard_consumable", 7);
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 1, "mock_standard_consumable", 8);
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 2, "mock_advanced_consumable", 9);
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 3, "mock_standard_light_weapon");
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 4, "mock_standard_engine");
     }
 
     [TearDown]
@@ -73,20 +73,17 @@ public class ItemHotbarTests
     public void AggregateRetainsZeroQuantityDefinitionAndSumsMultipleStacks()
     {
         Assign(0);
-        var slots = _inventory.Snapshot.Slots.ToArray();
-        slots[0] = null;
-        slots[1] = null;
-        _inventory.Install(_inventory.PrepareChange(slots));
+        ItemFixture.MoveAway(_inventory.Items, _inventory.Container, 0, 1);
         Assert.That(_adapter.Resolve(0), Is.EqualTo(new HotbarAvailability("mock_standard_consumable", 0, ItemRegistry.GetById("mock_standard_consumable").DisplayName, false)));
         Assert.That(_state.Entries[0], Is.TypeOf<ConsumableHotbarBinding>());
         using var inventory = new InventoryController();
-        using var equipment = new EquipmentController();
+        using var equipment = new EquipmentController(inventory.Items);
         using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
         using var state = new ItemHotbarState();
         var session = transfers.OpenEditSession();
         state.SetEditSession(session);
         var quantity = (long)ItemRegistry.GetById("mock_advanced_consumable").StackLimit * 2;
-        inventory.Add("mock_advanced_consumable", quantity);
+        inventory.Items.CreateItems(inventory.Container, "mock_advanced_consumable", quantity);
         var adapter = new ItemHotbarAdapter(state, inventory, equipment, transfers);
         adapter.Assign(session, 0, 0, ItemLocation.Inventory(0), inventory.Snapshot.Slots[0]!.Id, inventory.Revision, 0);
         Assert.That(adapter.Resolve(0).Quantity, Is.EqualTo(quantity));
@@ -113,7 +110,7 @@ public class ItemHotbarTests
             ItemLocation.Inventory(3), null, _inventory.Revision, _equipment.Revision));
         Assert.That(_adapter.Resolve(0).Available, Is.False);
         Assert.That(_adapter.Resolve(0).Label, Is.EqualTo("Light Weapon Slot 1"));
-        _inventory.Add("mock_standard_light_weapon", 1);
+        _inventory.Items.CreateItems(_inventory.Container, "mock_standard_light_weapon", 1);
         Equip(5);
         Assert.That(_adapter.Resolve(0).Available, Is.True);
         Assert.That(_equipment.Snapshot.Slots[4]!.Id, Is.Not.EqualTo(first.Id));

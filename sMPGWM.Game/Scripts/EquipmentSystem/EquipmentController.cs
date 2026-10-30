@@ -7,23 +7,32 @@ using sMPGWM.Scripts.ItemSystem;
 namespace sMPGWM.Scripts.EquipmentSystem;
 public sealed class EquipmentController : IDisposable, IEquipmentView
 {
-    private readonly Action<Exception>? _reportObserverError;
     private bool _disposed;
     private bool _publishing;
 
     public IReadOnlyList<EquipmentSlotDefinition> Definitions { get; }
-    public EquipmentSnapshot Snapshot { get; private set; } = new(0, new ItemEntity?[EquipmentSlotDefinition.Defaults.Count]);
+    public ItemController Items { get; }
+    public ItemContainer Container { get; }
+    private EquipmentSnapshot? _snapshot;
+    public EquipmentSnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
+        ? snapshot : _snapshot = new EquipmentSnapshot(Container.Revision, Container.Entities);
     public long Revision => Snapshot.Revision;
     public event Action<EquipmentSnapshot>? Changed;
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :
-        _publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
+        (_publishing || Items.Publishing) ? TransferResult.PublicationInProgress : TransferResult.Success;
 
-    public EquipmentController(Action<Exception>? reportObserverError = null)
+    public EquipmentController()
+        : this(new ItemController()) { }
+
+    public EquipmentController(ItemController items)
     {
-        _reportObserverError = reportObserverError;
+        Items = items;
         Definitions = EquipmentSlotDefinition.Defaults;
         foreach (var definition in Definitions)
             ItemRegistry.GetCategoryById(definition.AcceptedCategory);
+        Container = items.CreateContainer(Definitions.Count, accepts: (index, definition, count) =>
+            count == 1 && CanPlace(Definitions[index].Key, definition.Id));
+        Container.Subscribe(NotifyObservers);
     }
 
     public int FindSlot(string key)
@@ -39,53 +48,15 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
         return index >= 0 && ItemRegistry.GetById(definitionId).CategoryName == ItemRegistry.GetCategoryById(Definitions[index].AcceptedCategory).DisplayName;
     }
 
-    internal EquipmentSnapshot PrepareChange(ItemEntity?[] slots)
-    {
-        if (slots.Length != Definitions.Count) throw new ArgumentException("Invalid equipmentImpl size.", nameof(slots));
-        var identities = new HashSet<ItemEntityId>();
-        for (var index = 0; index < slots.Length; index++)
-        {
-            if (slots[index] is not { } entity) continue;
-            if (entity.Id == default || !identities.Add(entity.Id) || entity.Count != 1 ||
-                !CanPlace(Definitions[index].Key, entity.DefinitionId))
-                throw new ArgumentException("Invalid equipmentImpl placement or duplicate identity.", nameof(slots));
-        }
-        return new EquipmentSnapshot(checked(Revision + 1), slots);
-    }
-
-    internal void Install(EquipmentSnapshot snapshot) => Snapshot = snapshot;
     internal void SetPublicationInProgress(bool publishing) => _publishing = publishing;
 
-    internal void NotifyObservers()
-    {
-        if (Changed is not { } handlers) return;
-        foreach (Action<EquipmentSnapshot> observer in handlers.GetInvocationList())
-        {
-            try { observer(Snapshot); }
-            catch (Exception exception)
-            {
-                // TODO: Add subscriber recovery through its owner (rebuild or disable a failed view).
-                // Reporting alone does not recover it; preserve committed state and notify remaining subscribers.
-                // State is already committed; a broken subscriber must not prevent other notifications.
-                if (_reportObserverError is null)
-                {
-                    Console.Error.WriteLine($"Equipment observer failed: {exception}");
-                    continue;
-                }
-
-                try { _reportObserverError(exception); }
-                catch (Exception reportingException)
-                {
-                    // Bypass the failed reporter and preserve both exceptions for diagnosis.
-                    Console.Error.WriteLine($"Equipment observer failed: {exception}{Environment.NewLine}" +
-                        $"Equipment observer error reporter also failed: {reportingException}");
-                }
-            }
-        }
-    }
+    // Subscriber failures are programming errors: propagate them immediately.
+    internal void NotifyObservers() => Changed?.Invoke(Snapshot);
 
     public void Dispose()
     {
+        Container.Unsubscribe(NotifyObservers);
+        Container.Disposed = true;
         _disposed = true;
         Changed = null;
     }

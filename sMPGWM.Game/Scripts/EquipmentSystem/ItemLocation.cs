@@ -2,6 +2,7 @@
 
 namespace sMPGWM.Scripts.EquipmentSystem;
 
+/// <summary>A UI cell address. The transfer adapter resolves this to an ItemSystem container location.</summary>
 public readonly record struct ItemLocation
 {
     public int? InventoryAddress { get; }

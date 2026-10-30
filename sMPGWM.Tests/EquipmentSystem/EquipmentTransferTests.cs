@@ -1,3 +1,5 @@
+using sMPGWM.Scripts.Util.Mocks;
+using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
@@ -17,7 +19,7 @@ public class EquipmentTransferTests
     public void SetUp()
     {
         _inventoryImpl = new InventoryController();
-        _equipmentImpl = new EquipmentController();
+        _equipmentImpl = new EquipmentController(_inventoryImpl.Items);
         _transfers = new InventoryEquipmentTransferService(_inventoryImpl, _equipmentImpl);
         _session = _transfers.OpenEditSession();
     }
@@ -32,10 +34,8 @@ public class EquipmentTransferTests
 
     private void Seed(params (int Address, string Definition, int Count)[] entries)
     {
-        var slots = _inventoryImpl.Snapshot.Slots.ToArray();
         foreach (var entry in entries)
-            slots[entry.Address] = ItemRegistry.CreateEntity(entry.Definition, entry.Count);
-        _inventoryImpl.Install(_inventoryImpl.PrepareChange(slots));
+            ItemFixture.Place(_inventoryImpl.Items, _inventoryImpl.Container, entry.Address, entry.Definition, entry.Count);
     }
 
     private TransferRequest Request(ItemLocation source, ItemLocation destination)
@@ -56,10 +56,10 @@ public class EquipmentTransferTests
         foreach (var slot in EquipmentSlotDefinition.Defaults)
         {
             using var inventory = new InventoryController();
-            using var equipment = new EquipmentController();
+            using var equipment = new EquipmentController(inventory.Items);
             using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
             var definition = ItemRegistry.GetAll().First(d => d.CategoryName == category.DisplayName);
-            inventory.Add(definition.Id, 1);
+            inventory.Items.CreateItems(inventory.Container, definition.Id, 1);
             var before = inventory.Snapshot;
             var equipmentBefore = equipment.Snapshot;
             var entity = before.Slots[0]!;
@@ -208,21 +208,18 @@ public class EquipmentTransferTests
             Assert.That(_equipmentImpl.Snapshot.Slots[0]!.Id, Is.EqualTo(request.SourceEntity));
             Assert.That(_inventoryImpl.Revision, Is.EqualTo(inventoryRevision + 1));
             Assert.That(_equipmentImpl.Revision, Is.EqualTo(1));
-            Assert.That(_inventoryImpl.Add("mock_standard_engine", 1), Is.EqualTo(InventoryResult.PublicationInProgress));
+            Assert.That(_inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 1), Is.EqualTo(InventoryResult.PublicationInProgress));
             Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.PublicationInProgress));
             using var otherCoordinator = new InventoryEquipmentTransferService(_inventoryImpl, _equipmentImpl);
             Assert.That(otherCoordinator.Transfer(request), Is.EqualTo(TransferResult.PublicationInProgress));
         }
-        var failures = new List<Exception>();
-        Action<InventorySnapshot> inventoryObserver = _ => { try { Observe(); } catch (Exception exception) { failures.Add(exception); } };
+        Action<InventorySnapshot> inventoryObserver = _ => Observe();
         _inventoryImpl.Changed += inventoryObserver;
-        _inventoryImpl.Changed += _ => throw new InvalidOperationException("observer failure");
-        _equipmentImpl.Changed += _ => { try { Observe(); } catch (Exception exception) { failures.Add(exception); } };
+        _equipmentImpl.Changed += _ => Observe();
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Success));
-        Assert.That(failures, Is.Empty);
         Assert.That(notifications, Is.EqualTo(2));
         _inventoryImpl.Changed -= inventoryObserver;
-        Assert.That(_inventoryImpl.Add("mock_standard_engine", 1), Is.EqualTo(InventoryResult.Success));
+        Assert.That(_inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 1), Is.EqualTo(InventoryResult.Success));
     }
 
     [Test]
@@ -236,7 +233,7 @@ public class EquipmentTransferTests
         Assert.That(Move(ItemLocation.Inventory(1), ItemLocation.Equipment("engine")), Is.EqualTo(TransferResult.Success));
         Assert.That(_equipmentImpl.Snapshot.Slots[0], Is.SameAs(replacement));
         Assert.That(_inventoryImpl.Snapshot.Slots[1], Is.SameAs(before));
-        _inventoryImpl.Add("mock_standard_hull", 1);
+        _inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_hull", 1);
         var inventoryBefore = _inventoryImpl.Snapshot;
         Assert.That(_transfers.Transfer(stale), Is.EqualTo(TransferResult.StaleRevision));
         Assert.That(_transfers.Transfer(stale with { InventoryRevision = _inventoryImpl.Revision, SourceEntity = before!.Id }),
@@ -244,62 +241,36 @@ public class EquipmentTransferTests
         Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
     }
 
-    [Test]
-    public void ObserverAndLoggingFailures_DoNotStopRemainingNotifications()
+    [TestCase(false, typeof(InvalidOperationException))]
+    [TestCase(true, typeof(InvalidOperationException))]
+    [TestCase(false, typeof(OverflowException))]
+    [TestCase(true, typeof(OutOfMemoryException))]
+    public void SubscriberFailure_PropagatesAfterAtomicCommit(bool equipmentFails, Type exceptionType)
     {
-        var errors = 0;
-        using var inventory = new InventoryController( _ => { errors++; throw new Exception("logging"); });
-        using var equipment = new EquipmentController( _ => { errors++; throw new Exception("logging"); });
-        using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
-        inventory.Add("mock_standard_engine", 1);
-        var request = new TransferRequest(transfers.OpenEditSession(), ItemLocation.Inventory(0),
-            inventory.Snapshot.Slots[0]!.Id, ItemLocation.Equipment("engine"), null, inventory.Revision, equipment.Revision);
-        var notifications = 0;
-        inventory.Changed += _ => throw new Exception("inventoryImpl");
-        inventory.Changed += _ => notifications++;
-        equipment.Changed += _ => throw new Exception("equipmentImpl");
-        equipment.Changed += _ => notifications++;
-        Assert.That(transfers.Transfer(request), Is.EqualTo(TransferResult.Success));
-        Assert.That(errors, Is.EqualTo(2));
-        Assert.That(notifications, Is.EqualTo(2));
-    }
+        Seed((0, "mock_standard_engine", 1));
+        var request = Request(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
+        var failure = (Exception)Activator.CreateInstance(exceptionType)!;
+        if (equipmentFails) _equipmentImpl.Changed += _ => throw failure;
+        else _inventoryImpl.Changed += _ => throw failure;
+        var laterCalled = false;
+        _equipmentImpl.Changed += _ => laterCalled = true;
 
-    [TestCase(false)]
-    [TestCase(true)]
-    [NonParallelizable]
-    public void EquipmentObserverFailure_WritesFallbackAndContinuesNotifications(bool reporterThrows)
-    {
-        var observerFailure = new InvalidOperationException("equipment subscriber failed");
-        var reporterFailure = new InvalidOperationException("equipment reporter failed");
-        using var equipment = new EquipmentController(
-            reporterThrows ? _ => throw reporterFailure : null);
-        var notified = false;
-        equipment.Changed += _ => throw observerFailure;
-        equipment.Changed += snapshot => notified = ReferenceEquals(snapshot, equipment.Snapshot);
-        var originalError = Console.Error;
-        using var output = new System.IO.StringWriter();
-        try
-        {
-            Console.SetError(output);
-            Assert.DoesNotThrow(equipment.NotifyObservers);
-        }
-        finally
-        {
-            Console.SetError(originalError);
-        }
-
-        Assert.That(notified, Is.True);
-        Assert.That(output.ToString(), Does.Contain(observerFailure.ToString()));
-        if (reporterThrows)
-            Assert.That(output.ToString(), Does.Contain(reporterFailure.ToString()));
+        var thrown = Assert.Throws(exceptionType, () => _transfers.Transfer(request));
+        Assert.That(thrown, Is.SameAs(failure));
+        Assert.That(laterCalled, Is.False);
+        Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.Null);
+        Assert.That(_equipmentImpl.Snapshot.Slots[0]!.Id, Is.EqualTo(request.SourceEntity));
+        Assert.That(_inventoryImpl.Items.GetLocation(request.SourceEntity),
+            Is.EqualTo(new sMPGWM.Scripts.ItemSystem.ItemLocation(_equipmentImpl.Container.Id, 0)));
+        Assert.That(_inventoryImpl.Items.Publishing, Is.False);
     }
 
     [Test]
     public void FullInventory_RejectsIllegalSwapWithoutGrowingOrAutoRouting()
     {
-        _inventoryImpl.Add("mock_standard_engine", 128);
+        _inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 128);
         Move(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
-        _inventoryImpl.Add("mock_standard_hull", 1);
+        _inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_hull", 1);
         var inventoryBefore = _inventoryImpl.Snapshot;
         var equipmentBefore = _equipmentImpl.Snapshot;
         Assert.That(Move(ItemLocation.Equipment("engine"), ItemLocation.Inventory(0)), Is.EqualTo(TransferResult.IncompatiblePlacement));
@@ -319,7 +290,7 @@ public class EquipmentTransferTests
         if (owner == "coordinator") _transfers.Dispose();
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Disposed));
         using var nextInventory = new InventoryController();
-        using var nextEquipment = new EquipmentController();
+        using var nextEquipment = new EquipmentController(nextInventory.Items);
         using var nextTransfers = new InventoryEquipmentTransferService(nextInventory, nextEquipment);
         nextTransfers.OpenEditSession();
         Assert.That(nextTransfers.Transfer(request), Is.EqualTo(TransferResult.InvalidSession));

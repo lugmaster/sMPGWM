@@ -25,16 +25,26 @@ public partial class InventoryClickSmokeFixture : RefCounted
         var engine = "mock_standard_engine";
         var potion = "mock_standard_consumable";
         _inventory = new InventoryController();
-        _equipment = new EquipmentController();
+        _equipment = new EquipmentController(_inventory.Items);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
-        var slots = _inventory.Snapshot.Slots.ToArray();
-        slots[0] = ItemRegistry.CreateEntity(engine);
-        _engine = slots[0]!.Id;
-        var stacks = Enumerable.Range(0, 3).Select(_ => ItemRegistry.CreateEntity(potion)).OrderBy(entity => entity.Id.Value).ToArray();
-        slots[1] = new ItemEntity(stacks[0].Id, ItemRegistry.GetById(potion), 7);
-        slots[2] = new ItemEntity(stacks[1].Id, ItemRegistry.GetById(potion), 8);
-        slots[3] = new ItemEntity(stacks[2].Id, ItemRegistry.GetById(potion), 10);
-        _inventory.Install(_inventory.PrepareChange(slots));
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 0, engine);
+        _engine = _inventory.Snapshot.Slots[0]!.Id;
+        // Keep the visible stack order deterministic: the UI sorts equal definitions by identity.
+        var stacks = Enumerable.Range(0, 3).Select(_ =>
+        {
+            var staging = _inventory.Items.CreateContainer(1);
+            _inventory.Items.CreateItems(staging, potion, 1);
+            return staging;
+        }).OrderBy(container => container.Slots[0]!.Value.Value).ToArray();
+        var counts = new[] { 7, 8, 10 };
+        for (var index = 0; index < stacks.Length; index++)
+        {
+            var staging = stacks[index];
+            _inventory.Items.CreateItems(staging, potion, counts[index] - 1);
+            var id = staging.Slots[0]!.Value;
+            _inventory.Items.TransferItem(id, _inventory.Items.GetLocation(id),
+                new(_inventory.Container.Id, index + 1), staging.Revision, _inventory.Revision);
+        }
         _canvas = game.GetNode<UiCanvas>("UiCanvas");
         _canvas.CloseAllMenus();
         game.BindInventoryPresentation(_inventory, _equipment, _transfers);
@@ -47,7 +57,7 @@ public partial class InventoryClickSmokeFixture : RefCounted
     public bool EngineEquipped() => _equipment.Snapshot.Slots[0]?.Id == _engine;
     public int CountAt(int address) => _inventory.Snapshot.Slots[address]?.Count ?? 0;
     public long Revision() => _inventory.Revision;
-    public void Fill() => _inventory.Add("mock_standard_engine", 124);
+    public void Fill() => _inventory.Items.CreateItems(_inventory.Container, "mock_standard_engine", 124);
 
     public void Restore(GamePlayManager game)
     {

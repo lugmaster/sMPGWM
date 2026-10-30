@@ -49,9 +49,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     protected override void OnReady()
     {
         var player = PlayerMock.Instance;
-        InventoryController = new InventoryController(exception => LoggingSystem.Logger.Error($"Inventory observer failed: {exception}"));
+        InventoryController = new InventoryController();
         if (PopulateMockInventory) player.PopulateInventory(InventoryController);
-        EquipmentController = new EquipmentController(exception => LoggingSystem.Logger.Error($"Equipment observer failed: {exception}"));
+        EquipmentController = new EquipmentController(InventoryController.Items);
         ItemTransfers = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");

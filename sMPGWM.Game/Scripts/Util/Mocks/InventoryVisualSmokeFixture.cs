@@ -1,3 +1,4 @@
+using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 
 
 using System;
@@ -23,9 +24,9 @@ public partial class InventoryVisualSmokeFixture : RefCounted
     public void Show(GamePlayManager game)
     {
         _inventory = new InventoryController();
-        _equipment = new EquipmentController();
+        _equipment = new EquipmentController(_inventory.Items);
         foreach (var definition in ItemRegistry.GetAll().Where(d => d.Id.StartsWith("mock_standard_")))
-            _inventory.Add(definition.Id, definition.CanStack ? 11 : 1);
+            _inventory.Items.CreateItems(_inventory.Container, definition.Id, definition.CanStack ? 11 : 1);
         var canvas = game.GetNode<UiCanvas>("UiCanvas");
         canvas.CloseAllMenus();
         game.BindInventoryPresentation(_inventory, _equipment);

@@ -27,18 +27,14 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
         var potion = "mock_standard_consumable";
         var weapon = "mock_standard_light_weapon";
         _inventory = new InventoryController();
-        _equipment = new EquipmentController();
+        _equipment = new EquipmentController(_inventory.Items);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
         _adapter = new ItemHotbarAdapter(_state, _inventory, _equipment, _transfers);
-        var slots = _inventory.Snapshot.Slots.ToArray();
-        slots[0] = ItemRegistry.CreateEntity(potion, 7);
-        slots[1] = ItemRegistry.CreateEntity(potion, 8);
-        slots[2] = ItemRegistry.CreateEntity(weapon);
-        _inventory.Install(_inventory.PrepareChange(slots));
-        var equipment = _equipment.Snapshot.Slots.ToArray();
-        equipment[4] = ItemRegistry.CreateEntity(weapon);
-        _equipment.Install(_equipment.PrepareChange(equipment));
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 0, potion, 7);
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 1, potion, 8);
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 2, weapon);
+        ItemFixture.Place(_inventory.Items, _equipment.Container, 4, weapon);
         _canvas = game.GetNode<UiCanvas>("UiCanvas");
         _canvas.CloseAllMenus();
         game.BindInventoryPresentation(_inventory, _equipment, _transfers);
@@ -67,15 +63,8 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
 
     public void EmptyLinkedSources()
     {
-        var slots = _inventory.Snapshot.Slots.ToArray();
-        slots[0] = null;
-        slots[1] = null;
-        _inventory.Install(_inventory.PrepareChange(slots));
-        _inventory.NotifyObservers();
-        var equipment = _equipment.Snapshot.Slots.ToArray();
-        equipment[4] = null;
-        _equipment.Install(_equipment.PrepareChange(equipment));
-        _equipment.NotifyObservers();
+        ItemFixture.MoveAway(_inventory.Items, _inventory.Container, 0, 1);
+        ItemFixture.MoveAway(_inventory.Items, _equipment.Container, 4);
     }
 
     public void Restore(GamePlayManager game)

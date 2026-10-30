@@ -1,3 +1,4 @@
+using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 
 
 using System;

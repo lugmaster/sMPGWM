@@ -1,8 +1,6 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.InventorySystem;
@@ -11,153 +9,39 @@ public sealed class InventoryController : IDisposable, IInventoryView
     public const int InitialCapacity = 128;
     public const int GrowthChunk = 64;
 
-    private readonly Action<Exception>? _reportObserverError;
     private bool _publishing;
     private bool _disposed;
 
-    public InventorySnapshot Snapshot { get; private set; } = new(0, new ItemEntity?[InitialCapacity]);
+    public ItemController Items { get; }
+    public ItemContainer Container { get; }
+    private InventorySnapshot? _snapshot;
+    public InventorySnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
+        ? snapshot : _snapshot = new InventorySnapshot(Container.Revision, Container.Entities);
     public int Capacity => Snapshot.Capacity;
     public long Revision => Snapshot.Revision;
     public event Action<InventorySnapshot>? Changed;
     internal InventoryResult Availability => _disposed ? InventoryResult.Disposed :
-        _publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
+        (_publishing || Items.Publishing) ? InventoryResult.PublicationInProgress : InventoryResult.Success;
 
-    public InventoryController(Action<Exception>? reportObserverError = null)
+    public InventoryController()
+        : this(new ItemController()) { }
+
+    public InventoryController(ItemController items)
     {
-        _reportObserverError = reportObserverError;
-    }
-
-    // why not pass the item entity that is added directly? An Inventory should not be capable of creating new ItemEntities!
-    public InventoryResult Add(string definitionId, long quantity)
-    {
-        if (_disposed) return InventoryResult.Disposed;
-        if (_publishing) return InventoryResult.PublicationInProgress;
-        if (quantity < 0) return InventoryResult.NegativeQuantity;
-        // Throw Exception when id is not present. this is clearly a run time exception that is not recoverable
-        if (!ItemRegistry.TryGetById(definitionId, out var definition))
-            return InventoryResult.UnknownDefinition;
-        // Throw Exception. The caller should get feedback right away if quantity is 0
-        if (quantity == 0) return InventoryResult.NoChange;
-        if (Revision == long.MaxValue) return InventoryResult.CapacityExceeded;
-
-        var limit = definition.StackLimit;
-        var remaining = quantity;
-        foreach (var entry in Snapshot.Occupied)
-        {
-            if (entry.Entity.DefinitionId == definitionId)
-                remaining -= Math.Min(remaining, (long)limit - entry.Entity.Count);
-        }
-
-        var newStacks = remaining / limit + (remaining % limit == 0 ? 0 : 1);
-        var additionalCells = Math.Max(0, newStacks - Snapshot.EmptyAddresses.Count);
-        var chunks = additionalCells / GrowthChunk + (additionalCells % GrowthChunk == 0 ? 0 : 1);
-        if (chunks > (Array.MaxLength - Capacity) / GrowthChunk)
-            return InventoryResult.CapacityExceeded;
-        var nextCapacity = Capacity + chunks * GrowthChunk;
-
-        InventoryChangePlan plan;
-        try
-        {
-            var slots = new ItemEntity?[(int)nextCapacity];
-            for (var address = 0; address < Capacity; address++)
-                slots[address] = Snapshot.Slots[address];
-
-            remaining = quantity;
-            foreach (var entry in Snapshot.Occupied)
-            {
-                var entity = entry.Entity;
-                if (entity.DefinitionId != definitionId) continue;
-                var added = (int)Math.Min(remaining, (long)limit - entity.Count);
-                if (added == 0) continue;
-                slots[entry.Address] = new ItemEntity(entity.Id, entity.Definition, entity.Count + added);
-                remaining -= added;
-            }
-
-            for (var address = 0; remaining > 0 && address < slots.Length; address++)
-            {
-                if (slots[address] is not null) continue;
-                var count = (int)Math.Min(remaining, limit);
-                slots[address] = ItemRegistry.CreateEntity(definitionId, count);
-                remaining -= count;
-            }
-
-            plan = PrepareChange(slots);
-        }
-        catch (OutOfMemoryException)
-        {
-            return InventoryResult.CapacityExceeded;
-        }
-
-        var result = Install(plan);
-        if (result == InventoryResult.Success) Publish();
-        return result;
-    }
-
-    internal InventoryChangePlan PrepareChange(ItemEntity?[] slots)
-    {
-        if (slots.Length < Capacity || (slots.Length - InitialCapacity) % GrowthChunk != 0)
-            throw new ArgumentException("Inventory capacity cannot shrink and must grow in chunks.", nameof(slots));
-        var identities = new HashSet<ItemEntityId>();
-        foreach (var entity in slots)
-        {
-            if (entity is null) continue;
-            if (entity.Id == default || !identities.Add(entity.Id) || entity.Count <= 0 ||
-                entity.Count > entity.Definition.StackLimit)
-                throw new ArgumentException("Invalid inventoryImpl entity or duplicate identity.", nameof(slots));
-        }
-
-        return new InventoryChangePlan(this, Snapshot, new InventorySnapshot(checked(Revision + 1), slots));
-    }
-
-    internal InventoryResult Validate(InventoryChangePlan plan)
-    {
-        if (_disposed) return InventoryResult.Disposed;
-        if (_publishing) return InventoryResult.PublicationInProgress;
-        if (!ReferenceEquals(plan.Owner, this) || !ReferenceEquals(plan.Before, Snapshot))
-            return InventoryResult.StaleRevision;
-        return Snapshot.Slots.SequenceEqual(plan.After.Slots) ? InventoryResult.NoChange : InventoryResult.Success;
-    }
-
-    internal InventoryResult Install(InventoryChangePlan plan)
-    {
-        var result = Validate(plan);
-        if (result == InventoryResult.Success) Snapshot = plan.After;
-        return result;
-    }
-
-    internal void Publish()
-    {
-        _publishing = true;
-        try
-        {
-            NotifyObservers();
-        }
-        finally
-        {
-            _publishing = false;
-        }
+        Items = items;
+        Container = items.CreateContainer(InitialCapacity, GrowthChunk);
+        Container.Subscribe(NotifyObservers);
     }
 
     internal void SetPublicationInProgress(bool publishing) => _publishing = publishing;
 
-    internal void NotifyObservers()
-    {
-        if (Changed is not { } handlers) return;
-        foreach (Action<InventorySnapshot> observer in handlers.GetInvocationList())
-        {
-            try { observer(Snapshot); }
-            catch (Exception exception)
-            {
-                // TODO: Add subscriber recovery through its owner (rebuild or disable a failed view).
-                // Preserve committed state and remaining notifications; also surface error-reporter failures.
-                try { _reportObserverError?.Invoke(exception); }
-                catch (Exception) { }
-            }
-        }
-    }
+    // Subscriber failures are programming errors: propagate them immediately.
+    internal void NotifyObservers() => Changed?.Invoke(Snapshot);
 
     public void Dispose()
     {
+        Container.Unsubscribe(NotifyObservers);
+        Container.Disposed = true;
         _disposed = true;
         Changed = null;
     }

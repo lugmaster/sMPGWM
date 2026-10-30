@@ -30,7 +30,8 @@ public static class ItemRegistry
     public static ItemCategoryDefinition GetCategoryById(string id) => Data.Value.Categories[id];
     public static IReadOnlyList<ItemCategoryDefinition> GetAllCategories() => Data.Value.AllCategories;
 
-    public static ItemEntity CreateEntity(string id, int count = 1)
+    // Unregistered fixture data only. Gameplay creates located instances through ItemSystem.CreateItems.
+    internal static ItemEntity CreateEntity(string id, int count = 1)
     {
         var definition = GetById(id);
         if (count <= 0 || count > definition.StackLimit)
