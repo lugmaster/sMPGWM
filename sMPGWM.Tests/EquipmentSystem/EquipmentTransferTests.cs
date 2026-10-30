@@ -13,7 +13,7 @@ public class EquipmentTransferTests
     private InventoryController _inventoryImpl = null!;
     private EquipmentController _equipmentImpl = null!;
     private InventoryEquipmentTransferService _transfers = null!;
-    private Guid _session;
+    private ulong _session;
 
     [SetUp]
     public void SetUp()

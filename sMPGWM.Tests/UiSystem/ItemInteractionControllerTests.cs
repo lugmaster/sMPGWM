@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
 using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -54,7 +55,7 @@ public class ItemInteractionControllerTests
         Seed(("mock_standard_engine", 1));
         var before = _inventory.Snapshot;
         var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
-        Assert.That(token, Is.Not.EqualTo(Guid.Empty));
+        Assert.That(token, Is.Not.EqualTo(0UL));
         for (var index = 0; index < 3; index++)
         {
             Assert.That(_controller.ValidateDrag(token, Slot("hull")), Is.EqualTo(TransferResult.IncompatiblePlacement));
@@ -103,8 +104,8 @@ public class ItemInteractionControllerTests
     {
         Seed(("mock_standard_consumable", 7), ("mock_standard_consumable", 8));
         var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
-        Assert.That(_controller.ValidateDrag(Guid.NewGuid(), Bag(1)), Is.Null);
-        Assert.That(_controller.Drop(Guid.NewGuid(), Bag(1)), Is.Null);
+        Assert.That(_controller.ValidateDrag(RuntimeIds.Next(), Bag(1)), Is.Null);
+        Assert.That(_controller.Drop(RuntimeIds.Next(), Bag(1)), Is.Null);
         Assert.That(_controller.Drop(token, Bag(1)), Is.EqualTo(TransferResult.Success));
         Assert.That(_inventory.Snapshot.Slots[0]!.Count, Is.EqualTo(5));
         Assert.That(_inventory.Snapshot.Slots[1]!.Count, Is.EqualTo(10));
@@ -222,7 +223,7 @@ public class ItemInteractionControllerTests
         Click(Bag(0));
         _controller.Refresh(_inventory.Revision, _equipment.Revision + 1, 0);
         Assert.That(_controller.IsCarrying, Is.False);
-        _controller.SetSession(Guid.Empty);
+        _controller.SetSession(0UL);
         Click(Bag(0));
         Assert.That(_controller.IsCarrying, Is.False);
     }
@@ -297,7 +298,7 @@ public class ItemInteractionControllerTests
         else { Click(Bag(0)); Click(target); }
         Assert.That(hotbar.Entries[1], Is.Null);
         Assert.That(_controller.IsCarrying, Is.False);
-        _controller.SetSession(Guid.Empty);
+        _controller.SetSession(0UL);
         Click(ItemCellBinding.Hotbar(0, hotbar.Revision));
         Assert.That(_controller.IsCarrying, Is.False);
         Assert.That(_controller.Clear(ItemCellBinding.Hotbar(0, hotbar.Revision)), Is.EqualTo(HotbarResult.InvalidSession));

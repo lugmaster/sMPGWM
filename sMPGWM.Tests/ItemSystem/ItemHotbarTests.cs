@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
 using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -16,7 +17,7 @@ public class ItemHotbarTests
     private InventoryEquipmentTransferService _transfers = null!;
     private ItemHotbarState _state = null!;
     private ItemHotbarAdapter _adapter = null!;
-    private Guid _session;
+    private ulong _session;
 
     [SetUp]
     public void SetUp()
@@ -136,7 +137,7 @@ public class ItemHotbarTests
         var changes = 0;
         _state.Changed += () => changes++;
         var entries = _state.Entries;
-        Assert.That(_state.Clear(Guid.NewGuid(), 0, 0), Is.EqualTo(HotbarResult.InvalidSession));
+        Assert.That(_state.Clear(RuntimeIds.Next(), 0, 0), Is.EqualTo(HotbarResult.InvalidSession));
         Assert.That(_state.Clear(_session, 1, 0), Is.EqualTo(HotbarResult.StaleRevision));
         Assert.That(_state.Clear(_session, 0, 10), Is.EqualTo(HotbarResult.InvalidPosition));
         Assert.That(_state.Move(_session, 0, 0, 0), Is.EqualTo(HotbarResult.NoChange));
@@ -145,7 +146,7 @@ public class ItemHotbarTests
         _state.Clear(_session, 0, 0);
         Assert.That(_state.Clear(_session, 1, 0), Is.EqualTo(HotbarResult.NoChange));
         Assert.That(changes, Is.EqualTo(1));
-        _state.SetEditSession(Guid.Empty);
+        _state.SetEditSession(0UL);
         Assert.That(_state.Move(_session, 1, 1, 0), Is.EqualTo(HotbarResult.InvalidSession));
     }
 

@@ -6,7 +6,7 @@ namespace sMPGWM.Scripts.TagSystem.Ids;
 /// Identifies a query within one compiled registry; zero is invalid.
 /// </summary>
 /// <param name="Value">The registry-relative numeric query identifier; zero is invalid.</param>
-public readonly record struct TagQueryId(ushort Value)
+public readonly record struct TagQueryId(ulong Value)
 {
     public static readonly TagQueryId Invalid = new(0);
 

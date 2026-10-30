@@ -6,7 +6,7 @@ namespace sMPGWM.Scripts.TagSystem.Ids;
 /// Identifies a domain within one compiled registry; zero is invalid.
 /// </summary>
 /// <param name="Value">The registry-relative numeric domain identifier; zero is invalid.</param>
-public readonly record struct TagDomainId(ushort Value)
+public readonly record struct TagDomainId(ulong Value)
 {
     public static readonly TagDomainId Invalid = new(0);
 

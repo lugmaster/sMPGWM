@@ -1,15 +1,16 @@
+using sMPGWM.Scripts.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace sMPGWM.Scripts.ItemSystem;
 
-public readonly record struct ItemContainerId(Guid Value);
+public readonly record struct ItemContainerId(ulong Value);
 
 /// <summary>Storage shared by inventories, equipment and chests. Only ItemSystem may change it.</summary>
 public sealed class ItemContainer
 {
-    public ItemContainerId Id { get; } = new(Guid.NewGuid());
+    public ItemContainerId Id { get; } = new(RuntimeIds.Next());
     public int Capacity => Slots.Count;
     public long Revision { get; internal set; }
     public IReadOnlyList<ItemEntityId?> Slots { get; private set; }

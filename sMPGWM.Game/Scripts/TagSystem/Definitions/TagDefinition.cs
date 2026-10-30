@@ -14,7 +14,7 @@ public sealed class TagDefinition
         TagId id,
         TagDomainId domainId,
         string canonicalName,
-        ushort domainLocalIndex,
+        int domainLocalIndex,
         bool isAssignable,
         bool isRoot,
         TagId parentId)
@@ -31,7 +31,7 @@ public sealed class TagDefinition
     public TagId Id { get; }
     public TagDomainId DomainId { get; }
     public string CanonicalName { get; }
-    public ushort DomainLocalIndex { get; }
+    public int DomainLocalIndex { get; }
     public bool IsAssignable { get; }
     public bool IsRoot { get; }
     public TagId ParentId { get; }

@@ -131,7 +131,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     {
         _presentationTransfers?.RevokeEditSession();
         var session = available && GameState == MainGameState.Active && _presentationTransfers != null
-            ? _presentationTransfers.OpenEditSession() : Guid.Empty;
+            ? _presentationTransfers.OpenEditSession() : 0UL;
         _canvas.SetInventoryEditSession(session);
     }
 

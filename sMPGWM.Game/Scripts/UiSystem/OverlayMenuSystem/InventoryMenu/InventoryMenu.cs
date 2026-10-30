@@ -43,7 +43,7 @@ public partial class InventoryMenu : GameOverlayMenu
         _pointerOverlay = overlay;
     }
 
-    internal void BindHotbar(ItemHotbarState? state, ItemHotbarAdapter? adapter, HotbarControl view, Guid session)
+    internal void BindHotbar(ItemHotbarState? state, ItemHotbarAdapter? adapter, HotbarControl view, ulong session)
     {
         if (_hotbar != null) _hotbar.Changed -= OnViewChanging;
         CancelInteraction();
@@ -53,7 +53,7 @@ public partial class InventoryMenu : GameOverlayMenu
         foreach (var icon in view.Icons) RegisterCell(icon);
     }
 
-    internal void SetInteraction(IItemTransfers? transfers, Guid session)
+    internal void SetInteraction(IItemTransfers? transfers, ulong session)
     {
         CancelInteraction();
         _interaction = transfers == null ? null : new ItemInteractionController(transfers);
@@ -96,7 +96,7 @@ public partial class InventoryMenu : GameOverlayMenu
     internal void Unbind()
     {
         DismissTooltips();
-        SetInteraction(null, Guid.Empty);
+        SetInteraction(null, 0UL);
         if (_hotbar != null) _hotbar.Changed -= OnViewChanging;
         _hotbar = null;
         if (_inventory != null) _inventory.Changed -= RefreshInventory;
@@ -152,7 +152,7 @@ public partial class InventoryMenu : GameOverlayMenu
         if (_interaction == null || _inventory == null || _equipment == null || icon != _pressedIcon ||
             _pressedVersion != _mappingVersion || icon.Binding is not ItemCellBinding binding || binding != _pressedBinding) return default;
         var token = _interaction.BeginDrag(binding, _inventory.Snapshot.Revision, _equipment.Snapshot.Revision, _mappingVersion);
-        if (token == Guid.Empty) return default;
+        if (token == 0UL) return default;
         _nativeDrag = true;
         _pressedIcon = null;
         DismissTooltips();
@@ -162,8 +162,8 @@ public partial class InventoryMenu : GameOverlayMenu
         return token.ToString();
     }
 
-    private static Guid DragToken(Variant data) =>
-        data.VariantType == Variant.Type.String && Guid.TryParse(data.AsString(), out var token) ? token : Guid.Empty;
+    private static ulong DragToken(Variant data) =>
+        data.VariantType == Variant.Type.String && ulong.TryParse(data.AsString(), out var token) ? token : 0UL;
 
     private bool CanDrop(ClickableIcon icon, Variant data) => icon.Binding is ItemCellBinding binding &&
         _interaction?.ValidateDrag(DragToken(data), binding) == TransferResult.Success;

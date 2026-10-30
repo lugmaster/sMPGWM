@@ -33,7 +33,7 @@ public static class ItemHotbarPolicy
 public sealed class ItemHotbarState : IDisposable
 {
     public const int PositionCount = 10;
-    private Guid _session;
+    private ulong _session;
     private bool _publishing;
     private bool _disposed;
     private readonly Action<Exception>? _reportError;
@@ -54,25 +54,25 @@ public sealed class ItemHotbarState : IDisposable
         _reportError = reportError;
     }
 
-    public void SetEditSession(Guid session) => _session = _disposed ? Guid.Empty : session;
+    public void SetEditSession(ulong session) => _session = _disposed ? 0UL : session;
 
-    public HotbarResult ValidateEdit(Guid session, long revision, int position)
+    public HotbarResult ValidateEdit(ulong session, long revision, int position)
     {
         if (_disposed) return HotbarResult.Disposed;
         if (_publishing) return HotbarResult.PublicationInProgress;
-        if (_session == Guid.Empty || session != _session) return HotbarResult.InvalidSession;
+        if (_session == 0UL || session != _session) return HotbarResult.InvalidSession;
         if (revision != Revision) return HotbarResult.StaleRevision;
         return position is >= 0 and < PositionCount ? HotbarResult.Success : HotbarResult.InvalidPosition;
     }
 
-    internal HotbarResult ValidateAssignment(Guid session, long revision, int position, HotbarBinding binding)
+    internal HotbarResult ValidateAssignment(ulong session, long revision, int position, HotbarBinding binding)
     {
         var result = ValidateEdit(session, revision, position);
         if (result != HotbarResult.Success) return result;
         return Entries[position] == binding ? HotbarResult.NoChange : HotbarResult.Success;
     }
 
-    internal HotbarResult Assign(Guid session, long revision, int position, HotbarBinding binding)
+    internal HotbarResult Assign(ulong session, long revision, int position, HotbarBinding binding)
     {
         var result = ValidateAssignment(session, revision, position, binding);
         if (result != HotbarResult.Success) return result;
@@ -81,7 +81,7 @@ public sealed class ItemHotbarState : IDisposable
         return Publish(next);
     }
 
-    public HotbarResult ValidateMove(Guid session, long revision, int source, int destination)
+    public HotbarResult ValidateMove(ulong session, long revision, int source, int destination)
     {
         var result = ValidateEdit(session, revision, source);
         if (result != HotbarResult.Success) return result;
@@ -91,7 +91,7 @@ public sealed class ItemHotbarState : IDisposable
         return HotbarResult.Success;
     }
 
-    public HotbarResult Move(Guid session, long revision, int source, int destination)
+    public HotbarResult Move(ulong session, long revision, int source, int destination)
     {
         var result = ValidateMove(session, revision, source, destination);
         if (result != HotbarResult.Success) return result;
@@ -100,7 +100,7 @@ public sealed class ItemHotbarState : IDisposable
         return Publish(next);
     }
 
-    public HotbarResult Clear(Guid session, long revision, int position)
+    public HotbarResult Clear(ulong session, long revision, int position)
     {
         var result = ValidateEdit(session, revision, position);
         if (result != HotbarResult.Success) return result;
@@ -137,7 +137,7 @@ public sealed class ItemHotbarState : IDisposable
     public void Dispose()
     {
         _disposed = true;
-        _session = Guid.Empty;
+        _session = 0UL;
         Changed = null;
     }
 }

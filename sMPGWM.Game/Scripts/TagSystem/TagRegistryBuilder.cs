@@ -121,7 +121,7 @@ public sealed class TagRegistryBuilder
         var domainIdsByRoot = new Dictionary<string, TagDomainId>(StringComparer.Ordinal);
         for (var i = 0; i < orderedDomains.Count; i++)
         {
-            var domainId = new TagDomainId(checked((ushort)(i + 1)));
+            var domainId = new TagDomainId(checked((ulong)(i + 1)));
             domainIdsByKey.Add(orderedDomains[i].DomainKey, domainId);
             domainIdsByRoot.Add(orderedDomains[i].RootPrefix, domainId);
         }
@@ -129,22 +129,12 @@ public sealed class TagRegistryBuilder
         var orderedTagInputs = new List<TagCompileInput>(tagInputs.Values);
         orderedTagInputs.Sort((left, right) => string.CompareOrdinal(left.CanonicalName, right.CanonicalName));
 
-        if (orderedTagInputs.Count > ushort.MaxValue)
-        {
-            throw new TagValidationException([
-                new TagValidationDiagnostic(
-                    "TooManyTags",
-                    "Tags",
-                    "A compiled gameplay tag registry cannot exceed 65,535 tags.",
-                    orderedTagInputs.Count.ToString(CultureInfo.InvariantCulture))
-            ]);
-        }
 
         var childrenByParent = CountChildren(orderedTagInputs);
         var tagIdsByName = new Dictionary<string, TagId>(StringComparer.Ordinal);
         for (var i = 0; i < orderedTagInputs.Count; i++)
         {
-            tagIdsByName.Add(orderedTagInputs[i].CanonicalName, new TagId(checked((ushort)(i + 1))));
+            tagIdsByName.Add(orderedTagInputs[i].CanonicalName, new TagId(checked((ulong)(i + 1))));
         }
 
         var definitionsByName = BuildTagDefinitions(
@@ -506,12 +496,12 @@ public sealed class TagRegistryBuilder
             group.Sort((left, right) => string.CompareOrdinal(left.CanonicalName, right.CanonicalName));
         }
 
-        var localIndexByName = new Dictionary<string, ushort>(StringComparer.Ordinal);
+        var localIndexByName = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var group in domainGroups.Values)
         {
             for (var i = 0; i < group.Count; i++)
             {
-                localIndexByName[group[i].CanonicalName] = checked((ushort)i);
+                localIndexByName[group[i].CanonicalName] = i;
             }
         }
 
@@ -652,7 +642,7 @@ public sealed class TagRegistryBuilder
                 definitionsByName, noneMask);
 
             result[i] = new CompiledTagQuery(
-                new TagQueryId(checked((ushort)(i + 1))),
+                new TagQueryId(checked((ulong)(i + 1))),
                 query.QueryKey,
                 domainId,
                 query.MatchMode,

@@ -173,15 +173,17 @@ public class TagSystemStartupTests
         Assert.That(queryId, Is.EqualTo(TagQueryId.Invalid));
     }
 
-    [TestCase(0)]
-    [TestCase(65535)]
-    public void Registry_InvalidIdsFailThroughPublicOperations(int value)
+    [TestCase(0UL)]
+    [TestCase(65535UL)]
+    [TestCase(65536UL)]
+    [TestCase(ulong.MaxValue)]
+    public void Registry_InvalidIdsFailThroughPublicOperations(ulong value)
     {
         var registry = TagSystemFixtureFactory.CreateSmallGameplayRegistry();
         var set = registry.CreateTagSet(TagSystemFixtureFactory.EntityCondition);
-        var domainId = new TagDomainId((ushort)value);
-        var tagId = new TagId((ushort)value);
-        var queryId = new TagQueryId((ushort)value);
+        var domainId = new TagDomainId(value);
+        var tagId = new TagId(value);
+        var queryId = new TagQueryId(value);
 
         Assert.Throws<TagException>(() => registry.GetDomain(domainId));
         Assert.Throws<TagException>(() => registry.CreateTagSet(domainId));

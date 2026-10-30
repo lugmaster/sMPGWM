@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.Util;
 using System;
 using sMPGWM.Scripts.InventorySystem;
 
@@ -8,7 +9,7 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
 {
     private readonly InventoryController _inventoryImpl;
     private readonly EquipmentController _equipmentImpl;
-    private Guid _session;
+    private ulong _session;
     private bool _disposed;
 
     public InventoryEquipmentTransferService(InventoryController inventoryImpl, EquipmentController equipmentImpl)
@@ -21,14 +22,14 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
         _equipmentImpl = equipmentImpl;
     }
 
-    public Guid OpenEditSession()
+    public ulong OpenEditSession()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_inventoryImpl.Items.Publishing) throw new InvalidOperationException("Cannot open an edit session during publication.");
-        return _session = Guid.NewGuid();
+        return _session = RuntimeIds.Next();
     }
 
-    public void RevokeEditSession() => _session = Guid.Empty;
+    public void RevokeEditSession() => _session = 0UL;
     public TransferResult Validate(TransferRequest request) => Execute(request, false);
     public TransferResult Transfer(TransferRequest request) => Execute(request, true);
 
@@ -39,7 +40,7 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
             _equipmentImpl.Availability == TransferResult.Disposed) return TransferResult.Disposed;
         if (_inventoryImpl.Availability == InventoryResult.PublicationInProgress ||
             _equipmentImpl.Availability == TransferResult.PublicationInProgress) return TransferResult.PublicationInProgress;
-        if (_session == Guid.Empty || request.EditSession != _session) return TransferResult.InvalidSession;
+        if (_session == 0UL || request.EditSession != _session) return TransferResult.InvalidSession;
         if (!TryResolve(request.Source, out var source) || !TryResolve(request.Destination, out var destination))
             return TransferResult.InvalidLocation;
         var sourceRevision = request.Source.InventoryAddress.HasValue ? request.InventoryRevision : request.EquipmentRevision;

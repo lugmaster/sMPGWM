@@ -6,7 +6,7 @@ namespace sMPGWM.Scripts.TagSystem.Ids;
 /// Identifies a canonical tag within one compiled registry; zero is invalid.
 /// </summary>
 /// <param name="Value">The registry-relative numeric tag identifier; zero is invalid.</param>
-public readonly record struct TagId(ushort Value)
+public readonly record struct TagId(ulong Value)
 {
     public static readonly TagId Invalid = new(0);
 

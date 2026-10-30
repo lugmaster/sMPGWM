@@ -125,7 +125,7 @@ public sealed class TagRegistry
     /// <returns>True if the domain identifier is valid; otherwise, false.</returns>
     private bool TryGetDomain(TagDomainId domainId, out TagDomain domain)
     {
-        if (!domainId.IsValid || domainId.Value > _domainsByIndex.Length)
+        if (!domainId.IsValid || domainId.Value > (ulong)_domainsByIndex.Length)
         {
             domain = null!;
             return false;
@@ -186,7 +186,7 @@ public sealed class TagRegistry
     /// <returns>True if the tag identifier is valid; otherwise, false.</returns>
     internal bool TryGetTag(TagId tagId, out TagDefinition tag)
     {
-        if (!tagId.IsValid || tagId.Value > _tagsByIndex.Length)
+        if (!tagId.IsValid || tagId.Value > (ulong)_tagsByIndex.Length)
         {
             tag = null!;
             return false;
@@ -247,7 +247,7 @@ public sealed class TagRegistry
     /// <returns>True if the query identifier is valid; otherwise, false.</returns>
     internal bool TryGetQuery(TagQueryId queryId, out CompiledTagQuery query)
     {
-        if (!queryId.IsValid || queryId.Value > _queriesByIndex.Length)
+        if (!queryId.IsValid || queryId.Value > (ulong)_queriesByIndex.Length)
         {
             query = null!;
             return false;

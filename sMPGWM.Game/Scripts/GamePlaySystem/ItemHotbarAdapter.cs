@@ -15,7 +15,7 @@ public sealed record ItemHotbarActivationRequest(int Position, HotbarBinding Bin
 public sealed class ItemHotbarAdapter(ItemHotbarState state, InventoryController inventory, EquipmentController equipment,
     InventoryEquipmentTransferService transfers)
 {
-    public HotbarResult Assign(Guid session, long hotbarRevision, int position, ItemLocation source,
+    public HotbarResult Assign(ulong session, long hotbarRevision, int position, ItemLocation source,
         ItemEntityId entity, long inventoryRevision, long equipmentRevision, bool commit = true)
     {
         var result = state.ValidateEdit(session, hotbarRevision, position);

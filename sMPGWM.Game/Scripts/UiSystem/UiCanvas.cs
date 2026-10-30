@@ -148,10 +148,10 @@ public partial class UiCanvas : CanvasLayer
         _hotbarAdapter = null;
     }
 
-    internal void SetInventoryEditSession(Guid session)
+    internal void SetInventoryEditSession(ulong session)
     {
         _hotbar?.SetEditSession(session);
-        _playerHud.Hotbar.SetEditing(session != Guid.Empty);
+        _playerHud.Hotbar.SetEditing(session != 0UL);
         _inventoryMenu?.SetInteraction(_transfers, session);
         _inventoryMenu?.BindHotbar(_hotbar, _hotbarAdapter, _playerHud.Hotbar, session);
     }

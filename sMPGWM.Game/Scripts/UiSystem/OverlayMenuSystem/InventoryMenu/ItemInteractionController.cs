@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.Util;
 
 
 using System;
@@ -11,19 +12,19 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
 {
     internal enum PlacementMode { Idle, Click, NativeDrag }
 
-    private Guid _session;
+    private ulong _session;
     private long _inventoryRevision;
     private long _equipmentRevision;
     private long _hotbarRevision;
     private long _mappingVersion;
-    private Guid _dragToken;
+    private ulong _dragToken;
     private ItemHotbarState? _hotbar;
     private ItemHotbarAdapter? _adapter;
 
     internal ItemCellBinding? Source { get; private set; }
     internal PlacementMode Mode { get; private set; }
     internal bool IsCarrying => Mode != PlacementMode.Idle;
-    internal bool OwnsDrag(Guid token) => token != Guid.Empty && token == _dragToken && Mode == PlacementMode.NativeDrag;
+    internal bool OwnsDrag(ulong token) => token != 0UL && token == _dragToken && Mode == PlacementMode.NativeDrag;
     internal TransferResult? Feedback { get; private set; }
 
     internal void BindHotbar(ItemHotbarState? hotbar, ItemHotbarAdapter? adapter)
@@ -33,7 +34,7 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
         _adapter = adapter;
     }
 
-    internal void SetSession(Guid session)
+    internal void SetSession(ulong session)
     {
         Cancel();
         _session = session;
@@ -44,22 +45,22 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
         Source = null;
         Mode = PlacementMode.Idle;
         Feedback = null;
-        _dragToken = Guid.Empty;
+        _dragToken = 0UL;
     }
 
-    internal Guid BeginDrag(ItemCellBinding source, long inventoryRevision, long equipmentRevision, long mappingVersion)
+    internal ulong BeginDrag(ItemCellBinding source, long inventoryRevision, long equipmentRevision, long mappingVersion)
     {
         Cancel();
         Click(source, inventoryRevision, equipmentRevision, mappingVersion);
-        if (!IsCarrying) return Guid.Empty;
+        if (!IsCarrying) return 0UL;
         Mode = PlacementMode.NativeDrag;
-        return _dragToken = Guid.NewGuid();
+        return _dragToken = RuntimeIds.Next();
     }
 
-    internal TransferResult? ValidateDrag(Guid token, ItemCellBinding target) =>
+    internal TransferResult? ValidateDrag(ulong token, ItemCellBinding target) =>
         OwnsDrag(token) ? Evaluate(target, false) : null;
 
-    internal TransferResult? Drop(Guid token, ItemCellBinding target)
+    internal TransferResult? Drop(ulong token, ItemCellBinding target)
     {
         if (!OwnsDrag(token)) return null;
         try { return Evaluate(target, true); }
@@ -76,7 +77,7 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
     {
         var wasCarrying = IsCarrying;
         Refresh(inventoryRevision, equipmentRevision, mappingVersion);
-        if (wasCarrying && !IsCarrying || _session == Guid.Empty) return;
+        if (wasCarrying && !IsCarrying || _session == 0UL) return;
         if (Source == null)
         {
             if (target.IsHotbar)
