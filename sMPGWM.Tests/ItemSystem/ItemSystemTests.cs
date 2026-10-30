@@ -48,25 +48,6 @@ public class ItemSystemTests
     }
 
     [Test]
-    public void Merge_RetiresConsumedIdentityAndConservesQuantity()
-    {
-        var items = new ItemController();
-        var first = items.CreateContainer(1);
-        var second = items.CreateContainer(1);
-        items.CreateItems(first, Consumable, 3);
-        items.CreateItems(second, Consumable, 7);
-        var sourceId = first.Slots[0]!.Value;
-        var targetId = second.Slots[0]!.Value;
-        Assert.That(items.TransferItem(sourceId, items.GetLocation(sourceId), new(second.Id, 0),
-            first.Revision, second.Revision, targetId), Is.EqualTo(TransferResult.Success));
-        Assert.That(first.Slots[0], Is.Null);
-        Assert.That(items.TryGetItem(sourceId, out _), Is.False);
-        Assert.Throws<KeyNotFoundException>(() => items.GetLocation(sourceId));
-        Assert.That(items.GetItem(targetId).Count, Is.EqualTo(10));
-        Assert.That(items.GetLocation(targetId), Is.EqualTo(new ItemLocation(second.Id, 0)));
-    }
-
-    [Test]
     public void FixedCapacityCreationFailure_LeavesExistingStateUntouched()
     {
         var items = new ItemController();

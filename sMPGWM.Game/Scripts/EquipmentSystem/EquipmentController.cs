@@ -8,7 +8,6 @@ namespace sMPGWM.Scripts.EquipmentSystem;
 public sealed class EquipmentController : IDisposable, IEquipmentView
 {
     private bool _disposed;
-    private bool _publishing;
 
     public IReadOnlyList<EquipmentSlotDefinition> Definitions { get; }
     public ItemController Items { get; }
@@ -19,7 +18,7 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     public long Revision => Snapshot.Revision;
     public event Action<EquipmentSnapshot>? Changed;
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :
-        (_publishing || Items.Publishing) ? TransferResult.PublicationInProgress : TransferResult.Success;
+        Items.Publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
 
     public EquipmentController()
         : this(new ItemController()) { }
@@ -47,8 +46,6 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
         var index = FindSlot(key);
         return index >= 0 && ItemRegistry.GetById(definitionId).CategoryName == ItemRegistry.GetCategoryById(Definitions[index].AcceptedCategory).DisplayName;
     }
-
-    internal void SetPublicationInProgress(bool publishing) => _publishing = publishing;
 
     // Subscriber failures are programming errors: propagate them immediately.
     internal void NotifyObservers() => Changed?.Invoke(Snapshot);

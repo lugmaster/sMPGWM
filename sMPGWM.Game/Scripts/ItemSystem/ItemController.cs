@@ -16,7 +16,6 @@ public sealed class ItemController
 
     public ItemEntity GetItem(ItemEntityId id) => _items[id];
     public ItemLocation GetLocation(ItemEntityId id) => _locations[id];
-    public bool TryGetItem(ItemEntityId id, out ItemEntity item) => _items.TryGetValue(id, out item!);
 
     public ItemContainer CreateContainer(int capacity, int growthChunk = 0,
         Func<int, ItemDefinition, int, bool>? accepts = null)

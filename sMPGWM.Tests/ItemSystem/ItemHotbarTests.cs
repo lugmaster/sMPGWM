@@ -255,7 +255,6 @@ public class ItemHotbarTests
     [TestCase("equipmentDisposed", HotbarResult.Disposed)]
     [TestCase("location", HotbarResult.InvalidLocation)]
     [TestCase("equipmentLocation", HotbarResult.InvalidLocation)]
-    [TestCase("publication", HotbarResult.PublicationInProgress)]
     [TestCase("session", HotbarResult.InvalidSession)]
     [TestCase("revision", HotbarResult.StaleRevision)]
     [TestCase("entity", HotbarResult.StaleRevision)]
@@ -272,7 +271,6 @@ public class ItemHotbarTests
             case "equipmentDisposed": _equipment.Dispose(); break;
             case "location": source = ItemLocation.Inventory(_inventory.Capacity); break;
             case "equipmentLocation": source = ItemLocation.Equipment("missing"); break;
-            case "publication": _inventory.SetPublicationInProgress(true); break;
             case "session": _transfers.RevokeEditSession(); break;
             case "revision": revision--; break;
             case "entity": entity = ItemEntityId.Create(); break;

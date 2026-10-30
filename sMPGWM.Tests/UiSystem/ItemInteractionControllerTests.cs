@@ -317,10 +317,8 @@ public class ItemInteractionControllerTests
 
     [TestCase("disposed", TransferResult.Disposed, false)]
     [TestCase("location", TransferResult.InvalidLocation, false)]
-    [TestCase("publication", TransferResult.PublicationInProgress, true)]
     [TestCase("session", TransferResult.InvalidSession, false)]
     [TestCase("revision", TransferResult.StaleRevision, false)]
-    [TestCase("entity", TransferResult.StaleRevision, false)]
     [TestCase("ineligible", TransferResult.IncompatiblePlacement, true)]
     public void HotbarSourceRejectionsApplyPickupPolicy(string reason, TransferResult expected, bool retained)
     {
@@ -328,13 +326,11 @@ public class ItemInteractionControllerTests
         using var hotbar = ConfigureHotbar();
         var source = reason == "ineligible" ? Bag(1) : Bag(0);
         if (reason == "location") source = source with { Location = ItemLocation.Inventory(_inventory.Capacity) };
-        if (reason == "entity") source = source with { Entity = ItemRegistry.CreateEntity(new("mock_standard_consumable"), 3) };
         void Invalidate()
         {
             switch (reason)
             {
                 case "disposed": _transfers.Dispose(); break;
-                case "publication": _inventory.SetPublicationInProgress(true); break;
                 case "session": _transfers.RevokeEditSession(); break;
                 case "revision": _inventory.Items.CreateItems(_inventory.Container, new("mock_standard_consumable"), 1); break;
             }

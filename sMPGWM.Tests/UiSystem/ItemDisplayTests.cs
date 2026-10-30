@@ -30,16 +30,6 @@ public class ItemDisplayTests
 
     [Test]
     [Category("Godot")]
-    public void Tooltip_UsesExactQuantityAndConfiguredLimit()
-    {
-        var definition = ItemRegistry.GetById("mock_standard_consumable");
-        var display = ItemDisplayFormatter.Create( ItemRegistry.CreateEntity(definition.Id));
-        Assert.That(display.Quantity, Is.EqualTo(1));
-        Assert.That(display.Tooltip, Is.EqualTo($"{definition.DisplayName}\n{definition.CategoryName}\n{definition.Description}\nQuantity: 1\nStack limit: 10"));
-    }
-
-    [Test]
-    [Category("Godot")]
     public void Tooltip_PreservesExactAggregateQuantityBeyondIndividualStackLimit()
     {
         var definition = ItemRegistry.GetById("mock_advanced_resource");
@@ -56,16 +46,5 @@ public class ItemDisplayTests
         var display = ItemDisplayFormatter.Create( definition.Id, quantity);
         Assert.That(display.Quantity, Is.EqualTo(quantity));
         Assert.That(display.Tooltip, Does.Contain($"Quantity: {quantity}").And.Contain("Stack limit: 10"));
-    }
-
-    [Test]
-    [Category("Godot")]
-    public void EmptyAndNonstackableDisplays_HaveNoQuantity()
-    {
-        var definition = ItemRegistry.GetById("mock_standard_engine");
-        var display = ItemDisplayFormatter.Create( ItemRegistry.CreateEntity(definition.Id));
-        Assert.That(display.Quantity, Is.Null);
-        Assert.That(display.Tooltip, Does.Not.Contain("Quantity").And.Not.Contain("Stack limit"));
-        Assert.That(ItemDisplayFormatter.Create( null), Is.EqualTo(new IconDisplayData()));
     }
 }

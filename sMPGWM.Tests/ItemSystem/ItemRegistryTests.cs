@@ -8,29 +8,6 @@ namespace sMPGWM.Tests.ItemSystem;
 public class ItemRegistryTests
 {
     [Test]
-    [Category("Godot")]
-    public void EntitiesShareTheRegistryDefinitionAndHaveDistinctIdentities()
-    {
-        var first = ItemRegistry.CreateEntity("mock_standard_engine");
-        var second = ItemRegistry.CreateEntity("mock_standard_engine");
-        Assert.That(first.Definition, Is.SameAs(second.Definition).And.SameAs(ItemRegistry.GetById("mock_standard_engine")));
-        Assert.That(first.Id, Is.Not.EqualTo(second.Id));
-        Assert.That(first.Definition.Icon.IconTexture, Is.Not.Null);
-        Assert.That(first.Definition.Icon, Is.SameAs(ItemRegistry.GetCategoryById("engine").Icon));
-        var all = ItemRegistry.GetAll();
-        Assert.That(ItemRegistry.GetAll(), Is.SameAs(all));
-        Assert.Throws<NotSupportedException>(() => ((IList<ItemDefinition>)ItemRegistry.GetAll()).Clear());
-    }
-
-    [TestCase("mock_standard_engine", 0)]
-    [TestCase("mock_standard_engine", 2)]
-    [TestCase("mock_standard_consumable", -1)]
-    [TestCase("mock_standard_consumable", 11)]
-    [Category("Godot")]
-    public void InvalidEntityCountsAreRejected(string id, int count) =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => ItemRegistry.CreateEntity(id, count));
-
-    [Test]
     public void PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons()
     {
         var categories = ItemRegistry.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!);

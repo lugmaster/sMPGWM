@@ -9,7 +9,6 @@ public sealed class InventoryController : IDisposable, IInventoryView
     public const int InitialCapacity = 128;
     public const int GrowthChunk = 64;
 
-    private bool _publishing;
     private bool _disposed;
 
     public ItemController Items { get; }
@@ -21,7 +20,7 @@ public sealed class InventoryController : IDisposable, IInventoryView
     public long Revision => Snapshot.Revision;
     public event Action<InventorySnapshot>? Changed;
     internal InventoryResult Availability => _disposed ? InventoryResult.Disposed :
-        (_publishing || Items.Publishing) ? InventoryResult.PublicationInProgress : InventoryResult.Success;
+        Items.Publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
 
     public InventoryController()
         : this(new ItemController()) { }
@@ -32,8 +31,6 @@ public sealed class InventoryController : IDisposable, IInventoryView
         Container = items.CreateContainer(InitialCapacity, GrowthChunk);
         Container.Subscribe(NotifyObservers);
     }
-
-    internal void SetPublicationInProgress(bool publishing) => _publishing = publishing;
 
     // Subscriber failures are programming errors: propagate them immediately.
     internal void NotifyObservers() => Changed?.Invoke(Snapshot);
