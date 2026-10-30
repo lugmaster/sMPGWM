@@ -1,117 +1,139 @@
-# Epic: Tag-driven item classification and inventory views
+﻿# Item tags and inventory filtering
 
-Status: proposed (2026-10-26). Implementation has not started.
-
-Predecessor: [Inventory UI implementation plan](inventory-ui-implementation-plan.md). Tag contract: [Gameplay Tag System](../documentation/TagSystem.md), especially sections 12.5 and 13.5.
+Status: planned. Implementation has not started.
 
 ## Goal
 
-Integrate the existing TagSystem with ItemSystem, inventory presentation, equipment eligibility, and item hotbar eligibility. Replace the single-category classification constraint with independent tag dimensions. Present light and heavy weapons together in one Weapons tab while preserving their distinct equipment destinations.
+Load multiple tags on item definitions, automatically include their category, and use the existing TagSystem to filter inventory entries with All / Any / None queries. Deliver this small foundation before extending classification into affixes, modifiers, skills, or runtime state.
 
-This is an integration of classification and queries. InventorySystem and EquipmentSystem retain ownership of state and operations; TagSystem remains a shared classification/query service.
+Related references: [TagSystem](../documentation/TagSystem.md) and [inventory UI plan](inventory-ui-implementation-plan.md).
 
-## Agreed classification convention
+## Classification contract
 
-Whenever classification dimensions vary independently, represent them as separate branches. Use ancestry for genuine subtype relationships. This convention applies to future classification problems across domains.
+Keep one required `CategoryId` and add an optional `Tags` list:
 
-```text
-Light laser:
-  Item.Weapon.Size.Light
-  Item.Weapon.Technology.Laser
-
-Heavy laser:
-  Item.Weapon.Size.Heavy
-  Item.Weapon.Technology.Laser
+```yaml
+Items:
+  - Id: mock_advanced_hull
+    DisplayName: Advanced Hull
+    CategoryId: hull
+    Tags:
+      - light
+      - titan
 ```
 
-Both assignments expand to `Item.Weapon`. A broad weapon query selects both items. A laser query selects both; a light-size query selects only the first. An All query can require heavy size and laser technology together. Do not encode technology separately beneath each size.
+The effective public classification is `hull`, `light`, `titan`: the union of CategoryId and explicit Tags. Missing Tags or an empty list means category-only classification. Deduplicate repeated tags, including an explicit repeat of the category. Keys are case-sensitive. Reject null, blank, non-string, and unknown entries with file/item/field context.
 
-Resource subtypes can use `Item.Resource.Ore.Iron`, `Item.Resource.Ore.Copper`, and `Item.Resource.Gas.Helium`. Additional independent properties belong in separate branches. These are classification examples, not a request to implement resource gameplay or laser combat.
+Author each fact once. CategoryId is authoritative for category membership; its tag is derived automatically. Explicit tags provide additional classification. Future systems may derive tags from damage configuration or affixes, but those derivations are outside this implementation. Numeric values remain stats, and current conditions such as recharging remain instance state.
 
-Strict dot-path ancestry remains unchanged: each tag has one parent; an item can have multiple direct assignments. Required and exclusive dimensions are validated by consumers, not inferred from the hierarchy.
+Category metadata retains its existing stacking and presentation responsibilities. Tags do not alter IDs, stack compatibility, limits, icons, tooltip labels, or item behavior.
 
-## Boundaries and target behavior
+## Implementation steps
 
-- Preserve definition IDs, entity IDs, quantities, real storage addresses, 128-cell initial capacity, 64-cell growth, and atomic transfer semantics.
-- Item definitions own authored canonical tag references and explicit `CanStack` / optional `MaximumStackSize`. Resolve references once during initialization. Nonstackable definitions have limit one and reject explicit limits above one; stackable definitions default to `int.MaxValue`. Merges still require identical definition IDs.
-- Remove mandatory `CategoryId` from the final item model. Inventory tabs own stable IDs, labels, order, optional icons, and query references; they do not own item behavior. Keep an All tab independent of configured tab matches. Overlapping tabs are permitted; an item appears once per active projection.
-- Default tabs are Engine, Hull, Shield Generator, Reactor, Weapons, Consumable, and Resource. Weapons matches `Item.Weapon`. Keep eight equipment slots, including two light and two heavy weapon slots.
-- Keep artwork and tooltip results deterministic. Item artwork overrides a separately configured item fallback icon reference, then the placeholder. Migrate existing category artwork to item fallback references rather than choosing artwork from the selected tab or whichever tag happens to match first. Preserve a separately authored item type label for tooltips where needed; tab membership must not determine that label.
-- Equipment slot definitions reference compiled acceptance queries. Default light/heavy slot queries select their corresponding size tags; other slots select their equipment classifications. Preserve the existing one-entity/count-one constraint and validate swaps in both directions.
-- Hotbar eligibility queries replace hardcoded category comparisons. Consumable links still aggregate by definition ID; weapon links still require an equipped source and resolve by stable equipment-slot key. Tags do not execute consumption or attacks.
-- Build and own one registry per game instance through the existing startup lifecycle. Resolve all item/tab/slot/hotbar references against that same registry. Freeze before runtime consumers are published; no live registry reload.
-- Keep definition classifications immutable to consumers. The existing mutable `TagSet` must remain privately owned behind read-only matching access, or gain an immutable representation. No mutable tag collection may escape through definitions or snapshots.
-- Author tags and named queries in YAML using the existing FileLoadingSystem conventions. Register all declarations and queries before freeze; validate all consumer references before constructing state or binding views. Unknown tags, wrong domains, invalid queries, and invalid dimensions abort startup with source details.
-- Use `ItemClassification` for these queries. Runtime matches use cached IDs/compiled queries, without per-cell string resolution, hierarchy traversal, or query compilation.
+### 1. Load Tags and automatically include CategoryId
 
-## Stories and acceptance criteria
+Extend the item loading schema and loader to accept the optional list. Declare additional tag keys centrally through the existing FileLoadingSystem conventions so misspellings fail validation. Category IDs automatically contribute vocabulary entries and need no duplicate declarations. Follow existing packaged/user configuration loading rules.
 
-### TINV-01 — Content contract and taxonomy
+Keep short public keys such as `hull`, `light`, `titan`, `weapon`, and `plasma`. Map them deterministically into canonical names in the existing ItemClassification domain, for example `hull` to `Item.hull`. Register required ancestors and validate mapped names and conflicting declarations. Canonical paths stay inside the adapter; public item content and selectors use short keys.
 
-Dependency: none.
+Do not infer semantics from category spelling. `light_weapon` automatically contributes `light_weapon`, not `weapon` or `light`. Where broad weapon searches are needed, explicitly assign those additional classifications.
 
-Define the initial item branches, named tab/slot/hotbar queries, and YAML contracts for declarations, item assignments, tab presentation, and eligibility policies. Specify required metadata and stable keys. Initial equipment branches may use `Item.Equipment.Engine`, `Item.Equipment.Hull`, `Item.Equipment.ShieldGenerator`, and `Item.Equipment.Reactor`; retain `Item.Consumable` and `Item.Resource` for broad classification.
+Acceptance:
 
-Define validation for weapon size: every weapon requires exactly one supported size assignment, light or heavy. Technology is optional for current mock definitions; laser examples explicitly assign it. Reject contradictory light/heavy assignments. Do not require every item to match a tab or globally prohibit overlapping families without a concrete consumer constraint.
+- The hull example exposes exactly the three public tags above; internal ancestor expansion does not add authored public keys.
+- Existing item YAML without Tags remains valid.
+- Invalid content fails with actionable diagnostics; typos never create tags implicitly.
+- Existing category defaults and user-authored item data are preserved.
 
-Acceptance: document valid light/heavy laser and resource examples, invalid size examples, and expected tab/slot/hotbar matches. Every query references explicitly declared tags, including required ancestors. Existing mock items can be represented without inventing technology.
+### 2. Resolve immutable definition classification using the existing TagSystem
 
-### TINV-02 — Registry loading and game lifetime
+Resolve tags once while constructing the item catalog. Expose read-only matching on ItemDefinition; keep mutable TagSet storage private or use an immutable representation. Instances of a definition share its classification.
 
-Dependency: TINV-01.
+Use one coherent registry context for the catalog and its queries, and freeze the vocabulary before publishing definitions. Integrate with the current ItemRegistry loading lifetime; a general conversion of the static registry to per-game services is outside scope. Tests with independent catalogs must use matching registry contexts and must not leak state between them.
 
-Add YAML DTOs, schemas, configured packaged/user paths, and loading through FileLoadingSystem. Construct, validate, compile, and freeze the game-owned registry; then resolve consumer references before publishing catalogs or constructing inventory/equipment. Support teardown after partial initialization.
+Acceptance:
 
-Acceptance: invalid declarations, unknown references, wrong domains, and malformed queries abort through the existing load-error path with file/schema context. Menu reopen reuses the game registry; a new game receives independent registry and consumer instances. No static tag cache or silent fallback bypasses invalid content.
+- Consumers cannot mutate definition classifications.
+- Duplicate assignments are harmless.
+- No per-item-instance copy of definition tags is required.
+- Loading failures do not publish partially resolved definitions.
+- No hierarchy traversal or string resolution occurs during repeated matching.
 
-### TINV-03 — Immutable item classification and stack policy
+### 3. Expose All / Any / None matching
 
-Dependency: TINV-02.
+Provide a small structured-query adapter over the existing compiled-query machinery:
 
-Replace mandatory category membership with resolved definition-level classification. Move stackability to definitions; retain stack-limit defaults and contradiction checks. Provide read-only matching access and independent item type label/fallback artwork metadata. Keep ItemSystem independent of equipment, inventory, UI, and Godot resources.
+- All: every listed tag must be present.
+- Any: at least one listed tag must be present when this list is nonempty.
+- None: every listed tag must be absent.
 
-Acceptance: light/heavy lasers both match weapon and laser queries, but only their own size queries. Iron matches resource and ore queries. Several definitions may share all tags and still never merge. Repeated entities of a definition share immutable classification; callers cannot mutate it. Existing identity/count/limit invariants remain covered.
+Combine the three conditions with AND. Empty lists impose no restriction. Preserve the existing explicit `MatchAll: true` requirement whenever both All and Any are empty, including negative-only queries. Reject unknown selector keys, including those in None.
 
-### TINV-04 — Query-based inventory tabs
+Examples below are separate query documents:
 
-Dependency: TINV-03.
+```yaml
+# Light hulls
+All: [hull, light]
+---
+# Hulls that are neither light nor titan
+All: [hull]
+None: [light, titan]
+---
+# Hulls that are light or titan, or both
+All: [hull]
+Any: [light, titan]
+---
+# Plasma weapons
+All: [weapon, plasma]
+```
 
-Replace category-derived tabs with loaded tab definitions and compiled selectors. Update InventoryProjection and view binding. Track selection by stable tab key, adapting native UI indices at the boundary. Combine the active selector with existing name search and deterministic sort. Keep All available for items that match no configured tab.
+The agreed exclusion means `hull AND NOT (light OR titan)`.
 
-Acceptance: one Weapons tab displays both light and heavy examples. Configuring an additional Laser or Ore tab requires content changes only. Overlapping matches never duplicate entries within a tab. Filtering preserves real storage addresses and genuine empty cells; hidden occupied cells never become placement targets. Selection/search/sort survive operations and menu reopen as before. Item artwork and tooltip labels do not change across tabs.
+Compile the initial configured/programmatic selectors during catalog initialization using the existing builder, then pass compiled selectors to consumers. Expose matching without introducing a second query engine. Supporting arbitrary new queries after registry freeze, external named-query YAML catalogs, text parsing, and nested expressions is deferred.
 
-### TINV-05 — Equipment and hotbar query policies
+Acceptance: query semantics match the examples; queries and classifications use the same registry context; repeated candidate matching performs no query compilation or string lookup.
 
-Dependency: TINV-03; may be developed independently of TINV-04.
+### 4. Integrate one real consumer: inventory filtering
 
-Resolve slot and hotbar selectors at initialization and route compatibility checks through the shared item matching API. Remove category-ID comparisons. Keep eligibility within authoritative validation paths used by hover, click, drag, commit, and hotbar assignment.
+Add an optional compiled tag selector to the inventory projection/filtering path. Combine it with existing category selection, name search, and deterministic sorting. A caller can set or clear the selector; no selector preserves existing behavior. Use the existing All category view when searching across categories.
 
-Acceptance: light lasers fit both light slots and no heavy slots; heavy lasers fit both heavy slots and no light slots. Technology does not affect size compatibility unless explicitly required by a future policy. Invalid reverse swaps remain atomic rejections. Weapon links still require equipped items; consumable links still aggregate matching definition stacks. Sessions, revisions, identity checks, and activation behavior remain intact. Cached hover matching preserves the existing allocation expectations.
+Keep current category tabs. A new filter editor, search syntax, configurable tabs, and a combined Weapons tab are not required. This step delivers a working programmatic inventory filter, exercised through the real projection path.
 
-### TINV-06 — Packaged content and existing user configuration migration
+Responsibilities remain explicit:
 
-Dependencies: TINV-04, TINV-05.
+- ItemRegistry loads definitions and their resolved classification.
+- Inventory projection selects matching entries from the inventory snapshot.
+- InventoryController continues owning the inventory container/view lifecycle.
+- ItemController continues owning item identity, movement, and transactions.
 
-Convert all 16 packaged mock definitions, their artwork defaults, tabs, and eligibility policies. Preserve item IDs and explicit PlayerMock seed quantities. Retire category catalogs and obsolete schema/model references once all consumers are converted.
+Filtering preserves entity identity and real storage addresses. Hidden occupied cells never become empty placement targets. Multiple instances of the same definition remain separate entries. Clearing a filter restores the normal projection. Filtering does not change item artwork or tooltip labels.
 
-Provide a one-time migration for the known legacy category/item YAML format. Read legacy item/category pairs, resolve each category's stacking/artwork/type-label defaults into explicit item metadata, map known categories to the new tags, and generate tab definitions with a combined Weapons tab. Preserve custom category display groups using deterministic declared classification tags and matching tab queries; detect name collisions. Validate the complete generated content before installation, retain backups, and report migration details. Reject unsupported or ambiguous conversions with source details and actionable guidance; do not guess or overwrite user changes. Treat interrupted/partial migrations as recoverable and ensure reruns do not duplicate or reinterpret converted content.
+Acceptance: apply and clear the example selectors through the inventory projection; verify composition with name/category filters and sorting, including refresh after inventory changes. Existing movement and selection behavior remains valid.
 
-Acceptance: default migration preserves 16 definitions, 34 occupied seeded cells, eight empty equipment slots, and ten empty hotbar positions. Existing user content is preserved or explicitly diagnosed; reload-default behavior remains an explicit existing setting. Test custom categories, artwork, omitted/explicit limits, collisions, and interrupted migration. Fixtures include light and heavy lasers and several resource subtypes; new production example items are optional and must not silently change existing seed totals.
+### 5. Test the hull and plasma-weapon examples
 
-### TINV-07 — Integration regression and documentation
+Use focused loader, matching, and inventory projection tests.
 
-Dependencies: TINV-06.
+| Effective public tags | Hull AND light | Hull AND neither light nor titan | Hull AND (light OR titan) |
+| --- | --- | --- | --- |
+| hull | false | true | false |
+| hull, light | true | false | true |
+| hull, titan | false | false | true |
+| hull, light, titan | true | false | true |
+| armor, light | false | false | false |
 
-Update affected unit/loading fixtures and scene smoke checks. Cover selectors, hierarchy expansion, independent dimensions, immutability, invalid content, migration, artwork, tab persistence, and independent game lifetimes. Retain inventory growth, merge/identity conservation, stale/cancelled interactions, atomic swap, and hotbar regressions. Run the solution build, full NUnit suite, relevant UI architecture/icon/inventory smoke checks, and rendered inventory checks at the existing resolutions. Inspect the combined Weapons tab and equipment destinations.
+For plasma searches, include a weapon tagged plasma, a weapon without plasma, and a non-weapon tagged plasma. Only the first matches All: [weapon, plasma]. Include weapons from both existing size categories to prove that explicit weapon classification works across categories.
 
-Update the predecessor epic/implementation plan and TagSystem documentation to describe implemented behavior and exact validation results. Keep historical INV completion records identifiable as the pre-integration implementation.
+For these fixtures, plasma denotes plasma damage classification; it does not implement combat. When damage configuration becomes authoritative later, derive this classification from that configuration instead of maintaining the fact twice.
 
-Acceptance: required checks pass, or unresolved failures are explicitly recorded without claiming completion. No category-ID gameplay comparisons remain. No mutable classification escapes or runtime query compilation is introduced.
+Cover missing/empty Tags, duplicate/category-repeat tags, invalid entries, unknown selectors, empty and negative-only selectors, and immutable access. Test inventory filtering against actual entries, including repeated definitions and hidden occupied slots.
 
-## Out of scope
+Preserve the authored light/titan hull example. Keep production seed quantities unchanged; plasma examples can remain test fixtures. Run the solution build, relevant NUnit suites, and applicable inventory smoke checks during implementation. Record actual results then; this planning update does not claim implementation validation.
 
-Actual laser attacks, consuming items, crafting, loot generation, rarity/stat systems, resource processing, instance-specific mutable tags, nested boolean query expressions, mod distribution, save-game/network migration, hot reload, and a new secondary-filter UI are outside this epic. Query-defined additional tabs demonstrate extensibility; a dedicated faceted filtering interface can follow separately.
+## Deferred work
+
+Equipment and hotbar eligibility migration, equipped-item search, catalog search services, universal item/skill search, runtime-state tags, affixes, modifiers, numeric stats, damage-derived tags, dynamic query compilation, player-facing query controls, tab redesign, category removal, stacking redesign, hot reload, and registry lifetime redesign are separate follow-up work.
 
 ## Completion criteria
 
-Items support independent classifications, one default Weapons tab contains both sizes, equipment and hotbar eligibility use cached tag queries, and stack policy is independent of tabs. All content loads and validates before gameplay, legacy configuration is handled explicitly, and existing inventory/interaction guarantees remain verified. This epic does not merge state ownership into TagSystem.
+Item tag lists load and validate, categories automatically contribute tags, definitions expose immutable classification, All / Any / None use the existing TagSystem, and inventory filtering demonstrates the hull and plasma-weapon cases without changing inventory state or existing item behavior.
