@@ -52,20 +52,45 @@ public static class ItemRegistry
     internal static Dictionary<string, ItemCategoryDefinition> LoadItemCategoryDefinitions(
         JObject yaml, Func<string, IconDefinition> resolveIcon) =>
         yaml["Categories"]!.ToDictionary(row => (string)row["Id"]!, row =>
-            new ItemCategoryDefinition((string)row["Id"]!, (string)row["DisplayName"]!,
-                resolveIcon((string)row["Icon"]!)), StringComparer.Ordinal);
+        {
+            var (canStack, limit) = ResolveStacking(row, false, 1);
+            var definition = new ItemCategoryDefinition((string)row["Id"]!, (string)row["DisplayName"]!,
+                resolveIcon((string?)row["Icon"] ?? "Software.WarningSignCircleQuestionMarkHelp"))
+            {
+                Description = (string?)row["Description"] ?? "",
+                CanStack = canStack,
+                StackLimit = limit
+            };
+            ValidateStacking(definition.CanStack, definition.StackLimit);
+            return definition;
+        }, StringComparer.Ordinal);
+
+    private static (bool CanStack, int StackLimit) ResolveStacking(JToken row, bool defaultCanStack, int defaultLimit)
+    {
+        if (row["CanStack"] is { } toggle)
+            return ((bool)toggle, (bool)toggle ? int.MaxValue : 1);
+        if (row["StackLimit"] is { } limit)
+            return (true, (int)limit);
+        return (defaultCanStack, defaultLimit);
+    }
+
+    internal static void ValidateStacking(bool canStack, int limit)
+    {
+        if (canStack ? limit < 2 : limit != 1)
+            throw new ArgumentException("Resolved stacking configuration is inconsistent.");
+    }
 
     internal static Dictionary<string, ItemDefinition> LoadItemDefinitions(JObject yaml,
         Dictionary<string, ItemCategoryDefinition> categories, Func<string, IconDefinition> resolveIcon) =>
         yaml["Items"]!.ToDictionary(row => (string)row["Id"]!, row =>
         {
             var category = categories[(string)row["CategoryId"]!];
-            var canStack = (bool)row["CanStack"]!;
-            var limit = (int)row["StackLimit"]!;
-            if (!canStack && limit != 1)
-                throw new ArgumentException($"Nonstackable item {row["Id"]} must have a stack limit of one.");
-            return new ItemDefinition((string)row["Id"]!, (string)row["DisplayName"]!, category.DisplayName,
+            var (canStack, limit) = ResolveStacking(row, category.CanStack, category.StackLimit);
+            var definition = new ItemDefinition((string)row["Id"]!, (string)row["DisplayName"]!, category.DisplayName,
                 (string?)row["Description"] ?? "", canStack, limit,
                 row["Icon"]?.Type == JTokenType.String ? resolveIcon((string)row["Icon"]!) : category.Icon);
+            ValidateStacking(definition.CanStack, definition.StackLimit);
+            return definition;
         }, StringComparer.Ordinal);
 }
+

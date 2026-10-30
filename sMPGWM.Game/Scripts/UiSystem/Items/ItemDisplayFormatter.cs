@@ -25,7 +25,7 @@ internal static class ItemDisplayFormatter
         if (data.Description.Length > 0) tooltip += $"\n{data.Description}";
         if (data.CanStack)
         {
-            var limit = data.StackLimit.ToString(CultureInfo.InvariantCulture);
+            var limit = data.StackLimit == int.MaxValue ? "Unlimited" : data.StackLimit.ToString(CultureInfo.InvariantCulture);
             tooltip += $"\nQuantity: {quantity.GetValueOrDefault().ToString(CultureInfo.InvariantCulture)}\nStack limit: {limit}";
         }
         return new IconDisplayData(tooltip, data.CanStack ? quantity : null);

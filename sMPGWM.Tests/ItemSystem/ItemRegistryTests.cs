@@ -58,8 +58,56 @@ public class ItemRegistryTests
     {
         var categories = ItemRegistry.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!);
         var yaml = Read("ItemDefinitions.yml", "ItemSchema.yml");
-        yaml["Items"]![0]!["StackLimit"] = 2;
+        yaml["Items"]![0]!["StackLimit"] = 1;
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!));
+    }
+
+    [TestCase("", true)]
+    [TestCase("CanStack: true", true)]
+    [TestCase("CanStack: false", true)]
+    [TestCase("StackLimit: 2", true)]
+    [TestCase("StackLimit: 2147483646", true)]
+    [TestCase("StackLimit: 2147483647", false)]
+    [TestCase("StackLimit: 0", false)]
+    [TestCase("StackLimit: 1", false)]
+    [TestCase("StackLimit: -1", false)]
+    [TestCase("StackLimit: 2.5", false)]
+    [TestCase("CanStack: true\n    StackLimit: 2", false)]
+    public void StackingSchemas(string setting, bool valid)
+    {
+        var directory = Path.GetFullPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../sMPGWM.Game/assets/game_data"));
+        foreach (var category in new[] { false, true })
+        {
+            var schema = category ? "ItemCategorySchema.yml" : "ItemSchema.yml";
+            var yaml = (category ? "Categories" : "Items") + ":\n  - Id: test\n    DisplayName: Test\n    Description: Test\n" +
+                (category ? "" : "    CategoryId: test\n") + "    " + setting;
+            var result = YamlParser.ValidateAndReturn(yaml, File.ReadAllText(Path.Combine(directory, schema)), "test", schema);
+            Assert.That(result.IsSuccess, Is.EqualTo(valid), yaml);
+        }
+    }
+
+    [Test]
+    public void DefaultsAndOverridesResolveBeforeUse()
+    {
+        foreach (var categorySetting in new[] { "", "CanStack: true", "StackLimit: 7" })
+        foreach (var itemSetting in new[] { "", "CanStack: false", "CanStack: true", "StackLimit: 2" })
+        {
+            string? iconKey = null;
+            var categories = ItemRegistry.LoadItemCategoryDefinitions((JObject)YamlParser.ParseToken(
+                "Categories:\n  - Id: test\n    DisplayName: Test\n    " + categorySetting, "test").Value!, key => { iconKey = key; return null!; });
+            var items = ItemRegistry.LoadItemDefinitions((JObject)YamlParser.ParseToken(
+                "Items:\n  - Id: test\n    DisplayName: Test\n    CategoryId: test\n    " + itemSetting, "test").Value!, categories, _ => null!);
+            var expected = itemSetting switch
+            {
+                "CanStack: false" => 1,
+                "CanStack: true" => int.MaxValue,
+                "StackLimit: 2" => 2,
+                _ => categorySetting == "CanStack: true" ? int.MaxValue : categorySetting == "StackLimit: 7" ? 7 : 1
+            };
+            Assert.That(items["test"].StackLimit, Is.EqualTo(expected));
+            Assert.That(items["test"].CanStack, Is.EqualTo(expected > 1));
+            Assert.That(sMPGWM.Scripts.Util.UiComponents.Icons.IsDefined(iconKey!), Is.True);
+        }
     }
 
     private static JObject Read(string file, string schema)

@@ -18,8 +18,10 @@ Categories:
     DisplayName: Heavy Weapons
     Icon: Warfare.WeaponRocketLauncherRPG
   - Id: consumable
+    CanStack: true
     DisplayName: Consumables
     Icon: Alchemy.PotionVialBottleHeartHealthLifeFull
   - Id: resource
+    CanStack: true
     DisplayName: Resources
     Icon: Alchemy.Arsenic

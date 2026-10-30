@@ -13,7 +13,8 @@ properties:
       required:
         - Id
         - DisplayName
-        - Icon
+      not:
+        required: [CanStack, StackLimit]
       properties:
         Id:
           type: string
@@ -24,3 +25,11 @@ properties:
         Icon:
           type: string
           pattern: '^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$'
+        Description:
+          type: string
+        CanStack:
+          type: boolean
+        StackLimit:
+          type: integer
+          minimum: 2
+          maximum: 2147483646
