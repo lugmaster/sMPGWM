@@ -26,6 +26,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public event Action<MainGameState>? OnGameStateChanged;
 
     public MainGameState GameState => _gameState;
+    public ItemRequestService ItemRequests { get; private set; } = null!;
+    public ItemController WorldItems { get; private set; } = null!;
     public InventoryController InventoryController { get; private set; } = null!;
     public EquipmentController EquipmentController { get; private set; } = null!;
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
@@ -49,7 +51,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     protected override void OnReady()
     {
         var player = PlayerMock.Instance;
-        InventoryController = new InventoryController();
+        ItemRequests = new ItemRequestService();
+        WorldItems = new ItemController(ItemRequests);
+        InventoryController = new InventoryController(ItemRequests);
         if (PopulateMockInventory) player.PopulateInventory(InventoryController);
         EquipmentController = new EquipmentController(InventoryController.Items);
         ItemTransfers = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
@@ -110,6 +114,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ItemTransfers = null!;
         EquipmentController = null!;
         InventoryController = null!;
+        WorldItems = null!;
+        ItemRequests = null!;
         if (_playerActions is null)
             return;
 

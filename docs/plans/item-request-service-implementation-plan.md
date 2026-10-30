@@ -1,6 +1,6 @@
 # Item ownership and request service implementation plan
 
-Status: proposed, 2026-10-30. Documentation only; implementation has not started.
+Status: initial authority extraction implemented, 2026-10-30. Lifecycle, explicit operation contracts, world placement and performance work remain follow-up phases.
 
 Every live item entity must belong to exactly one container. Player inventory controllers and the world's `ItemController` request changes through one shared `ItemRequestService`. Containers remain simple storage with acceptance rules. The service owns authoritative item mutation and commits transactions atomically.
 
@@ -187,3 +187,7 @@ An in-memory atomic commit is not crash-safe persistence. Durable purchases and 
 ## Scope of the first implementation
 
 The first implementation should establish the shared service, retain player and world controllers, remove live entity creation from `ItemRegistry`, and route existing creation/transfers through the new boundary. Complete lifecycle operations and world integration in subsequent reviewable phases. Keep trading, networking, and persistence as explicit follow-up work until their open decisions are resolved.
+
+## Initial extraction decisions
+
+The gameplay composition root creates one ItemRequestService shared by inventory, equipment and the world-facing ItemController. Parameterless player-controller constructors remain for isolated fixtures; production explicitly injects the shared authority. Existing transfer placement behavior and synchronous observer exception propagation are preserved in this extraction: an observer exception occurs after commit and must never be retried as a rejected transaction. Creation is a trusted in-process gameplay API. Complete lifecycle separation, reliable observer delivery and UI-independent result types remain subsequent work.

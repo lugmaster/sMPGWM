@@ -9,7 +9,7 @@ namespace sMPGWM.Scripts.Util.Mocks;
 /// <summary>Arranges smoke fixtures through gameplay commands, including separate partial stacks.</summary>
 internal static class ItemFixture
 {
-    internal static ItemEntity Place(ItemController items, ItemContainer destination, int slot, string definitionId, int count = 1)
+    internal static ItemEntity Place(ItemRequestService items, ItemContainer destination, int slot, string definitionId, int count = 1)
     {
         if (destination.Slots[slot] is not null) throw new InvalidOperationException("Fixture slot must be empty.");
         if (count <= 0 || count > ItemRegistry.GetById(definitionId).StackLimit)
@@ -24,7 +24,7 @@ internal static class ItemFixture
         return items.GetItem(id);
     }
 
-    internal static void MoveAway(ItemController items, ItemContainer source, params int[] slots)
+    internal static void MoveAway(ItemRequestService items, ItemContainer source, params int[] slots)
     {
         var storage = items.CreateContainer(slots.Length);
         for (var index = 0; index < slots.Length; index++)

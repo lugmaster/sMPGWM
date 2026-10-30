@@ -15,7 +15,7 @@ public class ItemSystemTests
     [Test]
     public void ContainerSubscriberFailure_PropagatesAndResetsPublicationGuard()
     {
-        var items = new ItemController();
+        var items = new ItemRequestService();
         var container = items.CreateContainer(2);
         var failure = new InvalidOperationException("Broken container subscriber");
         var laterCalled = false;
@@ -32,7 +32,7 @@ public class ItemSystemTests
     [Test]
     public void InventoryAndChest_MoveTheSameInstanceAndUpdateItsLocation()
     {
-        var items = new ItemController();
+        var items = new ItemRequestService();
         using var inventory = new InventoryController(items);
         var chest = items.CreateContainer(2);
         items.CreateItems(inventory.Container, Engine, 1);
@@ -50,7 +50,7 @@ public class ItemSystemTests
     [Test]
     public void FixedCapacityCreationFailure_LeavesExistingStateUntouched()
     {
-        var items = new ItemController();
+        var items = new ItemRequestService();
         var chest = items.CreateContainer(1);
         items.CreateItems(chest, Consumable, 7);
         var id = chest.Slots[0]!.Value;
@@ -65,7 +65,7 @@ public class ItemSystemTests
     [Test]
     public void Swap_ValidatesBothDestinationsBeforeCommitting()
     {
-        var items = new ItemController();
+        var items = new ItemRequestService();
         var first = items.CreateContainer(1, accepts: (_, definition, _) => definition.Id == Engine);
         var second = items.CreateContainer(1);
         items.CreateItems(first, Engine, 1);
@@ -82,7 +82,7 @@ public class ItemSystemTests
     [Test]
     public void Observers_SeeBothCommittedLocationsAndCannotMutateAnotherContainer()
     {
-        var items = new ItemController();
+        var items = new ItemRequestService();
         using var first = new InventoryController(items);
         using var second = new InventoryController(items);
         items.CreateItems(first.Container, Engine, 1);
@@ -104,7 +104,7 @@ public class ItemSystemTests
     [Test]
     public void SecondRequestFromOldSource_CannotMoveAnAlreadyTransferredItem()
     {
-        var items = new ItemController();
+        var items = new ItemRequestService();
         var source = items.CreateContainer(1);
         var first = items.CreateContainer(1);
         var second = items.CreateContainer(1);

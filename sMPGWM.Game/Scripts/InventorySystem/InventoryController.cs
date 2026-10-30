@@ -11,7 +11,7 @@ public sealed class InventoryController : IDisposable, IInventoryView
 
     private bool _disposed;
 
-    public ItemController Items { get; }
+    public ItemRequestService Items { get; }
     public ItemContainer Container { get; }
     private InventorySnapshot? _snapshot;
     public InventorySnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
@@ -23,9 +23,9 @@ public sealed class InventoryController : IDisposable, IInventoryView
         Items.Publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
 
     public InventoryController()
-        : this(new ItemController()) { }
+        : this(new ItemRequestService()) { }
 
-    public InventoryController(ItemController items)
+    public InventoryController(ItemRequestService items)
     {
         Items = items;
         Container = items.CreateContainer(InitialCapacity, GrowthChunk);

@@ -10,7 +10,7 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     private bool _disposed;
 
     public IReadOnlyList<EquipmentSlotDefinition> Definitions { get; }
-    public ItemController Items { get; }
+    public ItemRequestService Items { get; }
     public ItemContainer Container { get; }
     private EquipmentSnapshot? _snapshot;
     public EquipmentSnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
@@ -21,9 +21,9 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
         Items.Publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
 
     public EquipmentController()
-        : this(new ItemController()) { }
+        : this(new ItemRequestService()) { }
 
-    public EquipmentController(ItemController items)
+    public EquipmentController(ItemRequestService items)
     {
         Items = items;
         Definitions = EquipmentSlotDefinition.Defaults;
