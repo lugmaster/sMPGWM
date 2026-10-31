@@ -1,0 +1,7 @@
+Command: C:\Users\lober\godot_engine/Godot_v4.6.2_mono_steam/editor/godot.windows.editor.x86_64.mono.console.exe --headless --path C:\Users\lober\AppData\Local\Temp\sMPGWM-enet-d18c2315021c4870823cc2e6da92fdc5 -- --enet-client
+Inputs: port = 52263; connection_timeout=1000 ms; diagnostic_timeout=10000 ms; server=127.0.0.1 (invalid-endpoint case uses invalid-address).
+Godot Engine v4.6.2.stable.mono.custom_build.001aa128b (2026-03-31 20:42:38 UTC) - https://godotengine.org
+[2026-10-31 15:56:10] [Info] Network session stopped role=Client tick=8
+[2026-10-31 15:56:10] [Debug] GameFlowManager.QuitToStartMenuBlocking graceful quit triggered with reason=NET14 deliberate cancellation.
+ERROR: [2026-10-31 15:56:10] [Error] Error: NET14 deliberate cancellation
+[2026-10-31 15:56:10] [Debug] GameFlowManager.QuitToStartMenuInternal returning to start menu.

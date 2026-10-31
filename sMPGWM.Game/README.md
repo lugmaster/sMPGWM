@@ -31,10 +31,10 @@ sMPGWM is a **2D top-down coop multiplayer space shooter** developed in **Godot 
 ## Runtime and Networking
 
 - **Frame rate:** Locked at 60 FPS.
-- **Network tick interval:** 30 ms.
+- **Network tick interval:** Every second local physics step (30 Hz at 60 physics steps/second).
 - **Authority model:** Host-authoritative multiplayer.
 - **Session scale:** Co-op, typically 5 players and at most 10.
-- **Performance:** Keep the 30 ms network interval stable at this scale. Avoid unnecessary recurring allocations, reuse storage where useful, and do not explicitly force garbage collection. Measure timing and GC impact; an absolute absence of automatic GC is not required.
+- **Performance:** Keep the 30 Hz network cadence stable at this scale. Avoid unnecessary recurring allocations, reuse storage where useful, and do not explicitly force garbage collection. Measure timing and GC impact; an absolute absence of automatic GC is not required.
 
 ### Multiplayer Terminology
 

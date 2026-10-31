@@ -1,0 +1,15 @@
+Command: C:\Users\lober\godot_engine/Godot_v4.6.2_mono_steam/editor/godot.windows.editor.x86_64.mono.console.exe --headless --path C:\Users\lober\AppData\Local\Temp\sMPGWM-enet-d18c2315021c4870823cc2e6da92fdc5 -- --enet-host
+Inputs: port = 52263; connection_timeout=1000 ms; diagnostic_timeout=10000 ms; server=127.0.0.1 (invalid-endpoint case uses invalid-address).
+Godot Engine v4.6.2.stable.mono.custom_build.001aa128b (2026-03-31 20:42:38 UTC) - https://godotengine.org
+[2026-10-31 15:56:05] [Info] Network Host: Listening
+[2026-10-31 15:56:05] [Info] Listening session=022b54c84f5f46ccace21661dcf21ce1 port=52263 maxPlayers=10
+[2026-10-31 15:56:06] [Info] Host sender=1481291267 DiagnosticHello correlation=d768193936354c0188fa393555c508ac payload=ENet diagnostic hello session=022b54c84f5f46ccace21661dcf21ce1 tick=91
+[2026-10-31 15:56:06] [Info] Host sender=1 DiagnosticReply correlation=d768193936354c0188fa393555c508ac payload=ENet diagnostic hello session=022b54c84f5f46ccace21661dcf21ce1
+[2026-10-31 15:56:06] [Info] Host sender=809105017 DiagnosticHello correlation=055193f9be4f4213812a8ee9656fd350 payload=ENet diagnostic hello session=022b54c84f5f46ccace21661dcf21ce1 tick=115
+[2026-10-31 15:56:06] [Info] Host sender=1 DiagnosticReply correlation=055193f9be4f4213812a8ee9656fd350 payload=ENet diagnostic hello session=022b54c84f5f46ccace21661dcf21ce1
+[2026-10-31 15:56:07] [Info] Host sender=507836005 DiagnosticHello correlation=1fcf90e506fe4450b843788018f6d853 payload=ENet diagnostic hello session=022b54c84f5f46ccace21661dcf21ce1 tick=165
+[2026-10-31 15:56:07] [Info] Host sender=1 DiagnosticReply correlation=1fcf90e506fe4450b843788018f6d853 payload=ENet diagnostic hello session=022b54c84f5f46ccace21661dcf21ce1
+[2026-10-31 15:56:08] [Info] Host sender=1613993440 DiagnosticHello correlation=085bb23c3ccc481da7e7f8650e5f1ea6 payload=ENet diagnostic hello session=022b54c84f5f46ccace21661dcf21ce1 tick=189
+[2026-10-31 15:56:08] [Info] Host sender=1 DiagnosticReply correlation=085bb23c3ccc481da7e7f8650e5f1ea6 payload=ENet diagnostic hello session=022b54c84f5f46ccace21661dcf21ce1
+[2026-10-31 15:56:08] [Info] Network session stopped role=Host tick=195
+[2026-10-31 15:56:08] [Debug] GameFlowManager.QuitGame completed Steam shutdown.

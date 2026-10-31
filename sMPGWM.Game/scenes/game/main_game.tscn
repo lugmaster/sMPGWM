@@ -12,11 +12,11 @@ anchors_preset = 0
 mouse_filter = 2
 script = ExtResource("1_7qhhq")
 
-[node name="InputController" type="Node" parent="." unique_id=1672137497]
-script = ExtResource("4_input")
-
 [node name="NetworkManager" type="Node" parent="." unique_id=258504685]
 script = ExtResource("3_p2514")
+
+[node name="InputController" type="Node" parent="." unique_id=1672137497]
+script = ExtResource("4_input")
 
 [node name="UiCanvas" parent="." unique_id=766120166 instance=ExtResource("2_qgbr3")]
 unique_name_in_owner = true

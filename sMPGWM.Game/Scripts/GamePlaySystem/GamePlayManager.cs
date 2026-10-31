@@ -86,7 +86,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _inputPolicy.SetSessionActive(GameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(GameState == MainGameState.Active);
         ApplyPlayerInputAvailability(_inputPolicy.CanControlPlayer);
-        CallDeferred(nameof(Start));
+        if (!sMPGWM.scripts.Network.NetworkManager.Instance.DiagnosticMode) CallDeferred(nameof(Start));
     }
 
     protected override void OnExitTree()

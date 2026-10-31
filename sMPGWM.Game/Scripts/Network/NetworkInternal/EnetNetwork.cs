@@ -1,147 +1,96 @@
-﻿using System;
-using System.Threading.Tasks;
+using System;
+using System.Net;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
+using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Network.NetworkInternal;
 using static Godot.MultiplayerPeer;
-
-using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.scripts.Network.NetworkInternal;
 
 public partial class EnetNetwork : BaseNetwork, IActiveNetwork
 {
-    private ENetMultiplayerPeer _peer;
-
-    public override void _Ready()
+    private ENetMultiplayerPeer? _peer;
+    public NetworkStartupData? Startup { get; init; }
+    public event Action<bool, string>? ConnectionChanged;
+    private bool _finished;
+    private bool _cleaned;
+    private bool _subscribed;
+    private void Report(bool success, string reason = "Connected")
     {
-        Logger.Debug(
-            $"{nameof(EnetNetwork)}.{nameof(_Ready)} setting up ENet network.");
+        if (_cleaned || _finished) return;
+        _finished = true;
+        ConnectionChanged?.Invoke(success, reason);
+    }
+    private bool _started;
+    private bool _waiting;
+    private ulong _deadline;
+
+    public void BecomeHost(int maxConnections)
+    {
+        if (_started) return;
+        _started = true;
+        if (maxConnections < 1 || maxConnections > 10)
+        {
+            Report(false, "ENet diagnostic hosting requires 1-10 player capacity.");
+            return;
+        }
         _peer = new ENetMultiplayerPeer();
+        var result = _peer.CreateServer(Startup?.Port ?? GameConfig.Port, Math.Max(1, maxConnections - 1));
+        if (result != Error.Ok) { Report(false, $"CreateServer: {result}"); return; }
+        _peer.RefuseNewConnections = maxConnections == 1;
+        Multiplayer.MultiplayerPeer = _peer;
+        Report(true, "Listening");
     }
 
-    public async void BecomeHost(int maxConnections)
+    public void BecomeClient(ulong lobbyId = 0)
     {
-        try
+        if (_started) return;
+        _started = true;
+        if (!IPAddress.TryParse(Startup?.Address ?? GameConfig.ServerIpAddress, out _) || (Startup?.Port ?? GameConfig.Port) is < 1 or > 65535)
         {
-            Logger.Debug(
-                $"{nameof(EnetNetwork)}.{nameof(BecomeHost)} becoming host.");
-            var result = _peer.CreateServer(GameConfig.Port, maxConnections);
-
-            if (result != Error.Ok)
-            {
-                EmitConnectedFalseAndQuit($"EnetNetwork(IActiveNetwork) - Failed to start the server: {result}");
-                return;
-            }
-
-            Logger.Debug(
-                $"{nameof(EnetNetwork)}.{nameof(BecomeHost)} server started with {nameof(GameConfig.Port)}={GameConfig.Port}, {nameof(maxConnections)}={maxConnections}.");
-            Multiplayer.MultiplayerPeer = _peer;
-
-            var success = await WaitForConnectionStatus(ConnectionStatus.Connecting);
-            if (!success)
-            {
-                EmitConnectedFalseAndQuit($"EnetNetwork(IActiveNetwork): Timeout while waiting to create Server. Status: {_peer.GetConnectionStatus()}");
-                return;
-            }
-
-            Logger.Debug(
-                $"{nameof(EnetNetwork)}.{nameof(BecomeHost)} server successfully started.");
-            EmitConnected(true);
+            Report(false, "Invalid LAN endpoint.");
+            return;
         }
-        catch (Exception e)
-        {
-            EmitConnectedFalseAndQuit($"EnetNetwork(IActiveNetwork): Failed becoming host: {e.Message}");
-        }
+        _subscribed = true;
+        Multiplayer.ConnectedToServer += Connected;
+        Multiplayer.ConnectionFailed += Failed;
+        Multiplayer.ServerDisconnected += Disconnected;
+        _peer = new ENetMultiplayerPeer();
+        var result = _peer.CreateClient(Startup?.Address ?? GameConfig.ServerIpAddress, Startup?.Port ?? GameConfig.Port);
+        if (result != Error.Ok) { Report(false, $"CreateClient: {result}"); return; }
+        _waiting = true;
+        _deadline = Time.GetTicksMsec() + (ulong)Math.Max(1, Startup?.ConnectionTimeoutMs ?? ConnectionTimeout);
+        Multiplayer.MultiplayerPeer = _peer;
     }
 
-    public async void BecomeClient(ulong lobbyId = 0)
+    private void Connected() { if (!_waiting) return; _waiting = false; Report(true); }
+    private void Failed() { _waiting = false; Report(false, "ENet connection failed or disconnected."); }
+    private void Disconnected() { if (!_cleaned) ConnectionChanged?.Invoke(false, "Server disconnected."); }
+    public override void _PhysicsProcess(double delta)
     {
-        try
-        {
-            Logger.Debug(
-                $"{nameof(EnetNetwork)}.{nameof(BecomeClient)} attempting to become client.");
-
-            _peer.CreateClient(GameConfig.ServerIpAddress, GameConfig.Port);
-            Multiplayer.MultiplayerPeer = _peer;
-
-            var successful = await WaitForConnectionStatus(ConnectionStatus.Connecting);
-            if (!successful)
-            {
-                EmitConnectedFalseAndQuit(
-                    $"EnetNetwork(IActiveNetwork) - Timeout while waiting for connection. Status: {_peer.GetConnectionStatus()}");
-                return;
-            }
-
-            Logger.Debug(
-                $"{nameof(EnetNetwork)}.{nameof(BecomeClient)} client successfully connected with peerId={Multiplayer.GetUniqueId()}.");
-            EmitConnected(true);
-        }
-        catch (Exception e)
-        {
-            EmitConnectedFalseAndQuit($"EnetNetwork(IActiveNetwork): Failed becoming client: {e.Message}");
-        }
+        if (_waiting && Time.GetTicksMsec() >= _deadline) Failed();
     }
-
-    public Node GetNode()
-    {
-        Logger.Debug(
-            $"{nameof(EnetNetwork)}.{nameof(GetNode)} returning network node.");
-        return this;
-    }
-
-    private async Task<bool> WaitForConnectionStatus(ConnectionStatus status)
-    {
-        Logger.Debug(
-            $"{nameof(EnetNetwork)}.{nameof(WaitForConnectionStatus)} waiting for connection to leave {nameof(status)}={status}.");
-        var elapsed = 0;
-
-        while (_peer.GetConnectionStatus() == status)
-        {
-            if (elapsed >= ConnectionTimeout)
-            {
-                return false;
-            }
-
-            await Task.Delay(100);
-            elapsed += 100;
-        }
-
-        var connected = _peer.GetConnectionStatus() == ConnectionStatus.Connected;
-        Logger.Debug(
-            $"{nameof(EnetNetwork)}.{nameof(WaitForConnectionStatus)} completed with {nameof(connected)}={connected}.");
-        return connected;
-    }
-
-    public bool IsConnected()
-    {
-        return _peer != null && _peer.GetConnectionStatus() == ConnectionStatus.Connected;
-    }
-
-    public ConnectionStatus GetConnectionStatus()
-    {
-        return _peer?.GetConnectionStatus() ?? ConnectionStatus.Disconnected;
-    }
-
+    public bool IsConnected() => GetConnectionStatus() == ConnectionStatus.Connected;
+    public ConnectionStatus GetConnectionStatus() => _peer?.GetConnectionStatus() ?? ConnectionStatus.Disconnected;
+    public Node GetNode() => this;
     public override void Cleanup()
     {
-        Logger.Debug(
-            $"{nameof(EnetNetwork)}.{nameof(Cleanup)} cleaning up ENet peer.");
-
-        if (_peer != null && GetConnectionStatus() != ConnectionStatus.Disconnected)
+        if (_cleaned) return;
+        _cleaned = true;
+        _waiting = false;
+        if (_subscribed)
         {
-            Logger.Debug(
-                $"{nameof(EnetNetwork)}.{nameof(Cleanup)} closing ENet peer.");
-            _peer.Close();
+            _subscribed = false;
+            Multiplayer.ConnectedToServer -= Connected;
+            Multiplayer.ConnectionFailed -= Failed;
+            Multiplayer.ServerDisconnected -= Disconnected;
         }
-
-        if (Multiplayer.MultiplayerPeer == _peer)
-        {
-            Multiplayer.MultiplayerPeer = null;
-        }
-
+        if (_peer == null) return;
+        if (Multiplayer.MultiplayerPeer == _peer) Multiplayer.MultiplayerPeer = null;
+        _peer.Close();
+        _peer.Dispose();
         _peer = null;
-
-        base.Cleanup();
+        ConnectionChanged = null;
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Util;
@@ -39,8 +39,9 @@ public partial class InputController : AbstractSingleton<InputController>
 
     protected override void OnReady()
     {
+        // TODO impose proper load order and remove null check. 
         Logger.Debug(
-            $"{nameof(InputController)}.{nameof(OnReady)} setting up for authority {GetMultiplayerAuthority()} on peer {Multiplayer.GetUniqueId()}.");
+            $"{nameof(InputController)}.{nameof(OnReady)} setting up for authority {GetMultiplayerAuthority()} on peer {(Multiplayer.HasMultiplayerPeer() ? Multiplayer.GetUniqueId() : 0)}.");
         _inputModes.Add(_enableAutoBreaking);
         _inputModes.Add(_actionInput);
         _inputModes.Add(_alternateActionInput);

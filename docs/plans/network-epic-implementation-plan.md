@@ -1,6 +1,6 @@
 # Network implementation plan
 
-Status: ready for implementation, 2026-10-31. All checkpoints are Pending; no runtime verification is claimed.
+Status: NET-14 Verified, 2026-10-31. Remaining checkpoints are Pending. See the NET-14 handoff and evidence below.
 
 Single source for NET-00 through NET-14, replacing the host, client, lobby, lobby-list, heartbeat and refinement plans. Target: `sMPGWM.Game/Scripts/Network`.
 
@@ -67,7 +67,7 @@ Statuses: Pending, In progress, Needs verification, Verified. A partial checkpoi
 
 | Order | Story checkpoint | Status |
 | --- | --- | --- |
-| 1 | NET-14: ENet diagnostic exchange | Pending |
+| 1 | NET-14: ENet diagnostic exchange | Verified |
 | 2 | NET-01: shared ownership completion | Pending |
 | 3 | NET-03: ENet completion | Pending |
 | 4 | NET-00: Steam capability gate | Pending |
@@ -235,4 +235,48 @@ Record checkpoint/status, changed files, exact commands/build/inputs, results, e
 
 **Message milestone:** checkpoints 1-5 Verified, including actual separate-process ENet and Steam exchanges. **Full planned slice:** all checkpoints Verified, public discovery reaches production admission and host survives churn. Neither claims real replication/player spawning.
 
-**Current checkpoint:** 1 — NET-14 ENet diagnostic exchange. Implementation not started; no runtime checks run. Next: inspect flow/network/Steam code and test conventions, establish baseline build/engine availability, then implement minimal owner/endpoint and ENet host.
+**Current checkpoint:** 1 - NET-14 Verified. Next checkpoint: NET-01 shared ownership completion; not started.
+
+### NET-14 implementation handoff (2026-10-31)
+
+Status: **Verified** for the diagnostic checkpoint. No Steam transport exchange, admission, replication, or gameplay activation is claimed.
+
+User constraint overrides the optional-Steam wording elsewhere in this plan: the game retains its original mandatory Steam startup and startup failure behavior, including when LAN is the selected session transport. LAN and Steam are mutually exclusive for a session; a selected transport failure exits the session to the menu, never switches transport. SteamworksHelper is unchanged.
+
+Implementation:
+- Opt-in --enet-host / --enet-client arguments enter main_game.tscn through GameFlowManager, supplying an immutable NetworkStartupData consumed once by NetworkManager. Ordinary application startup remains unchanged.
+- The scene-owned manager creates the named protocol endpoint and local ticker before the ENet child creates/assigns its peer. Client RPC starts only after ConnectedToServer. Host listening needs no remote peer.
+- ENet checks creation errors, captures the attempt timeout, handles connection signals on the main thread, bounds capacity including host-only mode, and cleans native resources/subscriptions idempotently.
+- Reliable bounded hello/reply messages validate version, sender, correlation, payload and host session. Each client attempt has one immutable result. Host responses are limited to one per connected peer; departure clears that peer's entry.
+- Diagnostic gameplay stays inactive. Physics ticks remain local; the README now documents every-second-step cadence. Normal engine multiplayer polling remains enabled.
+- Scene exit, cancellation and menu return stop the endpoint before transport teardown. QuitGame cleans the session before the existing Steam shutdown.
+- No access levels were lowered and no test-only production methods were added. The external GDScript test driver is marked @test-context. MpManager remains untouched.
+
+Validation:
+- dotnet test sMPGWM.Tests --filter FullyQualifiedName~Network: **5 passed**, including four standalone protocol tests and one real multi-process scenario matrix; game and test assemblies built successfully. Timestamps in retained evidence identify the final run.
+- dotnet test sMPGWM.Tests: **177 passed, 1 failed**. The existing Godot inventory case UnknownDefinitions_AreRejectedIncludingDefaultAndZeroQuantity expects UnknownDefinition but receives NoChange at InventoryControllerTests.cs:131. This does not exercise network code.
+- Runtime: Godot v4.6.2.stable.mono.custom_build.001aa128b, local GodotSteam .NET console executable under C:/Users/lober/godot_engine/Godot_v4.6.2_mono_steam/editor/. Steam initialized successfully using the unchanged startup.
+- Integration tests stage real scripts, compiled assembly, scenes and assets in a temporary project with isolated user data. The test-only autoload drives existing production methods; it does not implement another transport or manager. Logs are attached by NUnit as enet-*.log.
+- Inputs: headless processes, --enet-host / --enet-client, 127.0.0.1 and an OS-selected free UDP port, capacity 10 (also 1), connection budget 1000 ms, independent diagnostic budget 10000 ms. Default game connection budget remains 60000 ms. Each retained log excerpt records its exact command and port.
+
+Acceptance evidence:
+
+| Check | Evidence |
+| --- | --- |
+| Matching RPC payload and correlation in separate processes | Host and both client logs; production main_game.tscn endpoint |
+| Host alone, local ticks, unchanged host identity | Listening before any client; increasing host tick values, independent client ticks; four exchanges against one session |
+| Leave/rejoin and clean retry | Each of two client processes returns to menu and re-enters; new scene/manager/correlation, same host session; host port reused after cleanup |
+| Duplicate starts | Repeated CreateNetwork, AssignRole and SendHello produce exactly one success per client attempt |
+| Occupied port / immediate creation error | Second host reports CreateServer failure and exits its session |
+| Unreachable endpoint / connection timeout / invalid endpoint | No host at loopback port; deadline cleanup; invalid address rejected |
+| Cancellation | In-flight client cancellation returns to menu without diagnostic success |
+| Diagnostic timeout | Connected host endpoint deliberately suppresses replies; client times out independently of connection budget |
+| Immediate send error | Detached test endpoint attempts send without an assigned transport; native error is captured and terminal failure reported |
+| Unsupported / oversized / unmatched / invalid-session replies | Actual RPC fault injection from host is rejected, then correct reply succeeds |
+| Wrong sender, duplicate completion, late reply after cancel, fresh correlation | Standalone DiagnosticExchange tests |
+| Bounds | UTF-8 byte boundary tests; 1-player host listens and cleans up |
+| Cleanup and runtime errors | Successful client/rejoin/host-only paths assert no engine ERROR; shutdown occurs after session cleanup |
+
+Retained evidence: [NET-14 log excerpts](evidence/net14/). Excerpts include engine version, commands/inputs and diagnostic/lifecycle lines, omitting account identifiers and unrelated logs. Full generated logs remain NUnit attachments.
+
+Fresh-context handoff: resume at NET-01 if requested. Preserve the user's mandatory Steam startup constraint. The diagnostic harness deliberately does not activate gameplay. Existing menu startup and Steam ownership still need their later checkpoints; the full inventory suite failure remains separate.
