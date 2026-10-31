@@ -1,7 +1,7 @@
 using sMPGWM.Scripts.ItemSystem;
 using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 
-namespace sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
+namespace sMPGWM.Scripts.HotbarSystem;
 
 
 public sealed record HotbarAvailability(string? DefinitionId, long? Quantity, string Label, bool Available);

@@ -1,10 +1,8 @@
-
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
+namespace sMPGWM.Scripts.HotbarSystem;
 internal sealed class ItemHotbarState : IDisposable
 {
     public const int PositionCount = 10;

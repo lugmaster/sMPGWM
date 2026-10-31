@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.HotbarSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
-using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
+using sMPGWM.Scripts.UiSystem.HudSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.Util.UiComponents;
 

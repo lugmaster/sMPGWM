@@ -4,7 +4,7 @@ using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 
-namespace sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
+namespace sMPGWM.Scripts.HotbarSystem;
 public sealed class ItemHotbarController : IDisposable
 {
     private readonly ItemHotbarState _state;

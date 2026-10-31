@@ -1,6 +1,6 @@
 using sMPGWM.Scripts.ItemSystem;
 
-namespace sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
+namespace sMPGWM.Scripts.HotbarSystem;
 
 internal static class ItemHotbarPolicy
 {

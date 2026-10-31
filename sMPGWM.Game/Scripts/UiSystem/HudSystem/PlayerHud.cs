@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.Util.UiComponents;
+using HotbarControl = sMPGWM.Scripts.UiSystem.HudSystem.Hotbar.HotbarControl;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.UiSystem.HudSystem;

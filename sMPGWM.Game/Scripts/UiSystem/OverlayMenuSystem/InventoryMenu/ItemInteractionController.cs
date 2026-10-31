@@ -1,6 +1,6 @@
-using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using System;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.HotbarSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.Util;
 

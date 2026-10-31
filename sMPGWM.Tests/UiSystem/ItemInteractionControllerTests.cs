@@ -1,9 +1,9 @@
-using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
 using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.HotbarSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.Items;

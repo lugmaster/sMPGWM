@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using sMPGWM.Scripts.HotbarSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 
-namespace sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
+namespace sMPGWM.Scripts.UiSystem.HudSystem.Hotbar;
 
 public partial class HotbarControl : PanelContainer
 {

@@ -1,8 +1,8 @@
-using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.HotbarSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
