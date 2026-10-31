@@ -421,3 +421,16 @@ This verifies the first remote Steam diagnostic request/reply from client-side e
 User clarified the earlier perceived blocking-exit issue was the expected diagnostic-only screen, not an unsolicited exit or startup failure. There is no outstanding failure investigation for that report.
 
 Concrete next action: while both devices are available, return the client to menu and rejoin the same running host; expect another MessageExchangeSucceeded with a fresh correlation and the same host session. Then return the host to menu while the client is connected; expect client cleanup and return to menu with a host-loss reason. Retain both devices' logs for these checks.
+
+### Returned Steam lifecycle tests (2026-10-31 22:00-22:07)
+
+Reviewed user-supplied host and client logs against the committed baseline. NET-00 remains Needs verification, with these additional verified behaviors:
+
+- Host session c379d2d6c62f457cbe5acafcdc1eb634 survives client departure and handles a subsequent hello/reply. The rejoin correlation c12638371e464257b1fde63bd4c32ea1 and peer 649968205 match across both logs. Client voluntarily leaves immediately after sending hello, before logging receipt, so this particular attempt proves host-side rejoin handling and client cleanup, not completed client exchange. Host/client wall-clock timestamps differ; correlate by IDs, not cross-device elapsed time.
+- A later client exchange succeeds against that same host session: correlation 1f3204b06cf6476a86ab7c256d4fd9a4 at client time 22:04:07. This supplies completed exchange evidence against the retained host session.
+- Host departure at client time 22:04:12 triggers lobby-invalid/host-lost detection, native cleanup, session stop, scene-owned singleton exits and return to menu. The same process subsequently connects and completes exchanges with fresh host sessions 66ebdc4857cf4eb48e3bdef610b5e1cf (correlation cb06d4f4c97f4869b208735ae54ae300) and 096ef53897174680aedf4975e876f3de (correlation 9d9f25e0a4954e3d8c2ad5d80424c1a5). The second host-loss cleanup at 22:06:29 also returns to menu before successful retry.
+- The reported Godot error stack is explicitly emitted by QuitToStartMenuBlocking -> Logger.Error -> GD.PushError for the session-ending reason. It is not evidence of a thrown cleanup exception; subsequent navigation and reconnection succeed. The legacy text 'Click to return to Main Menu' is misleading because navigation is automatic (notification code is commented out). Retain this presentation issue for the menu/error-reporting work; do not suppress Logger.Error globally.
+
+This records user-tested graceful host-loss and retry, not abrupt transport loss/refusal or full native capability acceptance. No code changes or test reruns were needed to assess these logs. Export packaging, native auth, actual peer/Steam identity mapping, broader channel behavior and remaining NET-00 matrix remain unverified.
+
+Concrete next implementation action: add bounded native-auth and identity-mapping verification to the production diagnostic path, configure auth before peer assignment, validate locally with ENet as control, and prepare a new two-device UI test. Do not request repeats of the now-evidenced lifecycle scenarios without a relevant implementation change.
