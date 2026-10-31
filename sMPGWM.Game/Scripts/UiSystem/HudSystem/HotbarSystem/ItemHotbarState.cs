@@ -4,8 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace sMPGWM.Scripts.UiSystem.Items;
-public sealed class ItemHotbarState : IDisposable
+namespace sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
+internal sealed class ItemHotbarState : IDisposable
 {
     public const int PositionCount = 10;
     private ulong _session;

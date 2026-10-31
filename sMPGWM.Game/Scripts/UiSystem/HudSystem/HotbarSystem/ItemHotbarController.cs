@@ -4,16 +4,45 @@ using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 
-namespace sMPGWM.Scripts.UiSystem.Items;
-public sealed class ItemHotbarController(
-    ItemHotbarState state,
-    IInventoryView inventory,
-    IEquipmentView equipment,
-    IItemTransfers transfers,
-    Action<Exception>? reportError = null)
+namespace sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
+public sealed class ItemHotbarController : IDisposable
 {
-    public IReadOnlyList<HotbarBinding?> Entries => state.Entries;
-    public long Revision => state.Revision;
+    private readonly ItemHotbarState _state;
+    private readonly IInventoryView _inventory;
+    private readonly IEquipmentView _equipment;
+    private readonly IItemTransfers _transfers;
+    private readonly Action<Exception>? _reportError;
+    private bool _disposed;
+
+    public ItemHotbarController(IInventoryView inventory, IEquipmentView equipment, IItemTransfers transfers,
+        Action<Exception>? reportError = null)
+        : this(new ItemHotbarState(), inventory, equipment, transfers, reportError) { }
+
+    // Internal injection supports seeded fixture state; the controller owns its lifetime.
+    internal ItemHotbarController(ItemHotbarState state, IInventoryView inventory, IEquipmentView equipment,
+        IItemTransfers transfers, Action<Exception>? reportError = null)
+    {
+        this._state = state;
+        this._inventory = inventory;
+        this._equipment = equipment;
+        this._transfers = transfers;
+        this._reportError = reportError;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _state.Changed -= NotifyChanged;
+        _inventory.Changed -= OnInventoryChanged;
+        _equipment.Changed -= OnEquipmentChanged;
+        _changed = null;
+        _observers = Array.Empty<Delegate>();
+        _state.Dispose();
+    }
+
+    public IReadOnlyList<HotbarBinding?> Entries => _state.Entries;
+    public long Revision => _state.Revision;
     private Action? _changed;
     private Delegate[] _observers = Array.Empty<Delegate>();
     private readonly Dictionary<HotbarBinding, HotbarAvailability> _availability = new();
@@ -26,12 +55,12 @@ public sealed class ItemHotbarController(
     {
         add
         {
-            if (value == null) return;
+            if (value == null || _disposed) return;
             if (_changed == null)
             {
-                state.Changed += NotifyChanged;
-                inventory.Changed += OnInventoryChanged;
-                equipment.Changed += OnEquipmentChanged;
+                _state.Changed += NotifyChanged;
+                _inventory.Changed += OnInventoryChanged;
+                _equipment.Changed += OnEquipmentChanged;
             }
             _changed += value;
             _observers = _changed.GetInvocationList();
@@ -42,9 +71,9 @@ public sealed class ItemHotbarController(
             _observers = _changed?.GetInvocationList() ?? Array.Empty<Delegate>();
             if (_changed == null)
             {
-                state.Changed -= NotifyChanged;
-                inventory.Changed -= OnInventoryChanged;
-                equipment.Changed -= OnEquipmentChanged;
+                _state.Changed -= NotifyChanged;
+                _inventory.Changed -= OnInventoryChanged;
+                _equipment.Changed -= OnEquipmentChanged;
             }
         }
     }
@@ -59,17 +88,17 @@ public sealed class ItemHotbarController(
             try { handler(); }
             catch (Exception exception)
             {
-                try { reportError?.Invoke(exception); }
+                try { _reportError?.Invoke(exception); }
                 catch (Exception) { }
             }
         }
     }
 
-    public void SetEditSession(ulong session) => state.SetEditSession(session);
-    public HotbarResult ValidateEdit(ulong session, long revision, int position) => state.ValidateEdit(session, revision, position);
-    public HotbarResult ValidateMove(ulong session, long revision, int source, int destination) => state.ValidateMove(session, revision, source, destination);
-    public HotbarResult Move(ulong session, long revision, int source, int destination) => state.Move(session, revision, source, destination);
-    public HotbarResult Clear(ulong session, long revision, int position) => state.Clear(session, revision, position);
+    public void SetEditSession(ulong session) => _state.SetEditSession(session);
+    public HotbarResult ValidateEdit(ulong session, long revision, int position) => _state.ValidateEdit(session, revision, position);
+    public HotbarResult ValidateMove(ulong session, long revision, int source, int destination) => _state.ValidateMove(session, revision, source, destination);
+    public HotbarResult Move(ulong session, long revision, int source, int destination) => _state.Move(session, revision, source, destination);
+    public HotbarResult Clear(ulong session, long revision, int position) => _state.Clear(session, revision, position);
 
     public HotbarResult ValidateAssignment(HotbarAssignmentRequest request) => EvaluateAssignment(request, false);
     public HotbarResult Assign(HotbarAssignmentRequest request) => EvaluateAssignment(request, true);
@@ -77,9 +106,9 @@ public sealed class ItemHotbarController(
     private HotbarResult EvaluateAssignment(HotbarAssignmentRequest request, bool commit)
     {
         var (session, hotbarRevision, position, source, entity, inventoryRevision, equipmentRevision) = request;
-        var result = state.ValidateEdit(session, hotbarRevision, position);
+        var result = _state.ValidateEdit(session, hotbarRevision, position);
         if (result != HotbarResult.Success) return result;
-        var validation = transfers.Validate(new TransferRequest(session, source, entity, source, entity,
+        var validation = _transfers.Validate(new TransferRequest(session, source, entity, source, entity,
             inventoryRevision, equipmentRevision));
         if (validation != TransferResult.NoChange) return validation switch
         {
@@ -91,22 +120,22 @@ public sealed class ItemHotbarController(
             // A validated transfer to the source itself can only be NoChange or a validation error.
             _ => throw new InvalidOperationException($"Unexpected source validation result: {validation}")
         };
-        var sourceEntity = source.InventoryAddress.HasValue ? inventory.Snapshot.Slots[source.InventoryAddress.Value] :
-            equipment.Snapshot.Slots[FindEquipmentSlot(source.EquipmentSlotKey!)];
+        var sourceEntity = source.InventoryAddress.HasValue ? _inventory.Snapshot.Slots[source.InventoryAddress.Value] :
+            _equipment.Snapshot.Slots[FindEquipmentSlot(source.EquipmentSlotKey!)];
         var definition = sourceEntity!.Definition;
-        var current = state.Entries[position];
+        var current = _state.Entries[position];
         if (ItemHotbarPolicy.IsConsumable(definition.CategoryName))
         {
             if (current is ConsumableHotbarBinding consumable && consumable.DefinitionId == definition.Id)
                 return HotbarResult.NoChange;
-            return commit ? state.Assign(session, hotbarRevision, position, new ConsumableHotbarBinding(definition.Id)) :
+            return commit ? _state.Assign(session, hotbarRevision, position, new ConsumableHotbarBinding(definition.Id)) :
                 HotbarResult.Success;
         }
         if (source.EquipmentSlotKey is { } slotKey && ItemHotbarPolicy.IsWeapon(definition.CategoryName))
         {
             if (current is WeaponHotbarBinding weapon && weapon.SlotKey == slotKey)
                 return HotbarResult.NoChange;
-            return commit ? state.Assign(session, hotbarRevision, position, new WeaponHotbarBinding(slotKey)) :
+            return commit ? _state.Assign(session, hotbarRevision, position, new WeaponHotbarBinding(slotKey)) :
                 HotbarResult.Success;
         }
         return HotbarResult.IneligibleSource;
@@ -114,26 +143,26 @@ public sealed class ItemHotbarController(
 
     private int FindEquipmentSlot(string key)
     {
-        for (var index = 0; index < equipment.Definitions.Count; index++)
-            if (equipment.Definitions[index].Key == key) return index;
+        for (var index = 0; index < _equipment.Definitions.Count; index++)
+            if (_equipment.Definitions[index].Key == key) return index;
         return -1;
     }
 
     public HotbarAvailability Resolve(int position)
     {
         if (position is < 0 or >= ItemHotbarState.PositionCount) return InvalidPosition;
-        var inventorySnapshot = inventory.Snapshot;
-        var equipmentSnapshot = equipment.Snapshot;
+        var inventorySnapshot = _inventory.Snapshot;
+        var equipmentSnapshot = _equipment.Snapshot;
         // Resolve can be called without subscribers, so events alone cannot invalidate this cache.
-        if (_cachedHotbarRevision != state.Revision || _cachedInventoryRevision != inventorySnapshot.Revision ||
+        if (_cachedHotbarRevision != _state.Revision || _cachedInventoryRevision != inventorySnapshot.Revision ||
             _cachedEquipmentRevision != equipmentSnapshot.Revision)
         {
             _availability.Clear();
-            _cachedHotbarRevision = state.Revision;
+            _cachedHotbarRevision = _state.Revision;
             _cachedInventoryRevision = inventorySnapshot.Revision;
             _cachedEquipmentRevision = equipmentSnapshot.Revision;
         }
-        var binding = state.Entries[position];
+        var binding = _state.Entries[position];
         if (binding == null) return EmptyPosition;
         if (_availability.TryGetValue(binding, out var cached)) return cached;
         var availability = ResolveBinding(binding, inventorySnapshot, equipmentSnapshot);
@@ -155,7 +184,7 @@ public sealed class ItemHotbarController(
                 var index = FindEquipmentSlot(weapon.SlotKey);
                 if (index < 0) return new(null, null, weapon.SlotKey, false);
                 var equipped = equipmentSnapshot.Slots[index];
-                return new(equipped?.DefinitionId, null, equipment.Definitions[index].DisplayName, equipped != null);
+                return new(equipped?.DefinitionId, null, _equipment.Definitions[index].DisplayName, equipped != null);
             case ActionHotbarBinding action:
                 return new(null, null, action.ActionKey, true);
             default:
@@ -165,9 +194,10 @@ public sealed class ItemHotbarController(
 
     public HotbarResult Activate(int position, Action<string> activateAction, Action<ItemHotbarActivationRequest> activateItem)
     {
+        if (_disposed) return HotbarResult.Disposed;
         var availability = Resolve(position);
         if (!availability.Available) return HotbarResult.Unavailable;
-        var binding = state.Entries[position]!;
+        var binding = _state.Entries[position]!;
         if (binding is ActionHotbarBinding action) activateAction(action.ActionKey);
         else activateItem(new ItemHotbarActivationRequest(position, binding, availability.DefinitionId!, availability.Quantity));
         return HotbarResult.Success;

@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using System;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -30,7 +31,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public InventoryController InventoryController { get; private set; } = null!;
     public EquipmentController EquipmentController { get; private set; } = null!;
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
-    public ItemHotbarState ItemHotbar { get; private set; } = null!;
     public ItemHotbarController HotbarController { get; private set; } = null!;
 
     public MessageStore Messages { get; private set; } = null!;
@@ -70,9 +70,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var actions = player.GetHotBarSkills();
-        ItemHotbar = new ItemHotbarState(
-            exception => Logger.Error($"Hotbar observer failed: {exception}"));
-        HotbarController = new ItemHotbarController(ItemHotbar, InventoryController, EquipmentController, ItemTransfers,
+        HotbarController = new ItemHotbarController(InventoryController, EquipmentController, ItemTransfers,
             exception => Logger.Error($"Hotbar observer failed: {exception}"));
         _playerActions = new PlayerActionController(
             _inputPolicy, position => HotbarController.Activate(position,
@@ -106,8 +104,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         }
         _presentationTransfers = null;
         ItemTransfers?.Dispose();
-        ItemHotbar?.Dispose();
-        ItemHotbar = null!;
+        HotbarController?.Dispose();
         HotbarController = null!;
         EquipmentController?.Dispose();
         InventoryController?.Dispose();

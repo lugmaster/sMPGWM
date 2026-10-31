@@ -1,4 +1,4 @@
-namespace sMPGWM.Scripts.UiSystem.Items;
+namespace sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 
 public abstract record HotbarBinding;
 

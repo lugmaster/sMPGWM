@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using System.Collections;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
@@ -40,10 +41,25 @@ public class ItemHotbarTests
     [TearDown]
     public void TearDown()
     {
+        _controller.Dispose();
         _state.Dispose();
         _transfers.Dispose();
         _equipment.Dispose();
         _inventory.Dispose();
+    }
+
+    [Test]
+    public void DisposalRevokesEditingAndDetachesObservers()
+    {
+        var notifications = 0;
+        _controller.Changed += () => notifications++;
+        _controller.Dispose();
+        _controller.Dispose();
+        _controller.Changed += () => notifications++;
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 5, "mock_standard_consumable");
+        Assert.That(notifications, Is.Zero);
+        Assert.That(_controller.Clear(_session, _controller.Revision, 0), Is.EqualTo(HotbarResult.Disposed));
+        Assert.That(_controller.Activate(0, _ => Assert.Fail(), _ => Assert.Fail()), Is.EqualTo(HotbarResult.Disposed));
     }
 
     private HotbarResult Assign(int source, int position = 0) => _controller.Assign(new HotbarAssignmentRequest(
@@ -465,3 +481,4 @@ public class ItemHotbarTests
         _controller.Changed -= Observe;
     }
 }
+
