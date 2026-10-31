@@ -1,6 +1,3 @@
-
-
-using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -192,13 +189,13 @@ public partial class InventoryMenu : GameOverlayMenu
         RestoreHighlight(_hoverIcon);
         _sourceIcon = null;
         _hoverIcon = null;
-        if (GodotObject.IsInstanceValid(_pointerOverlay)) _pointerOverlay!.Clear();
+        if (IsInstanceValid(_pointerOverlay)) _pointerOverlay!.Clear();
         if (_nativeDrag && !_dropping && IsInsideTree()) GetViewport().GuiCancelDrag();
     }
 
     private static void RestoreHighlight(ClickableIcon? icon)
     {
-        if (GodotObject.IsInstanceValid(icon)) icon!.Modulate = icon.DisplayModulate;
+        if (IsInstanceValid(icon)) icon!.Modulate = icon.DisplayModulate;
     }
 
     public override void _Input(InputEvent @event)
@@ -212,7 +209,7 @@ public partial class InventoryMenu : GameOverlayMenu
         var hovered = GetViewport().GuiGetHoveredControl();
         if (hovered is ClickableIcon icon && _cells.Contains(icon)) return;
         for (var ancestor = hovered; ancestor != null; ancestor = ancestor.GetParent() as Control)
-            if (ancestor is sMPGWM.Scripts.UiSystem.HudSystem.MenuToolbarControl)
+            if (ancestor is MenuToolbarControl)
             {
                 CancelInteraction();
                 return;
