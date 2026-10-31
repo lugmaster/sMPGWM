@@ -52,6 +52,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
                 layer.AddChild(panel);
                 AddChild(layer);
             }
+        }
+        {
             _protocol = new SessionProtocolNode { Name = "SessionProtocol" };
             _protocol.Completed += CompleteDiagnostic;
             AddChild(_protocol);
@@ -172,6 +174,17 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_diagnosticStatus != null) _diagnosticStatus.Text = result.Reason;
         Logger.Info($"Diagnostic result={result.Reason} correlation={result.Correlation} session={result.HostSession} tick={NetworkTicker.GetTicksSinceStart()}");
         if (!result.Succeeded) CancelDiagnostic(result.Reason);
+    }
+
+    public override void _PhysicsProcess(double delta) => _protocol?.TickHealth();
+
+    public PeerHealthMonitor? GetPeerHealth(int peer) => _protocol?.GetHealth(peer);
+
+    public void RemoveUnhealthyPeer(int peer)
+    {
+        if (_stopped) return;
+        if (IsHost()) ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
+        else CancelDiagnostic("Server health response timed out or failed.");
     }
 
     public void CancelDiagnostic(string reason)

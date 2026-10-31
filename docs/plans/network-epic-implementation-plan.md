@@ -73,7 +73,7 @@ Statuses: Pending, In progress, Needs verification, Deferred verification, Verif
 | 4 | NET-00: Steam capability gate | Deferred verification; implementation may proceed |
 | 5 | NET-02: private Steam diagnostic exchange | In progress; exchange/lifecycle evidenced, reconcile remaining scope |
 | 6 | NET-08: protocol/preflight completion | In progress |
-| 7 | NET-11: heartbeat and RTT | Pending |
+| 7 | NET-11: heartbeat and RTT | In progress; bounded probes/RTT implemented, native verification pending |
 | 8 | NET-06: compatibility | Pending |
 | 9 | NET-07: explicit initialization | Pending |
 | 10 | NET-13: world-join contract | Pending |
@@ -236,11 +236,13 @@ Auto-refresh discovery on activation; show loading/empty/error and Refresh/Back.
 
 Exercise production flows: repeated host/client startup, join/leave/rejoin, three-peer isolation and last-slot races with unchanged host session/world identity. Cover host loss, scene/init/data/health failures, late callbacks, cleanup before Steam shutdown, mandatory-Steam LAN, pause/background and representative-load timing/GC. Verify world change requires quit to menu and fresh scene entry, with no retained singleton/static session references or external subscriptions. Verify role-specific Steam callback failures exit locally and cannot initialize the other role. Finish NET-00 multi-peer matrix and every story's acceptance; record stub/native limitations.
 
-## Current handoff — 2026-10-31
+## Current handoff â€” 2026-10-31
 
 This section replaces all historical carry-over instructions. User decision: continue the epic; defer remaining NET-00 checks to relevant playtests. Do not mark deferred checks Verified or repeat passed authentication tests without a relevant change. Update this handoff in place rather than appending another chronological handoff.
 
 ### Resume point
+
+Current additional implementation: manager-driven health probes run after native preflight for diagnostic and production sessions. Per-peer random lifetime tokens and sequences correlate replies; eight outstanding slots, two-second interval, ten-second expiry, first-sample EMA and stale availability are implemented. Host expiry disconnects only the remote peer; client expiry tears down locally. Reliable existing control channel is used pending separate-channel verification. Session endpoint/ticker now exist for production too. Two deterministic health tests pass; build succeeds with existing warnings. Session identity is implicit in endpoint lifetime/token rather than explicit on the health wire; pause/background, congestion and native loss tests remain pending. Admission, compatibility, explicit initialization, public discovery and production menu work remain unimplemented.
 
 Latest implementation: manager-owned HostSession now supplies both lobby metadata and diagnostic replies. Native preflight checks compiled game module MVID plus protocol/version on all session starts; Steam metadata checks the same MVID. This is exact module identity, not content compatibility or a package hash. Focused Network tests pass 7/7. Added an admission-envelope validator for protocol/session/token/epoch/revision and the 4 KiB payload bound, plus a host diagnostic per-peer rate limit (16 messages/second, disconnect on excess). Envelope issuance/RPC integration, admission-state checks and rejection grace remain outstanding; NET-08 remains in progress. Cross-device Steam validation remains outstanding. These findings supersede the older baseline statements below.
 
@@ -259,7 +261,7 @@ Checkpoint 5/6 reconciliation must account for independently generated lobby ses
 - Diagnostic native auth is configured before peer assignment, validates exact marker and Steam identity mapping/membership, and has a production ten-second deadline. Cleanup restores API settings; object decoding is disabled.
 - Use Godot 4.7.2 Mono and typed GodotSteam GDExtension bindings. The old 4.6 compiled module/wrapper is obsolete. Preserve mandatory Steam startup even for LAN, transport exclusivity (no failure fallback), and existing UI layout.
 - Temporary auth enum/UID, startup field/parameter, UI selector, injection branches, client timeout override and selector-only harness assertions are removed. Keep production validation and automated adversarial-peer regression tests.
-- Logger append fix and engine user://game.log configuration are retained. No Logger changes were needed for auth results. Warning/error backtraces alone are not thrown exceptions; do not suppress logging globally. Legacy “Click to return” wording belongs to later menu/error presentation work.
+- Logger append fix and engine user://game.log configuration are retained. No Logger changes were needed for auth results. Warning/error backtraces alone are not thrown exceptions; do not suppress logging globally. Legacy â€œClick to returnâ€ wording belongs to later menu/error presentation work.
 
 ### Retained evidence
 
@@ -275,11 +277,11 @@ Checkpoint 5/6 reconciliation must account for independently generated lobby ses
 | Export/logging | Local Windows export/headless startup passes, Steam initializes and game.log is retained. [Logging/export review](evidence/net00/logging-export-review.md). Not remote exported-package acceptance. |
 | Latest validation | After source cleanup: build succeeds with existing warnings; focused Network **7/7**, including ENet malformed/silent rejection and recovery. sMPGWM.Tests/TestResults/net00-auth-cleanup.trx; no temporary source-control references; diff check passes. |
 
-Remote evidence is summarized from user-supplied conversation logs; full remote log files are not claimed saved locally. Device clocks differ: correlate IDs and use same-device timing. Client logs include editor execution, so they establish runtime behavior, not exported deployment. Shared payload text “ENet diagnostic hello” also appears over Steam.
+Remote evidence is summarized from user-supplied conversation logs; full remote log files are not claimed saved locally. Device clocks differ: correlate IDs and use same-device timing. Client logs include editor execution, so they establish runtime behavior, not exported deployment. Shared payload text â€œENet diagnostic helloâ€ also appears over Steam.
 
 Older native-host/source evidence under evidence/net00 describes the pre-migration runtime; use the logging/export review for current DLL hashes and provenance limits. Current runtime reports relay support; older relay=false observations do not apply.
 
-### Deferred verification — not implementation blockers
+### Deferred verification â€” not implementation blockers
 
 | Check | Revisit |
 | --- | --- |
@@ -300,7 +302,7 @@ No manual test is pending. Future requests must provide a complete exported game
 
 ### Temporary artifact housekeeping
 
-Source controls are removed and clean source was rebuilt/tested. Automatic approval review again rejected deletion after the user's cleanup request with “blocked by policy”; these remain:
+Source controls are removed and clean source was rebuilt/tested. Automatic approval review again rejected deletion after the user's cleanup request with â€œblocked by policyâ€; these remain:
 
 - artifacts/net00-auth-windows
 - artifacts/net00-auth-smoke-user
