@@ -12,7 +12,7 @@ config_version=5
 
 config/name="sMPGWM"
 run/main_scene="uid://bwppb4jr80bw0"
-config/features=PackedStringArray("4.6", "C#", "Forward Plus")
+config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 
 [autoload]
 
@@ -31,10 +31,6 @@ window/stretch/aspect="expand"
 [dotnet]
 
 project/assembly_name="sMPGWM"
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/steam_runtime_export/plugin.cfg")
 
 [input]
 

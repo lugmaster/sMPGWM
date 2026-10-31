@@ -1,4 +1,4 @@
-<Project Sdk="Godot.NET.Sdk/4.6.2">
+<Project Sdk="Godot.NET.Sdk/4.7.2">
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
@@ -8,26 +8,26 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.4"/>
-        <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1"/>
-        <PackageReference Include="YamlDotNet" Version="18.1.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+        <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
+        <PackageReference Include="YamlDotNet" Version="18.1.0" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="assets\ui\backgrounds\"/>
-        <Folder Include="assets\ui\fonts\"/>
-        <Folder Include="assets\ui\icons\"/>
-        <Folder Include="scenes\ui\controls\"/>
-        <Folder Include="scenes\ui\screens\"/>
+        <Folder Include="assets\ui\backgrounds\" />
+        <Folder Include="assets\ui\fonts\" />
+        <Folder Include="assets\ui\icons\" />
+        <Folder Include="scenes\ui\controls\" />
+        <Folder Include="scenes\ui\screens\" />
     </ItemGroup>
     <ItemGroup>
-        <Content Include="assets\game_data\EffectDefinitions.yml"/>
-        <Content Include="assets\game_data\EffectSchemas.yml"/>
-        <Content Include="assets\ui\mocks\ship_fighter_reference.png"/>
-        <Content Include="assets\ui\mocks\ship_fighter_reference.png.import"/>
-        <Content Include="config\config.cfg"/>
-        <Content Include="credits"/>
-        <Content Include="README.md"/>
-        <Content Include="Scripts\Network\MpManager.cs.uid"/>
-        <Content Include="Scripts\Network\NetworkManager.cs.uid"/>
+        <Content Include="assets\game_data\EffectDefinitions.yml" />
+        <Content Include="assets\game_data\EffectSchemas.yml" />
+        <Content Include="assets\ui\mocks\ship_fighter_reference.png" />
+        <Content Include="assets\ui\mocks\ship_fighter_reference.png.import" />
+        <Content Include="config\config.cfg" />
+        <Content Include="credits" />
+        <Content Include="README.md" />
+        <Content Include="Scripts\Network\MpManager.cs.uid" />
+        <Content Include="Scripts\Network\NetworkManager.cs.uid" />
     </ItemGroup>
 </Project>
