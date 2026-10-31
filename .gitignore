@@ -3,10 +3,6 @@
 export_presets.cfg
 .godot/
 mono/
-!addons/
-!addons/**
-addons/~*
-addons/**/~*
 /artifacts
 
 # Mono and C# build files
@@ -14,7 +10,6 @@ addons/**/~*
 *.suo
 *.pdb
 *.dll
-!/sMPGWM.Game/native/steam/windows/x86_64/steam_api64.dll
 *.exe
 *.mdb
 *.cache
@@ -80,3 +75,13 @@ desktop.ini
 !*.res
 !*.scn
 !*.glb
+
+# Vendored addon source is tracked normally; include its native runtime DLLs.
+# Keep these exceptions after the build-output rules above.
+!/sMPGWM.Game/addons/**/*.dll
+
+# Godot hot-reload copies and addon build output are never vendored.
+/sMPGWM.Game/addons/**/~*
+/sMPGWM.Game/addons/**/bin/
+/sMPGWM.Game/addons/**/obj/
+/sMPGWM.Game/addons/**/.godot/
