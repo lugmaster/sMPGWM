@@ -1,0 +1,9 @@
+Godot Engine v4.6.2.stable.mono.custom_build.001aa128b (2026-03-31 20:42:38 UTC) - https://godotengine.org
+[2026-10-31 16:41:57] [Info] Network Client: Connected
+[2026-10-31 16:41:57] [Info] Diagnostic result=MessageExchangeSucceeded correlation=bab7dd6e2b254f4581146df121c7c6ae session=f6a0134edb43438f97519a98fb52b94e tick=9
+[2026-10-31 16:41:58] [Info] Network session stopped role=Client tick=18
+[2026-10-31 16:41:58] [Debug] GameFlowManager.QuitToStartMenuInternal returning to start menu.
+[2026-10-31 16:41:58] [Info] Network Client: Connected
+[2026-10-31 16:41:58] [Info] Diagnostic result=MessageExchangeSucceeded correlation=ceef8f94002847128646b13b5b4c2f93 session=f6a0134edb43438f97519a98fb52b94e tick=2
+[2026-10-31 16:41:59] [Info] Network session stopped role=Client tick=100
+[2026-10-31 16:41:59] [Debug] GameFlowManager.QuitGame completed Steam shutdown.

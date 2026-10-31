@@ -281,7 +281,7 @@ Retained evidence: [NET-14 log excerpts](evidence/net14/). Excerpts include engi
 
 Fresh-context handoff: resume at NET-01 if requested. Preserve the user's mandatory Steam startup constraint. The diagnostic harness deliberately does not activate gameplay. Existing menu startup and Steam ownership still need their later checkpoints; the full inventory suite failure remains separate.
 
-### NET-01 handoff (2026-10-31)
+### NET-01 handoff (2026-10-31, historical — superseded)
 
 Status: **In progress**, not Verified. Menu startup now uses the consumed-once immutable handoff; removed retained GameFlowManager session choices and manager fallback. Transport and readiness events are instance-scoped; role assignment is guarded. ENet clears event ownership even without a peer. Steam cleanup detaches OnSuddenExit, leaves recorded membership and suppresses pending connection continuations after cleanup. Mandatory Steam startup is unchanged.
 
@@ -289,7 +289,7 @@ Validation: dotnet test sMPGWM.Tests --filter FullyQualifiedName~Network: all 5 
 
 Remaining before acceptance: native Steam operation serialization/draining, role-specific callback and terminal completion guards, main-thread loss handling instead of polling, clearing only the owned peer, distinct typed transport targets, input shutdown and delayed menu-transition generation guards. Verify canceled native operations and repeated Steam round trips using the custom engine. Do not advance to NET-03; existing ENet tests do not prove Steam ownership acceptance.
 
-### NET-01 continuation (2026-10-31)
+### NET-01 continuation (2026-10-31, historical — superseded)
 
 Status: **In progress**. `SteamNetwork.cs` now guards duplicate starts and startup completion, restricts native callbacks to the selected role/target, completes hosting only after successful peer creation, replaces asynchronous status polling with Multiplayer API signals and a monotonic physics deadline, detaches those signals on cleanup, unpublishes host membership before leaving, and clears only its owned peer. Mandatory Steam initialization remains unchanged.
 
@@ -300,6 +300,8 @@ Remaining: application-lifetime native operation serialization/draining (includi
 ### NET-01 / NET-03 final handoff (2026-10-31)
 
 Status: **Verified** for shared ownership and ENet completion. This supersedes the earlier NET-01 unfinished-work lists. It does not verify the later Steam exchange, public hosting, compatibility or admission stories.
+
+Completion reconfirmed after closing the `_Ready()` exception gap: `SteamNetwork` catches native peer construction/setup exceptions locally and reports the original reason through `NetworkManager` cleanup to `QuitToStartMenuBlocking(reason)`. The focused network suite was rerun: **7 passed**. Native construction failure itself was not fault-injected; that path was checked by source inspection. Mandatory Steam autoload startup is unchanged.
 
 Implementation:
 - SteamworksHelper owns serialized create/join callback slots. Cancellation drops the scene delegate immediately, retains only operation/target state, blocks that operation kind until its callback returns, and leaves late successful membership. A callback that never returns keeps that kind unavailable with an explicit runtime-restart reason. Mandatory Steam initialization/failure behavior is preserved.
