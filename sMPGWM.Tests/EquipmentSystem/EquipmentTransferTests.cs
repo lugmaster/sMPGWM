@@ -19,7 +19,7 @@ public class EquipmentTransferTests
     public void SetUp()
     {
         _inventoryImpl = new InventoryController();
-        _equipmentImpl = new EquipmentController(_inventoryImpl.Items);
+        _equipmentImpl = new EquipmentController(_inventoryImpl.ItemRequestService);
         _transfers = new InventoryEquipmentTransferService(_inventoryImpl, _equipmentImpl);
         _session = _transfers.OpenEditSession();
     }
@@ -35,7 +35,7 @@ public class EquipmentTransferTests
     private void Seed(params (int Address, string Definition, int Count)[] entries)
     {
         foreach (var entry in entries)
-            ItemFixture.Place(_inventoryImpl.Items, _inventoryImpl.Container, entry.Address, entry.Definition, entry.Count);
+            ItemFixture.Place(_inventoryImpl.ItemRequestService, _inventoryImpl.Container, entry.Address, entry.Definition, entry.Count);
     }
 
     private TransferRequest Request(ItemLocation source, ItemLocation destination)
@@ -56,10 +56,10 @@ public class EquipmentTransferTests
         foreach (var slot in EquipmentSlotDefinition.Defaults)
         {
             using var inventory = new InventoryController();
-            using var equipment = new EquipmentController(inventory.Items);
+            using var equipment = new EquipmentController(inventory.ItemRequestService);
             using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
             var definition = ItemRegistry.GetAll().First(d => d.CategoryName == category.DisplayName);
-            inventory.Items.CreateItems(inventory.Container, definition.Id, 1);
+            inventory.ItemRequestService.CreateItems(inventory.Container, definition.Id, 1);
             var before = inventory.Snapshot;
             var equipmentBefore = equipment.Snapshot;
             var entity = before.Slots[0]!;
@@ -208,7 +208,7 @@ public class EquipmentTransferTests
             Assert.That(_equipmentImpl.Snapshot.Slots[0]!.Id, Is.EqualTo(request.SourceEntity));
             Assert.That(_inventoryImpl.Revision, Is.EqualTo(inventoryRevision + 1));
             Assert.That(_equipmentImpl.Revision, Is.EqualTo(1));
-            Assert.That(_inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 1), Is.EqualTo(InventoryResult.PublicationInProgress));
+            Assert.That(_inventoryImpl.ItemRequestService.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 1), Is.EqualTo(InventoryResult.PublicationInProgress));
             Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.PublicationInProgress));
             using var otherCoordinator = new InventoryEquipmentTransferService(_inventoryImpl, _equipmentImpl);
             Assert.That(otherCoordinator.Transfer(request), Is.EqualTo(TransferResult.PublicationInProgress));
@@ -219,7 +219,7 @@ public class EquipmentTransferTests
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Success));
         Assert.That(notifications, Is.EqualTo(2));
         _inventoryImpl.Changed -= inventoryObserver;
-        Assert.That(_inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 1), Is.EqualTo(InventoryResult.Success));
+        Assert.That(_inventoryImpl.ItemRequestService.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 1), Is.EqualTo(InventoryResult.Success));
     }
 
     [Test]
@@ -233,7 +233,7 @@ public class EquipmentTransferTests
         Assert.That(Move(ItemLocation.Inventory(1), ItemLocation.Equipment("engine")), Is.EqualTo(TransferResult.Success));
         Assert.That(_equipmentImpl.Snapshot.Slots[0], Is.SameAs(replacement));
         Assert.That(_inventoryImpl.Snapshot.Slots[1], Is.SameAs(before));
-        _inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_hull", 1);
+        _inventoryImpl.ItemRequestService.CreateItems(_inventoryImpl.Container, "mock_standard_hull", 1);
         var inventoryBefore = _inventoryImpl.Snapshot;
         Assert.That(_transfers.Transfer(stale), Is.EqualTo(TransferResult.StaleRevision));
         Assert.That(_transfers.Transfer(stale with { InventoryRevision = _inventoryImpl.Revision, SourceEntity = before!.Id }),
@@ -260,17 +260,17 @@ public class EquipmentTransferTests
         Assert.That(laterCalled, Is.False);
         Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.Null);
         Assert.That(_equipmentImpl.Snapshot.Slots[0]!.Id, Is.EqualTo(request.SourceEntity));
-        Assert.That(_inventoryImpl.Items.GetLocation(request.SourceEntity),
+        Assert.That(_inventoryImpl.ItemRequestService.GetLocation(request.SourceEntity),
             Is.EqualTo(new sMPGWM.Scripts.ItemSystem.ItemLocation(_equipmentImpl.Container.Id, 0)));
-        Assert.That(_inventoryImpl.Items.Publishing, Is.False);
+        Assert.That(_inventoryImpl.ItemRequestService.Publishing, Is.False);
     }
 
     [Test]
     public void FullInventory_RejectsIllegalSwapWithoutGrowingOrAutoRouting()
     {
-        _inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 128);
+        _inventoryImpl.ItemRequestService.CreateItems(_inventoryImpl.Container, "mock_standard_engine", 128);
         Move(ItemLocation.Inventory(0), ItemLocation.Equipment("engine"));
-        _inventoryImpl.Items.CreateItems(_inventoryImpl.Container, "mock_standard_hull", 1);
+        _inventoryImpl.ItemRequestService.CreateItems(_inventoryImpl.Container, "mock_standard_hull", 1);
         var inventoryBefore = _inventoryImpl.Snapshot;
         var equipmentBefore = _equipmentImpl.Snapshot;
         Assert.That(Move(ItemLocation.Equipment("engine"), ItemLocation.Inventory(0)), Is.EqualTo(TransferResult.IncompatiblePlacement));
@@ -290,7 +290,7 @@ public class EquipmentTransferTests
         if (owner == "coordinator") _transfers.Dispose();
         Assert.That(_transfers.Transfer(request), Is.EqualTo(TransferResult.Disposed));
         using var nextInventory = new InventoryController();
-        using var nextEquipment = new EquipmentController(nextInventory.Items);
+        using var nextEquipment = new EquipmentController(nextInventory.ItemRequestService);
         using var nextTransfers = new InventoryEquipmentTransferService(nextInventory, nextEquipment);
         nextTransfers.OpenEditSession();
         Assert.That(nextTransfers.Transfer(request), Is.EqualTo(TransferResult.InvalidSession));

@@ -39,7 +39,7 @@ public class InventoryControllerTests
             observed = snapshot;
         };
 
-        Assert.That(inventory.Items.CreateItems(inventory.Container, Engine, quantity), Is.EqualTo(InventoryResult.Success));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, Engine, quantity), Is.EqualTo(InventoryResult.Success));
         Assert.That(inventory.Capacity, Is.EqualTo(capacity));
         Assert.That(inventory.Snapshot.Occupied.Select(entry => entry.Address),
             Is.EqualTo(Enumerable.Range(0, quantity)));
@@ -54,12 +54,12 @@ public class InventoryControllerTests
     public void Add_FillsPartialStacksBeforeHolesInStorageOrderAndPreservesIds()
     {
         using var inventory = new InventoryController();
-        ItemFixture.Place(inventory.Items, inventory.Container, 3, Repair, 7);
-        ItemFixture.Place(inventory.Items, inventory.Container, 7, Repair, 5);
-        ItemFixture.Place(inventory.Items, inventory.Container, 9, Engine);
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 3, Repair, 7);
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 7, Repair, 5);
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 9, Engine);
         var before = inventory.Snapshot;
 
-        Assert.That(inventory.Items.CreateItems(inventory.Container, Repair, 6), Is.EqualTo(InventoryResult.Success));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, Repair, 6), Is.EqualTo(InventoryResult.Success));
         Assert.That(inventory.Snapshot.Slots[3]!.Count, Is.EqualTo(10));
         Assert.That(inventory.Snapshot.Slots[7]!.Count, Is.EqualTo(8));
         Assert.That(inventory.Snapshot.Slots[0], Is.Null);
@@ -68,7 +68,7 @@ public class InventoryControllerTests
         Assert.That(inventory.Snapshot.Slots[9], Is.SameAs(before.Slots[9]));
         Assert.That(before.Slots[3]!.Count, Is.EqualTo(7));
 
-        inventory.Items.CreateItems(inventory.Container, Repair, 15);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Repair, 15);
         Assert.That(inventory.Snapshot.Slots[0]!.Count, Is.EqualTo(10));
         Assert.That(inventory.Snapshot.Slots[1]!.Count, Is.EqualTo(3));
         Assert.That(inventory.Snapshot.Slots[7]!.Count, Is.EqualTo(10));
@@ -79,9 +79,9 @@ public class InventoryControllerTests
     public void FullStacks_AllocateNextStackAndRetainExistingIdentity()
     {
         using var inventory = new InventoryController();
-        inventory.Items.CreateItems(inventory.Container, Repair, 1280);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Repair, 1280);
         var before = inventory.Snapshot;
-        inventory.Items.CreateItems(inventory.Container, Repair, 1);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Repair, 1);
         Assert.That(inventory.Capacity, Is.EqualTo(192));
         Assert.That(inventory.Snapshot.Slots.Take(128), Is.EqualTo(before.Slots));
         Assert.That(inventory.Snapshot.Slots[128]!.Count, Is.EqualTo(1));
@@ -94,11 +94,11 @@ public class InventoryControllerTests
         using var inventory = new InventoryController();
         var limit = ItemRegistry.GetById(Resource).StackLimit;
         var quantity = (long)limit * 2 + 3;
-        inventory.Items.CreateItems(inventory.Container, Resource, quantity);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Resource, quantity);
         Assert.That(inventory.Snapshot.Occupied.Select(entry => entry.Entity.Count),
             Is.EqualTo(new[] { limit, limit, 3 }));
         Assert.That(inventory.Snapshot.Occupied.Sum(entry => (long)entry.Entity.Count), Is.EqualTo(quantity));
-        inventory.Items.CreateItems(inventory.Container, Resource, limit);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Resource, limit);
         Assert.That(inventory.Snapshot.Occupied.Sum(entry => (long)entry.Entity.Count),
             Is.EqualTo(quantity + limit));
     }
@@ -110,15 +110,15 @@ public class InventoryControllerTests
     public void InvalidOrNoopAdd_PreservesExactSnapshotAndPublishesNothing(long quantity, InventoryResult expected)
     {
         using var inventory = new InventoryController();
-        inventory.Items.CreateItems(inventory.Container, Repair, 7);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Repair, 7);
         var before = inventory.Snapshot;
         var notifications = 0;
         inventory.Changed += _ => notifications++;
-        Assert.That(inventory.Items.CreateItems(inventory.Container, Engine, quantity), Is.EqualTo(expected));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, Engine, quantity), Is.EqualTo(expected));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
         Assert.That(notifications, Is.Zero);
-        Assert.That(inventory.Items.CreateItems(inventory.Container, Resource, long.MaxValue), Is.EqualTo(InventoryResult.CapacityExceeded));
-        Assert.That(inventory.Items.CreateItems(inventory.Container, Repair, long.MaxValue), Is.EqualTo(InventoryResult.CapacityExceeded));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, Resource, long.MaxValue), Is.EqualTo(InventoryResult.CapacityExceeded));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, Repair, long.MaxValue), Is.EqualTo(InventoryResult.CapacityExceeded));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
     }
 
@@ -127,8 +127,8 @@ public class InventoryControllerTests
     {
         using var inventory = new InventoryController();
         var before = inventory.Snapshot;
-        Assert.Throws<ArgumentNullException>(() => inventory.Items.CreateItems(inventory.Container, null!, 1));
-        Assert.That(inventory.Items.CreateItems(inventory.Container, "missing", 0), Is.EqualTo(InventoryResult.UnknownDefinition));
+        Assert.Throws<ArgumentNullException>(() => inventory.ItemRequestService.CreateItems(inventory.Container, null!, 1));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, "missing", 0), Is.EqualTo(InventoryResult.UnknownDefinition));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
     }
 
@@ -136,13 +136,13 @@ public class InventoryControllerTests
     public void TransferOut_LeavesHolesAndNeverShrinks()
     {
         using var inventory = new InventoryController();
-        inventory.Items.CreateItems(inventory.Container, Engine, 129);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Engine, 129);
         var retained = inventory.Snapshot.Slots[128];
-        ItemFixture.MoveAway(inventory.Items, inventory.Container, 0);
+        ItemFixture.MoveAway(inventory.ItemRequestService, inventory.Container, 0);
         Assert.That(inventory.Capacity, Is.EqualTo(192));
         Assert.That(inventory.Snapshot.Slots[128], Is.SameAs(retained));
         Assert.That(inventory.Snapshot.EmptyAddresses[0], Is.Zero);
-        inventory.Items.CreateItems(inventory.Container, Engine, 1);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Engine, 1);
         Assert.That(inventory.Capacity, Is.EqualTo(192));
         Assert.That(inventory.Snapshot.Slots[0], Is.Not.Null);
         Assert.That(inventory.Snapshot.Slots[128], Is.SameAs(retained));
@@ -152,7 +152,7 @@ public class InventoryControllerTests
     public void Snapshots_DoNotExposeWritableStorage()
     {
         using var inventory = new InventoryController();
-        ItemFixture.Place(inventory.Items, inventory.Container, 2, Engine);
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 2, Engine);
         var before = inventory.Snapshot;
         var slots = before.Slots.ToArray();
         slots[2] = null;
@@ -160,7 +160,7 @@ public class InventoryControllerTests
         Assert.Throws<NotSupportedException>(() => ((IList<ItemEntity?>)inventory.Snapshot.Slots)[2] = null);
         Assert.Throws<NotSupportedException>(() => ((IList<InventoryEntry>)inventory.Snapshot.Occupied).Clear());
         Assert.Throws<NotSupportedException>(() => ((IList<int>)inventory.Snapshot.EmptyAddresses).Clear());
-        ItemFixture.MoveAway(inventory.Items, inventory.Container, 2);
+        ItemFixture.MoveAway(inventory.ItemRequestService, inventory.Container, 2);
         Assert.That(inventory.Snapshot.Slots[2], Is.Null);
         Assert.That(before.Slots[2], Is.Not.Null);
     }
@@ -173,10 +173,10 @@ public class InventoryControllerTests
         InventorySnapshot? observed = null;
         inventory.Changed += snapshot =>
         {
-            reentrant = inventory.Items.CreateItems(inventory.Container, Engine, 1);
+            reentrant = inventory.ItemRequestService.CreateItems(inventory.Container, Engine, 1);
             observed = snapshot;
         };
-        Assert.That(inventory.Items.CreateItems(inventory.Container, Engine, 1), Is.EqualTo(InventoryResult.Success));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, Engine, 1), Is.EqualTo(InventoryResult.Success));
         Assert.That(observed, Is.SameAs(inventory.Snapshot));
         Assert.That(reentrant, Is.EqualTo(InventoryResult.PublicationInProgress));
         Assert.That(inventory.Revision, Is.EqualTo(1));
@@ -194,15 +194,15 @@ public class InventoryControllerTests
         inventory.Changed += broken;
         inventory.Changed += _ => laterCalled = true;
 
-        var thrown = Assert.Throws(exceptionType, () => inventory.Items.CreateItems(inventory.Container, Engine, 1));
+        var thrown = Assert.Throws(exceptionType, () => inventory.ItemRequestService.CreateItems(inventory.Container, Engine, 1));
         Assert.That(thrown, Is.SameAs(failure));
         Assert.That(laterCalled, Is.False);
         Assert.That(inventory.Revision, Is.EqualTo(1));
         var item = inventory.Snapshot.Slots[0]!;
-        Assert.That(inventory.Items.GetLocation(item.Id), Is.EqualTo(new ItemLocation(inventory.Container.Id, 0)));
-        Assert.That(inventory.Items.Publishing, Is.False);
+        Assert.That(inventory.ItemRequestService.GetLocation(item.Id), Is.EqualTo(new ItemLocation(inventory.Container.Id, 0)));
+        Assert.That(inventory.ItemRequestService.Publishing, Is.False);
         inventory.Changed -= broken;
-        Assert.That(inventory.Items.CreateItems(inventory.Container, Engine, 1), Is.EqualTo(InventoryResult.Success));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, Engine, 1), Is.EqualTo(InventoryResult.Success));
         Assert.That(laterCalled, Is.True);
     }
 
@@ -210,11 +210,11 @@ public class InventoryControllerTests
     public void Disposal_RevokesMutationsAndNewGameHasIndependentEmptyStorage()
     {
         var inventory = new InventoryController();
-        inventory.Items.CreateItems(inventory.Container, Engine, 129);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Engine, 129);
         var before = inventory.Snapshot;
         inventory.Dispose();
         inventory.Dispose();
-        Assert.That(inventory.Items.CreateItems(inventory.Container, Engine, 1), Is.EqualTo(InventoryResult.Disposed));
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, Engine, 1), Is.EqualTo(InventoryResult.Disposed));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
         using var nextGame = new InventoryController();
         Assert.That(nextGame.Capacity, Is.EqualTo(128));

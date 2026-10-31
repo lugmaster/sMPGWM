@@ -23,17 +23,17 @@ public class ItemHotbarTests
     public void SetUp()
     {
         _inventory = new InventoryController();
-        _equipment = new EquipmentController(_inventory.Items);
+        _equipment = new EquipmentController(_inventory.ItemRequestService);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
         _adapter = new ItemHotbarAdapter(_state, _inventory, _equipment, _transfers);
         _session = _transfers.OpenEditSession();
         _state.SetEditSession(_session);
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 0, "mock_standard_consumable", 7);
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 1, "mock_standard_consumable", 8);
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 2, "mock_advanced_consumable", 9);
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 3, "mock_standard_light_weapon");
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 4, "mock_standard_engine");
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 0, "mock_standard_consumable", 7);
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 1, "mock_standard_consumable", 8);
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 2, "mock_advanced_consumable", 9);
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 3, "mock_standard_light_weapon");
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 4, "mock_standard_engine");
     }
 
     [TearDown]
@@ -74,17 +74,17 @@ public class ItemHotbarTests
     public void AggregateRetainsZeroQuantityDefinitionAndSumsMultipleStacks()
     {
         Assign(0);
-        ItemFixture.MoveAway(_inventory.Items, _inventory.Container, 0, 1);
+        ItemFixture.MoveAway(_inventory.ItemRequestService, _inventory.Container, 0, 1);
         Assert.That(_adapter.Resolve(0), Is.EqualTo(new HotbarAvailability("mock_standard_consumable", 0, ItemRegistry.GetById("mock_standard_consumable").DisplayName, false)));
         Assert.That(_state.Entries[0], Is.TypeOf<ConsumableHotbarBinding>());
         using var inventory = new InventoryController();
-        using var equipment = new EquipmentController(inventory.Items);
+        using var equipment = new EquipmentController(inventory.ItemRequestService);
         using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
         using var state = new ItemHotbarState();
         var session = transfers.OpenEditSession();
         state.SetEditSession(session);
         var quantity = (long)ItemRegistry.GetById("mock_advanced_consumable").StackLimit * 2;
-        inventory.Items.CreateItems(inventory.Container, "mock_advanced_consumable", quantity);
+        inventory.ItemRequestService.CreateItems(inventory.Container, "mock_advanced_consumable", quantity);
         var adapter = new ItemHotbarAdapter(state, inventory, equipment, transfers);
         adapter.Assign(session, 0, 0, ItemLocation.Inventory(0), inventory.Snapshot.Slots[0]!.Id, inventory.Revision, 0);
         Assert.That(adapter.Resolve(0).Quantity, Is.EqualTo(quantity));
@@ -111,7 +111,7 @@ public class ItemHotbarTests
             ItemLocation.Inventory(3), null, _inventory.Revision, _equipment.Revision));
         Assert.That(_adapter.Resolve(0).Available, Is.False);
         Assert.That(_adapter.Resolve(0).Label, Is.EqualTo("Light Weapon Slot 1"));
-        _inventory.Items.CreateItems(_inventory.Container, "mock_standard_light_weapon", 1);
+        _inventory.ItemRequestService.CreateItems(_inventory.Container, "mock_standard_light_weapon", 1);
         Equip(5);
         Assert.That(_adapter.Resolve(0).Available, Is.True);
         Assert.That(_equipment.Snapshot.Slots[4]!.Id, Is.Not.EqualTo(first.Id));

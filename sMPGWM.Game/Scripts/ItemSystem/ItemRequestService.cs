@@ -34,8 +34,8 @@ public sealed class ItemRequestService
         if (!Owns(destination) || destination.Disposed) return InventoryResult.Disposed;
         if (Publishing) return InventoryResult.PublicationInProgress;
         if (quantity < 0) return InventoryResult.NegativeQuantity;
-        if (!ItemRegistry.TryGetById(definitionId, out var definition)) return InventoryResult.UnknownDefinition;
         if (quantity == 0) return InventoryResult.NoChange;
+        if (!ItemRegistry.TryGetById(definitionId, out var definition)) return InventoryResult.UnknownDefinition;
         if (destination.Revision == long.MaxValue) return InventoryResult.CapacityExceeded;
         var remaining = quantity;
         foreach (var item in destination.Entities)

@@ -26,8 +26,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public event Action<MainGameState>? OnGameStateChanged;
 
     public MainGameState GameState => _gameState;
-    public ItemRequestService ItemRequests { get; private set; } = null!;
-    public ItemController WorldItems { get; private set; } = null!;
+    public ItemRequestService ItemRequestService { get; private set; } = null!;
+    public ItemController ItemController { get; private set; } = null!;
     public InventoryController InventoryController { get; private set; } = null!;
     public EquipmentController EquipmentController { get; private set; } = null!;
     public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
@@ -51,11 +51,11 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     protected override void OnReady()
     {
         var player = PlayerMock.Instance;
-        ItemRequests = new ItemRequestService();
-        WorldItems = new ItemController(ItemRequests);
-        InventoryController = new InventoryController(ItemRequests);
+        ItemRequestService = new ItemRequestService();
+        ItemController = new ItemController(ItemRequestService);
+        InventoryController = new InventoryController(ItemRequestService);
         if (PopulateMockInventory) player.PopulateInventory(InventoryController);
-        EquipmentController = new EquipmentController(InventoryController.Items);
+        EquipmentController = new EquipmentController(InventoryController.ItemRequestService);
         ItemTransfers = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
@@ -114,8 +114,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ItemTransfers = null!;
         EquipmentController = null!;
         InventoryController = null!;
-        WorldItems = null!;
-        ItemRequests = null!;
+        ItemController = null!;
+        ItemRequestService = null!;
         if (_playerActions is null)
             return;
 

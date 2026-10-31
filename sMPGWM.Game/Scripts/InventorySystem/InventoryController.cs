@@ -6,12 +6,13 @@ using sMPGWM.Scripts.ItemSystem;
 namespace sMPGWM.Scripts.InventorySystem;
 public sealed class InventoryController : IDisposable, IInventoryView
 {
+    // TODO move capacity and growth decisions to the container. 
     public const int InitialCapacity = 128;
     public const int GrowthChunk = 64;
 
     private bool _disposed;
 
-    public ItemRequestService Items { get; }
+    public ItemRequestService ItemRequestService { get; }
     public ItemContainer Container { get; }
     private InventorySnapshot? _snapshot;
     public InventorySnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
@@ -20,15 +21,15 @@ public sealed class InventoryController : IDisposable, IInventoryView
     public long Revision => Snapshot.Revision;
     public event Action<InventorySnapshot>? Changed;
     internal InventoryResult Availability => _disposed ? InventoryResult.Disposed :
-        Items.Publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
+        ItemRequestService.Publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;
 
     public InventoryController()
         : this(new ItemRequestService()) { }
 
-    public InventoryController(ItemRequestService items)
+    public InventoryController(ItemRequestService itemRequestService)
     {
-        Items = items;
-        Container = items.CreateContainer(InitialCapacity, GrowthChunk);
+        ItemRequestService = itemRequestService;
+        Container = itemRequestService.CreateContainer(InitialCapacity, GrowthChunk);
         Container.Subscribe(NotifyObservers);
     }
 

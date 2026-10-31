@@ -14,7 +14,7 @@ public class InventoryProjectionTests
     {
         var id = "mock_standard_engine";
         using var inventory = new InventoryController();
-        inventory.Items.CreateItems(inventory.Container, id, 1);
+        inventory.ItemRequestService.CreateItems(inventory.Container, id, 1);
         var state = new InventoryViewState { SelectedTab = 1 };
         Assert.That(InventoryProjection.Create(inventory.Snapshot, state)[0].Entity?.DefinitionId, Is.EqualTo(id));
         state.SelectedTab = 2;
@@ -30,7 +30,7 @@ public class InventoryProjectionTests
         var resource = "mock_standard_resource";
         using var inventory = new InventoryController();
         for (var index = 0; index < occupied; index++)
-            ItemFixture.Place(inventory.Items, inventory.Container, index, index < 3 ? Engine : resource);
+            ItemFixture.Place(inventory.ItemRequestService, inventory.Container, index, index < 3 ? Engine : resource);
         var before = inventory.Snapshot;
         var state = new InventoryViewState { SearchText = search };
         var cells = InventoryProjection.Create(before, state);
@@ -48,9 +48,9 @@ public class InventoryProjectionTests
     public void Sorting_ReversesOnlyNamesAndRetainsDeterministicTies(int sort)
     {
         using var inventory = new InventoryController();
-        inventory.Items.CreateItems(inventory.Container, "mock_standard_engine", 1);
-        inventory.Items.CreateItems(inventory.Container, "mock_advanced_engine", 2);
-        inventory.Items.CreateItems(inventory.Container, "mock_standard_hull", 2);
+        inventory.ItemRequestService.CreateItems(inventory.Container, "mock_standard_engine", 1);
+        inventory.ItemRequestService.CreateItems(inventory.Container, "mock_advanced_engine", 2);
+        inventory.ItemRequestService.CreateItems(inventory.Container, "mock_standard_hull", 2);
         var before = inventory.Snapshot;
         var state = new InventoryViewState { SelectedSort = sort };
         var ordered = sort == 0
@@ -84,9 +84,9 @@ public class InventoryProjectionTests
     public void Holes_PackOccupiedCellsThenTrueEmptiesWithoutMutatingStorage()
     {
         using var inventory = new InventoryController();
-        ItemFixture.Place(inventory.Items, inventory.Container, 0, Engine);
-        ItemFixture.Place(inventory.Items, inventory.Container, 3, Engine);
-        ItemFixture.Place(inventory.Items, inventory.Container, 127, Engine);
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 0, Engine);
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 3, Engine);
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 127, Engine);
         var snapshot = inventory.Snapshot;
         var cells = InventoryProjection.Create(snapshot);
 
@@ -109,7 +109,7 @@ public class InventoryProjectionTests
     {
         using var inventory = new InventoryController();
         var before = InventoryProjection.Create(inventory.Snapshot);
-        inventory.Items.CreateItems(inventory.Container, Engine, count);
+        inventory.ItemRequestService.CreateItems(inventory.Container, Engine, count);
         var cells = InventoryProjection.Create(inventory.Snapshot);
 
         Assert.That(cells.Count, Is.EqualTo(capacity));

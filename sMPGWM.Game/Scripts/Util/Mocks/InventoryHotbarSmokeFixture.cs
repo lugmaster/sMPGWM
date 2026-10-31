@@ -27,14 +27,14 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
         var potion = "mock_standard_consumable";
         var weapon = "mock_standard_light_weapon";
         _inventory = new InventoryController();
-        _equipment = new EquipmentController(_inventory.Items);
+        _equipment = new EquipmentController(_inventory.ItemRequestService);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
         _adapter = new ItemHotbarAdapter(_state, _inventory, _equipment, _transfers);
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 0, potion, 7);
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 1, potion, 8);
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 2, weapon);
-        ItemFixture.Place(_inventory.Items, _equipment.Container, 4, weapon);
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 0, potion, 7);
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 1, potion, 8);
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 2, weapon);
+        ItemFixture.Place(_inventory.ItemRequestService, _equipment.Container, 4, weapon);
         _canvas = game.GetNode<UiCanvas>("UiCanvas");
         _canvas.CloseAllMenus();
         game.BindInventoryPresentation(_inventory, _equipment, _transfers);
@@ -63,8 +63,8 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
 
     public void EmptyLinkedSources()
     {
-        ItemFixture.MoveAway(_inventory.Items, _inventory.Container, 0, 1);
-        ItemFixture.MoveAway(_inventory.Items, _equipment.Container, 4);
+        ItemFixture.MoveAway(_inventory.ItemRequestService, _inventory.Container, 0, 1);
+        ItemFixture.MoveAway(_inventory.ItemRequestService, _equipment.Container, 4);
     }
 
     public void Restore(GamePlayManager game)

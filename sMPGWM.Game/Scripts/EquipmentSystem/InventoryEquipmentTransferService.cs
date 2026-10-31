@@ -16,7 +16,7 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
     {
         ArgumentNullException.ThrowIfNull(inventoryImpl);
         ArgumentNullException.ThrowIfNull(equipmentImpl);
-        if (!ReferenceEquals(inventoryImpl.Items, equipmentImpl.Items))
+        if (!ReferenceEquals(inventoryImpl.ItemRequestService, equipmentImpl.ItemRequestService))
             throw new ArgumentException("Inventory and equipment must use the same ItemSystem.");
         _inventoryImpl = inventoryImpl;
         _equipmentImpl = equipmentImpl;
@@ -25,7 +25,7 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
     public ulong OpenEditSession()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (_inventoryImpl.Items.Publishing) throw new InvalidOperationException("Cannot open an edit session during publication.");
+        if (_inventoryImpl.ItemRequestService.Publishing) throw new InvalidOperationException("Cannot open an edit session during publication.");
         return _session = RuntimeIds.Next();
     }
 
@@ -45,7 +45,7 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
             return TransferResult.InvalidLocation;
         var sourceRevision = request.Source.InventoryAddress.HasValue ? request.InventoryRevision : request.EquipmentRevision;
         var destinationRevision = request.Destination.InventoryAddress.HasValue ? request.InventoryRevision : request.EquipmentRevision;
-        return _inventoryImpl.Items.TransferItem(request.SourceEntity, source, destination,
+        return _inventoryImpl.ItemRequestService.TransferItem(request.SourceEntity, source, destination,
             sourceRevision, destinationRevision, request.DestinationEntity, commit);
     }
 

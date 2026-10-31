@@ -10,7 +10,7 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     private bool _disposed;
 
     public IReadOnlyList<EquipmentSlotDefinition> Definitions { get; }
-    public ItemRequestService Items { get; }
+    public ItemRequestService ItemRequestService { get; }
     public ItemContainer Container { get; }
     private EquipmentSnapshot? _snapshot;
     public EquipmentSnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
@@ -18,18 +18,18 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     public long Revision => Snapshot.Revision;
     public event Action<EquipmentSnapshot>? Changed;
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :
-        Items.Publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
+        ItemRequestService.Publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
 
     public EquipmentController()
         : this(new ItemRequestService()) { }
 
-    public EquipmentController(ItemRequestService items)
+    public EquipmentController(ItemRequestService itemRequestService)
     {
-        Items = items;
+        ItemRequestService = itemRequestService;
         Definitions = EquipmentSlotDefinition.Defaults;
         foreach (var definition in Definitions)
             ItemRegistry.GetCategoryById(definition.AcceptedCategory);
-        Container = items.CreateContainer(Definitions.Count, accepts: (index, definition, count) =>
+        Container = itemRequestService.CreateContainer(Definitions.Count, accepts: (index, definition, count) =>
             count == 1 && CanPlace(Definitions[index].Key, definition.Id));
         Container.Subscribe(NotifyObservers);
     }

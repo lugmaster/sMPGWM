@@ -58,7 +58,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
         var canvas = game.GetNode<UiCanvas>("UiCanvas");
         var engine = "mock_standard_engine";
         using var inventory = new InventoryController();
-        using var equipment = new EquipmentController(inventory.Items);
+        using var equipment = new EquipmentController(inventory.ItemRequestService);
         using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
         var canEdit = false;
         Action<bool> trackEditing = available => canEdit = available;
@@ -78,7 +78,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
             var grid = menu.GetNode<InventoryContainer>("%InventoryContainer")
                 .GetNode<ItemGrid>("%ItemGrid").GetNode<GridContainer>("%SlotGrid");
             var firstCell = grid.GetChild<ClickableIcon>(0);
-            Require(inventory.Items.CreateItems(inventory.Container, engine, 129) == InventoryResult.Success, "Fixture addition failed.");
+            Require(inventory.ItemRequestService.CreateItems(inventory.Container, engine, 129) == InventoryResult.Success, "Fixture addition failed.");
             Require(grid.GetChildCount() == 192 && grid.GetChild(0) == firstCell,
                 "Live growth must append cells and reuse existing controls.");
             var source = inventory.Snapshot.Slots[2]!;
@@ -99,7 +99,7 @@ public partial class InventorySlotSmokeFixture : RefCounted
             canvas.CloseMenu(UiWindowId.InventoryMenu);
             Require(!canEdit, "Map remaining open must not retain inventoryImpl edit permission.");
             var detachedBinding = firstCell.Binding;
-            Require(inventory.Items.CreateItems(inventory.Container, engine, 1) == InventoryResult.Success, "Closed-view addition failed.");
+            Require(inventory.ItemRequestService.CreateItems(inventory.Container, engine, 1) == InventoryResult.Success, "Closed-view addition failed.");
             Require(ReferenceEquals(firstCell.Binding, detachedBinding),
                 "A closed view must detach its state subscriptions before deletion.");
             canvas.OpenMenu(UiWindowId.InventoryMenu);

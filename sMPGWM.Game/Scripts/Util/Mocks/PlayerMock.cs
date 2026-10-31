@@ -59,7 +59,7 @@ public partial class PlayerMock: AbstractSingleton<PlayerMock>
         ValidateInventoryDefinitions();
         foreach (var (id, quantity) in InventoryExamples)
         {
-            var result = inventory.Items.CreateItems(inventory.Container, id, quantity);
+            var result = inventory.ItemRequestService.CreateItems(inventory.Container, id, quantity);
             if (result != InventoryResult.Success)
                 throw new InvalidOperationException($"Could not add mock item {id}: {result}.");
         }
