@@ -13,6 +13,46 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
     private const uint SteamAppId = 480;
     private readonly PendingLobbyOperation _create = new();
     private readonly PendingLobbyOperation _join = new();
+    private bool _lobbyCreatedSubscribed;
+    private bool _lobbyJoinedSubscribed;
+
+    public void SubscribeLobbyEvents()
+    {
+        try
+        {
+            if (!_lobbyCreatedSubscribed)
+            {
+                GodotSteam.Steam.LobbyCreated += LobbyCreated;
+                _lobbyCreatedSubscribed = true;
+            }
+
+            if (!_lobbyJoinedSubscribed)
+            {
+                GodotSteam.Steam.LobbyJoined += LobbyJoined;
+                _lobbyJoinedSubscribed = true;
+            }
+        }
+        catch
+        {
+            UnsubscribeLobbyEvents();
+            throw;
+        }
+    }
+
+    public void UnsubscribeLobbyEvents()
+    {
+        if (_lobbyCreatedSubscribed)
+        {
+            GodotSteam.Steam.LobbyCreated -= LobbyCreated;
+            _lobbyCreatedSubscribed = false;
+        }
+
+        if (_lobbyJoinedSubscribed)
+        {
+            GodotSteam.Steam.LobbyJoined -= LobbyJoined;
+            _lobbyJoinedSubscribed = false;
+        }
+    }
 
     public bool CreateSessionLobby(int capacity, Action<long, ulong> completion)
     {
@@ -48,8 +88,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     protected override void OnExitTree()
     {
-        GodotSteam.Steam.LobbyCreated -= LobbyCreated;
-        GodotSteam.Steam.LobbyJoined -= LobbyJoined;
+        UnsubscribeLobbyEvents();
     }
 
     protected override void OnEnterTree()
@@ -61,8 +100,6 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     protected override void OnReady()
     {
-        GodotSteam.Steam.LobbyCreated += LobbyCreated;
-        GodotSteam.Steam.LobbyJoined += LobbyJoined;
         try
         {
             Logger.Debug(GodotSteam.Steam.IsSteamRunning() ? "Steam is running" : "Steam is not running");

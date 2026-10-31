@@ -5,6 +5,7 @@ using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.scripts.Network;
 using sMPGWM.Scripts.Network;
+using sMPGWM.Scripts.Steam;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -27,6 +28,7 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
     public void ShowJoinSteamGameMenu()
     {
         Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowJoinSteamGameMenu)} requested.");
+        SteamworksHelper.Instance.SubscribeLobbyEvents();
         NavigateTo(StartMenuProvider.CreateJoinSteamGameMenu());
     }
     
@@ -45,6 +47,7 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
     public void ShowHostSteamGameMenu()
     {
         Logger.Debug($"{nameof(StartMenuManager)}.{nameof(ShowHostSteamGameMenu)} requested.");
+        SteamworksHelper.Instance.SubscribeLobbyEvents();
         NavigateTo(StartMenuProvider.CreateHostSteamGameMenu());
     }
 
