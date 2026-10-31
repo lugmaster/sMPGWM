@@ -160,7 +160,7 @@ public class EnetProcessTests
                 using (var refused = Start("refused", "--enet-client"))
                 {
                     await refused.WaitFor("returning to start menu.");
-                    Assert.That(refused.Output, Does.Contain("Server disconnected.").Or.Contain("Native diagnostic authentication failed or timed out."));
+                    Assert.That(refused.Output, Does.Contain("Server disconnected.").Or.Contain("Native protocol preflight failed or timed out."));
                     Assert.That(refused.Output, Does.Not.Contain("MessageExchangeSucceeded"));
                 }
                 Assert.That(alone.Output, Does.Not.Contain("DiagnosticReply correlation="));

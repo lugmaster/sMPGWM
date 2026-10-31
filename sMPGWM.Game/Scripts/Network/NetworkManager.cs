@@ -24,6 +24,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private Callable _previousAuthCallback;
     private double _previousAuthTimeout;
     private byte[] _authPayload = Array.Empty<byte>();
+    public string HostSession { get; private set; } = Guid.NewGuid().ToString("N");
     public bool SessionStopped => _stopped;
     public bool DiagnosticMode => _startup?.Diagnostic == true;
     public NetworkRole NetworkRole { get; private set; }
@@ -77,11 +78,10 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             _previousObjectDecoding = api.AllowObjectDecoding;
             api.AllowObjectDecoding = false;
             _configuredApi = true;
-            if (DiagnosticMode)
             {
                 _previousAuthCallback = api.AuthCallback;
                 _previousAuthTimeout = api.AuthTimeout;
-                _authPayload = System.Text.Encoding.UTF8.GetBytes($"sMPGWM:diagnostic:{DiagnosticExchange.ProtocolVersion}:{sMPGWM.Scripts.GameConfigSystem.GameConfig.Version}");
+                _authPayload = System.Text.Encoding.UTF8.GetBytes($"sMPGWM:preflight:{typeof(NetworkManager).Module.ModuleVersionId:N}:{DiagnosticExchange.ProtocolVersion}:{sMPGWM.Scripts.GameConfigSystem.GameConfig.Version}");
                 api.AuthTimeout = 10;
                 api.AuthCallback = Callable.From<long, byte[]>(ReceiveAuthentication);
                 api.PeerAuthenticating += AuthenticatePeer;
@@ -140,7 +140,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         Logger.Warning($"NET00 auth_failed peer={peer}");
         if (!_stopped && NetworkRole == NetworkRole.Client)
-            CancelDiagnostic("Native diagnostic authentication failed or timed out.");
+            CancelDiagnostic("Native protocol preflight failed or timed out.");
     }
 
     public void AssignRole()
@@ -198,7 +198,6 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _activeNetwork = null;
         if (_configuredApi && Multiplayer is SceneMultiplayer api)
         {
-            if (DiagnosticMode)
             {
                 api.PeerAuthenticating -= AuthenticatePeer;
                 api.PeerAuthenticationFailed -= AuthenticationFailed;
@@ -215,6 +214,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     protected override void OnExitTree()
     {
         StopSession();
+        HostSession = "";
         _startup = null;
         _protocol = null;
         _ticker = null;

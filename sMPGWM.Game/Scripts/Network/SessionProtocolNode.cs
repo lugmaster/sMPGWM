@@ -8,7 +8,7 @@ namespace sMPGWM.Scripts.Network;
 
 public partial class SessionProtocolNode : Node
 {
-    public string HostSession { get; } = Guid.NewGuid().ToString("N");
+    public string HostSession => NetworkManager.Instance.HostSession;
     public event Action<DiagnosticResult>? Completed;
     private readonly DiagnosticExchange _exchange = new();
     private readonly HashSet<int> _answered = new(10);

@@ -72,7 +72,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
             _steamMultiplayerPeer.ServerRelay = true;
 
-            if (Startup?.Diagnostic == true && Multiplayer is SceneMultiplayer api)
+            if (Multiplayer is SceneMultiplayer api)
             {
                 api.PeerAuthenticating += VerifyIdentity;
                 _identitySubscribed = true;
@@ -198,7 +198,8 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             SetData(lobbyId, "version", GameConfig.Version);
             SetData(lobbyId, "protocol", DiagnosticExchange.ProtocolVersion.ToString());
             SetData(lobbyId, "host_steam_id", SteamworksHelper.Api.GetSteamId().ToString());
-            SetData(lobbyId, "session_id", Guid.NewGuid().ToString("N"));
+            SetData(lobbyId, "session_id", NetworkManager.Instance.HostSession);
+            SetData(lobbyId, "build", typeof(NetworkManager).Module.ModuleVersionId.ToString("N"));
             SetData(lobbyId, "state", "preparing");
 
             Logger.Debug(
@@ -300,6 +301,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "session_id") != _pinnedSession ||
             SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "game_id") != GameConfig.LobbyGameId ||
             SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "version") != GameConfig.Version ||
+            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "build") != typeof(NetworkManager).Module.ModuleVersionId.ToString("N") ||
             SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "protocol") != DiagnosticExchange.ProtocolVersion.ToString() ||
             SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "state") != "diagnostic") return false;
         for (var i = 0; i < SteamworksHelper.Api.GetNumLobbyMembers(checked((long)lobby)); i++)

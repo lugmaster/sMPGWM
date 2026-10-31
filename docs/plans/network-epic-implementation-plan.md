@@ -72,7 +72,7 @@ Statuses: Pending, In progress, Needs verification, Deferred verification, Verif
 | 3 | NET-03: ENet completion | Verified |
 | 4 | NET-00: Steam capability gate | Deferred verification; implementation may proceed |
 | 5 | NET-02: private Steam diagnostic exchange | In progress; exchange/lifecycle evidenced, reconcile remaining scope |
-| 6 | NET-08: protocol/preflight completion | Pending |
+| 6 | NET-08: protocol/preflight completion | In progress |
 | 7 | NET-11: heartbeat and RTT | Pending |
 | 8 | NET-06: compatibility | Pending |
 | 9 | NET-07: explicit initialization | Pending |
@@ -241,6 +241,8 @@ Exercise production flows: repeated host/client startup, join/leave/rejoin, thre
 This section replaces all historical carry-over instructions. User decision: continue the epic; defer remaining NET-00 checks to relevant playtests. Do not mark deferred checks Verified or repeat passed authentication tests without a relevant change. Update this handoff in place rather than appending another chronological handoff.
 
 ### Resume point
+
+Latest implementation: manager-owned HostSession now supplies both lobby metadata and diagnostic replies. Native preflight checks compiled game module MVID plus protocol/version on all session starts; Steam metadata checks the same MVID. This is exact module identity, not content compatibility or a package hash. Focused Network tests pass 7/7. Admission envelopes, token/epoch/revision validation, rate limits and rejection grace remain outstanding; NET-08 remains in progress. Cross-device Steam validation remains outstanding. These findings supersede the older baseline statements below.
 
 Execution checkpoint **6 is NET-08 protocol/preflight**. Numeric story **NET-06** is compatibility at checkpoint 8. Checkpoints 1-3 are Verified. Much of checkpoint 5 was implemented ahead of the gate to enable Steam testing; private exchange works, but the full checkpoint was never formally closed.
 
