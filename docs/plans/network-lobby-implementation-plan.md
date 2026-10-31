@@ -2,6 +2,8 @@
 
 Status: revised proposal, 2026-10-27. Planning only; implementation has not started.
 
+For the smaller host/client message-exchange epic, see the [vertical slice refinement discussion](network-vertical-slice-refinement-plan.md). It proposes NET-14 as the first implementation story and separates basic transport proof from the larger gameplay admission scope below.
+
 The host runs a persistent world for the lifetime of its process. Players discover a running game, join, leave, and join again while the host continues playing. Steam lobbies implement discovery/membership; the product is a server browser, not a pre-match waiting room. A player's departure must not tear down the host's world. Durable saves across host restarts are separate work.
 
 This increment establishes sessions, lists running games, verifies gameplay compatibility and explicit initialization, and invokes a host-owned spawning method that logs for now. It defines the world synchronization boundary required before real players can join a running world. Player instantiation, world replication, prediction, and generated-content distribution are subsequent work; connection/checksum success must not be reported as completion of those features.
