@@ -6,7 +6,6 @@ using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Network.NetworkInternal;
-using static Godot.MultiplayerPeer;
 
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -173,7 +172,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             Multiplayer.MultiplayerPeer = (MultiplayerPeer)_steamMultiplayerPeerWrapper.GetPeer();
             Logger.Debug(
                 $"{nameof(SteamNetwork)}.{nameof(ConnectSocket)} assigned peerId={Multiplayer.GetUniqueId()} to steamId={Steam.GetSteamID()}.");
-            var successful = await WaitForConnectionStatus(ConnectionStatus.Connecting);
+            var successful = await WaitForConnectionStatus(MultiplayerPeer.ConnectionStatus.Connecting);
             if (!successful)
             {
                 EmitConnectedFalseAndQuit($"SteamNetwork(IActiveNetwork) - Timeout while waiting for connection. Status: {_steamMultiplayerPeerWrapper.GetConnectionStatus()}");
@@ -219,7 +218,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         }
     }
 
-    private async Task<bool> WaitForConnectionStatus(ConnectionStatus status)
+    private async Task<bool> WaitForConnectionStatus(MultiplayerPeer.ConnectionStatus status)
     {
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(WaitForConnectionStatus)} waiting for connection to leave {nameof(status)}={status}.");
@@ -236,7 +235,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             elapsed += 100;
         }
 
-        var connected = _steamMultiplayerPeerWrapper.GetConnectionStatus() == (int)ConnectionStatus.Connected;
+        var connected = _steamMultiplayerPeerWrapper.GetConnectionStatus() == (int)MultiplayerPeer.ConnectionStatus.Connected;
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(WaitForConnectionStatus)} completed with {nameof(connected)}={connected}.");
         return connected;
@@ -245,14 +244,14 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     public bool IsConnected()
     {
         return _steamMultiplayerPeerWrapper != null &&
-               _steamMultiplayerPeerWrapper.GetConnectionStatus() == (int)ConnectionStatus.Connected;
+               _steamMultiplayerPeerWrapper.GetConnectionStatus() == (int)MultiplayerPeer.ConnectionStatus.Connected;
     }
 
-    public ConnectionStatus GetConnectionStatus()
+    public MultiplayerPeer.ConnectionStatus GetConnectionStatus()
     {
         return _steamMultiplayerPeerWrapper != null
-            ? (ConnectionStatus)_steamMultiplayerPeerWrapper.GetConnectionStatus()
-            : ConnectionStatus.Disconnected;
+            ? (MultiplayerPeer.ConnectionStatus)_steamMultiplayerPeerWrapper.GetConnectionStatus()
+            : MultiplayerPeer.ConnectionStatus.Disconnected;
     }
 
 

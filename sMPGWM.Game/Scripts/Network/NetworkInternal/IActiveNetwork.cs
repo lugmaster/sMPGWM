@@ -1,5 +1,4 @@
-﻿using System;
-using Godot;
+﻿using Godot;
 using static Godot.MultiplayerPeer;
 
 namespace sMPGWM.scripts.Network.NetworkInternal;

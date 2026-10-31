@@ -4,23 +4,35 @@ using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.Network;
 using sMPGWM.scripts.Network.NetworkInternal;
-using static Godot.MultiplayerPeer;
-using BaseNetwork = sMPGWM.Scripts.Network.NetworkInternal.BaseNetwork;
+using sMPGWM.Scripts.Network.NetworkInternal;
+using sMPGWM.Scripts.Util;
 
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.scripts.Network;
 
-public partial class NetworkManager : Node
+public partial class NetworkManager : AbstractSingleton<NetworkManager>
 {
     public static event Action OnNetworkReady;
     private IActiveNetwork _activeNetwork;
 
-    public override void _Ready()
+    protected override void OnEnterTree()
+    {
+        
+    }
+
+    protected override void OnReady()
     {
         Logger.Debug(
             $"{nameof(NetworkManager)}.{nameof(_Ready)} creating network manager.");
         BaseNetwork.OnConnected += OnNetworkConnected;
+    }
+
+    protected override void OnExitTree()
+    {
+        Logger.Debug(
+            $"{nameof(NetworkManager)}.{nameof(OnExitTree)} cleaning up {nameof(_activeNetwork)}.");
+        _activeNetwork?.Cleanup();
     }
 
     private void OnNetworkConnected(bool connected, string reason)
@@ -101,13 +113,13 @@ public partial class NetworkManager : Node
         return peer switch
         {
             null or OfflineMultiplayerPeer => false,
-            _ => peer.GetConnectionStatus() == ConnectionStatus.Connected && Multiplayer.IsServer()
+            _ => peer.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected && Multiplayer.IsServer()
         };
     }
 
-    public ConnectionStatus GetCurrentConnectionStatus()
+    public MultiplayerPeer.ConnectionStatus GetCurrentConnectionStatus()
     {
-        return _activeNetwork?.GetConnectionStatus() ?? ConnectionStatus.Disconnected;
+        return _activeNetwork?.GetConnectionStatus() ?? MultiplayerPeer.ConnectionStatus.Disconnected;
     }
 
     public bool IsConnected()
@@ -121,11 +133,5 @@ public partial class NetworkManager : Node
             $"{nameof(NetworkManager)}.{nameof(InvokeNetworkReady)} invoking {nameof(OnNetworkReady)}.");
         OnNetworkReady?.Invoke();
     }
-
-    public void Cleanup()
-    {
-        Logger.Debug(
-            $"{nameof(NetworkManager)}.{nameof(Cleanup)} cleaning up {nameof(_activeNetwork)}.");
-        _activeNetwork?.Cleanup();
-    }
+    
 }
