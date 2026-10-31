@@ -8,16 +8,16 @@ public partial class BaseNetwork : Node
 {
     protected static int ConnectionTimeout => GameConfig.ConnectionTimeout;
     
-    public static event Action<bool, string> OnConnected;
+    public event Action<bool, string>? ConnectionChanged;
 
-    protected static void EmitConnected(bool connected, string reason = "success")
+    protected void EmitConnected(bool connected, string reason = "success")
     {
-        OnConnected?.Invoke(connected, reason);
+        ConnectionChanged?.Invoke(connected, reason);
     }
 
     public virtual void Cleanup()
     {
-        OnConnected = null;
+        ConnectionChanged = null;
     }
 
     protected void EmitConnectedFalseAndQuit(string reason)

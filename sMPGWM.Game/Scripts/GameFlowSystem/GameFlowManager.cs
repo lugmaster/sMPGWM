@@ -12,9 +12,6 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 {
     private GameFlowState _gameFlowState = GameFlowState.StartMenu;
     private GameFlowState _pendingGameFlowState = GameFlowState.StartMenu;
-    private NetworkRole _networkRole;
-    private NetworkType _networkType;
-    private ulong _lobbyId;
     private NetworkStartupData? _pendingNetworkStartup;
 
     public NetworkStartupData? ConsumeNetworkStartup()
@@ -54,9 +51,6 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     public event Action OnSuddenExit;
     
     public GameFlowState GameFlowState => _gameFlowState;
-    public NetworkRole NetworkRole => _networkRole;
-    public NetworkType NetworkType => _networkType;
-    public ulong LobbyId => _lobbyId;
 
     protected override void OnEnterTree()
     {
@@ -134,10 +128,9 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void StartGame(NetworkRole networkRole, NetworkType networkType)
     {
-        _networkRole = networkRole;
-        _networkType = networkType;
-        Logger.Debug($"{nameof(GameFlowManager)}.{nameof(StartGame)} starting game.");
-        ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.InGame);
+        StartNetworkGame(new NetworkStartupData(networkType, networkRole,
+            GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port,
+            GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout));
     }
 
     private void QuitToStartMenuInternal()

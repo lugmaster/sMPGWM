@@ -68,7 +68,7 @@ Statuses: Pending, In progress, Needs verification, Verified. A partial checkpoi
 | Order | Story checkpoint | Status |
 | --- | --- | --- |
 | 1 | NET-14: ENet diagnostic exchange | Verified |
-| 2 | NET-01: shared ownership completion | Pending |
+| 2 | NET-01: shared ownership completion | In progress |
 | 3 | NET-03: ENet completion | Pending |
 | 4 | NET-00: Steam capability gate | Pending |
 | 5 | NET-02: private Steam diagnostic exchange | Pending |
@@ -235,7 +235,7 @@ Record checkpoint/status, changed files, exact commands/build/inputs, results, e
 
 **Message milestone:** checkpoints 1-5 Verified, including actual separate-process ENet and Steam exchanges. **Full planned slice:** all checkpoints Verified, public discovery reaches production admission and host survives churn. Neither claims real replication/player spawning.
 
-**Current checkpoint:** 1 - NET-14 Verified. Next checkpoint: NET-01 shared ownership completion; not started.
+**Current checkpoint:** 2 - NET-01 In progress; see handoff below.
 
 ### NET-14 implementation handoff (2026-10-31)
 
@@ -280,3 +280,11 @@ Acceptance evidence:
 Retained evidence: [NET-14 log excerpts](evidence/net14/). Excerpts include engine version, commands/inputs and diagnostic/lifecycle lines, omitting account identifiers and unrelated logs. Full generated logs remain NUnit attachments.
 
 Fresh-context handoff: resume at NET-01 if requested. Preserve the user's mandatory Steam startup constraint. The diagnostic harness deliberately does not activate gameplay. Existing menu startup and Steam ownership still need their later checkpoints; the full inventory suite failure remains separate.
+
+### NET-01 handoff (2026-10-31)
+
+Status: **In progress**, not Verified. Menu startup now uses the consumed-once immutable handoff; removed retained GameFlowManager session choices and manager fallback. Transport and readiness events are instance-scoped; role assignment is guarded. ENet clears event ownership even without a peer. Steam cleanup detaches OnSuddenExit, leaves recorded membership and suppresses pending connection continuations after cleanup. Mandatory Steam startup is unchanged.
+
+Validation: dotnet test sMPGWM.Tests --filter FullyQualifiedName~Network: all 5 passed, including multi-process ENet lifecycle scenarios; game/test builds successful with compiler warnings. git diff --check passed.
+
+Remaining before acceptance: native Steam operation serialization/draining, role-specific callback and terminal completion guards, main-thread loss handling instead of polling, clearing only the owned peer, distinct typed transport targets, input shutdown and delayed menu-transition generation guards. Verify canceled native operations and repeated Steam round trips using the custom engine. Do not advance to NET-03; existing ENet tests do not prove Steam ownership acceptance.

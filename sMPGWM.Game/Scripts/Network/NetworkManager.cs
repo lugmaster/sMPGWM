@@ -12,7 +12,8 @@ namespace sMPGWM.scripts.Network;
 
 public partial class NetworkManager : AbstractSingleton<NetworkManager>
 {
-    public static event Action? OnNetworkReady;
+    public event Action? OnNetworkReady;
+    private bool _roleAssigned;
     private IActiveNetwork? _activeNetwork;
     private SessionProtocolNode? _protocol;
     private NetworkStartupData? _startup;
@@ -44,9 +45,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     public void CreateNetwork()
     {
         if (_activeNetwork != null || _stopped) return;
-        _startup ??= new NetworkStartupData(GameFlowManager.Instance.NetworkType,
-            GameFlowManager.Instance.NetworkRole, GameConfig.ServerIpAddress, GameConfig.Port,
-            GameConfig.MaxPlayers, GameConfig.ConnectionTimeout, LobbyId: GameFlowManager.Instance.LobbyId);
+        if (_startup == null) return;
         NetworkRole = _startup.Role;
         NetworkType = _startup.Type;
         if (!Enum.IsDefined(NetworkRole) || !Enum.IsDefined(NetworkType))
@@ -63,21 +62,21 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (NetworkType == NetworkType.Lan)
         {
             var network = new EnetNetwork { Startup = _startup };
-            network.ConnectionChanged += OnNetworkConnected;
             _activeNetwork = network;
         }
         else
         {
-            BaseNetwork.OnConnected += OnNetworkConnected;
             _activeNetwork = new SteamNetwork();
         }
+        _activeNetwork.ConnectionChanged += OnNetworkConnected;
         AddChild(_activeNetwork.GetNode());
         AssignRole();
     }
 
     public void AssignRole()
     {
-        if (_activeNetwork == null || _stopped) return;
+        if (_activeNetwork == null || _stopped || _roleAssigned) return;
+        _roleAssigned = true;
         if (NetworkRole == NetworkRole.Host) _activeNetwork.BecomeHost(_startup!.MaxPlayers);
         else _activeNetwork.BecomeClient(_startup!.LobbyId);
     }
@@ -120,8 +119,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             _protocol.Completed -= CompleteDiagnostic;
             _protocol.Stop();
         }
-        BaseNetwork.OnConnected -= OnNetworkConnected;
-        if (_activeNetwork is EnetNetwork network) network.ConnectionChanged -= OnNetworkConnected;
+        if (_activeNetwork != null) _activeNetwork.ConnectionChanged -= OnNetworkConnected;
         _activeNetwork?.Cleanup();
         _activeNetwork = null;
         if (_configuredApi && Multiplayer is SceneMultiplayer api)

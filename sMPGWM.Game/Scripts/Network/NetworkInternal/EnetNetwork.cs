@@ -12,7 +12,6 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
 {
     private ENetMultiplayerPeer? _peer;
     public NetworkStartupData? Startup { get; init; }
-    public event Action<bool, string>? ConnectionChanged;
     private bool _finished;
     private bool _cleaned;
     private bool _subscribed;
@@ -20,7 +19,7 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
     {
         if (_cleaned || _finished) return;
         _finished = true;
-        ConnectionChanged?.Invoke(success, reason);
+        EmitConnected(success, reason);
     }
     private bool _started;
     private bool _waiting;
@@ -66,7 +65,7 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
 
     private void Connected() { if (!_waiting) return; _waiting = false; Report(true); }
     private void Failed() { _waiting = false; Report(false, "ENet connection failed or disconnected."); }
-    private void Disconnected() { if (!_cleaned) ConnectionChanged?.Invoke(false, "Server disconnected."); }
+    private void Disconnected() { if (!_cleaned) EmitConnected(false, "Server disconnected."); }
     public override void _PhysicsProcess(double delta)
     {
         if (_waiting && Time.GetTicksMsec() >= _deadline) Failed();
@@ -86,11 +85,11 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
             Multiplayer.ConnectionFailed -= Failed;
             Multiplayer.ServerDisconnected -= Disconnected;
         }
+        base.Cleanup();
         if (_peer == null) return;
         if (Multiplayer.MultiplayerPeer == _peer) Multiplayer.MultiplayerPeer = null;
         _peer.Close();
         _peer.Dispose();
         _peer = null;
-        ConnectionChanged = null;
     }
 }

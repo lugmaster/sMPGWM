@@ -15,6 +15,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 {
     private SteamMultiplayerPeerWrapper _steamMultiplayerPeerWrapper;
     private ulong? _currentLobbyId;
+    private bool _cleaned;
     
     private const int StateEntered      = 0x01;
     private const int StateLeft         = 0x02;
@@ -66,6 +67,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     {
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} received lobby creation result.");
+        if (_cleaned) return;
         _currentLobbyId = lobbyId;
         if (connect == 1)
         {
@@ -103,14 +105,16 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     {
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(OnLobbyJoined)} received lobby join result.");
+        if (_cleaned) return;
         if (response == 1)
         {
+            _currentLobbyId = lobby;
             var lobbyId = Steam.GetLobbyOwner(lobby);
 
             // Host joins lobby itself compare with SteamId
             if (lobbyId == Steam.GetSteamID())
             {
-                switch (GameFlowManager.Instance.NetworkRole)
+                switch (NetworkManager.Instance.NetworkRole)
                 {
                     case NetworkRole.Host:
                         Logger.Debug(
@@ -173,6 +177,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             Logger.Debug(
                 $"{nameof(SteamNetwork)}.{nameof(ConnectSocket)} assigned peerId={Multiplayer.GetUniqueId()} to steamId={Steam.GetSteamID()}.");
             var successful = await WaitForConnectionStatus(MultiplayerPeer.ConnectionStatus.Connecting);
+            if (_cleaned) return;
             if (!successful)
             {
                 EmitConnectedFalseAndQuit($"SteamNetwork(IActiveNetwork) - Timeout while waiting for connection. Status: {_steamMultiplayerPeerWrapper.GetConnectionStatus()}");
@@ -185,6 +190,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         }
         catch (Exception e)
         {
+            if (_cleaned) return;
             EmitConnectedFalseAndQuit($"Error creating client: {e.Message}");
         }
     }
@@ -224,7 +230,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             $"{nameof(SteamNetwork)}.{nameof(WaitForConnectionStatus)} waiting for connection to leave {nameof(status)}={status}.");
         var elapsed = 0;
 
-        while (_steamMultiplayerPeerWrapper.GetConnectionStatus() == (int)status)
+        while (!_cleaned && _steamMultiplayerPeerWrapper.GetConnectionStatus() == (int)status)
         {
             if (elapsed >= ConnectionTimeout)
             {
@@ -235,6 +241,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             elapsed += 100;
         }
 
+        if (_cleaned) return false;
         var connected = _steamMultiplayerPeerWrapper.GetConnectionStatus() == (int)MultiplayerPeer.ConnectionStatus.Connected;
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(WaitForConnectionStatus)} completed with {nameof(connected)}={connected}.");
@@ -260,6 +267,10 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(Cleanup)} cleanup started.");
 
+        if (_cleaned) return;
+        _cleaned = true;
+        GameFlowManager.Instance.OnSuddenExit -= SetLobbyUnjoinable;
+        if (_currentLobbyId.HasValue) Steam.LeaveLobby(_currentLobbyId.Value);
         Steam.LobbyJoined -= OnLobbyJoined;
         Steam.LobbyCreated -= OnLobbyCreated;
         Steam.LobbyChatUpdate -= OnLobbyChatUpdate;
@@ -306,10 +317,6 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         {
             Logger.Error(
                 $"{nameof(SteamNetwork)}.{nameof(SetLobbyUnjoinable)} failed to set lobby unjoinable with {nameof(ex.Message)}={ex.Message}.");
-        }
-        finally
-        {
-            _currentLobbyId = null;
         }
     }
 
