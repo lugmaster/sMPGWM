@@ -6,4 +6,4 @@ Goal: the host maintains authoritative participant membership and synchronizes i
 
 Discuss full roster delivery on join, updates on join/leave, duplicate/stale messages, controller lifecycle and cleanup, and tick dispatch. Target co-op sessions of typically 5 players, at most 10; keep the solution proportionate.
 
-Earlier architecture proposals remain in the [refinement plan](network-vertical-slice-refinement-plan.md#global-registry-and-controller-ownership) as background, not adopted implementation requirements.
+The [network implementation plan](network-epic-implementation-plan.md) defines the current scope. Registry ownership, controller roles and roster protocol remain decisions for this follow-up.
