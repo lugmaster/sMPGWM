@@ -1,4 +1,3 @@
-using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using System;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -7,7 +6,7 @@ using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem;
-using sMPGWM.Scripts.UiSystem.Items;
+using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
