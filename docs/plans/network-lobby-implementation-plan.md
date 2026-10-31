@@ -6,6 +6,39 @@ The host runs a persistent world for the lifetime of its process. Players discov
 
 This increment establishes sessions, lists running games, verifies gameplay compatibility and explicit initialization, and invokes a host-owned spawning method that logs for now. It defines the world synchronization boundary required before real players can join a running world. Player instantiation, world replication, prediction, and generated-content distribution are subsequent work; connection/checksum success must not be reported as completion of those features.
 
+## Plan split and implementation ownership
+
+Reorganized 2026-10-31 into four executable workstreams. This file remains the shared contract and integration reference; workflow details live in their respective plans.
+
+| Plan | Boundary |
+| --- | --- |
+| [Create game as host](network-host-implementation-plan.md) | Final Host action, server setup, local initialization/admission, publication |
+| [Create game as client](network-client-implementation-plan.md) | Selected target through connection and remote admission; implements both sides of admission |
+| [Create the lobby list](network-lobby-list-implementation-plan.md) | Discovery, snapshots, selection and handoff to client creation |
+| [Heartbeat and round-trip measurement](network-heartbeat-rtt-implementation-plan.md) | Connected-peer liveness, RTT generation and removal requests |
+
+Implement common ownership/native verification once in the host workstream, then prove host/client admission over ENet. Integrate health and Steam, then real browser discovery and NET-12. Browser UI and pure health logic can proceed against fixtures/contracts earlier. The delivery table below preserves existing story identifiers; it is not an additional fifth implementation plan.
+
+### Godot Nodes versus ordinary C# types
+
+| Type / responsibility | Decision and lifetime |
+| --- | --- |
+| NetworkManager | Persistent Node child of GameFlowManager; sole session/peer owner; ticks ordinary state machines |
+| SessionProtocolNode | Deterministically named persistent Node child of NetworkManager; same RPC path on all peers; created before peer assignment |
+| GameFlowManager / GamePlayManager | Existing Nodes; navigation and scene initialization respectively |
+| SteamworksHelper | Existing persistent Node for Steam runtime/callback pumping; no duplicate autoload |
+| Menu and lobby entry Controls | Scene Nodes; subscribe/unsubscribe on actual activation/deactivation |
+| HostSessionFlow / ClientSessionFlow | Ordinary classes owned by NetworkManager; one cancellable attempt, no independent tree lifetime |
+| SteamLobbyService / SteamServerBrowser | Ordinary classes; explicit callback ownership/disposal; service outlives browser and drains late operations |
+| SteamPeerAdapter / EnetPeerAdapter | Ordinary classes managing engine peer objects and explicit signal subscriptions; peer objects are not scene children |
+| PeerAdmission / PeerHealthMonitor | Ordinary state machines with monotonic clock; manager drives ticks; no per-peer Nodes/Timers |
+| Compatibility policy, hashing, requests, DTOs, enums, metrics | Ordinary immutable data/pure logic where applicable; one file per type |
+| WorldJoinCoordinator / PlayerSpawnCoordinator | Ordinary coordinators for the initial stub; future actual players/world objects use scene Nodes as required |
+
+A Godot API or signal dependency alone does not require inheriting Node. Inject the needed API/context and detach subscriptions explicitly; keep engine work on the main thread. Configure the persistent owner/endpoint for supported pause processing and test background behavior. Do not use Task.Run for engine calls. CollisionTypes.cs is an existing example of a plain enum: leave it in CollisionSystem; network enums likewise do not need Nodes.
+
+Suggested organization under `sMPGWM.Game/Scripts/Network`: root owner and role/type, `Hosting`, `Joining`, `Lobby`, `Transport`, `Protocol`, `Admission`, `Health`, and `Compatibility` as responsibilities become implemented. Keep namespaces aligned with paths and normalize existing `scripts`/`Scripts` casing through semantic refactoring during implementation. These are folders, not additional managers or mandatory interfaces.
+
 ## Recommendation and comparison
 
 Keep Godot high-level multiplayer and the installed Steam MultiplayerPeer. Replace the package's lifecycle/application protocol. Another transport would not fix its ownership, cancellation, or readiness bugs. Use one persistent session owner, small adapters, one scene initialization result, and a short host-authoritative admission exchange.
@@ -105,24 +138,7 @@ Do not hold native auth open for gameplay loading: normal RPCs are unavailable t
 
 If demonstrated native incompatibility prevents this gate, record evidence and select one bounded RPC preflight before scene loading for this build. Enforce pending/admitted allowlists on every handler. Do not maintain two runtime-selectable protocols or silently switch. Document absent native identity mapping as a limitation.
 
-## Publication, connection, and cleanup
-
-Hosting:
-
-1. Final Host submits a validated request. Reject duplicates and retain the menu during setup.
-2. Create an initially private lobby, record membership immediately, and make it unjoinable while preparing. Avoid publishing an incomplete public entry; revalidate every join regardless of visibility.
-3. Set name/game_id/mode/version, protocol/build, pinned host_steam_id, session_id and state=preparing. Check writes. Pin the actual owner at creation.
-4. Create/validate server peer on virtual port 0, configure API/protocol, assign peer. Automatic creator LobbyJoined is bookkeeping, never another completion/client connect.
-5. Complete setup once usable, load/initialize the scene, finalize gameplay fingerprint and admit local host through the logging stub.
-6. Publish state=ready/public/joinable. Publication failure releases session with a reason. Keep the running game open while host can accept players.
-
-Joining:
-
-1. Join selected ID, record membership, revalidate required metadata/readiness/game/version, pin host/session. Initially require host membership/current ownership. Reject self-join.
-2. Create client peer to pinned host on virtual port 0. Membership/CreateClient Ok are intermediate, not connection success.
-3. Await actual connection/short preflight, then load/initialize, compare gameplay, synchronize current world, and activate on host acceptance.
-4. Revalidate host/session on metadata/membership changes. Steam ownership may transfer when owner leaves; this does not migrate the authoritative world. Pinned host departure, owner/session inconsistency or server loss ends the client session. Never reconnect to a new owner automatically.
-5. Departure releases only that client locally and its slot/transfers on host. Rejoining the same running game repeats admission with fresh tokens and current world/content state.
+## Shared connection and cleanup rules
 
 ENet follows the same application rules, validates endpoint, checks immediate creation errors and actual connection outcome. A refused/failed client cannot stop the host.
 
@@ -132,15 +148,9 @@ If an uncorrelatable callback never returns, mark that operation kind unavailabl
 
 Cleanup invalidates session/attempt first; cancels initialization/admission/health/transfers; disables input; removes peers; unpublishes owned hosting; leaves memberships; clears only its assigned peer; closes/disposes native resources; detaches owned callbacks once safe. Retain only outstanding late-operation drain until completion/shutdown. Reset fingerprint/DTO/state/timers/API settings. Cleanup is idempotent on cancel, scene failure, menu return and exit, before Steam shutdown. A crash cannot promise OnSuddenExit execution.
 
-## Running-game browser
+## Lobby list
 
-Use running games/servers in UI language, with Join/host/players. Auto-request on activation; provide Refresh/loading/empty/error states. Reapply exact game_id/version plus Worldwide each request; filter protocol/build for this contract. Read only needed metadata, persona names with fallback, and exclude invalid/self/not-ready entries locally.
-
-Serialize refresh and stop publication/listeners on deactivation while the lobby service drains unresolved work. Preserve discovery order by default. Search name/host and sort locally with stable-ID tie-breaks and bounded result count; do not issue new Steam calls for local filtering.
-
-Replace samples through existing entry scenes/StartMenuProvider. Exactly one keyboard-accessible selection; Join requires visible valid selected ID and no pending search/connect. Refresh/filter removal clears selection; sorting preserves ID. Preserve inventory toolbar paths/options. Back cancels setup before navigating.
-
-Membership counts are not admitted players. Publish separate host-owned admitted-player/capacity metadata for display and update on join/leave; treat it as advisory. Actual pending/admitted host state decides capacity when players race for the last slot. Stale/full entries fail cleanly with refresh/retry.
+Workflow moved to [Create the lobby list](network-lobby-list-implementation-plan.md).
 
 ## Editable gameplay comparison policy
 
@@ -210,21 +220,9 @@ Reject wrong sender/token/epoch/revision, missing/mismatching fingerprint, malfo
 
 Keep setup/auth, scene, admission and future snapshot budgets independent. Initially use ConnectionTimeout for setup, 60 seconds scene initialization and 15 seconds admission after local readiness; bound waiting for HostReady too. Add a measured world-transfer budget when snapshots exist. Pongs never extend phase deadlines.
 
-## Health, RTT/ping, and failures
+## Heartbeat and RTT
 
-Native events detect transport loss; application probes verify session processing. Probe host <-> each client after preflight, including loading/synchronization, without a mesh. Start with 2-second interval/10-second response deadline/startup grace, tune from measured loading. Use monotonic time, correlated sequence/token/session, and a fixed bounded outstanding set. Only live matching replies refresh health.
-
-Reuse those probes to measure RTT; no additional ping messages or faster probe loop are needed. Store the local monotonic send timestamp with each outstanding challenge. On its matching reply, calculate RTT in milliseconds as local receive time minus that stored send time. Echo the challenge identity promptly from the persistent endpoint; do not depend on remote timestamps or synchronized clocks. Consume each reply once. Duplicate, unsolicited, expired, wrong-peer or wrong-session replies produce neither RTT samples nor health refreshes. Older out-of-order replies must not overwrite a newer published latency sample.
-
-Expose per-peer latest RTT, smoothed RTT, sample count, and age of the last accepted sample through a read-only session metrics snapshot/event. Initialize smoothing from the first valid sample, then use an exponential moving average with alpha = 0.125. UI-facing Ping (ms) means smoothed round-trip time, not RTT divided by two; this does not measure one-way latency. Host metrics cover each client, and each client measures its host independently. Label the measurement as application RTT: it includes transport queuing, frame scheduling and remote reply processing. Reliable fallback can also include retransmission delays.
-
-Before the first sample, show unavailable rather than zero. Once the last sample is older than the health response deadline, mark latency stale/unavailable even if removal is still pending. Reset all samples on peer removal, teardown and fresh admission/rejoin. Smoothing affects presentation only; health and admission still use their independent monotonic deadlines. These metrics describe connected peers; unconnected server-list entries must not display an invented ping from metadata or discovery order. Choosing a concrete HUD placement can follow the existing UI when implementation reaches it.
-
-Prefer unreliable probes on a verified separate channel to avoid reliable backlog. If native peer requires reliable control, document/test congestion behavior before choosing it. Do not build another reliability layer. Keep endpoint and Steam callbacks processing during supported pauses/background operation.
-
-Measure main-thread stalls and use supported nonblocking loading where needed. A persistent Node does not make blocking loads nonblocking; its watchdog cannot run during the stall. Remote peers may time out first. Test deliberate stalls/loss/delay/congestion and tune deadlines accordingly.
-
-Host timeout removes only that client/transfers/admission, frees capacity and invokes future player-removal hook. Client timeout/server loss returns that client to menu. Leaving/rejoining cannot restart the host world. Removal/rejection/disconnect/teardown share idempotent paths.
+Workflow moved to [Heartbeat and round-trip measurement](network-heartbeat-rtt-implementation-plan.md).
 
 ## Delivery stories and acceptance
 
