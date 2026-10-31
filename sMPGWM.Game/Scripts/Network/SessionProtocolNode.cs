@@ -15,23 +15,19 @@ public partial class SessionProtocolNode : Node
     private readonly Dictionary<int, ProtocolRateLimit> _rates = new(9);
     private readonly Dictionary<int, PeerHealthMonitor> _health = new(9);
     private ulong _deadline;
-    private bool _waiting;
-    private bool _started;
-    private bool _stopped;
-    private bool _subscribed;
+    private enum ExchangeState { Idle, Waiting, Completed, Stopped }
+    private ExchangeState _state;
 
     public override void _Ready()
     {
         Multiplayer.PeerDisconnected += PeerLeft;
-        _subscribed = true;
     }
     private void PeerLeft(long peer) { _answered.Remove((int)peer); _rates.Remove((int)peer); _health.Remove((int)peer); }
 
     public void SendHello()
     {
-        if (_started || _stopped) return;
-        _started = true;
-        _waiting = true;
+        if (_state != ExchangeState.Idle) return;
+        _state = ExchangeState.Waiting;
         _deadline = Time.GetTicksMsec() + 10000;
         Logger.Info($"Client sender={(Multiplayer.HasMultiplayerPeer() ? Multiplayer.GetUniqueId() : 0)} DiagnosticHello correlation={_exchange.Correlation} payload={_exchange.Payload}");
         var result = RpcId(1, nameof(DiagnosticHello), DiagnosticExchange.ProtocolVersion, _exchange.Correlation, _exchange.Payload);
@@ -46,7 +42,7 @@ public partial class SessionProtocolNode : Node
     private void DiagnosticHello(int version, string correlation, string payload)
     {
         var sender = Multiplayer.GetRemoteSenderId();
-        if (_stopped || !NetworkManager.Instance.IsHost()) return;
+        if (_state == ExchangeState.Stopped || !NetworkManager.Instance.IsHost()) return;
         var member = false;
         foreach (var peer in Multiplayer.GetPeers()) if (peer == sender) member = true;
         if (!member) return;
@@ -73,7 +69,7 @@ public partial class SessionProtocolNode : Node
     private void DiagnosticReply(int version, string correlation, string payload, string session)
     {
         var sender = Multiplayer.GetRemoteSenderId();
-        if (_stopped || !_waiting || Time.GetTicksMsec() >= _deadline ||
+        if (_state != ExchangeState.Waiting || Time.GetTicksMsec() >= _deadline ||
             !_exchange.Accept(sender, version, correlation, payload, session)) return;
         Logger.Info($"Client sender={sender} DiagnosticReply correlation={correlation} payload={payload} session={session}");
         Finish(true, "MessageExchangeSucceeded", session);
@@ -81,21 +77,22 @@ public partial class SessionProtocolNode : Node
 
     private void Finish(bool success, string reason, string session)
     {
-        _waiting = false;
+        if (_state != ExchangeState.Waiting) return;
+        _state = ExchangeState.Completed;
         _exchange.Cancel();
         Completed?.Invoke(new DiagnosticResult(success, reason, _exchange.Correlation, session));
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        if (_waiting && Time.GetTicksMsec() >= _deadline) Finish(false, "Diagnostic reply timeout.", "");
+        if (_state == ExchangeState.Waiting && Time.GetTicksMsec() >= _deadline) Finish(false, "Diagnostic reply timeout.", "");
     }
 
     public PeerHealthMonitor? GetHealth(int peer) => _health.GetValueOrDefault(peer);
 
     public void TickHealth()
     {
-        if (_stopped || !NetworkManager.Instance.IsConnected()) return;
+        if (_state == ExchangeState.Stopped || !NetworkManager.Instance.IsConnected()) return;
         var now = Time.GetTicksMsec();
         foreach (var peer in Multiplayer.GetPeers())
         {
@@ -125,7 +122,7 @@ public partial class SessionProtocolNode : Node
     private void HealthProbe(long sequence, string token)
     {
         var sender = Multiplayer.GetRemoteSenderId();
-        if (_stopped || sequence <= 0 || !Guid.TryParseExact(token, "N", out _)) return;
+        if (_state == ExchangeState.Stopped || sequence <= 0 || !Guid.TryParseExact(token, "N", out _)) return;
         if (!Multiplayer.IsServer() && sender != 1) return;
         var member = false;
         foreach (var peer in Multiplayer.GetPeers()) if (peer == sender) member = true;
@@ -144,19 +141,15 @@ public partial class SessionProtocolNode : Node
     private void HealthReply(long sequence, string token)
     {
         var sender = Multiplayer.GetRemoteSenderId();
-        if (!_stopped && _health.TryGetValue(sender, out var health))
+        if (_state != ExchangeState.Stopped && _health.TryGetValue(sender, out var health))
             health.Reply(sequence, token, Time.GetTicksMsec());
     }
 
     public void Stop()
     {
-        if (_subscribed)
-        {
-            Multiplayer.PeerDisconnected -= PeerLeft;
-            _subscribed = false;
-        }
-        _stopped = true;
-        _waiting = false;
+        if (_state == ExchangeState.Stopped) return;
+        _state = ExchangeState.Stopped;
+        Multiplayer.PeerDisconnected -= PeerLeft;
         _exchange.Cancel();
         _answered.Clear();
         _rates.Clear();

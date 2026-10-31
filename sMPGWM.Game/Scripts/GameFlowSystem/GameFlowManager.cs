@@ -32,9 +32,9 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         foreach (var argument in OS.GetCmdlineUserArgs())
         {
             if (argument != "--enet-host" && argument != "--enet-client") continue;
-            var config = new NetworkStartupData(NetworkType.Lan,
+            var config = new NetworkStartupData(
                 argument == "--enet-host" ? NetworkRole.Host : NetworkRole.Client,
-                GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port,
+                new LanEndpoint(GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port),
                 GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout, true);
             StartNetworkGame(config);
             return;
@@ -132,8 +132,13 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void StartGame(NetworkRole networkRole, NetworkType networkType)
     {
-        StartNetworkGame(new NetworkStartupData(networkType, networkRole,
-            GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port,
+        NetworkTarget target = networkType switch
+        {
+            NetworkType.Lan => new LanEndpoint(GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port),
+            NetworkType.Steam => new SteamLobbyTarget(0),
+            _ => throw new ArgumentOutOfRangeException(nameof(networkType))
+        };
+        StartNetworkGame(new NetworkStartupData(networkRole, target,
             GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout));
     }
 

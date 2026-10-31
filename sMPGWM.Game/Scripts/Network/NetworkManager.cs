@@ -13,7 +13,10 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
 {
     public event Action? OnNetworkReady;
     private bool _roleAssigned;
-    private Label? _diagnosticStatus;
+    public NetworkSession Session { get; } = new();
+    public bool CanPlay => Session.State == SessionState.Ready && !DiagnosticMode;
+    public ulong? LobbyId => (_activeNetwork as SteamNetwork)?.LobbyId;
+    public event Action<DiagnosticResult>? DiagnosticCompleted;
     private IActiveNetwork? _activeNetwork;
     private SessionProtocolNode? _protocol;
     private NetworkTicker? _ticker;
@@ -37,22 +40,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_startup == null) return;
         NetworkRole = _startup.Role;
         NetworkType = _startup.Type;
-        if (DiagnosticMode)
-        {
-            if (_startup.Type == NetworkType.Steam)
-            {
-                var layer = new CanvasLayer { Layer = 100 };
-                var panel = new VBoxContainer { Position = new Vector2(20, 20) };
-                _diagnosticStatus = new Label { Text = $"Steam {NetworkRole}: connecting (gameplay inactive)" };
-                panel.AddChild(_diagnosticStatus);
-                var leave = new Button { Text = "Return to menu" };
-                leave.Pressed += () => GameFlowManager.Instance.QuitToStartMenu("Left diagnostic session.");
-                panel.AddChild(leave);
-                panel.AddChild(new Label { Text = $"Logs: {ProjectSettings.GlobalizePath(Logger.LogFilePath)}" });
-                layer.AddChild(panel);
-                AddChild(layer);
-            }
-        }
+        if (DiagnosticMode && NetworkType == NetworkType.Steam)
+            AddChild(new NetworkDiagnosticPanel { SessionManager = this });
         {
             _protocol = new SessionProtocolNode { Name = "SessionProtocol" };
             _protocol.Completed += CompleteDiagnostic;
@@ -68,11 +57,12 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_activeNetwork != null || _stopped) return;
         if (_startup == null) return;
+        if (!Session.TryStart()) return;
         NetworkRole = _startup.Role;
         NetworkType = _startup.Type;
         if (!Enum.IsDefined(NetworkRole) || !Enum.IsDefined(NetworkType))
         {
-            CancelDiagnostic("Invalid network role or transport.");
+            FailSession("Invalid network role or transport.");
             return;
         }
         if (Multiplayer is SceneMultiplayer api)
@@ -99,13 +89,15 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         {
             _activeNetwork = new SteamNetwork { Startup = _startup };
         }
-        _activeNetwork.ConnectionChanged += OnNetworkConnected;
+        _activeNetwork.TransportReady += OnNetworkConnected;
+        _activeNetwork.StartupFailed += FailSession;
+        _activeNetwork.ConnectionLost += FailSession;
         try
         {
             AddChild(_activeNetwork.GetNode());
             AssignRole();
         }
-        catch (Exception e) { CancelDiagnostic($"Network startup failed: {e.Message}"); }
+        catch (Exception e) { FailSession($"Network startup failed: {e.Message}"); }
     }
 
     private void AuthenticatePeer(long peer)
@@ -142,7 +134,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         Logger.Warning($"NET00 auth_failed peer={peer}");
         if (!_stopped && NetworkRole == NetworkRole.Client)
-            CancelDiagnostic("Native protocol preflight failed or timed out.");
+            FailSession("Native protocol preflight failed or timed out.");
     }
 
     public void AssignRole()
@@ -153,16 +145,15 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         else _activeNetwork.BecomeClient(_startup!.SteamTarget?.LobbyId ?? 0);
     }
 
-    private void OnNetworkConnected(bool connected, string reason)
+    private void OnNetworkConnected(string reason)
     {
         if (_stopped) return;
-        if (!connected) { CancelDiagnostic(reason); return; }
+        if (!Session.TryReady()) return;
         Logger.Info($"Network {NetworkRole}: {reason}");
-        if (_diagnosticStatus != null) _diagnosticStatus.Text = $"Steam {NetworkRole}: {reason} (gameplay inactive)";
         if (DiagnosticMode)
         {
             if (NetworkRole == NetworkRole.Client) _protocol!.SendHello();
-            else Logger.Info($"Listening session={_protocol!.HostSession} port={_startup!.Port} maxPlayers={_startup.MaxPlayers}");
+            else Logger.Info($"Listening session={_protocol!.HostSession} port={_startup!.LanTarget?.Port} maxPlayers={_startup.MaxPlayers}");
         }
         else OnNetworkReady?.Invoke();
     }
@@ -171,9 +162,9 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped || DiagnosticResult != null) return;
         DiagnosticResult = result;
-        if (_diagnosticStatus != null) _diagnosticStatus.Text = result.Reason;
+        DiagnosticCompleted?.Invoke(result);
         Logger.Info($"Diagnostic result={result.Reason} correlation={result.Correlation} session={result.HostSession} tick={NetworkTicker.GetTicksSinceStart()}");
-        if (!result.Succeeded) CancelDiagnostic(result.Reason);
+        if (!result.Succeeded) FailSession(result.Reason);
     }
 
     public override void _PhysicsProcess(double delta) => _protocol?.TickHealth();
@@ -184,13 +175,14 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped) return;
         if (IsHost()) ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
-        else CancelDiagnostic("Server health response timed out or failed.");
+        else FailSession("Server health response timed out or failed.");
     }
 
-    public void CancelDiagnostic(string reason)
+    public void FailSession(string reason)
     {
         if (_stopped) return;
         DiagnosticResult ??= new DiagnosticResult(false, reason, "", "");
+        Session.TryStop(reason);
         StopSession();
         GameFlowManager.Instance.QuitToStartMenuBlocking(reason);
     }
@@ -199,6 +191,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped) return;
         _stopped = true;
+        Session.TryStop();
         _ticker?.SetPhysicsProcess(false);
         GamePlayManager.Instance?.StopSession();
         if (_protocol != null)
@@ -206,7 +199,12 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             _protocol.Completed -= CompleteDiagnostic;
             _protocol.Stop();
         }
-        if (_activeNetwork != null) _activeNetwork.ConnectionChanged -= OnNetworkConnected;
+        if (_activeNetwork != null)
+        {
+            _activeNetwork.TransportReady -= OnNetworkConnected;
+            _activeNetwork.StartupFailed -= FailSession;
+            _activeNetwork.ConnectionLost -= FailSession;
+        }
         _activeNetwork?.Cleanup();
         _activeNetwork = null;
         if (_configuredApi && Multiplayer is SceneMultiplayer api)
@@ -221,6 +219,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             api.AllowObjectDecoding = _previousObjectDecoding;
             _configuredApi = false;
         }
+        Session.CompleteStop();
         Logger.Info($"Network session stopped role={NetworkRole} tick={NetworkTicker.GetTicksSinceStart()}");
     }
 
@@ -233,6 +232,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _ticker = null;
         DiagnosticResult = null;
         OnNetworkReady = null;
+        DiagnosticCompleted = null;
     }
 
     public bool IsHost() => !_stopped && _activeNetwork?.IsConnected() == true && Multiplayer.IsServer();

@@ -1,3 +1,3 @@
 namespace sMPGWM.Scripts.Network;
 
-public sealed record LanEndpoint(string Address, int Port);
+public sealed record LanEndpoint(string Address, int Port) : NetworkTarget;

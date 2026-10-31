@@ -104,6 +104,30 @@ public class EnetProcessTests
             host.Command("quit");
             await host.WaitForExit();
             Assert.That(host.Output, Does.Not.Contain("ERROR:"));
+            using (var waiting = Start("normal-wait", "--no-network"))
+            {
+                await waiting.WaitFor("Steam initialized successfully");
+                waiting.Command("normal-wait");
+                await waiting.WaitFor("NET lifecycle gameplay inactive while connecting");
+                await waiting.WaitFor("returning to start menu.");
+                Assert.That(waiting.Output, Does.Not.Contain("SCRIPT ERROR:"));
+            }
+            using (var normalHost = Start("normal-host", "--no-network"))
+            using (var normalClient = Start("normal-client", "--no-network"))
+            {
+                await normalHost.WaitFor("Steam initialized successfully");
+                await normalClient.WaitFor("Steam initialized successfully");
+                normalHost.Command("normal-host");
+                await normalHost.WaitFor("NET lifecycle gameplay active after readiness");
+                normalClient.Command("normal-client");
+                await normalClient.WaitFor("NET lifecycle gameplay active after readiness");
+                normalClient.Command("normal-stop");
+                await normalClient.WaitFor("NET lifecycle gameplay inactive after stop");
+                normalHost.Command("normal-stop");
+                await normalHost.WaitFor("NET lifecycle gameplay inactive after stop");
+                Assert.That(normalClient.Output, Does.Not.Contain("SCRIPT ERROR:"));
+                Assert.That(normalHost.Output, Does.Not.Contain("SCRIPT ERROR:"));
+            }
             using (var timeout = Start("timeout", "--enet-client"))
                 await timeout.WaitFor("ENet connection failed or disconnected.");
             using (var cancel = Start("cancel-client", "--enet-client"))
@@ -210,6 +234,11 @@ public class EnetProcessTests
                     await steam.WaitForCount("returning to start menu.", round + 1);
                     await Task.Delay(200);
                 }
+                steam.Command("normal-steam-host");
+                await steam.WaitFor("NET lifecycle gameplay active after readiness");
+                steam.Command("normal-stop");
+                await steam.WaitFor("NET lifecycle gameplay inactive after stop");
+                await steam.WaitForCount("returning to start menu.", 4);
                 steam.Command("quit");
                 await steam.WaitForExit();
                 Assert.That(steam.Output, Does.Not.Contain("ERROR:"));

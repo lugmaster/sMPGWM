@@ -6,7 +6,9 @@ namespace sMPGWM.scripts.Network.NetworkInternal;
 
 public interface IActiveNetwork
 {
-    event Action<bool, string>? ConnectionChanged;
+    event Action<string>? TransportReady;
+    event Action<string>? StartupFailed;
+    event Action<string>? ConnectionLost;
     void BecomeHost(int maxConnections);
     void BecomeClient(ulong lobbyId);
     bool IsConnected();

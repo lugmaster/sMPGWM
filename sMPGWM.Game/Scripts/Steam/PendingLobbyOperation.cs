@@ -8,6 +8,24 @@ public sealed class PendingLobbyOperation
     public bool Pending { get; private set; }
     public ulong Target { get; private set; }
 
+    public bool Submit(ulong target, Action<long, ulong> completion, Action request)
+    {
+        if (!Begin(target, completion)) return false;
+        try
+        {
+            request();
+            return true;
+        }
+        catch
+        {
+            // No asynchronous request was submitted, so there is nothing to drain.
+            _completion = null;
+            Pending = false;
+            Target = 0;
+            throw;
+        }
+    }
+
     public bool Begin(ulong target, Action<long, ulong> completion)
     {
         if (Pending) return false;

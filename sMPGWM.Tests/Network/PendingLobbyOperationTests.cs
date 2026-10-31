@@ -5,6 +5,21 @@ namespace sMPGWM.Tests.Network;
 public class PendingLobbyOperationTests
 {
     [Test]
+    public void SubmissionFailureAllowsRetryWithoutWaitingForCallback()
+    {
+        var operation = new PendingLobbyOperation();
+        Action<long, ulong> callback = (_, _) => Assert.Fail("Failed submission cannot complete");
+        Assert.Throws<InvalidOperationException>(() => operation.Submit(42, callback,
+            () => throw new InvalidOperationException("Not submitted")));
+        Assert.That(operation.Pending, Is.False);
+        Assert.That(operation.Target, Is.Zero);
+        var completions = 0;
+        Assert.That(operation.Submit(43, (_, _) => completions++, () => { }), Is.True);
+        operation.Complete(1, 43, _ => Assert.Fail());
+        Assert.That(completions, Is.EqualTo(1));
+    }
+
+    [Test]
     public void CanceledOperationBlocksRetryUntilLateMembershipIsDrained()
     {
         var operation = new PendingLobbyOperation();

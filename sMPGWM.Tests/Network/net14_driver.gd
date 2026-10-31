@@ -33,6 +33,26 @@ func _process(_delta: float) -> void:
         manager.get_node("SessionProtocol").rpc_id(int(parts[1]), "DiagnosticReply", int(parts[2]), parts[3], parts[4], parts[5])
         return
     match command:
+        "normal-wait":
+            flow.call("StartGame", 1, 0)
+            await get_tree().scene_changed
+            assert(get_node("/root/MainGame").get("GameState") == 1)
+            await get_tree().create_timer(0.3).timeout
+            assert(get_node("/root/MainGame").get("GameState") == 1)
+            print("NET lifecycle gameplay inactive while connecting")
+        "normal-host", "normal-client", "normal-steam-host":
+            flow.call("StartGame", 1 if command == "normal-client" else 0, 1 if command == "normal-steam-host" else 0)
+            await get_tree().scene_changed
+            var deadline = Time.get_ticks_msec() + 10000
+            while get_node("/root/MainGame").get("GameState") != 0 and Time.get_ticks_msec() < deadline:
+                await get_tree().process_frame
+            assert(get_node("/root/MainGame").get("GameState") == 0)
+            print("NET lifecycle gameplay active after readiness")
+        "normal-stop":
+            manager.call("StopSession")
+            assert(get_node("/root/MainGame").get("GameState") == 1)
+            print("NET lifecycle gameplay inactive after stop")
+            flow.call("QuitToStartMenuBlocking", "Normal session stopped", false)
         "steam-cancel":
             flow.call("StartGame", 0, 1)
             await get_tree().scene_changed
@@ -67,7 +87,7 @@ func _process(_delta: float) -> void:
             manager.call("AssignRole")
             manager.get_node("SessionProtocol").call("SendHello")
         "cancel":
-            manager.call("CancelDiagnostic", "NET14 deliberate cancellation")
+            manager.call("FailSession", "NET14 deliberate cancellation")
         "quit":
             flow.call("QuitGame", "NET14 finished")
         "suppress":

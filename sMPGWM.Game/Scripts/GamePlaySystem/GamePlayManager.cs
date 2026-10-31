@@ -15,6 +15,7 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 
 public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
+    private sMPGWM.scripts.Network.NetworkManager? _network;
     private UiCanvas _canvas = null!;
     private InventoryEquipmentTransferService? _presentationTransfers;
     private InputController _inputController = null!;
@@ -86,11 +87,15 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _inputPolicy.SetSessionActive(GameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(GameState == MainGameState.Active);
         ApplyPlayerInputAvailability(_inputPolicy.CanControlPlayer);
-        if (!sMPGWM.scripts.Network.NetworkManager.Instance.DiagnosticMode) CallDeferred(nameof(Start));
+        _network = sMPGWM.scripts.Network.NetworkManager.Instance;
+        _network.Session.Changed += NetworkStateChanged;
+        NetworkStateChanged(_network.Session.State);
     }
 
     protected override void OnExitTree()
     {
+        if (_network != null) _network.Session.Changed -= NetworkStateChanged;
+        _network = null;
         if (_canvas != null)
         {
             _canvas.MessageAcknowledged -= AcknowledgeMessage;
@@ -125,10 +130,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (_canvas != null && _inputController != null) SetGameState(MainGameState.Inactive);
     }
 
-    private void Start()
+    private void NetworkStateChanged(sMPGWM.Scripts.Network.SessionState state)
     {
-        if (sMPGWM.scripts.Network.NetworkManager.Instance?.SessionStopped == false)
-            SetGameState(MainGameState.Active);
+        SetGameState(_network?.CanPlay == true ? MainGameState.Active : MainGameState.Inactive);
     }
 
     internal void BindInventoryPresentation(InventoryController inventory, EquipmentController equipment, InventoryEquipmentTransferService? transfers = null)

@@ -15,47 +15,18 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 {
     private SteamMultiplayerPeer? _steamMultiplayerPeer;
     private ulong? _currentLobbyId;
-    private bool _cleaned;
-    private bool _identitySubscribed;
-    private bool _started;
-    private bool _hosting;
-    private bool _completed;
+    private bool Hosting => Startup.Role == NetworkRole.Host;
     private ulong _targetLobby;
     private ulong _pinnedHost;
     private string _pinnedSession = "";
-    public NetworkStartupData? Startup { get; init; }
-    private ulong _deadline;
     private MultiplayerPeer? _ownedPeer;
+    public ulong? LobbyId => _currentLobbyId;
+    protected override string TimeoutReason => "Steam startup timed out.";
 
-    private void Report(bool success, string reason = "Connected")
-    {
-        if (_cleaned || _completed) return;
-        _completed = true;
-        EmitConnected(success, reason);
-    }
+    private void Connected() { if (!Hosting && _ownedPeer != null) ReadyTransport(); }
+    private void Failed() => FailTransport("Steam connection failed.");
+    private void Disconnected() => FailTransport("Steam server disconnected.");
 
-    private void Connected() { if (!_hosting && _ownedPeer != null) Report(true); }
-    private void Failed() => Report(false, "Steam connection failed.");
-    private void Disconnected()
-    {
-        if (!_cleaned) EmitConnected(false, "Steam server disconnected.");
-    }
-
-    public override void _PhysicsProcess(double delta)
-    {
-        if (_started && !_completed && !_cleaned && Time.GetTicksMsec() >= _deadline)
-            Report(false, "Steam startup timed out.");
-    }
-
-    private bool Begin(bool hosting)
-    {
-        if (_started || _cleaned) return false;
-        _started = true;
-        _hosting = hosting;
-        _deadline = Time.GetTicksMsec() + (ulong)Math.Max(1, Startup?.ConnectionTimeoutMs ?? ConnectionTimeout);
-        return true;
-    }
-    
     private const int StateEntered      = 0x01;
     private const int StateLeft         = 0x02;
     private const int StateDisconnected = 0x04;
@@ -74,15 +45,14 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
             if (Multiplayer is SceneMultiplayer api)
             {
-                api.PeerAuthenticating += VerifyIdentity;
-                _identitySubscribed = true;
+                Subscribe(() => api.PeerAuthenticating += VerifyIdentity, () => api.PeerAuthenticating -= VerifyIdentity);
             }
-            Multiplayer.ConnectedToServer += Connected;
-            Multiplayer.ConnectionFailed += Failed;
-            Multiplayer.ServerDisconnected += Disconnected;
-            SteamworksHelper.Api.LobbyChatUpdateSignal += OnLobbyChatUpdate;
-            SteamworksHelper.Api.LobbyDataUpdateSignal += OnLobbyDataUpdate;
-            GameFlowManager.Instance.OnSuddenExit += SetLobbyUnjoinable;
+            Subscribe(() => Multiplayer.ConnectedToServer += Connected, () => Multiplayer.ConnectedToServer -= Connected);
+            Subscribe(() => Multiplayer.ConnectionFailed += Failed, () => Multiplayer.ConnectionFailed -= Failed);
+            Subscribe(() => Multiplayer.ServerDisconnected += Disconnected, () => Multiplayer.ServerDisconnected -= Disconnected);
+            Subscribe(() => SteamworksHelper.Api.LobbyChatUpdateSignal += OnLobbyChatUpdate, () => SteamworksHelper.Api.LobbyChatUpdateSignal -= OnLobbyChatUpdate);
+            Subscribe(() => SteamworksHelper.Api.LobbyDataUpdateSignal += OnLobbyDataUpdate, () => SteamworksHelper.Api.LobbyDataUpdateSignal -= OnLobbyDataUpdate);
+            Subscribe(() => GameFlowManager.Instance.OnSuddenExit += SetLobbyUnjoinable, () => GameFlowManager.Instance.OnSuddenExit -= SetLobbyUnjoinable);
 
             Logger.Debug(
                 $"{nameof(SteamNetwork)}.{nameof(_Ready)} SteamMultiplayerPeer GDExtension loaded successfully.");
@@ -90,13 +60,13 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         catch (Exception e)
         {
             // Godot invokes _Ready through its bridge; report here rather than throwing across it.
-            Report(false, e.Message);
+            FailTransport(e.Message);
         }
     }
 
     private void VerifyIdentity(long peer)
     {
-        if (_cleaned || _steamMultiplayerPeer == null) return;
+        if (State == TransportState.Stopped || _steamMultiplayerPeer == null) return;
         try
         {
             var steamId = _steamMultiplayerPeer.GetSteamIdForPeerId(peer);
@@ -109,7 +79,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
                     if (SteamworksHelper.Api.GetLobbyMemberByIndex(lobby, i) == steamId) member = true;
             }
             var valid = steamId > 0 && reverse == peer && member &&
-                        (_hosting || (peer == 1 && steamId == checked((long)_pinnedHost)));
+                        (Hosting || (peer == 1 && steamId == checked((long)_pinnedHost)));
             Logger.Info($"NET00 identity peer={peer} steam={steamId} reverse={reverse} member={member} valid={valid}");
             if (!valid) ((SceneMultiplayer)Multiplayer).DisconnectPeer(checked((int)peer));
         }
@@ -140,29 +110,29 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     {
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(BecomeHost)} becoming host.");
-        if (!Begin(true)) return;
-        if (maxConnections is < 1 or > 10) { Report(false, "Invalid player capacity."); return; }
+        if (!Begin()) return;
+        if (maxConnections is < 1 or > 10) { FailTransport("Invalid player capacity."); return; }
         try
         {
             if (!SteamworksHelper.Instance.CreateSessionLobby(maxConnections, LobbyResult))
-                Report(false, "Steam create unavailable: previous operation is still draining; restart Steam runtime if it never returns.");
+                FailTransport("Steam create unavailable: previous operation is still draining; restart Steam runtime if it never returns.");
         }
-        catch (Exception e) { Report(false, e.Message); }
+        catch (Exception e) { FailTransport(e.Message); }
     }
 
     public void BecomeClient(ulong lobbyId)
     {
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(BecomeClient)} becoming client.");
-        if (!Begin(false)) return;
+        if (!Begin()) return;
         _targetLobby = lobbyId;
-        if (lobbyId == 0) { Report(false, "Invalid Steam lobby target."); return; }
+        if (lobbyId == 0) { FailTransport("Invalid Steam lobby target."); return; }
         try
         {
             if (!SteamworksHelper.Instance.JoinSessionLobby(lobbyId, LobbyResult))
-                Report(false, "Steam join unavailable: previous operation is still draining; restart Steam runtime if it never returns.");
+                FailTransport("Steam join unavailable: previous operation is still draining; restart Steam runtime if it never returns.");
         }
-        catch (Exception e) { Report(false, e.Message); }
+        catch (Exception e) { FailTransport(e.Message); }
     }
 
     public Node GetNode()
@@ -174,17 +144,17 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     {
         try
         {
-            if (_hosting) OnLobbyCreated(result, lobby);
+            if (Hosting) OnLobbyCreated(result, lobby);
             else OnLobbyJoined(lobby, 0, false, result);
         }
-        catch (Exception e) { Report(false, $"Steam lobby callback failed: {e.Message}"); }
+        catch (Exception e) { FailTransport($"Steam lobby callback failed: {e.Message}"); }
     }
 
     private void OnLobbyCreated(long connect, ulong lobbyId)
     {
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} received lobby creation result.");
-        if (_cleaned || !_started || !_hosting || _completed) return;
+        if (State != TransportState.Starting || !Hosting) return;
         if (connect == 1) _currentLobbyId = lobbyId;
         if (connect == 1)
         {
@@ -214,26 +184,21 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
                 Multiplayer.MultiplayerPeer = _ownedPeer;
                 Logger.Debug(
                     $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} created host from lobby.");
-                if (Startup?.Diagnostic == true)
-                {
-                    SetData(lobbyId, "state", "diagnostic");
-                    if (!SteamworksHelper.Api.SetLobbyJoinable(checked((long)lobbyId), true)) throw new InvalidOperationException("Cannot open diagnostic lobby.");
-                    var layer = new CanvasLayer { Layer = 101 };
-                    var label = new Label { Text = $"Private lobby ID: {lobbyId}", Position = new Vector2(20, 150) };
-                    layer.AddChild(label);
-                    AddChild(layer);
+                SetData(lobbyId, "state", Startup.Diagnostic ? "diagnostic" : "ready");
+                if (!SteamworksHelper.Api.SetLobbyJoinable(checked((long)lobbyId), true))
+                    throw new InvalidOperationException("Cannot open lobby.");
+                if (Startup.Diagnostic)
                     Logger.Info($"Steam diagnostic lobby={lobbyId} ready; gameplay inactive.");
-                }
-                Report(true, "Listening");
+                ReadyTransport("Listening");
             }
             else
             {
-                Report(false, $"SteamNetwork(IActiveNetwork): Error creating host: {error}");
+                FailTransport($"SteamNetwork(IActiveNetwork): Error creating host: {error}");
             }
         }
         else
         {
-            Report(false, $"SteamNetwork(IActiveNetwork): Failed to create lobby. Error: {connect}");
+            FailTransport($"SteamNetwork(IActiveNetwork): Failed to create lobby. Error: {connect}");
         }
     }
 
@@ -241,7 +206,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     {
         Logger.Debug(
             $"{nameof(SteamNetwork)}.{nameof(OnLobbyJoined)} received lobby join result.");
-        if (_cleaned || !_started || _hosting || _completed || lobby != _targetLobby || _ownedPeer != null) return;
+        if (State != TransportState.Starting || Hosting || lobby != _targetLobby || _ownedPeer != null) return;
         if (response == 1)
         {
             _currentLobbyId = lobby;
@@ -250,14 +215,14 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             _pinnedSession = SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "session_id");
             if (Startup?.Diagnostic == true && !ValidDiagnosticLobby(lobby))
             {
-                Report(false, "Steam lobby is stale or incompatible.");
+                FailTransport("Steam lobby is stale or incompatible.");
                 return;
             }
 
             // Host joins lobby itself compare with SteamId
             if (lobbyId == checked((long)SteamworksHelper.Api.GetSteamId()))
             {
-                Report(false, "Cannot join a self-hosted lobby.");
+                FailTransport("Cannot join a self-hosted lobby.");
                 return;
             }
             else
@@ -283,7 +248,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
                 _ => $"Unknown Reason: {response}"
             };
 
-            Report(false, $"SteamNetwork(IActiveNetwork) failed: {failReason}");
+            FailTransport($"SteamNetwork(IActiveNetwork) failed: {failReason}");
         }
     }
 
@@ -311,9 +276,9 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
     private void OnLobbyDataUpdate(long success, long lobby, long member)
     {
-        if (_cleaned || _hosting || _currentLobbyId != (ulong)lobby || member != lobby || Startup?.Diagnostic != true) return;
+        if (State == TransportState.Stopped || Hosting || _currentLobbyId != (ulong)lobby || member != lobby || Startup?.Diagnostic != true) return;
         if (success != 1 || !ValidDiagnosticLobby(checked((ulong)lobby)))
-            EmitConnected(false, "Steam diagnostic lobby changed or original host was lost.");
+            FailTransport("Steam diagnostic lobby changed or original host was lost.");
     }
 
     private void ConnectSocket(ulong steamId)
@@ -322,19 +287,19 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         {
             var result = _steamMultiplayerPeer.ConnectToLobby(checked((long)steamId));
             TraceCapabilities("client", result);
-            if (result != Error.Ok) { Report(false, $"CreateClient: {result}"); return; }
+            if (result != Error.Ok) { FailTransport($"CreateClient: {result}"); return; }
             _ownedPeer = _steamMultiplayerPeer;
             Multiplayer.MultiplayerPeer = _ownedPeer;
         }
-        catch (Exception e) { Report(false, $"Error creating client: {e.Message}"); }
+        catch (Exception e) { FailTransport($"Error creating client: {e.Message}"); }
     }
 
     private void OnLobbyChatUpdate(long lobbyId, long changedId, long makingChangeId, long chatState)
     {
-        if (_cleaned || _currentLobbyId != (ulong)lobbyId) return;
-        if (!_hosting && changedId == checked((long)_pinnedHost) && (chatState & (StateLeft | StateDisconnected | StateKicked | StateBanned)) != 0)
+        if (State == TransportState.Stopped || _currentLobbyId != (ulong)lobbyId) return;
+        if (!Hosting && changedId == checked((long)_pinnedHost) && (chatState & (StateLeft | StateDisconnected | StateKicked | StateBanned)) != 0)
         {
-            EmitConnected(false, "Original Steam host left the lobby.");
+            FailTransport("Original Steam host left the lobby.");
             return;
         }
         if ((chatState & StateLeft) != 0)
@@ -366,8 +331,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
     public bool IsConnected()
     {
-        return _steamMultiplayerPeer != null &&
-               _steamMultiplayerPeer.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected;
+        return State == TransportState.Ready;
     }
 
     public MultiplayerPeer.ConnectionStatus GetConnectionStatus()
@@ -376,39 +340,25 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     }
 
 
-    public override void Cleanup()
+    protected override void ReleaseResources()
     {
         Logger.Debug(
-            $"{nameof(SteamNetwork)}.{nameof(Cleanup)} cleanup started.");
+            $"{nameof(SteamNetwork)}.{nameof(ReleaseResources)} cleanup started.");
 
-        if (_cleaned) return;
-        _cleaned = true;
-        if (_identitySubscribed && Multiplayer is SceneMultiplayer api)
-        {
-            api.PeerAuthenticating -= VerifyIdentity;
-            _identitySubscribed = false;
-        }
-        Multiplayer.ConnectedToServer -= Connected;
-        Multiplayer.ConnectionFailed -= Failed;
-        Multiplayer.ServerDisconnected -= Disconnected;
-        if (_hosting) SetLobbyUnjoinable();
+        if (Hosting) SetLobbyUnjoinable();
         if (_ownedPeer != null && Multiplayer.MultiplayerPeer == _ownedPeer)
             Multiplayer.MultiplayerPeer = null;
         _ownedPeer = null;
-        GameFlowManager.Instance.OnSuddenExit -= SetLobbyUnjoinable;
         if (_currentLobbyId.HasValue) SteamworksHelper.Api.LeaveLobby(checked((long)_currentLobbyId.Value));
         SteamworksHelper.Instance?.CancelLobbyOperations(LobbyResult);
-        SteamworksHelper.Api.LobbyChatUpdateSignal -= OnLobbyChatUpdate;
-        SteamworksHelper.Api.LobbyDataUpdateSignal -= OnLobbyDataUpdate;
 
         _steamMultiplayerPeer?.Close();
         _steamMultiplayerPeer?.Dispose();
         _steamMultiplayerPeer = null;
 
         _currentLobbyId = null;
-        base.Cleanup();
         Logger.Debug(
-            $"{nameof(SteamNetwork)}.{nameof(Cleanup)} cleanup complete.");
+            $"{nameof(SteamNetwork)}.{nameof(ReleaseResources)} cleanup complete.");
     }
     
     private void SetLobbyUnjoinable()

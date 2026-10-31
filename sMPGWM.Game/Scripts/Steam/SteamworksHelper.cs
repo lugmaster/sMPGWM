@@ -58,17 +58,14 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
     public bool CreateSessionLobby(int capacity, Action<long, ulong> completion)
     {
         SubscribeLobbyEvents();
-        if (!_create.Begin(0, completion)) return false;
-        Api.CreateLobby(GDExtension.Wrappers.Steam.LobbyType.Private, capacity);
-        return true;
+        return _create.Submit(0, completion,
+            () => Api.CreateLobby(GDExtension.Wrappers.Steam.LobbyType.Private, capacity));
     }
 
     public bool JoinSessionLobby(ulong lobby, Action<long, ulong> completion)
     {
         SubscribeLobbyEvents();
-        if (!_join.Begin(lobby, completion)) return false;
-        Api.JoinLobby(checked((long)lobby));
-        return true;
+        return _join.Submit(lobby, completion, () => Api.JoinLobby(checked((long)lobby)));
     }
 
     public void CancelLobbyOperations(Action<long, ulong> completion)

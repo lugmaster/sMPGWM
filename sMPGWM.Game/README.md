@@ -45,6 +45,14 @@ sMPGWM is a **2D top-down coop multiplayer space shooter** developed in **Godot 
 
 These conventions should be used consistently in architecture discussions, implementation plans, and code examples.
 
+### Session lifecycle
+
+The menu passes a `NetworkStartupData` request with either a `LanEndpoint` or a `SteamLobbyTarget` to `GameFlowManager`. The main-game scene consumes it and starts networking deferred, after scene consumers have subscribed.
+
+`NetworkManager` coordinates a single `NetworkSession`: `Created -> Starting -> Ready -> Stopping -> Stopped`. A stopped session cannot restart; returning through the menu creates a fresh one. Gameplay observes session changes and stays inactive until a non-diagnostic session is ready. Diagnostic clients also require the hello/reply exchange before readiness; the Steam menu currently retains this diagnostic flow.
+
+ENet and Steam share startup deadlines, terminal transport events, and subscription cleanup in `BaseNetwork`. `SessionAuthentication` owns the temporary multiplayer authentication settings, `SessionProtocolNode` handles control messages and health probes, and `NetworkDiagnosticPanel` owns diagnostic controls. Steam lobby operations remain in `SteamworksHelper`: canceled submitted requests drain late callbacks, while synchronous submission failures permit immediate retry.
+
 ## Tests
 
 Run `dotnet test sMPGWM.Tests` from the repository root. The NUnit project targets .NET 8 to match the game assembly. Set `GODOT_BIN` to a Godot 4.6 .NET console executable if it is not available as `godot` on PATH (the local `godot_engine/Godot_v4.6.2_mono_steam` installation is also detected).

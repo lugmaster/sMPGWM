@@ -64,11 +64,9 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
     
     public void StartSteamDiagnostic(NetworkRole role, ulong lobbyId = 0)
     {
-        GameFlowManager.Instance.StartNetworkGame(new NetworkStartupData(NetworkType.Steam, role,
-            GameConfig.ServerIpAddress,
-            GameConfig.Port,
+        GameFlowManager.Instance.StartNetworkGame(new NetworkStartupData(role, new SteamLobbyTarget(lobbyId),
             GameConfig.MaxPlayers,
-            GameConfig.ConnectionTimeout, true, lobbyId));
+            GameConfig.ConnectionTimeout, true));
     }
 
     private readonly Stack<Control> _screenHistory = new();
