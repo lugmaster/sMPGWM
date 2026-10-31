@@ -1,5 +1,7 @@
 # Logging, export and native assertion review — 2026-10-31
 
+Historical evidence snapshot. Its next-action and missing-auth statements are superseded by the current handoff in ../../network-epic-implementation-plan.md: Steam silent/malformed auth and host recovery passed; remaining NET-00 checks are deferred by user decision and do not block implementation.
+
 ## Logging
 
 Logger's optional direct-file sink now opens existing files with ReadWrite, creates missing files with WriteRead, and seeks to the end before each entry. Previously WriteRead truncated every entry. FileLogging_CreatesThenPreservesEarlierMessages passed inside Godot, exercising creation, two retained entries and minimum-level filtering. The engine integration orchestration remains red because of the previously recorded inventory UnknownDefinitions_AreRejectedIncludingDefaultAndZeroQuantity failure; no clean full-suite result is claimed.
