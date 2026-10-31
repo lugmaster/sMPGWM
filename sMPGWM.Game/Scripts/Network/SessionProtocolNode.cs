@@ -12,6 +12,7 @@ public partial class SessionProtocolNode : Node
     public event Action<DiagnosticResult>? Completed;
     private readonly DiagnosticExchange _exchange = new();
     private readonly HashSet<int> _answered = new(10);
+    private readonly Dictionary<int, ProtocolRateLimit> _rates = new(9);
     private ulong _deadline;
     private bool _waiting;
     private bool _started;
@@ -23,7 +24,7 @@ public partial class SessionProtocolNode : Node
         Multiplayer.PeerDisconnected += PeerLeft;
         _subscribed = true;
     }
-    private void PeerLeft(long peer) => _answered.Remove((int)peer);
+    private void PeerLeft(long peer) { _answered.Remove((int)peer); _rates.Remove((int)peer); }
 
     public void SendHello()
     {
@@ -44,10 +45,23 @@ public partial class SessionProtocolNode : Node
     private void DiagnosticHello(int version, string correlation, string payload)
     {
         var sender = Multiplayer.GetRemoteSenderId();
-        if (_stopped || !NetworkManager.Instance.IsHost() || !DiagnosticExchange.IsValid(version, correlation, payload)) return;
+        if (_stopped || !NetworkManager.Instance.IsHost()) return;
         var member = false;
         foreach (var peer in Multiplayer.GetPeers()) if (peer == sender) member = true;
-        if (!member || _answered.Count >= 9 || !_answered.Add(sender)) return;
+        if (!member) return;
+        if (!_rates.TryGetValue(sender, out var rate))
+        {
+            if (_rates.Count >= 9) return;
+            rate = new ProtocolRateLimit();
+            _rates.Add(sender, rate);
+        }
+        if (!rate.Accept(Time.GetTicksMsec()))
+        {
+            Logger.Warning($"Protocol rate exceeded peer={sender}");
+            ((SceneMultiplayer)Multiplayer).DisconnectPeer(sender);
+            return;
+        }
+        if (!DiagnosticExchange.IsValid(version, correlation, payload) || _answered.Count >= 9 || !_answered.Add(sender)) return;
         Logger.Info($"Host sender={sender} DiagnosticHello correlation={correlation} payload={payload} session={HostSession} tick={NetworkTicker.GetTicksSinceStart()}");
         var result = RpcId(sender, nameof(DiagnosticReply), version, correlation, payload, HostSession);
         if (result != Error.Ok) Logger.Error($"Diagnostic reply failed: {result}");
@@ -87,6 +101,7 @@ public partial class SessionProtocolNode : Node
         _waiting = false;
         _exchange.Cancel();
         _answered.Clear();
+        _rates.Clear();
         Completed = null;
         SetPhysicsProcess(false);
     }
