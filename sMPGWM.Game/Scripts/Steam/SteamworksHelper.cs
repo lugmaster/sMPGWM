@@ -1,6 +1,6 @@
 ﻿using System;
 using Godot;
-using GodotSteam;
+using GDExtension.Wrappers;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.Util;
@@ -10,6 +10,7 @@ namespace sMPGWM.Scripts.Steam;
 
 public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 {
+    public static GDExtension.Wrappers.Steam Api { get; private set; } = null!;
     private const uint SteamAppId = 480;
     private readonly PendingLobbyOperation _create = new();
     private readonly PendingLobbyOperation _join = new();
@@ -22,13 +23,13 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
         {
             if (!_lobbyCreatedSubscribed)
             {
-                GodotSteam.Steam.LobbyCreated += LobbyCreated;
+                Api.LobbyCreatedSignal += LobbyCreated;
                 _lobbyCreatedSubscribed = true;
             }
 
             if (!_lobbyJoinedSubscribed)
             {
-                GodotSteam.Steam.LobbyJoined += LobbyJoined;
+                Api.LobbyJoinedSignal += LobbyJoined;
                 _lobbyJoinedSubscribed = true;
             }
         }
@@ -43,28 +44,30 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
     {
         if (_lobbyCreatedSubscribed)
         {
-            GodotSteam.Steam.LobbyCreated -= LobbyCreated;
+            Api.LobbyCreatedSignal -= LobbyCreated;
             _lobbyCreatedSubscribed = false;
         }
 
         if (_lobbyJoinedSubscribed)
         {
-            GodotSteam.Steam.LobbyJoined -= LobbyJoined;
+            Api.LobbyJoinedSignal -= LobbyJoined;
             _lobbyJoinedSubscribed = false;
         }
     }
 
     public bool CreateSessionLobby(int capacity, Action<long, ulong> completion)
     {
+        SubscribeLobbyEvents();
         if (!_create.Begin(0, completion)) return false;
-        GodotSteam.Steam.CreateLobby(GodotSteam.Steam.LobbyType.Private, capacity);
+        Api.CreateLobby(GDExtension.Wrappers.Steam.LobbyType.Private, capacity);
         return true;
     }
 
     public bool JoinSessionLobby(ulong lobby, Action<long, ulong> completion)
     {
+        SubscribeLobbyEvents();
         if (!_join.Begin(lobby, completion)) return false;
-        GodotSteam.Steam.JoinLobby(lobby);
+        Api.JoinLobby(checked((long)lobby));
         return true;
     }
 
@@ -74,15 +77,15 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
         _join.Cancel(completion);
     }
 
-    private void LobbyCreated(long result, ulong lobby) =>
-        _create.Complete(result, lobby, LeaveLateLobby);
+    private void LobbyCreated(long result, long lobby) =>
+        _create.Complete(result, checked((ulong)lobby), LeaveLateLobby);
 
-    private void LobbyJoined(ulong lobby, long permissions, bool locked, long result) =>
-        _join.Complete(result, lobby, LeaveLateLobby);
+    private void LobbyJoined(long lobby, long permissions, bool locked, long result) =>
+        _join.Complete(result, checked((ulong)lobby), LeaveLateLobby);
 
     private static void LeaveLateLobby(ulong lobby)
     {
-        GodotSteam.Steam.LeaveLobby(lobby);
+        Api.LeaveLobby(checked((long)lobby));
         Logger.Info("Canceled Steam lobby membership drained.");
     }
 
@@ -93,6 +96,8 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     protected override void OnEnterTree()
     {
+        Api = GDExtension.Wrappers.Steam.GetSingleton();
+        ProcessMode = ProcessModeEnum.Always;
         Logger.Debug("Setting Steam app id");
         OS.SetEnvironment("SteamAppId", SteamAppId.ToString());
         OS.SetEnvironment("SteamGameId", SteamAppId.ToString());
@@ -102,7 +107,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
     {
         try
         {
-            Logger.Debug(GodotSteam.Steam.IsSteamRunning() ? "Steam is running" : "Steam is not running");
+            Logger.Debug(Api.IsSteamRunning() ? "Steam is running" : "Steam is not running");
 
             if (GameConfig.RunSteamEx)
             {
@@ -123,7 +128,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     public override void _Process(double delta)
     {
-        GodotSteam.Steam.RunCallbacks();
+        Api.RunCallbacks();
     }
 
     public static void ShutdownSteam()
@@ -132,7 +137,7 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
         try
         {
-            GodotSteam.Steam.SteamShutdown();
+            Api.SteamShutdown();
         }
         catch (Exception e)
         {
@@ -142,24 +147,22 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     private static void InitializeSteamEx()
     {
-        var initializeResponse = GodotSteam.Steam.SteamInitEx(SteamAppId, true);
+        var initializeResponse = Api.SteamInitEx(SteamAppId, false);
 
-        Logger.Debug($"SteamAPI.InitEx() response: {initializeResponse.Status} - {initializeResponse.Verbal}");
-
-        if (initializeResponse.Status != SteamInitExStatus.SteamworksActive)
-            QuitWithOsError($"Failed to initialize SteamEX: {initializeResponse.Status} - {initializeResponse.Verbal}");
+        Logger.Debug($"SteamAPI.InitEx() response: {initializeResponse}");
+        if (!initializeResponse.ContainsKey("status") ||
+            initializeResponse["status"].As<long>() != (long)GDExtension.Wrappers.Steam.SteamApiInitResult.Ok)
+            QuitWithOsError($"Failed to initialize SteamEX: {initializeResponse}");
 
         Logger.Debug("Steam initialized successfully with SteamInitEx.");
     }
 
     private static void InitializeSteam()
     {
-        var initializeResponse = GodotSteam.Steam.SteamInit(SteamAppId, true);
+        var initializeResponse = Api.SteamInit(SteamAppId, false);
 
-        Logger.Debug($"SteamAPI.InitEx() response: {initializeResponse.Status} - {initializeResponse.Verbal}");
-
-        if (initializeResponse.Status != SteamInitStatus.SteamworksActive)
-            QuitWithOsError($"Failed to initialize Steam: {initializeResponse.Status} - {initializeResponse.Verbal}");
+        if (!initializeResponse)
+            QuitWithOsError("Failed to initialize Steam.");
 
         Logger.Debug("Steam initialized successfully with SteamInit.");
     }

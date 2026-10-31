@@ -1,6 +1,6 @@
 ﻿using System;
 using Godot;
-using GodotSteam;
+using GDExtension.Wrappers;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.Network;
@@ -13,7 +13,7 @@ namespace sMPGWM.scripts.Network.NetworkInternal;
 
 public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 {
-    private SteamMultiplayerPeerWrapper _steamMultiplayerPeerWrapper;
+    private SteamMultiplayerPeer? _steamMultiplayerPeer;
     private ulong? _currentLobbyId;
     private bool _cleaned;
     private bool _started;
@@ -67,13 +67,15 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             $"{nameof(SteamNetwork)}.{nameof(_Ready)} Steam network ready.");
         try
         {
-            _steamMultiplayerPeerWrapper = new SteamMultiplayerPeerWrapper { DiagnosticTracing = Startup?.Diagnostic == true };
+            _steamMultiplayerPeer = SteamMultiplayerPeer.Instantiate();
+
+            _steamMultiplayerPeer.ServerRelay = true;
 
             Multiplayer.ConnectedToServer += Connected;
             Multiplayer.ConnectionFailed += Failed;
             Multiplayer.ServerDisconnected += Disconnected;
-            Steam.LobbyChatUpdate += OnLobbyChatUpdate;
-            Steam.LobbyDataUpdate += OnLobbyDataUpdate;
+            SteamworksHelper.Api.LobbyChatUpdateSignal += OnLobbyChatUpdate;
+            SteamworksHelper.Api.LobbyDataUpdateSignal += OnLobbyDataUpdate;
             GameFlowManager.Instance.OnSuddenExit += SetLobbyUnjoinable;
 
             Logger.Debug(
@@ -84,6 +86,22 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             // Godot invokes _Ready through its bridge; report here rather than throwing across it.
             Report(false, e.Message);
         }
+    }
+
+    private void TraceCapabilities(string phase, Error result = Error.Ok)
+    {
+        if (Startup?.Diagnostic != true && OS.GetEnvironment("NET00_CAPABILITIES") != "1")
+            return;
+
+        var peer = (MultiplayerPeer)_steamMultiplayerPeer;
+        using var api = new SceneMultiplayer();
+        Logger.Info($"NET00 phase={phase} engine={Engine.GetVersionInfo()["string"]} native={_steamMultiplayerPeer.GetClass()} result={result} status={peer.GetConnectionStatus()}");
+        foreach (var method in new[] { "host_with_lobby", "connect_to_lobby", "close", "get_steam_id_for_peer_id", "get_peer_id_for_steam_id" })
+            Logger.Info($"NET00 native_method={method} available={_steamMultiplayerPeer.HasMethod(method)}");
+        foreach (var method in new[] { "set_auth_callback", "send_auth", "complete_auth", "set_server_relay_enabled" })
+            Logger.Info($"NET00 api_method={method} available={api.HasMethod(method)}");
+        if (phase == "host" && result == Error.Ok)
+            Logger.Info($"NET00 server_id={peer.GetUniqueId()} relay_supported={peer.IsServerRelaySupported()}");
     }
 
     public void BecomeHost(int maxConnections)
@@ -140,31 +158,33 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         {
             Logger.Debug(
                 $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} created lobby with {nameof(lobbyId)}={lobbyId}.");
-            if (!Steam.SetLobbyJoinable(lobbyId, false)) throw new InvalidOperationException("Cannot lock lobby.");
+            if (!SteamworksHelper.Api.SetLobbyJoinable(checked((long)lobbyId), false)) throw new InvalidOperationException("Cannot lock lobby.");
 
             SetData(lobbyId, "name", GameConfig.LobbyName + " " + Guid.NewGuid().ToString("N")[..8]);
             SetData(lobbyId, "game_id", GameConfig.LobbyGameId);
             SetData(lobbyId, "mode", GameConfig.LobbyMode);
             SetData(lobbyId, "version", GameConfig.Version);
             SetData(lobbyId, "protocol", DiagnosticExchange.ProtocolVersion.ToString());
-            SetData(lobbyId, "host_steam_id", Steam.GetSteamID().ToString());
+            SetData(lobbyId, "host_steam_id", SteamworksHelper.Api.GetSteamId().ToString());
             SetData(lobbyId, "session_id", Guid.NewGuid().ToString("N"));
             SetData(lobbyId, "state", "preparing");
 
             Logger.Debug(
-                $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} creating host with lobby name={Steam.GetLobbyData(lobbyId, "name")}.");
+                $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} creating host with lobby name={SteamworksHelper.Api.GetLobbyData(checked((long)lobbyId), "name")}.");
 
-            var error = _steamMultiplayerPeerWrapper.CreateHost(0);
+            TraceCapabilities("constructed");
+            var error = _steamMultiplayerPeer.HostWithLobby(checked((long)lobbyId));
+            TraceCapabilities("host", error);
             if (error == Error.Ok)
             {
-                _ownedPeer = (MultiplayerPeer)_steamMultiplayerPeerWrapper.GetPeer();
+                _ownedPeer = _steamMultiplayerPeer;
                 Multiplayer.MultiplayerPeer = _ownedPeer;
                 Logger.Debug(
                     $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} created host from lobby.");
                 if (Startup?.Diagnostic == true)
                 {
                     SetData(lobbyId, "state", "diagnostic");
-                    if (!Steam.SetLobbyJoinable(lobbyId, true)) throw new InvalidOperationException("Cannot open diagnostic lobby.");
+                    if (!SteamworksHelper.Api.SetLobbyJoinable(checked((long)lobbyId), true)) throw new InvalidOperationException("Cannot open diagnostic lobby.");
                     var layer = new CanvasLayer { Layer = 101 };
                     var label = new Label { Text = $"Private lobby ID: {lobbyId}", Position = new Vector2(20, 150) };
                     layer.AddChild(label);
@@ -192,9 +212,9 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         if (response == 1)
         {
             _currentLobbyId = lobby;
-            var lobbyId = Steam.GetLobbyOwner(lobby);
-            _pinnedHost = lobbyId;
-            _pinnedSession = Steam.GetLobbyData(lobby, "session_id");
+            var lobbyId = SteamworksHelper.Api.GetLobbyOwner(checked((long)lobby));
+            _pinnedHost = checked((ulong)lobbyId);
+            _pinnedSession = SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "session_id");
             if (Startup?.Diagnostic == true && !ValidDiagnosticLobby(lobby))
             {
                 Report(false, "Steam lobby is stale or incompatible.");
@@ -202,7 +222,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             }
 
             // Host joins lobby itself compare with SteamId
-            if (lobbyId == Steam.GetSteamID())
+            if (lobbyId == checked((long)SteamworksHelper.Api.GetSteamId()))
             {
                 Report(false, "Cannot join a self-hosted lobby.");
                 return;
@@ -210,7 +230,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             else
             {
                 // Client joins lobby - connect socket to host
-                ConnectSocket(lobbyId);
+                ConnectSocket(lobby);
             }
         }
         else
@@ -236,29 +256,29 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
     private static void SetData(ulong lobby, string key, string value)
     {
-        if (!Steam.SetLobbyData(lobby, key, value))
+        if (!SteamworksHelper.Api.SetLobbyData(checked((long)lobby), key, value))
             throw new InvalidOperationException($"Steam metadata write failed: {key}");
     }
 
     private bool ValidDiagnosticLobby(ulong lobby)
     {
-        if (_pinnedHost == 0 || Steam.GetLobbyOwner(lobby) != _pinnedHost ||
-            Steam.GetLobbyData(lobby, "host_steam_id") != _pinnedHost.ToString() ||
+        if (_pinnedHost == 0 || SteamworksHelper.Api.GetLobbyOwner(checked((long)lobby)) != checked((long)_pinnedHost) ||
+            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "host_steam_id") != checked((long)_pinnedHost).ToString() ||
             !Guid.TryParseExact(_pinnedSession, "N", out _) ||
-            Steam.GetLobbyData(lobby, "session_id") != _pinnedSession ||
-            Steam.GetLobbyData(lobby, "game_id") != GameConfig.LobbyGameId ||
-            Steam.GetLobbyData(lobby, "version") != GameConfig.Version ||
-            Steam.GetLobbyData(lobby, "protocol") != DiagnosticExchange.ProtocolVersion.ToString() ||
-            Steam.GetLobbyData(lobby, "state") != "diagnostic") return false;
-        for (var i = 0; i < Steam.GetNumLobbyMembers(lobby); i++)
-            if (Steam.GetLobbyMemberByIndex(lobby, i) == _pinnedHost) return true;
+            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "session_id") != _pinnedSession ||
+            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "game_id") != GameConfig.LobbyGameId ||
+            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "version") != GameConfig.Version ||
+            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "protocol") != DiagnosticExchange.ProtocolVersion.ToString() ||
+            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "state") != "diagnostic") return false;
+        for (var i = 0; i < SteamworksHelper.Api.GetNumLobbyMembers(checked((long)lobby)); i++)
+            if (SteamworksHelper.Api.GetLobbyMemberByIndex(checked((long)lobby), i) == checked((long)_pinnedHost)) return true;
         return false;
     }
 
-    private void OnLobbyDataUpdate(uint success, ulong lobby, ulong member)
+    private void OnLobbyDataUpdate(long success, long lobby, long member)
     {
-        if (_cleaned || _hosting || _currentLobbyId != lobby || member != lobby || Startup?.Diagnostic != true) return;
-        if (success != 1 || !ValidDiagnosticLobby(lobby))
+        if (_cleaned || _hosting || _currentLobbyId != (ulong)lobby || member != lobby || Startup?.Diagnostic != true) return;
+        if (success != 1 || !ValidDiagnosticLobby(checked((ulong)lobby)))
             EmitConnected(false, "Steam diagnostic lobby changed or original host was lost.");
     }
 
@@ -266,18 +286,19 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     {
         try
         {
-            var result = _steamMultiplayerPeerWrapper.CreateClient(steamId, 0);
+            var result = _steamMultiplayerPeer.ConnectToLobby(checked((long)steamId));
+            TraceCapabilities("client", result);
             if (result != Error.Ok) { Report(false, $"CreateClient: {result}"); return; }
-            _ownedPeer = (MultiplayerPeer)_steamMultiplayerPeerWrapper.GetPeer();
+            _ownedPeer = _steamMultiplayerPeer;
             Multiplayer.MultiplayerPeer = _ownedPeer;
         }
         catch (Exception e) { Report(false, $"Error creating client: {e.Message}"); }
     }
 
-    private void OnLobbyChatUpdate(ulong lobbyId, long changedId, long makingChangeId, long chatState)
+    private void OnLobbyChatUpdate(long lobbyId, long changedId, long makingChangeId, long chatState)
     {
-        if (_cleaned || _currentLobbyId != lobbyId) return;
-        if (!_hosting && (ulong)changedId == _pinnedHost && (chatState & (StateLeft | StateDisconnected | StateKicked | StateBanned)) != 0)
+        if (_cleaned || _currentLobbyId != (ulong)lobbyId) return;
+        if (!_hosting && changedId == checked((long)_pinnedHost) && (chatState & (StateLeft | StateDisconnected | StateKicked | StateBanned)) != 0)
         {
             EmitConnected(false, "Original Steam host left the lobby.");
             return;
@@ -311,15 +332,13 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
     public bool IsConnected()
     {
-        return _steamMultiplayerPeerWrapper != null &&
-               _steamMultiplayerPeerWrapper.GetConnectionStatus() == (int)MultiplayerPeer.ConnectionStatus.Connected;
+        return _steamMultiplayerPeer != null &&
+               _steamMultiplayerPeer.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected;
     }
 
     public MultiplayerPeer.ConnectionStatus GetConnectionStatus()
     {
-        return _steamMultiplayerPeerWrapper != null
-            ? (MultiplayerPeer.ConnectionStatus)_steamMultiplayerPeerWrapper.GetConnectionStatus()
-            : MultiplayerPeer.ConnectionStatus.Disconnected;
+        return _steamMultiplayerPeer?.GetConnectionStatus() ?? MultiplayerPeer.ConnectionStatus.Disconnected;
     }
 
 
@@ -338,13 +357,14 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             Multiplayer.MultiplayerPeer = null;
         _ownedPeer = null;
         GameFlowManager.Instance.OnSuddenExit -= SetLobbyUnjoinable;
-        if (_currentLobbyId.HasValue) Steam.LeaveLobby(_currentLobbyId.Value);
+        if (_currentLobbyId.HasValue) SteamworksHelper.Api.LeaveLobby(checked((long)_currentLobbyId.Value));
         SteamworksHelper.Instance?.CancelLobbyOperations(LobbyResult);
-        Steam.LobbyChatUpdate -= OnLobbyChatUpdate;
-        Steam.LobbyDataUpdate -= OnLobbyDataUpdate;
+        SteamworksHelper.Api.LobbyChatUpdateSignal -= OnLobbyChatUpdate;
+        SteamworksHelper.Api.LobbyDataUpdateSignal -= OnLobbyDataUpdate;
 
-        _steamMultiplayerPeerWrapper?.Cleanup();
-        _steamMultiplayerPeerWrapper = null;
+        _steamMultiplayerPeer?.Close();
+        _steamMultiplayerPeer?.Dispose();
+        _steamMultiplayerPeer = null;
 
         _currentLobbyId = null;
         base.Cleanup();
@@ -363,14 +383,14 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
                 return;
             }
 
-            if (!Steam.IsSteamRunning())
+            if (!SteamworksHelper.Api.IsSteamRunning())
             {
                 Logger.Debug(
                     $"{nameof(SteamNetwork)}.{nameof(SetLobbyUnjoinable)} Steam is not running, cannot set lobby unjoinable.");
                 return;
             }
 
-            Steam.SetLobbyJoinable(_currentLobbyId.Value, false);
+            SteamworksHelper.Api.SetLobbyJoinable(checked((long)_currentLobbyId.Value), false);
             Logger.Debug(
                 $"{nameof(SteamNetwork)}.{nameof(SetLobbyUnjoinable)} lobby set to unjoinable with {nameof(_currentLobbyId)}={_currentLobbyId.Value}.");
         }

@@ -1,10 +1,9 @@
 using System;
 using Godot;
-using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
+using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.Network;
 using sMPGWM.scripts.Network.NetworkInternal;
-using sMPGWM.Scripts.Network.NetworkInternal;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -138,7 +137,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_stopped) return;
         _stopped = true;
         _ticker?.SetPhysicsProcess(false);
-        sMPGWM.Scripts.GamePlaySystem.GamePlayManager.Instance?.StopSession();
+        GamePlayManager.Instance?.StopSession();
         if (_protocol != null)
         {
             _protocol.Completed -= CompleteDiagnostic;

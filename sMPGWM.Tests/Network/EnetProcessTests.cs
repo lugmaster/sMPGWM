@@ -19,9 +19,10 @@ public class EnetProcessTests
         {
             var game = Path.Combine(root, "sMPGWM.Game");
             var configuration = new DirectoryInfo(TestContext.CurrentContext.TestDirectory).Parent!.Name;
-            foreach (var directory in new[] { "Scripts", "scenes", "assets", "config", ".godot/imported", $".godot/mono/temp/bin/{configuration}" })
+            foreach (var directory in new[] { "addons", "Scripts", "scenes", "assets", "config", ".godot/imported", $".godot/mono/temp/bin/{configuration}" })
                 CopyTree(Path.Combine(game, directory), Path.Combine(stage, directory));
             File.Copy(Path.Combine(game, ".godot/uid_cache.bin"), Path.Combine(stage, ".godot/uid_cache.bin"));
+            File.Copy(Path.Combine(game, ".godot/extension_list.cfg"), Path.Combine(stage, ".godot/extension_list.cfg"));
             var project = File.ReadAllText(Path.Combine(game, "project.godot"))
                 .Replace("uid://bwppb4jr80bw0", "res://scenes/start_scene.tscn")
                 .Replace("uid://dnk44tr6vs3ar", "res://Scripts/GameFlowSystem/GameFlowManager.cs")

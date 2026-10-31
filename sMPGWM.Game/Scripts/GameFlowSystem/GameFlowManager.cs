@@ -141,7 +141,6 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     {
         if (generation != _navigationGeneration) return;
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuInternal)} returning to start menu.");
-        Steam.SteamworksHelper.Instance?.UnsubscribeLobbyEvents();
         ChangeScene(GameFlowSceneProvider.StartMenuScene, GameFlowState.StartMenu);
     }
 

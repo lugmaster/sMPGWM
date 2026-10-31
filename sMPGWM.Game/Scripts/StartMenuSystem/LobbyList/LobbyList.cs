@@ -1,7 +1,8 @@
 using System;
 using Godot;
-using SteamApi = GodotSteam.Steam;
 using sMPGWM.Scripts.GameConfigSystem;
+using sMPGWM.Scripts.Steam;
+using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.StartMenuSystem.LobbyList;
 
@@ -20,7 +21,7 @@ public partial class LobbyList : PanelContainer
         var content = GetNode<VBoxContainer>("VBoxContainer");
         _entries = content.GetNode<VBoxContainer>("LobbyScroll/LobbyEntries");
         ClearSelection();
-        var toolbar = new sMPGWM.Scripts.Util.UiComponents.FilterToolbar();
+        var toolbar = new FilterToolbar();
         _target = new LineEdit { PlaceholderText = "Private lobby ID from host", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         var lookup = new Button { Text = "Look up" };
         toolbar.AddChild(_target);
@@ -31,7 +32,7 @@ public partial class LobbyList : PanelContainer
         content.AddChild(_status);
         lookup.Pressed += Lookup;
         _target.TextChanged += _ => { _requested = 0; ClearSelection(); };
-        SteamApi.LobbyDataUpdate += DataUpdated;
+        SteamworksHelper.Api.LobbyDataUpdateSignal += DataUpdated;
     }
 
     private void ClearSelection()
@@ -59,33 +60,33 @@ public partial class LobbyList : PanelContainer
         _status.Text = "Looking up lobby?";
         try
         {
-            if (!SteamApi.RequestLobbyData(id)) Fail("Lobby lookup could not start.");
+            if (!SteamworksHelper.Api.RequestLobbyData(checked((long)id))) Fail("Lobby lookup could not start.");
         }
         catch (Exception e) { Fail(e.Message); }
     }
 
     private void Fail(string reason) { _requested = 0; _status.Text = reason; }
 
-    private void DataUpdated(uint success, ulong lobby, ulong member)
+    private void DataUpdated(long success, long lobby, long member)
     {
-        if (_requested == 0 || lobby != _requested || member != lobby) return;
+        if (_requested == 0 || (ulong)lobby != _requested || member != lobby) return;
         _requested = 0;
         try
         {
-            if (success != 1 || SteamApi.GetLobbyData(lobby, "game_id") != GameConfig.LobbyGameId ||
-                SteamApi.GetLobbyData(lobby, "version") != GameConfig.Version ||
-                SteamApi.GetLobbyData(lobby, "state") != "diagnostic" ||
-                SteamApi.GetLobbyOwner(lobby) == SteamApi.GetSteamID())
+            if (success != 1 || SteamworksHelper.Api.GetLobbyData(lobby, "game_id") != GameConfig.LobbyGameId ||
+                SteamworksHelper.Api.GetLobbyData(lobby, "version") != GameConfig.Version ||
+                SteamworksHelper.Api.GetLobbyData(lobby, "state") != "diagnostic" ||
+                SteamworksHelper.Api.GetLobbyOwner(lobby) == checked((long)SteamworksHelper.Api.GetSteamId()))
             {
                 Fail("Lobby unavailable, incompatible, or hosted by you.");
                 return;
             }
             var row = GD.Load<PackedScene>("res://scenes/ui/menu/start_menu/lobby_list_entry.tscn").Instantiate<Button>();
-            row.GetNode<Label>("MarginContainer/MainRow/LobbyNameLabel").Text = SteamApi.GetLobbyData(lobby, "name");
+            row.GetNode<Label>("MarginContainer/MainRow/LobbyNameLabel").Text = SteamworksHelper.Api.GetLobbyData(lobby, "name");
             row.GetNode<Label>("MarginContainer/MainRow/HostNameLabel").Text = "Private diagnostic";
-            row.GetNode<Label>("MarginContainer/MainRow/PlayerCountLabel").Text = $"{SteamApi.GetNumLobbyMembers(lobby)}/{SteamApi.GetLobbyMemberLimit(lobby)}";
+            row.GetNode<Label>("MarginContainer/MainRow/PlayerCountLabel").Text = $"{SteamworksHelper.Api.GetNumLobbyMembers(lobby)}/{SteamworksHelper.Api.GetLobbyMemberLimit(lobby)}";
             row.FocusMode = FocusModeEnum.All;
-            row.Pressed += () => { SelectedLobbyId = row.ButtonPressed ? lobby : 0; SelectionChanged?.Invoke(SelectedLobbyId); };
+            row.Pressed += () => { SelectedLobbyId = row.ButtonPressed ? checked((ulong)lobby) : 0; SelectionChanged?.Invoke(SelectedLobbyId); };
             _entries.AddChild(row);
             _status.Text = "Select the lobby row, then Join Steam Game.";
         }
@@ -100,7 +101,7 @@ public partial class LobbyList : PanelContainer
     public override void _ExitTree()
     {
         _requested = 0;
-        SteamApi.LobbyDataUpdate -= DataUpdated;
+        SteamworksHelper.Api.LobbyDataUpdateSignal -= DataUpdated;
         SelectionChanged = null;
     }
 }

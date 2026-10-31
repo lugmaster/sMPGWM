@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://csfidmr8pe45n" path="res://scenes/ui/base/base_start_menu.tscn" id="1_lh57r"]
 [ext_resource type="Script" uid="uid://7qktnjcqjlhi" path="res://Scripts/StartMenuSystem/JoinSteamGameMenu.cs" id="2_qrs2d"]
-[ext_resource type="Script" uid="uid://d10cg4uua3u1j" path="res://Scripts/StartMenuSystem/LobbyList/LobbyList.cs" id="6_list"]
+[ext_resource type="Script" uid="uid://cgx7ncea6usvx" path="res://Scripts/StartMenuSystem/LobbyList/LobbyList.cs" id="6_list"]
 
 [node name="JoinSteamGameMenu" unique_id=1431156458 instance=ExtResource("1_lh57r")]
 script = ExtResource("2_qrs2d")
