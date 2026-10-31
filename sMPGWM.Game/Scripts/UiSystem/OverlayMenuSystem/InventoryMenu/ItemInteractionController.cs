@@ -5,6 +5,7 @@ using System;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.UiSystem.Items;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
@@ -20,8 +21,7 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
     private long _hotbarRevision;
     private long _mappingVersion;
     private ulong _dragToken;
-    private ItemHotbarState? _hotbar;
-    private ItemHotbarAdapter? _adapter;
+    private ItemHotbarController? _hotbar;
 
     internal ItemCellBinding? Source { get; private set; }
     internal PlacementMode Mode { get; private set; }
@@ -29,11 +29,10 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
     internal bool OwnsDrag(ulong token) => token != 0UL && token == _dragToken && Mode == PlacementMode.NativeDrag;
     internal TransferResult? Feedback { get; private set; }
 
-    internal void BindHotbar(ItemHotbarState? hotbar, ItemHotbarAdapter? adapter)
+    internal void BindHotbar(ItemHotbarController? adapter)
     {
         Cancel();
-        _hotbar = hotbar;
-        _adapter = adapter;
+        _hotbar = adapter;
     }
 
     internal void SetSession(ulong session)
@@ -133,15 +132,16 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
             if (commit && result == TransferResult.Success) Placed?.Invoke(source, target);
             return result;
         }
-        if (_hotbar == null || _adapter == null) return TransferResult.InvalidSession;
+        if (_hotbar == null) return TransferResult.InvalidSession;
         var validation = _hotbar.ValidateEdit(_session, _hotbarRevision, target.HotbarPosition!.Value);
         if (validation != HotbarResult.Success) return Convert(validation);
         if (target.Revision != _hotbarRevision) return TransferResult.StaleRevision;
         if (source.IsHotbar)
             return commit ? Convert(_hotbar.Move(_session, _hotbarRevision, source.HotbarPosition!.Value, target.HotbarPosition.Value)) :
                 Convert(_hotbar.ValidateMove(_session, _hotbarRevision, source.HotbarPosition!.Value, target.HotbarPosition.Value));
-        return Convert(_adapter.Assign(_session, _hotbarRevision, target.HotbarPosition.Value, source.Location, source.Entity!.Id,
-            _inventoryRevision, _equipmentRevision, commit));
+        var request = new HotbarAssignmentRequest(_session, _hotbarRevision, target.HotbarPosition.Value,
+            source.Location, source.Entity!.Id, _inventoryRevision, _equipmentRevision);
+        return Convert(commit ? _hotbar.Assign(request) : _hotbar.ValidateAssignment(request));
     }
 
     private TransferRequest Request(ItemCellBinding target) => new(_session, Source!.Location, Source.Entity!.Id,

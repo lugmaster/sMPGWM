@@ -4,32 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace sMPGWM.Scripts.ItemSystem;
-
-public abstract record HotbarBinding;
-public sealed record ConsumableHotbarBinding(string DefinitionId) : HotbarBinding;
-public sealed record WeaponHotbarBinding(string SlotKey) : HotbarBinding;
-
-public enum HotbarResult
-{
-    Success,
-    NoChange,
-    InvalidSession,
-    StaleRevision,
-    InvalidPosition,
-    InvalidLocation,
-    IneligibleSource,
-    Unavailable,
-    PublicationInProgress,
-    Disposed
-}
-
-public static class ItemHotbarPolicy
-{
-    public static bool IsConsumable(string category) => category == ItemRegistry.GetCategoryById("consumable").DisplayName;
-    public static bool IsWeapon(string category) => category == ItemRegistry.GetCategoryById("light_weapon").DisplayName || category == ItemRegistry.GetCategoryById("heavy_weapon").DisplayName;
-}
-
+namespace sMPGWM.Scripts.UiSystem.Items;
 public sealed class ItemHotbarState : IDisposable
 {
     public const int PositionCount = 10;

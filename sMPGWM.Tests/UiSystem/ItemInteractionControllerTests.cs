@@ -5,6 +5,7 @@ using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
 namespace sMPGWM.Tests.UiSystem;
@@ -233,7 +234,7 @@ public class ItemInteractionControllerTests
         var session = _transfers.OpenEditSession();
         state.SetEditSession(session);
         _controller.SetSession(session);
-        _controller.BindHotbar(state, new ItemHotbarAdapter(state, _inventory, _equipment, _transfers));
+        _controller.BindHotbar(new ItemHotbarController(state, _inventory, _equipment, _transfers));
         return state;
     }
 

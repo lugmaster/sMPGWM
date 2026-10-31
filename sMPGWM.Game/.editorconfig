@@ -3,5 +3,6 @@ root = true
 [*]
 charset = utf-8
 
-[addons/godotsteam_csharpbindings/**/*.cs]
+[addons/**]
 generated_code = true
+dotnet_analyzer_diagnostic.severity = none

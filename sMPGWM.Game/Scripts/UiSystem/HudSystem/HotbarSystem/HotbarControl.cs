@@ -18,8 +18,7 @@ public partial class HotbarControl : PanelContainer
     private HBoxContainer _buttonContainer = null!;
     private bool _isProcessingInput;
     private bool _canEdit;
-    private ItemHotbarState? _state;
-    private ItemHotbarAdapter? _adapter;
+    private ItemHotbarController? _controller;
     private ItemVisuals? _visuals;
     private IReadOnlyList<IconDefinition> _actions = Array.Empty<IconDefinition>();
     private ClickableIcon[] _icons = Array.Empty<ClickableIcon>();
@@ -45,7 +44,7 @@ public partial class HotbarControl : PanelContainer
         Logger.Debug($"{nameof(HotbarControl)}.{nameof(SetIcons)} called with {nameof(iconDefinitions)} count={iconDefinitions.Count}.");
         ClearButtons();
 
-        _icons = new ClickableIcon[_state?.Entries.Count ?? iconDefinitions.Count];
+        _icons = new ClickableIcon[_controller?.Entries.Count ?? iconDefinitions.Count];
         for (var i = 0; i < _icons.Length; i++)
         {
             var slotIndex = i;
@@ -94,23 +93,21 @@ public partial class HotbarControl : PanelContainer
         SetGameplayInputEnabled(_isProcessingInput);
     }
 
-    internal void Bind(ItemHotbarState state, ItemHotbarAdapter adapter, IReadOnlyList<IconDefinition> actions)
+    internal void Bind(ItemHotbarController adapter, IReadOnlyList<IconDefinition> actions)
     {
         Unbind();
-        _state = state;
-        _adapter = adapter;
+        _controller = adapter;
         _visuals = new ItemVisuals();
         _actions = actions;
         SetIcons(actions);
-        state.Changed += Refresh;
+        adapter.Changed += Refresh;
         Refresh();
     }
 
     internal void Unbind()
     {
-        if (_state != null) _state.Changed -= Refresh;
-        _state = null;
-        _adapter = null;
+        if (_controller != null) _controller.Changed -= Refresh;
+        _controller = null;
         _visuals = null;
         _actions = Array.Empty<IconDefinition>();
         SetEditing(false);
@@ -118,14 +115,14 @@ public partial class HotbarControl : PanelContainer
 
     internal void Refresh()
     {
-        if (_state == null || _adapter == null) return;
+        if (_controller == null) return;
         var icons = Icons;
         for (var position = 0; position < icons.Length; position++)
         {
             var icon = icons[position];
-            icon.Binding = ItemCellBinding.Hotbar(position, _state.Revision);
-            var availability = _adapter.Resolve(position);
-            if (_state.Entries[position] is ActionHotbarBinding action && int.TryParse(action.ActionKey, out var originalIndex))
+            icon.Binding = ItemCellBinding.Hotbar(position, _controller.Revision);
+            var availability = _controller.Resolve(position);
+            if (_controller.Entries[position] is ActionHotbarBinding action && int.TryParse(action.ActionKey, out var originalIndex))
             {
                 var texture = originalIndex >= 0 && originalIndex < _actions.Count ? _actions[originalIndex].IconTexture : null;
                 icon.SetDisplay(texture, new IconDisplayData($"Skill {originalIndex + 1}"));
@@ -133,7 +130,7 @@ public partial class HotbarControl : PanelContainer
                 icon.Modulate = Colors.White;
             }
             else _visuals!.ApplyDefinition(icon, availability.DefinitionId, availability.Quantity, availability.Label,
-                availability.Available, _state.Entries[position] is WeaponHotbarBinding);
+                availability.Available, _controller.Entries[position] is WeaponHotbarBinding);
         }
     }
 

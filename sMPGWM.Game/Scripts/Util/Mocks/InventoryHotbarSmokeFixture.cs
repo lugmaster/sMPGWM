@@ -8,6 +8,7 @@ using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem;
+using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 
 namespace sMPGWM.Scripts.Util.Mocks;
@@ -18,7 +19,7 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
     private EquipmentController _equipment = null!;
     private InventoryEquipmentTransferService _transfers = null!;
     private ItemHotbarState _state = null!;
-    private ItemHotbarAdapter _adapter = null!;
+    private ItemHotbarController _adapter = null!;
     private UiCanvas _canvas = null!;
     private int _activations;
 
@@ -30,7 +31,7 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
         _equipment = new EquipmentController(_inventory.ItemRequestService);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
-        _adapter = new ItemHotbarAdapter(_state, _inventory, _equipment, _transfers);
+        _adapter = new ItemHotbarController(_state, _inventory, _equipment, _transfers);
         ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 0, potion, 7);
         ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 1, potion, 8);
         ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 2, weapon);
@@ -38,7 +39,7 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
         _canvas = game.GetNode<UiCanvas>("UiCanvas");
         _canvas.CloseAllMenus();
         game.BindInventoryPresentation(_inventory, _equipment, _transfers);
-        _canvas.BindHotbar(_state, _adapter, PlayerMock.Instance.GetHotBarSkills());
+        _canvas.BindHotbar(_adapter, PlayerMock.Instance.GetHotBarSkills());
         _canvas.OnRequestHotbarAction += OnActivation;
         _canvas.OpenMenu(UiWindowId.InventoryMenu);
     }
@@ -72,7 +73,7 @@ public partial class InventoryHotbarSmokeFixture : RefCounted
         _canvas.CloseAllMenus();
         _canvas.OnRequestHotbarAction -= OnActivation;
         game.BindInventoryPresentation(game.InventoryController, game.EquipmentController, game.ItemTransfers);
-        _canvas.BindHotbar(game.ItemHotbar, game.HotbarAdapter, PlayerMock.Instance.GetHotBarSkills());
+        _canvas.BindHotbar(game.HotbarController, PlayerMock.Instance.GetHotBarSkills());
         _state.Dispose();
         _transfers.Dispose();
         _equipment.Dispose();

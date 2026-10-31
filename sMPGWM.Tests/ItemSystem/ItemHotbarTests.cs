@@ -5,6 +5,7 @@ using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.UiSystem.Items;
 
 namespace sMPGWM.Tests.ItemSystem;
 
@@ -16,7 +17,7 @@ public class ItemHotbarTests
     private EquipmentController _equipment = null!;
     private InventoryEquipmentTransferService _transfers = null!;
     private ItemHotbarState _state = null!;
-    private ItemHotbarAdapter _adapter = null!;
+    private ItemHotbarController _controller = null!;
     private ulong _session;
 
     [SetUp]
@@ -26,7 +27,7 @@ public class ItemHotbarTests
         _equipment = new EquipmentController(_inventory.ItemRequestService);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
-        _adapter = new ItemHotbarAdapter(_state, _inventory, _equipment, _transfers);
+        _controller = new ItemHotbarController(_state, _inventory, _equipment, _transfers);
         _session = _transfers.OpenEditSession();
         _state.SetEditSession(_session);
         ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 0, "mock_standard_consumable", 7);
@@ -45,8 +46,7 @@ public class ItemHotbarTests
         _inventory.Dispose();
     }
 
-    private HotbarResult Assign(int source, int position = 0) => _adapter.Assign(_session, _state.Revision, position,
-        ItemLocation.Inventory(source), _inventory.Snapshot.Slots[source]!.Id, _inventory.Revision, _equipment.Revision);
+    private HotbarResult Assign(int source, int position = 0) => _controller.Assign(new HotbarAssignmentRequest(_session, _state.Revision, position, ItemLocation.Inventory(source), _inventory.Snapshot.Slots[source]!.Id, _inventory.Revision, _equipment.Revision));
 
     private TransferResult Equip(int source) => _transfers.Transfer(new TransferRequest(_session, ItemLocation.Inventory(source),
         _inventory.Snapshot.Slots[source]!.Id, ItemLocation.Equipment("light_weapon_1"), _equipment.Snapshot.Slots[4]?.Id,
@@ -58,7 +58,7 @@ public class ItemHotbarTests
         var inventory = _inventory.Snapshot;
         var equipment = _equipment.Snapshot;
         Assert.That(Assign(0), Is.EqualTo(HotbarResult.Success));
-        Assert.That(_adapter.Resolve(0).Quantity, Is.EqualTo(15L));
+        Assert.That(_controller.Resolve(0).Quantity, Is.EqualTo(15L));
         Assert.That(_inventory.Snapshot, Is.SameAs(inventory));
         Assert.That(_equipment.Snapshot, Is.SameAs(equipment));
         Assert.That(Assign(1, 1), Is.EqualTo(HotbarResult.Success));
@@ -75,7 +75,7 @@ public class ItemHotbarTests
     {
         Assign(0);
         ItemFixture.MoveAway(_inventory.ItemRequestService, _inventory.Container, 0, 1);
-        Assert.That(_adapter.Resolve(0), Is.EqualTo(new HotbarAvailability("mock_standard_consumable", 0, ItemRegistry.GetById("mock_standard_consumable").DisplayName, false)));
+        Assert.That(_controller.Resolve(0), Is.EqualTo(new HotbarAvailability("mock_standard_consumable", 0, ItemRegistry.GetById("mock_standard_consumable").DisplayName, false)));
         Assert.That(_state.Entries[0], Is.TypeOf<ConsumableHotbarBinding>());
         using var inventory = new InventoryController();
         using var equipment = new EquipmentController(inventory.ItemRequestService);
@@ -85,8 +85,8 @@ public class ItemHotbarTests
         state.SetEditSession(session);
         var quantity = (long)ItemRegistry.GetById("mock_advanced_consumable").StackLimit * 2;
         inventory.ItemRequestService.CreateItems(inventory.Container, "mock_advanced_consumable", quantity);
-        var adapter = new ItemHotbarAdapter(state, inventory, equipment, transfers);
-        adapter.Assign(session, 0, 0, ItemLocation.Inventory(0), inventory.Snapshot.Slots[0]!.Id, inventory.Revision, 0);
+        var adapter = new ItemHotbarController(state, inventory, equipment, transfers);
+        adapter.Assign(new HotbarAssignmentRequest(session, 0, 0, ItemLocation.Inventory(0), inventory.Snapshot.Slots[0]!.Id, inventory.Revision, 0));
         Assert.That(adapter.Resolve(0).Quantity, Is.EqualTo(quantity));
     }
 
@@ -104,16 +104,15 @@ public class ItemHotbarTests
     {
         Equip(3);
         var first = _equipment.Snapshot.Slots[4]!;
-        Assert.That(_adapter.Assign(_session, 0, 0, ItemLocation.Equipment("light_weapon_1"), first.Id,
-            _inventory.Revision, _equipment.Revision), Is.EqualTo(HotbarResult.Success));
+        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemLocation.Equipment("light_weapon_1"), first.Id, _inventory.Revision, _equipment.Revision)), Is.EqualTo(HotbarResult.Success));
         Assert.That(_state.Entries[0], Is.EqualTo(new WeaponHotbarBinding("light_weapon_1")));
         _transfers.Transfer(new TransferRequest(_session, ItemLocation.Equipment("light_weapon_1"), first.Id,
             ItemLocation.Inventory(3), null, _inventory.Revision, _equipment.Revision));
-        Assert.That(_adapter.Resolve(0).Available, Is.False);
-        Assert.That(_adapter.Resolve(0).Label, Is.EqualTo("Light Weapon Slot 1"));
+        Assert.That(_controller.Resolve(0).Available, Is.False);
+        Assert.That(_controller.Resolve(0).Label, Is.EqualTo("Light Weapon Slot 1"));
         _inventory.ItemRequestService.CreateItems(_inventory.Container, "mock_standard_light_weapon", 1);
         Equip(5);
-        Assert.That(_adapter.Resolve(0).Available, Is.True);
+        Assert.That(_controller.Resolve(0).Available, Is.True);
         Assert.That(_equipment.Snapshot.Slots[4]!.Id, Is.Not.EqualTo(first.Id));
     }
 
@@ -154,10 +153,10 @@ public class ItemHotbarTests
     public void AssignmentRejectsStaleSourceTargetAndSession()
     {
         var entity = _inventory.Snapshot.Slots[0]!;
-        Assert.That(_adapter.Assign(_session, 0, 0, ItemLocation.Inventory(0), entity.Id, 0, 0), Is.EqualTo(HotbarResult.StaleRevision));
-        Assert.That(_adapter.Assign(_session, 0, 0, ItemLocation.Inventory(0), ItemEntityId.Create(), _inventory.Revision, 0), Is.EqualTo(HotbarResult.StaleRevision));
+        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemLocation.Inventory(0), entity.Id, 0, 0)), Is.EqualTo(HotbarResult.StaleRevision));
+        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemLocation.Inventory(0), ItemEntityId.Create(), _inventory.Revision, 0)), Is.EqualTo(HotbarResult.StaleRevision));
         Assign(0);
-        Assert.That(_adapter.Assign(_session, 0, 1, ItemLocation.Inventory(0), entity.Id, _inventory.Revision, 0), Is.EqualTo(HotbarResult.StaleRevision));
+        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 1, ItemLocation.Inventory(0), entity.Id, _inventory.Revision, 0)), Is.EqualTo(HotbarResult.StaleRevision));
         _transfers.RevokeEditSession();
         Assert.That(Assign(0, 2), Is.EqualTo(HotbarResult.InvalidSession));
     }
@@ -165,8 +164,7 @@ public class ItemHotbarTests
     [Test]
     public void EmptyWeaponSlotCannotCreateAnAssignment()
     {
-        Assert.That(_adapter.Assign(_session, 0, 0, ItemLocation.Equipment("light_weapon_1"),
-            ItemEntityId.Create(), _inventory.Revision, _equipment.Revision), Is.EqualTo(HotbarResult.StaleRevision));
+        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemLocation.Equipment("light_weapon_1"), ItemEntityId.Create(), _inventory.Revision, _equipment.Revision)), Is.EqualTo(HotbarResult.StaleRevision));
         Assert.That(_state.Revision, Is.Zero);
     }
 
@@ -176,10 +174,10 @@ public class ItemHotbarTests
         Assign(0);
         _transfers.Transfer(new TransferRequest(_session, ItemLocation.Inventory(0), _inventory.Snapshot.Slots[0]!.Id,
             ItemLocation.Inventory(1), _inventory.Snapshot.Slots[1]!.Id, _inventory.Revision, _equipment.Revision));
-        Assert.That(_adapter.Resolve(0).Quantity, Is.EqualTo(15L));
+        Assert.That(_controller.Resolve(0).Quantity, Is.EqualTo(15L));
         _transfers.Transfer(new TransferRequest(_session, ItemLocation.Inventory(1), _inventory.Snapshot.Slots[1]!.Id,
             ItemLocation.Inventory(7), null, _inventory.Revision, _equipment.Revision));
-        Assert.That(_adapter.Resolve(0).Quantity, Is.EqualTo(15L));
+        Assert.That(_controller.Resolve(0).Quantity, Is.EqualTo(15L));
     }
 
     [Test]
@@ -187,12 +185,12 @@ public class ItemHotbarTests
     {
         Equip(3);
         var weapon = _equipment.Snapshot.Slots[4]!;
-        _adapter.Assign(_session, 0, 0, ItemLocation.Equipment("light_weapon_1"), weapon.Id, _inventory.Revision, _equipment.Revision);
+        _controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemLocation.Equipment("light_weapon_1"), weapon.Id, _inventory.Revision, _equipment.Revision));
         _transfers.Transfer(new TransferRequest(_session, ItemLocation.Equipment("light_weapon_1"), weapon.Id,
             ItemLocation.Inventory(3), null, _inventory.Revision, _equipment.Revision));
         _state.Move(_session, _state.Revision, 0, 1);
         var activations = 0;
-        Assert.That(_adapter.Activate(1, _ => activations++, _ => activations++), Is.EqualTo(HotbarResult.Unavailable));
+        Assert.That(_controller.Activate(1, _ => activations++, _ => activations++), Is.EqualTo(HotbarResult.Unavailable));
         Assert.That(activations, Is.Zero);
         Assert.That(_state.Clear(_session, _state.Revision, 1), Is.EqualTo(HotbarResult.Success));
     }
@@ -215,11 +213,11 @@ public class ItemHotbarTests
         _state.Move(_session, 0, 0, 5);
         var activated = "";
         ItemHotbarActivationRequest? request = null;
-        _adapter.Activate(5, key => activated = key, item => request = item);
+        _controller.Activate(5, key => activated = key, item => request = item);
         Assert.That(activated, Is.EqualTo("0"));
         Assign(0, 5);
         activated = "";
-        _adapter.Activate(5, key => activated = key, item => request = item);
+        _controller.Activate(5, key => activated = key, item => request = item);
         Assert.That(activated, Is.Empty);
         Assert.That(request!.DefinitionId, Is.EqualTo("mock_standard_consumable"));
         Assert.That(request.Quantity, Is.EqualTo(15L));
@@ -285,7 +283,7 @@ public class ItemHotbarTests
         _equipment.Changed += _ => notifications++;
         _state.Changed += () => notifications++;
         foreach (var commit in new[] { false, true })
-            Assert.That(_adapter.Assign(_session, hotbarRevision, 0, source, entity, revision, _equipment.Revision, commit),
+            Assert.That((commit ? _controller.Assign(new HotbarAssignmentRequest(_session, hotbarRevision, 0, source, entity, revision, _equipment.Revision)) : _controller.ValidateAssignment(new HotbarAssignmentRequest(_session, hotbarRevision, 0, source, entity, revision, _equipment.Revision))),
                 Is.EqualTo(expected));
         Assert.That(_inventory.Snapshot, Is.SameAs(inventory));
         Assert.That(_equipment.Snapshot, Is.SameAs(equipment));
@@ -301,8 +299,7 @@ public class ItemHotbarTests
         if (weapon) Assert.That(Equip(3), Is.EqualTo(TransferResult.Success));
         var source = weapon ? ItemLocation.Equipment("light_weapon_1") : ItemLocation.Inventory(0);
         var entity = weapon ? _equipment.Snapshot.Slots[4]!.Id : _inventory.Snapshot.Slots[0]!.Id;
-        HotbarResult AssignLink(int position, bool commit) => _adapter.Assign(_session, _state.Revision, position,
-            source, entity, _inventory.Revision, _equipment.Revision, commit);
+        HotbarResult AssignLink(int position, bool commit) => (commit ? _controller.Assign(new HotbarAssignmentRequest(_session, _state.Revision, position, source, entity, _inventory.Revision, _equipment.Revision)) : _controller.ValidateAssignment(new HotbarAssignmentRequest(_session, _state.Revision, position, source, entity, _inventory.Revision, _equipment.Revision)));
         var inventory = _inventory.Snapshot;
         var equipment = _equipment.Snapshot;
         var notifications = 0;
@@ -349,8 +346,7 @@ public class ItemHotbarTests
         _inventory.Changed += _ =>
         {
             var entity = _inventory.Snapshot.Slots[0]!;
-            validation = _adapter.Assign(_session, 0, 0, ItemLocation.Inventory(0), entity.Id,
-                _inventory.Revision, _equipment.Revision, false);
+            validation = _controller.ValidateAssignment(new HotbarAssignmentRequest(_session, 0, 0, ItemLocation.Inventory(0), entity.Id, _inventory.Revision, _equipment.Revision));
             commit = Assign(0);
         };
         Assert.That(Equip(3), Is.EqualTo(TransferResult.Success));
@@ -359,5 +355,29 @@ public class ItemHotbarTests
         Assert.That(_state.Entries, Is.SameAs(entries));
         Assert.That(_state.Revision, Is.Zero);
         Assert.That(notifications, Is.Zero);
+    }
+    [Test]
+    public void ControllerChangesFollowAllSourcesAndDetachOnUnbind()
+    {
+        var changes = 0;
+        void Observe() => changes++;
+        _controller.Changed += Observe;
+        _controller.Clear(_session, _controller.Revision, 0);
+        Assert.That(changes, Is.EqualTo(1));
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 8, "mock_standard_consumable", 1);
+        Assert.That(changes, Is.EqualTo(2));
+        ItemFixture.Place(_inventory.ItemRequestService, _equipment.Container, 4, "mock_standard_light_weapon");
+        Assert.That(changes, Is.EqualTo(3));
+
+        _controller.Changed -= Observe;
+        _controller.Clear(_session, _controller.Revision, 1);
+        ItemFixture.MoveAway(_inventory.ItemRequestService, _inventory.Container, 8);
+        ItemFixture.MoveAway(_inventory.ItemRequestService, _equipment.Container, 4);
+        Assert.That(changes, Is.EqualTo(3));
+
+        _controller.Changed += Observe;
+        _controller.Clear(_session, _controller.Revision, 2);
+        Assert.That(changes, Is.EqualTo(4));
+        _controller.Changed -= Observe;
     }
 }

@@ -22,7 +22,7 @@ public partial class InventoryMenu : GameOverlayMenu
     private EquipmentContainer _equipmentView = null!;
     private ItemVisuals _visuals = null!;
     private ItemInteractionController? _interaction;
-    private ItemHotbarState? _hotbar;
+    private ItemHotbarController? _hotbar;
     private ItemPointerOverlay? _pointerOverlay;
     private ClickableIcon? _sourceIcon;
     private ClickableIcon? _hoverIcon;
@@ -40,12 +40,12 @@ public partial class InventoryMenu : GameOverlayMenu
         _pointerOverlay = overlay;
     }
 
-    internal void BindHotbar(ItemHotbarState? state, ItemHotbarAdapter? adapter, HotbarControl view, ulong session)
+    internal void BindHotbar(ItemHotbarController? adapter, HotbarControl view)
     {
         if (_hotbar != null) _hotbar.Changed -= OnViewChanging;
         CancelInteraction();
-        _hotbar = state;
-        _interaction?.BindHotbar(state, adapter);
+        _hotbar = adapter;
+        _interaction?.BindHotbar(adapter);
         if (_hotbar != null) _hotbar.Changed += OnViewChanging;
         foreach (var icon in view.Icons) RegisterCell(icon);
     }
