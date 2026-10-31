@@ -18,6 +18,7 @@ public static class GameConfig
     public static string Version { get; private set; }
     public static int ConnectionTimeout { get; private set; }
     public static bool ReloadConfigOnStart { get; private set; }
+    public static bool Development { get; private set; }
     public static string GameDataChecksum { get; private set; }
     public static string ConfigDataChecksum { get; private set; }
     
@@ -35,6 +36,7 @@ public static class GameConfig
             RunSteamEx = GetConfigValue("general", "run_steam_ex").AsBool();
             ServerIpAddress = GetConfigValue("general", "server_ip_address").AsString();
             ReloadConfigOnStart = GetConfigValue("config", "reload_config_on_start").AsBool();
+            Development = GetConfigValue("general", "development").AsBool();
             LobbyGameId = GetConfigValue("general", "lobby_game_id").AsString();
             MaxPlayers = GetConfigValue("general", "max_players").AsInt32();
             Logger.Info("Successfully loaded config values.");

@@ -1,5 +1,6 @@
 ﻿using System;
 using Godot;
+using System.Reflection;
 using GDExtension.Wrappers;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
@@ -19,6 +20,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     private ulong _targetLobby;
     private ulong _pinnedHost;
     private string _pinnedSession = "";
+    private string _lobbyValidationFailure = "";
     private MultiplayerPeer? _ownedPeer;
     public ulong? LobbyId => _currentLobbyId;
     protected override string TimeoutReason => "Steam startup timed out.";
@@ -169,6 +171,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             SetData(lobbyId, "protocol", DiagnosticExchange.ProtocolVersion.ToString());
             SetData(lobbyId, "host_steam_id", SteamworksHelper.Api.GetSteamId().ToString());
             SetData(lobbyId, "session_id", NetworkManager.Instance.HostSession);
+            LogBuildIdentity(lobbyId);
             SetData(lobbyId, "build", typeof(NetworkManager).Module.ModuleVersionId.ToString("N"));
             SetData(lobbyId, "state", "preparing");
 
@@ -215,7 +218,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             _pinnedSession = SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "session_id");
             if (Startup?.Diagnostic == true && !ValidDiagnosticLobby(lobby))
             {
-                FailTransport("Steam lobby is stale or incompatible.");
+                FailTransport($"Steam lobby is stale or incompatible: {_lobbyValidationFailure}");
                 return;
             }
 
@@ -256,29 +259,74 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     {
         if (!SteamworksHelper.Api.SetLobbyData(checked((long)lobby), key, value))
             throw new InvalidOperationException($"Steam metadata write failed: {key}");
+        Logger.Info($"Steam lobby metadata published lobby={lobby} key={key} value='{value}' length={value.Length}");
+    }
+
+    private void LogBuildIdentity(ulong lobby)
+    {
+        var module = typeof(NetworkManager).Module;
+        var assembly = module.Assembly;
+        Logger.Info($"Steam lobby local build lobby={lobby} role={Startup.Role} " +
+                    $"source=NetworkManager.Module.ModuleVersionId build={module.ModuleVersionId:N} " +
+                    $"assembly='{assembly.FullName}' module='{module.ScopeName}' location='{assembly.Location}' " +
+                    $"configuration='{assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration}' " +
+                    $"informationalVersion='{assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion}'");
     }
 
     private bool ValidDiagnosticLobby(ulong lobby)
     {
-        if (_pinnedHost == 0 || SteamworksHelper.Api.GetLobbyOwner(checked((long)lobby)) != checked((long)_pinnedHost) ||
-            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "host_steam_id") != checked((long)_pinnedHost).ToString() ||
-            !Guid.TryParseExact(_pinnedSession, "N", out _) ||
-            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "session_id") != _pinnedSession ||
-            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "game_id") != GameConfig.LobbyGameId ||
-            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "version") != GameConfig.Version ||
-            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "build") != typeof(NetworkManager).Module.ModuleVersionId.ToString("N") ||
-            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "protocol") != DiagnosticExchange.ProtocolVersion.ToString() ||
-            SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "state") != "diagnostic") return false;
+        _lobbyValidationFailure = "";
+        var owner = SteamworksHelper.Api.GetLobbyOwner(checked((long)lobby));
+        Logger.Info($"Steam lobby validation lobby={lobby} targetLobby={_targetLobby} " +
+                    $"pinnedHost={_pinnedHost} actualOwner={owner} pinnedSession='{_pinnedSession}'");
+        if (_pinnedHost == 0 || owner != checked((long)_pinnedHost))
+            return RejectLobby($"owner changed (expected={_pinnedHost}, actual={owner}).");
+        if (!Guid.TryParseExact(_pinnedSession, "N", out _))
+            return RejectLobby("session_id is missing or invalid.");
+
+        LogBuildIdentity(lobby);
+        string? firstMismatch = null;
+        foreach (var (key, expected) in new[]
+        {
+            ("host_steam_id", checked((long)_pinnedHost).ToString()),
+            ("session_id", _pinnedSession),
+            ("game_id", GameConfig.LobbyGameId),
+            ("version", GameConfig.Version),
+            ("build", typeof(NetworkManager).Module.ModuleVersionId.ToString("N")),
+            ("protocol", DiagnosticExchange.ProtocolVersion.ToString()),
+            ("state", "diagnostic")
+        })
+        {
+            var actual = SteamworksHelper.Api.GetLobbyData(checked((long)lobby), key);
+            Logger.Info($"Steam lobby metadata comparison lobby={lobby} key={key} " +
+                        $"expected='{expected}' expectedLength={expected.Length} " +
+                        $"actual='{actual}' actualLength={actual.Length} match={actual == expected} " +
+                        "actualSource=Steam.GetLobbyData");
+            if (actual != expected)
+                firstMismatch ??= $"{key} mismatch (expected={expected}, actual={actual})." +
+                    (key == "build" ? " Use the same built game on both machines." : "");
+        }
+        // Log every field even when an earlier comparison failed, then reject as before.
+        if (firstMismatch != null) return RejectLobby(firstMismatch);
         for (var i = 0; i < SteamworksHelper.Api.GetNumLobbyMembers(checked((long)lobby)); i++)
             if (SteamworksHelper.Api.GetLobbyMemberByIndex(checked((long)lobby), i) == checked((long)_pinnedHost)) return true;
+        return RejectLobby("original host is no longer a lobby member.");
+    }
+
+    private bool RejectLobby(string reason)
+    {
+        _lobbyValidationFailure = reason;
+        Logger.Warning($"Steam lobby validation failed lobby={_currentLobbyId}: {reason}");
         return false;
     }
 
     private void OnLobbyDataUpdate(long success, long lobby, long member)
     {
         if (State == TransportState.Stopped || Hosting || _currentLobbyId != (ulong)lobby || member != lobby || Startup?.Diagnostic != true) return;
-        if (success != 1 || !ValidDiagnosticLobby(checked((ulong)lobby)))
-            FailTransport("Steam diagnostic lobby changed or original host was lost.");
+        if (success != 1)
+            FailTransport("Steam diagnostic lobby metadata update failed.");
+        else if (!ValidDiagnosticLobby(checked((ulong)lobby)))
+            FailTransport($"Steam diagnostic lobby changed: {_lobbyValidationFailure}");
     }
 
     private void ConnectSocket(ulong steamId)

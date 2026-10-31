@@ -60,6 +60,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (!Session.TryStart()) return;
         NetworkRole = _startup.Role;
         NetworkType = _startup.Type;
+        Logger.Info($"Network startup role={NetworkRole} transport={NetworkType} build={typeof(NetworkManager).Module.ModuleVersionId:N} protocol={DiagnosticExchange.ProtocolVersion} version={sMPGWM.Scripts.GameConfigSystem.GameConfig.Version}");
         if (!Enum.IsDefined(NetworkRole) || !Enum.IsDefined(NetworkType))
         {
             FailSession("Invalid network role or transport.");
