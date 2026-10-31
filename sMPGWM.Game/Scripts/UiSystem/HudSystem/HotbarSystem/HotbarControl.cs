@@ -1,10 +1,6 @@
-
-
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 using sMPGWM.Scripts.Util.UiComponents;
@@ -93,14 +89,14 @@ public partial class HotbarControl : PanelContainer
         SetGameplayInputEnabled(_isProcessingInput);
     }
 
-    internal void Bind(ItemHotbarController adapter, IReadOnlyList<IconDefinition> actions)
+    internal void Bind(ItemHotbarController controller, IReadOnlyList<IconDefinition> actions)
     {
         Unbind();
-        _controller = adapter;
+        _controller = controller;
         _visuals = new ItemVisuals();
         _actions = actions;
         SetIcons(actions);
-        adapter.Changed += Refresh;
+        controller.Changed += Refresh;
         Refresh();
     }
 

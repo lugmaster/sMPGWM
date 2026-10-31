@@ -1,6 +1,3 @@
-using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
-
-
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -12,15 +9,24 @@ public sealed class ItemHotbarController(
     ItemHotbarState state,
     IInventoryView inventory,
     IEquipmentView equipment,
-    IItemTransfers transfers)
+    IItemTransfers transfers,
+    Action<Exception>? reportError = null)
 {
     public IReadOnlyList<HotbarBinding?> Entries => state.Entries;
     public long Revision => state.Revision;
     private Action? _changed;
+    private Delegate[] _observers = Array.Empty<Delegate>();
+    private readonly Dictionary<HotbarBinding, HotbarAvailability> _availability = new();
+    private long _cachedHotbarRevision = -1;
+    private long _cachedInventoryRevision = -1;
+    private long _cachedEquipmentRevision = -1;
+    private static readonly HotbarAvailability InvalidPosition = new(null, null, "", false);
+    private static readonly HotbarAvailability EmptyPosition = new(null, null, "Empty hotbar position", false);
     public event Action Changed
     {
         add
         {
+            if (value == null) return;
             if (_changed == null)
             {
                 state.Changed += NotifyChanged;
@@ -28,10 +34,12 @@ public sealed class ItemHotbarController(
                 equipment.Changed += OnEquipmentChanged;
             }
             _changed += value;
+            _observers = _changed.GetInvocationList();
         }
         remove
         {
             _changed -= value;
+            _observers = _changed?.GetInvocationList() ?? Array.Empty<Delegate>();
             if (_changed == null)
             {
                 state.Changed -= NotifyChanged;
@@ -45,11 +53,15 @@ public sealed class ItemHotbarController(
     private void OnEquipmentChanged(EquipmentSnapshot _) => NotifyChanged();
     private void NotifyChanged()
     {
-        if (_changed is not { } handlers) return;
-        foreach (Action handler in handlers.GetInvocationList())
+        // Keep this publication's snapshot even if a handler changes subscriptions.
+        foreach (Action handler in _observers)
         {
             try { handler(); }
-            catch (Exception exception) { sMPGWM.Scripts.LoggingSystem.Logger.Error($"Hotbar observer failed: {exception}"); }
+            catch (Exception exception)
+            {
+                try { reportError?.Invoke(exception); }
+                catch (Exception) { }
+            }
         }
     }
 
@@ -82,13 +94,22 @@ public sealed class ItemHotbarController(
         var sourceEntity = source.InventoryAddress.HasValue ? inventory.Snapshot.Slots[source.InventoryAddress.Value] :
             equipment.Snapshot.Slots[FindEquipmentSlot(source.EquipmentSlotKey!)];
         var definition = sourceEntity!.Definition;
-        HotbarBinding? binding = ItemHotbarPolicy.IsConsumable(definition.CategoryName)
-            ? new ConsumableHotbarBinding(definition.Id)
-            : source.EquipmentSlotKey != null && ItemHotbarPolicy.IsWeapon(definition.CategoryName)
-                ? new WeaponHotbarBinding(source.EquipmentSlotKey) : null;
-        if (binding == null) return HotbarResult.IneligibleSource;
-        return commit ? state.Assign(session, hotbarRevision, position, binding) :
-            state.ValidateAssignment(session, hotbarRevision, position, binding);
+        var current = state.Entries[position];
+        if (ItemHotbarPolicy.IsConsumable(definition.CategoryName))
+        {
+            if (current is ConsumableHotbarBinding consumable && consumable.DefinitionId == definition.Id)
+                return HotbarResult.NoChange;
+            return commit ? state.Assign(session, hotbarRevision, position, new ConsumableHotbarBinding(definition.Id)) :
+                HotbarResult.Success;
+        }
+        if (source.EquipmentSlotKey is { } slotKey && ItemHotbarPolicy.IsWeapon(definition.CategoryName))
+        {
+            if (current is WeaponHotbarBinding weapon && weapon.SlotKey == slotKey)
+                return HotbarResult.NoChange;
+            return commit ? state.Assign(session, hotbarRevision, position, new WeaponHotbarBinding(slotKey)) :
+                HotbarResult.Success;
+        }
+        return HotbarResult.IneligibleSource;
     }
 
     private int FindEquipmentSlot(string key)
@@ -100,23 +121,45 @@ public sealed class ItemHotbarController(
 
     public HotbarAvailability Resolve(int position)
     {
-        if (position is < 0 or >= ItemHotbarState.PositionCount) return new(null, null, "", false);
-        switch (state.Entries[position])
+        if (position is < 0 or >= ItemHotbarState.PositionCount) return InvalidPosition;
+        var inventorySnapshot = inventory.Snapshot;
+        var equipmentSnapshot = equipment.Snapshot;
+        // Resolve can be called without subscribers, so events alone cannot invalidate this cache.
+        if (_cachedHotbarRevision != state.Revision || _cachedInventoryRevision != inventorySnapshot.Revision ||
+            _cachedEquipmentRevision != equipmentSnapshot.Revision)
+        {
+            _availability.Clear();
+            _cachedHotbarRevision = state.Revision;
+            _cachedInventoryRevision = inventorySnapshot.Revision;
+            _cachedEquipmentRevision = equipmentSnapshot.Revision;
+        }
+        var binding = state.Entries[position];
+        if (binding == null) return EmptyPosition;
+        if (_availability.TryGetValue(binding, out var cached)) return cached;
+        var availability = ResolveBinding(binding, inventorySnapshot, equipmentSnapshot);
+        _availability.Add(binding, availability);
+        return availability;
+    }
+
+    private HotbarAvailability ResolveBinding(HotbarBinding binding, InventorySnapshot inventorySnapshot,
+        EquipmentSnapshot equipmentSnapshot)
+    {
+        switch (binding)
         {
             case ConsumableHotbarBinding consumable:
                 long quantity = 0;
-                foreach (var entity in inventory.Snapshot.Slots)
+                foreach (var entity in inventorySnapshot.Slots)
                     if (entity?.DefinitionId == consumable.DefinitionId) quantity = checked(quantity + entity.Count);
                 return new(consumable.DefinitionId, quantity, ItemRegistry.GetById(consumable.DefinitionId).DisplayName, quantity > 0);
             case WeaponHotbarBinding weapon:
                 var index = FindEquipmentSlot(weapon.SlotKey);
                 if (index < 0) return new(null, null, weapon.SlotKey, false);
-                var equipped = equipment.Snapshot.Slots[index];
+                var equipped = equipmentSnapshot.Slots[index];
                 return new(equipped?.DefinitionId, null, equipment.Definitions[index].DisplayName, equipped != null);
             case ActionHotbarBinding action:
                 return new(null, null, action.ActionKey, true);
             default:
-                return new(null, null, "Empty hotbar position", false);
+                return EmptyPosition;
         }
     }
 

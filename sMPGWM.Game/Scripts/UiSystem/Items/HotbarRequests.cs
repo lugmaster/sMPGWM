@@ -1,5 +1,5 @@
-using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 using sMPGWM.Scripts.ItemSystem;
+using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 
 namespace sMPGWM.Scripts.UiSystem.Items;
 
@@ -8,5 +8,5 @@ public sealed record HotbarAvailability(string? DefinitionId, long? Quantity, st
 
 public sealed record ItemHotbarActivationRequest(int Position, HotbarBinding Binding, string DefinitionId, long? Quantity);
 
-public sealed record HotbarAssignmentRequest(ulong Session, long HotbarRevision, int Position,
+public readonly record struct HotbarAssignmentRequest(ulong Session, long HotbarRevision, int Position,
     ItemLocation Source, ItemEntityId Entity, long InventoryRevision, long EquipmentRevision);

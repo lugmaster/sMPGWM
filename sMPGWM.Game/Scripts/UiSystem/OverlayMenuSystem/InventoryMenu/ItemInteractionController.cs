@@ -1,11 +1,7 @@
-using sMPGWM.Scripts.Util;
-
-
 using System;
 using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.Items;
+using sMPGWM.Scripts.Util;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
@@ -29,10 +25,10 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
     internal bool OwnsDrag(ulong token) => token != 0UL && token == _dragToken && Mode == PlacementMode.NativeDrag;
     internal TransferResult? Feedback { get; private set; }
 
-    internal void BindHotbar(ItemHotbarController? adapter)
+    internal void BindHotbar(ItemHotbarController? controller)
     {
         Cancel();
-        _hotbar = adapter;
+        _hotbar = controller;
     }
 
     internal void SetSession(ulong session)

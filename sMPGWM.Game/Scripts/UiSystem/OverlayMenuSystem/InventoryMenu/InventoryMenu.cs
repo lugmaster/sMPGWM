@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
-using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem.HotbarSystem;
 using sMPGWM.Scripts.UiSystem.Items;
@@ -40,12 +38,12 @@ public partial class InventoryMenu : GameOverlayMenu
         _pointerOverlay = overlay;
     }
 
-    internal void BindHotbar(ItemHotbarController? adapter, HotbarControl view)
+    internal void BindHotbar(ItemHotbarController? controller, HotbarControl view)
     {
         if (_hotbar != null) _hotbar.Changed -= OnViewChanging;
         CancelInteraction();
-        _hotbar = adapter;
-        _interaction?.BindHotbar(adapter);
+        _hotbar = controller;
+        _interaction?.BindHotbar(controller);
         if (_hotbar != null) _hotbar.Changed += OnViewChanging;
         foreach (var icon in view.Icons) RegisterCell(icon);
     }

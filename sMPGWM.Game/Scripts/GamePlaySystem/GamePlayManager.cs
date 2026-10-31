@@ -1,17 +1,15 @@
 using System;
-using sMPGWM.Scripts.MessageSystem;
-using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
-using sMPGWM.Scripts.Util.UiComponents;
+using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
@@ -60,7 +58,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ItemTransfers = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
-        Messages = new MessageStore(exception => LoggingSystem.Logger.Error($"Message observer failed: {exception}"));
+        Messages = new MessageStore(exception => Logger.Error($"Message observer failed: {exception}"));
         _acknowledgements = new MessageAcknowledgements(Messages);
         _acknowledgements.Changed += RefreshAcknowledgement;
         _canvas.MessageAcknowledged += AcknowledgeMessage;
@@ -73,12 +71,13 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var actions = player.GetHotBarSkills();
         ItemHotbar = new ItemHotbarState(
-            exception => LoggingSystem.Logger.Error($"Hotbar observer failed: {exception}"));
-        HotbarController = new ItemHotbarController(ItemHotbar, InventoryController, EquipmentController, ItemTransfers);
+            exception => Logger.Error($"Hotbar observer failed: {exception}"));
+        HotbarController = new ItemHotbarController(ItemHotbar, InventoryController, EquipmentController, ItemTransfers,
+            exception => Logger.Error($"Hotbar observer failed: {exception}"));
         _playerActions = new PlayerActionController(
             _inputPolicy, position => HotbarController.Activate(position,
                 key => player.OnHotbarSlotPressed(int.Parse(key)),
-                request => LoggingSystem.Logger.Info($"Item hotbar activation requested: {request}")),
+                request => Logger.Info($"Item hotbar activation requested: {request}")),
             () => _inputController.IsGameplayInputAvailable);
 
         _canvas.OnRequestHotbarAction += _playerActions.RequestHotbarActivation;

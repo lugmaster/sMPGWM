@@ -1,19 +1,15 @@
-
-
 using System;
-using sMPGWM.Scripts.MessageSystem;
-using sMPGWM.Scripts.UiSystem.MessageStackSystem;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
-using sMPGWM.Scripts.ItemSystem;
-using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.Items;
+using sMPGWM.Scripts.UiSystem.MessageStackSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
-using sMPGWM.Scripts.Util.UiComponents;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
+using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.UiSystem;
 
@@ -152,10 +148,10 @@ public partial class UiCanvas : CanvasLayer
         _inventoryMenu?.BindHotbar(_hotbar, _playerHud.Hotbar);
     }
 
-    internal void BindHotbar(ItemHotbarController adapter, IReadOnlyList<IconDefinition> actions)
+    internal void BindHotbar(ItemHotbarController controller, IReadOnlyList<IconDefinition> actions)
     {
-        _hotbar = adapter;
-        _playerHud.Hotbar.Bind(adapter, actions);
+        _hotbar = controller;
+        _playerHud.Hotbar.Bind(controller, actions);
     }
 
 

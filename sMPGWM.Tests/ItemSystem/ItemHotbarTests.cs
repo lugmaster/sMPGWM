@@ -1,11 +1,11 @@
-using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.Util.Mocks;
-using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
+using System.Collections;
 using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.Items;
+using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.Util.Mocks;
+using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
 
 namespace sMPGWM.Tests.ItemSystem;
 
@@ -46,7 +46,9 @@ public class ItemHotbarTests
         _inventory.Dispose();
     }
 
-    private HotbarResult Assign(int source, int position = 0) => _controller.Assign(new HotbarAssignmentRequest(_session, _state.Revision, position, ItemLocation.Inventory(source), _inventory.Snapshot.Slots[source]!.Id, _inventory.Revision, _equipment.Revision));
+    private HotbarResult Assign(int source, int position = 0) => _controller.Assign(new HotbarAssignmentRequest(
+        _session, _state.Revision, position, ItemLocation.Inventory(source), _inventory.Snapshot.Slots[source]!.Id,
+        _inventory.Revision, _equipment.Revision));
 
     private TransferResult Equip(int source) => _transfers.Transfer(new TransferRequest(_session, ItemLocation.Inventory(source),
         _inventory.Snapshot.Slots[source]!.Id, ItemLocation.Equipment("light_weapon_1"), _equipment.Snapshot.Slots[4]?.Id,
@@ -85,9 +87,9 @@ public class ItemHotbarTests
         state.SetEditSession(session);
         var quantity = (long)ItemRegistry.GetById("mock_advanced_consumable").StackLimit * 2;
         inventory.ItemRequestService.CreateItems(inventory.Container, "mock_advanced_consumable", quantity);
-        var adapter = new ItemHotbarController(state, inventory, equipment, transfers);
-        adapter.Assign(new HotbarAssignmentRequest(session, 0, 0, ItemLocation.Inventory(0), inventory.Snapshot.Slots[0]!.Id, inventory.Revision, 0));
-        Assert.That(adapter.Resolve(0).Quantity, Is.EqualTo(quantity));
+        var controller = new ItemHotbarController(state, inventory, equipment, transfers);
+        controller.Assign(new HotbarAssignmentRequest(session, 0, 0, ItemLocation.Inventory(0), inventory.Snapshot.Slots[0]!.Id, inventory.Revision, 0));
+        Assert.That(controller.Resolve(0).Quantity, Is.EqualTo(quantity));
     }
 
     [TestCase(3)]
@@ -236,7 +238,7 @@ public class ItemHotbarTests
         };
         Assert.That(Assign(0), Is.EqualTo(HotbarResult.Success));
         Assert.That(observed, Is.True);
-        Assert.That(_state.Entries, Is.AssignableTo<System.Collections.IList>());
+        Assert.That(_state.Entries, Is.AssignableTo<IList>());
         Assert.Throws<NotSupportedException>(() => ((IList<HotbarBinding?>)_state.Entries)[0] = null);
     }
 
@@ -282,9 +284,10 @@ public class ItemHotbarTests
         _inventory.Changed += _ => notifications++;
         _equipment.Changed += _ => notifications++;
         _state.Changed += () => notifications++;
-        foreach (var commit in new[] { false, true })
-            Assert.That((commit ? _controller.Assign(new HotbarAssignmentRequest(_session, hotbarRevision, 0, source, entity, revision, _equipment.Revision)) : _controller.ValidateAssignment(new HotbarAssignmentRequest(_session, hotbarRevision, 0, source, entity, revision, _equipment.Revision))),
-                Is.EqualTo(expected));
+        var request = new HotbarAssignmentRequest(_session, hotbarRevision, 0, source, entity,
+            revision, _equipment.Revision);
+        Assert.That(_controller.ValidateAssignment(request), Is.EqualTo(expected));
+        Assert.That(_controller.Assign(request), Is.EqualTo(expected));
         Assert.That(_inventory.Snapshot, Is.SameAs(inventory));
         Assert.That(_equipment.Snapshot, Is.SameAs(equipment));
         Assert.That(_state.Entries, Is.SameAs(entries));
@@ -299,7 +302,12 @@ public class ItemHotbarTests
         if (weapon) Assert.That(Equip(3), Is.EqualTo(TransferResult.Success));
         var source = weapon ? ItemLocation.Equipment("light_weapon_1") : ItemLocation.Inventory(0);
         var entity = weapon ? _equipment.Snapshot.Slots[4]!.Id : _inventory.Snapshot.Slots[0]!.Id;
-        HotbarResult AssignLink(int position, bool commit) => (commit ? _controller.Assign(new HotbarAssignmentRequest(_session, _state.Revision, position, source, entity, _inventory.Revision, _equipment.Revision)) : _controller.ValidateAssignment(new HotbarAssignmentRequest(_session, _state.Revision, position, source, entity, _inventory.Revision, _equipment.Revision)));
+        HotbarResult AssignLink(int position, bool commit)
+        {
+            var request = new HotbarAssignmentRequest(_session, _state.Revision, position, source, entity,
+                _inventory.Revision, _equipment.Revision);
+            return commit ? _controller.Assign(request) : _controller.ValidateAssignment(request);
+        }
         var inventory = _inventory.Snapshot;
         var equipment = _equipment.Snapshot;
         var notifications = 0;
@@ -356,6 +364,82 @@ public class ItemHotbarTests
         Assert.That(_state.Revision, Is.Zero);
         Assert.That(notifications, Is.Zero);
     }
+    [Test]
+    public void AvailabilityCacheTracksRevisionsWithoutSubscribersAndSharesDuplicateBindings()
+    {
+        Assign(0);
+        Assign(1, 1);
+        var first = _controller.Resolve(0);
+        Assert.That(_controller.Resolve(0), Is.SameAs(first));
+        Assert.That(_controller.Resolve(1), Is.SameAs(first));
+
+        ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, 8, "mock_standard_consumable", 2);
+        var updated = _controller.Resolve(0);
+        Assert.That(updated.Quantity, Is.EqualTo(17));
+        Assert.That(updated, Is.Not.SameAs(first));
+        Assert.That(_controller.Resolve(1), Is.SameAs(updated));
+
+        _controller.Clear(_session, _controller.Revision, 0);
+        Assert.That(_controller.Resolve(0).Available, Is.False);
+        Assert.That(_controller.Resolve(1).Quantity, Is.EqualTo(17));
+    }
+
+    [Test]
+    public void AvailabilityCacheTracksEquipmentOnlyChanges()
+    {
+        Equip(3);
+        var entity = _equipment.Snapshot.Slots[4]!;
+        _controller.Assign(new HotbarAssignmentRequest(_session, _controller.Revision, 0,
+            ItemLocation.Equipment("light_weapon_1"), entity.Id, _inventory.Revision, _equipment.Revision));
+        Assert.That(_controller.Resolve(0).Available, Is.True);
+        var inventoryRevision = _inventory.Revision;
+        ItemFixture.MoveAway(_inventory.ItemRequestService, _equipment.Container, 4);
+        Assert.That(_inventory.Revision, Is.EqualTo(inventoryRevision));
+        Assert.That(_controller.Resolve(0).Available, Is.False);
+        ItemFixture.Place(_inventory.ItemRequestService, _equipment.Container, 4, "mock_standard_light_weapon");
+        Assert.That(_controller.Resolve(0).Available, Is.True);
+    }
+
+    [Test]
+    public void ControllerObserverSnapshotSurvivesSubscriptionChangesAndReporterFailures()
+    {
+        var reported = new List<Exception>();
+        var controller = new ItemHotbarController(_state, _inventory, _equipment, _transfers, exception =>
+        {
+            reported.Add(exception);
+            throw new InvalidOperationException("Reporter failed");
+        });
+        var calls = new List<string>();
+        void Later() => calls.Add("later");
+        void Existing() => calls.Add("existing");
+        void ChangeSubscriptions()
+        {
+            calls.Add("change");
+            controller.Changed -= ChangeSubscriptions;
+            controller.Changed -= Existing;
+            controller.Changed += Later;
+            throw new InvalidOperationException("Observer failed");
+        }
+        controller.Changed += ChangeSubscriptions;
+        controller.Changed += Existing;
+        try
+        {
+            controller.Clear(_session, controller.Revision, 0);
+            Assert.That(calls, Is.EqualTo(new[] { "change", "existing" }));
+            Assert.That(reported, Has.Count.EqualTo(1));
+            Assert.That(reported[0].Message, Is.EqualTo("Observer failed"));
+            calls.Clear();
+            controller.Clear(_session, controller.Revision, 1);
+            Assert.That(calls, Is.EqualTo(new[] { "later" }));
+        }
+        finally
+        {
+            controller.Changed -= ChangeSubscriptions;
+            controller.Changed -= Existing;
+            controller.Changed -= Later;
+        }
+    }
+
     [Test]
     public void ControllerChangesFollowAllSourcesAndDetachOnUnbind()
     {
