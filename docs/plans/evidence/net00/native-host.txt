@@ -1,0 +1,49 @@
+Godot Engine v4.6.2.stable.mono.custom_build.001aa128b (2026-03-31 20:42:38 UTC) - https://godotengine.org
+[2026-10-31 16:58:46] [Info] Network session stopped role=Host tick=0
+[2026-10-31 16:58:46] [Info] Canceled Steam lobby membership drained.
+[2026-10-31 16:58:47] [Info] NET00 phase=constructed engine=4.6.2-stable (custom_build) native=SteamMultiplayerPeer result=Ok status=Disconnected
+[2026-10-31 16:58:47] [Info] NET00 native_method=create_host available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=create_client available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=close available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=get_steam_id_for_peer_id available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=get_peer_id_for_steam_id available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=set_auth_callback available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=send_auth available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=complete_auth available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=set_server_relay_enabled available=True
+[2026-10-31 16:58:47] [Info] NET00 phase=host engine=4.6.2-stable (custom_build) native=SteamMultiplayerPeer result=Ok status=Connected
+[2026-10-31 16:58:47] [Info] NET00 native_method=create_host available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=create_client available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=close available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=get_steam_id_for_peer_id available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=get_peer_id_for_steam_id available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=set_auth_callback available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=send_auth available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=complete_auth available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=set_server_relay_enabled available=True
+[2026-10-31 16:58:47] [Info] NET00 server_id=1 relay_supported=False
+[2026-10-31 16:58:47] [Info] Network Host: Listening
+[2026-10-31 16:58:47] [Info] Network session stopped role=Host tick=0
+[2026-10-31 16:58:47] [Info] NET00 phase=constructed engine=4.6.2-stable (custom_build) native=SteamMultiplayerPeer result=Ok status=Disconnected
+[2026-10-31 16:58:47] [Info] NET00 native_method=create_host available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=create_client available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=close available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=get_steam_id_for_peer_id available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=get_peer_id_for_steam_id available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=set_auth_callback available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=send_auth available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=complete_auth available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=set_server_relay_enabled available=True
+[2026-10-31 16:58:47] [Info] NET00 phase=host engine=4.6.2-stable (custom_build) native=SteamMultiplayerPeer result=Ok status=Connected
+[2026-10-31 16:58:47] [Info] NET00 native_method=create_host available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=create_client available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=close available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=get_steam_id_for_peer_id available=True
+[2026-10-31 16:58:47] [Info] NET00 native_method=get_peer_id_for_steam_id available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=set_auth_callback available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=send_auth available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=complete_auth available=True
+[2026-10-31 16:58:47] [Info] NET00 api_method=set_server_relay_enabled available=True
+[2026-10-31 16:58:47] [Info] NET00 server_id=1 relay_supported=False
+[2026-10-31 16:58:47] [Info] Network Host: Listening
+[2026-10-31 16:58:47] [Info] Network session stopped role=Host tick=0

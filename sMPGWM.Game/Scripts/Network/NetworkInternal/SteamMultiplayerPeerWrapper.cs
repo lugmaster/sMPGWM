@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
 
@@ -21,14 +21,32 @@ public class SteamMultiplayerPeerWrapper
         }
     }
 
+    private void TraceCapabilities(string phase, Error result = Error.Ok)
+    {
+        if (OS.GetEnvironment("NET00_CAPABILITIES") != "1")
+            return;
+
+        var peer = (MultiplayerPeer)_nativePeer;
+        using var api = new SceneMultiplayer();
+        Logger.Info($"NET00 phase={phase} engine={Engine.GetVersionInfo()["string"]} native={_nativePeer.GetClass()} result={result} status={peer.GetConnectionStatus()}");
+        foreach (var method in new[] { "create_host", "create_client", "close", "get_steam_id_for_peer_id", "get_peer_id_for_steam_id" })
+            Logger.Info($"NET00 native_method={method} available={_nativePeer.HasMethod(method)}");
+        foreach (var method in new[] { "set_auth_callback", "send_auth", "complete_auth", "set_server_relay_enabled" })
+            Logger.Info($"NET00 api_method={method} available={api.HasMethod(method)}");
+        if (phase == "host" && result == Error.Ok)
+            Logger.Info($"NET00 server_id={peer.GetUniqueId()} relay_supported={peer.IsServerRelaySupported()}");
+    }
+
     public Error CreateHost(int port)
     {
         Logger.Debug(
             $"{nameof(SteamMultiplayerPeerWrapper)}.{nameof(CreateHost)} creating host with virtual {nameof(port)}={port}.");
+        TraceCapabilities("constructed");
         var result = _nativePeer.Call("create_host", port);
 
         if (result.VariantType == Variant.Type.Int)
         {
+            TraceCapabilities("host", (Error)result.AsInt32());
             return (Error)result.AsInt32();
         }
 

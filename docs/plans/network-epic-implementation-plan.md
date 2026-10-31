@@ -1,6 +1,6 @@
 # Network implementation plan
 
-Status: NET-14, NET-01 and NET-03 Verified, 2026-10-31. Next checkpoint: NET-00 native capability gate. See the final handoff below.
+Status: NET-14, NET-01 and NET-03 Verified; NET-00 Needs verification, 2026-10-31. Next action: verification/readiness review, not automatic implementation of another story. Follow the final fresh-context handoff below.
 
 Single source for NET-00 through NET-14, replacing the host, client, lobby, lobby-list, heartbeat and refinement plans. Target: `sMPGWM.Game/Scripts/Network`.
 
@@ -70,7 +70,7 @@ Statuses: Pending, In progress, Needs verification, Verified. A partial checkpoi
 | 1 | NET-14: ENet diagnostic exchange | Verified |
 | 2 | NET-01: shared ownership completion | Verified |
 | 3 | NET-03: ENet completion | Verified |
-| 4 | NET-00: Steam capability gate | Pending |
+| 4 | NET-00: Steam capability gate | Needs verification |
 | 5 | NET-02: private Steam diagnostic exchange | Pending |
 | 6 | NET-08: protocol/preflight completion | Pending |
 | 7 | NET-11: heartbeat and RTT | Pending |
@@ -217,6 +217,15 @@ Serialize refresh through lobby service; deactivate UI listeners/publication whi
 
 ### NET-05: menus
 
+User layout constraint (2026-10-31): reuse `sMPGWM.Game/scenes/ui/menu/start_menu/join_steam_game_menu.tscn` and its existing `JoinSteamGameMenu.cs`, `lobby_list_entry.tscn` and `StartMenuProvider` navigation. This scene already provides the intended layout: lobby/host/player-count columns, scrollable lobby entries and the Join Steam Game button. Preserve that layout and wire real discovery, selection and joining into it; replace the sample rows with live entries. Add only required missing controls/status within the established design. Do not create a replacement join screen or a separate user-test UI.
+
+Existing component inventory (inspected 2026-10-31; reuse and extend these files):
+- `Scripts/StartMenuSystem/LobbyList/LobbyList.cs` is currently an empty plain-class scaffold. Implement the menu list/selection logic here as appropriate, consuming discovery snapshots without becoming a session owner.
+- `Scripts/StartMenuSystem/HostSteamGameMenu.cs` already sends the Host/Steam choice through `StartMenuManager.InitializeGame`; preserve this scene-entry handoff.
+- `Scripts/StartMenuSystem/JoinSteamGameMenu.cs` already wires the Join button but currently supplies only Client/Steam, without a selected lobby target. Complete its query/selection/join TODO and pass the selected stable lobby ID through startup data. Correct its current "Start Steam Game" title to match the join screen.
+- `Scripts/Util/UiComponents/FilterToolbar.cs` is an `HBoxContainer` scaffold; reuse it and `scenes/ui/base/filter_toolbar.tscn` for search/sort. Inventory already uses this scene and directly resolves `FilterToolbar/LineEdit` and `FilterToolbar/SortSelector`; preserve those paths and inventory behavior when extending it.
+- `scenes/ui/menu/start_menu/lobby_list_entry.tscn` already supplies a toggle Button with lobby-name, host-name and player-count labels. Bind real snapshot values and stable-ID selection to this row. Its current `focus_mode = 0` must be adjusted for the planned keyboard selection; preserve its visual layout.
+
 Preserve main menu -> Host/Join -> LAN/Steam; final action hands off role/type and target data and enters `main_game.tscn`. Only then does `NetworkManager` allocate its active network child and begin hosting/joining. Replace sample rows in actual Steam join/entry scenes through `StartMenuProvider`. No waiting room or ready-up/Start screen. Main menu has no connection/session state.
 
 Auto-refresh discovery on activation; show loading/empty/error and Refresh/Back. One keyboard-accessible selection by stable lobby ID; Join requires visible valid selection and no pending search/navigation. Sorting preserves selection; filter/refresh removal clears it. Client revalidates handed-off target inside the main-game scene. LAN uses address/configured port. Menu Back deactivates discovery before navigation; cancellation after scene entry goes through `NetworkManager.Instance`, cleans up and returns to the main menu. Steam capability failure disables Steam actions with a reason; this is runtime availability, not connection state.
@@ -232,6 +241,20 @@ Exercise production flows: repeated host/client startup, join/leave/rejoin, thre
 For each checkpoint read repository instructions, this plan and relevant current code; preserve unrelated edits. Establish baseline failures, implement, then run focused deterministic state/codec/hash/clock tests, game build, relevant Godot scene checks and real multi-process integration. Follow existing NUnit conventions in `sMPGWM.Game/README.md`; discover the actual custom executable. Do not repeat passed checks without changes/unresolved concerns.
 
 Record checkpoint/status, changed files, exact commands/build/inputs, results, evidence paths and limitations without account secrets. Mark Verified only when acceptance passes. Missing accounts/devices/tooling means Needs verification with precise next action; do not silently advance past the gate. End each checkpoint with a fresh-context handoff; unfinished work resumes the same checkpoint.
+
+### Required user testing on a second device
+
+User constraint (2026-10-31): manual testing requires a complete exported game build, launched normally and operated entirely through the UI. The user can return the full console log from each device. Do not require editor access, launch arguments, command files, developer harness commands, or manual RPC injection for user testing. Automated local harnesses remain available to the implementing agent.
+
+This constraint overrides the earlier strict checkpoint sequencing only as needed to prepare a usable UI test build. Continue the necessary Steam host/join, menu and logging implementation across NET-02/NET-05 (and their required dependencies) while NET-00 remains **Needs verification**. Do not interpret permission to implement ahead as verification of native behavior. Earlier instructions to stop before NET-02 or dependent implementation are superseded for this purpose.
+
+- **First request:** as soon as a complete build supports the required Steam host/join flow through actual menus, request the two-device test explicitly; do not wait for the entire epic if that flow is ready earlier. Prepare and locally validate the export and UI path first. Supply the build identity, normal launch instructions, two distinct Steam account prerequisites, exact menu/button sequence, expected visible outcomes and console-log location. Any lobby-ID exchange must be supported by UI controls; do not require command-line target selection.
+- **Concrete first test:** host on device A, join through the UI on device B, leave and rejoin against the still-running host, close the host and observe the client outcome, then restart and retry. Diagnostic exchange, auth and identity observations must run automatically within the production scene/session flow and write useful console evidence. Logs should identify the build, transport, role, session/correlation, signal ordering, auth outcome, actual sender and channel observations, identity-validation result and cleanup outcome. Use the existing Logger; avoid account secrets. The user checks visible behavior and returns the complete console logs from both devices; the agent analyzes technical evidence.
+- **Additional capability cases:** provide UI-only steps for refusal or other negative cases when available. Cases requiring fault injection remain agent-run checks or explicitly unverified; never ask the user to simulate unsupported harness actions. Method availability alone does not verify native auth, RPC/channel behavior or identity mapping. Keep any provisional preflight implementation and outstanding native assumptions explicit; no silent fallback.
+- **After the result:** inspect both full console logs, record pass/fail or missing evidence per capability, fix failures and request focused UI reruns as needed. Keep NET-00 and affected acceptance criteria unverified until evidence exists. Request remaining NET-02 two-account cases through the same built-game UI workflow.
+- **Final request: NET-12 integration.** Supply a separate UI-only end-to-end test for public discovery, compatibility/admission, host loss and repeated join/leave/rejoin, collecting full console logs again. Third-peer isolation and last-slot checks require a third peer; availability is not assumed, and two devices alone do not prove that matrix.
+
+Every request must identify the checkpoint, exact UI steps, expected outcomes and logs to return. Prepare all feasible implementation and local validation before asking for the user's time. This section governs future handoffs and supersedes earlier requests for a user-operated capability harness.
 
 **Message milestone:** checkpoints 1-5 Verified, including actual separate-process ENet and Steam exchanges. **Full planned slice:** all checkpoints Verified, public discovery reaches production admission and host survives churn. Neither claims real replication/player spawning.
 
@@ -322,3 +345,32 @@ Validation:
 Scope boundaries: Steam-unavailable LAN is excluded by the user's mandatory Steam startup constraint recorded above. Two-account Steam exchange, client native signal/identity capability matrix, publication and host-loss policy remain NET-00/NET-02 work. Shared canceled-operation ownership is verified with native creation/draining plus deterministic join-callback tests; no two-account Steam exchange is claimed.
 
 Fresh-context handoff: next is checkpoint 4, NET-00. Preserve mandatory Steam startup and transport exclusivity. NET-01/NET-03 completion does not imply completion of NET-00/NET-02: execution order, not numeric ID, defines these checkpoints.
+
+### NET-00 partial handoff (2026-10-31)
+
+Status: **Needs verification**. Do not declare the gate complete. Supporting implementation ahead of the gate is permitted only as described under required user testing and the final fresh-context handoff.
+
+Added opt-in NET00_CAPABILITIES=1 tracing inside the existing native wrapper and enabled it in the process matrix. Native execution proves SteamMultiplayerPeer construction, disconnected initial status, successful host creation, connected host status, server ID 1, and two close/recreate cycles. The peer reports relay support false. Runtime method inspection finds both peer/Steam identity mapping methods and SceneMultiplayer auth/send/complete methods; presence is not proof of remote behavior or signatures. No preflight fallback has been selected.
+
+Validation: dotnet test sMPGWM.Tests --filter FullyQualifiedName~Network: 7 passed, including ENet control and native Steam lifecycle. Game/test assemblies built with existing warnings. Runtime/executable and inputs are unchanged from the preceding handoff; the added environment variable is the only test input change. Sanitized trace: [native-host.txt](evidence/net00/native-host.txt).
+
+Remaining gate work: establish exact GodotSteam module revision/signatures; use two accounts/devices to trace Steam client signal ordering, targeted reliable RPC/channels, finite native authentication, actual identity mapping against membership, refusal/loss and client close/retry. The local run uses one account and cannot verify those remote behaviors. Retain explicit unknowns; third-peer checks remain checkpoint 16. Resume NET-00, preserving mandatory Steam initialization and transport exclusivity.
+
+### Fresh-context handoff: verify past work before advancing (2026-10-31)
+
+This is the authoritative next-action handoff, superseding earlier sequencing instructions where they differ. The current turn only updates this plan; implementation, builds, test execution and user-test requests resume in a fresh context.
+
+**First action in the fresh context:** review the current working tree, the latest implemented checkpoint and retained evidence to determine which past work is verified and whether a useful exported-build user test is already possible. Preserve unrelated/uncommitted edits. Do not begin the next story before this review. Reuse valid passing evidence; rerun checks only for changes since that evidence, failures or unresolved concerns.
+
+Current known baseline:
+- NET-14, NET-01 and NET-03 have recorded verification, including the ENet process matrix and local Steam ownership/lifecycle checks. Their verification does not establish two-device Steam exchange.
+- NET-00 is the most recently implemented checkpoint, and is only partially implemented/verified: opt-in native host capability traces and process assertions were added; the focused network suite passed 7 tests. Remote auth, identity, RPC/channels, refusal/loss and client retry remain unverified. The full-suite inventory failure recorded above remains a separate known baseline issue.
+- The existing Steam join scene has the intended layout, but its script currently hands off Client/Steam without a selected lobby target. LobbyList and FilterToolbar remain scaffolds. The latest inspection therefore does **not** establish a usable two-device Steam test through the UI. Recheck the actual repository in the fresh context rather than assuming this remains unchanged.
+
+Apply this decision order:
+1. **Close verification gaps in already implemented work first.** Inspect relevant code and evidence and run only needed local checks. Correct failures before treating a checkpoint as complete. Distinguish local validation from acceptance that requires the user's second device.
+2. **If a useful UI-only build test is already possible, explicitly request it now in that fresh context.** Prepare a concrete test package: exact build/export instructions or an available build, build identity, device/account prerequisites, numbered menu/button steps, expected visible outcomes and where to obtain the full console logs from both devices. Specify exactly which past checkpoint/capabilities this test verifies. Request the test before adding unrelated story work; retain Needs verification while awaiting results. Never ask for editor actions, launch flags or harness commands. Analyze returned logs before deciding acceptance.
+3. **If the build/UI cannot exercise the outstanding acceptance, identify the precise missing path and implement the minimum necessary test-enabling work next.** Start with completing the current NET-00 local work; use the authorized NET-02/NET-05 dependencies where needed to make the remote test possible. Reuse the existing menus, LobbyList, row scene and FilterToolbar listed above. Log diagnostic evidence automatically in the exported UI flow. Do not request a non-actionable user test or mark remote checks passed. Reassess test readiness after each completed increment and request the user test as soon as it is actionable.
+4. **Once the latest implemented story is fully verified and the backlog of past verification is up to date, start the next pending checkpoint in the execution order.** At present that means NET-02 private Steam diagnostic exchange after NET-00; account for any test-enabling pieces already implemented. If verification remains outstanding, continue the current checkpoint or its explicitly identified test-enabling dependency rather than silently advancing.
+
+End the next work session with updated statuses, evidence, outstanding user-test results and one concrete next action. Preserve mandatory Steam startup, transport exclusivity, the existing UI layout, and the user's full-build/UI-only testing constraint.

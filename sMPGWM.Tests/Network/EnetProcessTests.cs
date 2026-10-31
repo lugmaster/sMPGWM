@@ -172,6 +172,8 @@ public class EnetProcessTests
                 {
                     steam.Command("steam-host");
                     await steam.WaitForCount("Network Host: Listening", round);
+                    Assert.That(steam.Output, Does.Contain("NET00 server_id=1"));
+                    Assert.That(steam.Output, Does.Contain("NET00 phase=host"));
                     steam.Command("leave");
                     await steam.WaitForCount("returning to start menu.", round + 1);
                     await Task.Delay(200);
@@ -231,6 +233,7 @@ public class EnetProcessTests
                 RedirectStandardOutput = true, RedirectStandardError = true
             };
             foreach (var arg in new[] { "--headless", "--path", stage, "--", role }) start.ArgumentList.Add(arg);
+            start.Environment["NET00_CAPABILITIES"] = "1";
             start.Environment["NET14_COMMAND_FILE"] = _commandFile;
             start.Environment["APPDATA"] = Path.Combine(stage, "users", name);
             start.Environment["XDG_DATA_HOME"] = Path.Combine(stage, "users", name);
