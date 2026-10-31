@@ -16,6 +16,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     private SteamMultiplayerPeer? _steamMultiplayerPeer;
     private ulong? _currentLobbyId;
     private bool _cleaned;
+    private bool _identitySubscribed;
     private bool _started;
     private bool _hosting;
     private bool _completed;
@@ -71,6 +72,11 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
             _steamMultiplayerPeer.ServerRelay = true;
 
+            if (Startup?.Diagnostic == true && Multiplayer is SceneMultiplayer api)
+            {
+                api.PeerAuthenticating += VerifyIdentity;
+                _identitySubscribed = true;
+            }
             Multiplayer.ConnectedToServer += Connected;
             Multiplayer.ConnectionFailed += Failed;
             Multiplayer.ServerDisconnected += Disconnected;
@@ -85,6 +91,32 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         {
             // Godot invokes _Ready through its bridge; report here rather than throwing across it.
             Report(false, e.Message);
+        }
+    }
+
+    private void VerifyIdentity(long peer)
+    {
+        if (_cleaned || _steamMultiplayerPeer == null) return;
+        try
+        {
+            var steamId = _steamMultiplayerPeer.GetSteamIdForPeerId(peer);
+            var reverse = steamId > 0 ? _steamMultiplayerPeer.GetPeerIdForSteamId(steamId) : 0;
+            var member = false;
+            if (_currentLobbyId.HasValue)
+            {
+                var lobby = checked((long)_currentLobbyId.Value);
+                for (var i = 0; i < SteamworksHelper.Api.GetNumLobbyMembers(lobby); i++)
+                    if (SteamworksHelper.Api.GetLobbyMemberByIndex(lobby, i) == steamId) member = true;
+            }
+            var valid = steamId > 0 && reverse == peer && member &&
+                        (_hosting || (peer == 1 && steamId == checked((long)_pinnedHost)));
+            Logger.Info($"NET00 identity peer={peer} steam={steamId} reverse={reverse} member={member} valid={valid}");
+            if (!valid) ((SceneMultiplayer)Multiplayer).DisconnectPeer(checked((int)peer));
+        }
+        catch (Exception e)
+        {
+            Logger.Warning($"NET00 identity failed peer={peer}: {e.Message}");
+            ((SceneMultiplayer)Multiplayer).DisconnectPeer(checked((int)peer));
         }
     }
 
@@ -349,6 +381,11 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
         if (_cleaned) return;
         _cleaned = true;
+        if (_identitySubscribed && Multiplayer is SceneMultiplayer api)
+        {
+            api.PeerAuthenticating -= VerifyIdentity;
+            _identitySubscribed = false;
+        }
         Multiplayer.ConnectedToServer -= Connected;
         Multiplayer.ConnectionFailed -= Failed;
         Multiplayer.ServerDisconnected -= Disconnected;

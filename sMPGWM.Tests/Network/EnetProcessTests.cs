@@ -55,6 +55,7 @@ public class EnetProcessTests
                 await client.WaitFor("MessageExchangeSucceeded");
                 Assert.That(client.Output, Does.Contain("session=" + session));
                 Assert.That(client.Output, Does.Contain("payload=ENet diagnostic hello"));
+                Assert.That(client.Output, Does.Contain("NET00 auth_complete peer=1 result=Ok"));
                 Assert.That(client.Output, Does.Not.Contain("ERROR:"));
                 client.Command("duplicate");
                 await Task.Delay(150);
@@ -67,10 +68,12 @@ public class EnetProcessTests
                 await client.WaitForCount("Diagnostic result=MessageExchangeSucceeded", 2);
                 await Task.Delay(1600);
                 Assert.That(Regex.Matches(client.Output, "returning to start menu.").Count, Is.EqualTo(1));
+                Assert.That(client.Output, Does.Contain("NET00 auth_complete peer=1 result=Ok"));
                 Assert.That(client.Output, Does.Not.Contain("ERROR:"));
                 client.Command("quit");
                 await client.WaitFor("completed Steam shutdown.");
                 await client.WaitForExit();
+                Assert.That(client.Output, Does.Contain("NET00 auth_complete peer=1 result=Ok"));
                 Assert.That(client.Output, Does.Not.Contain("ERROR:"));
             }
             Assert.That(Regex.Matches(host.Output, "Host sender=1 DiagnosticReply").Count, Is.EqualTo(4), host.Output);
@@ -132,7 +135,11 @@ public class EnetProcessTests
             {
                 await alone.WaitFor("Listening session=");
                 using (var refused = Start("refused", "--enet-client"))
-                    await refused.WaitFor("Server disconnected.");
+                {
+                    await refused.WaitFor("returning to start menu.");
+                    Assert.That(refused.Output, Does.Contain("Server disconnected.").Or.Contain("Native diagnostic authentication failed or timed out."));
+                    Assert.That(refused.Output, Does.Not.Contain("MessageExchangeSucceeded"));
+                }
                 Assert.That(alone.Output, Does.Not.Contain("DiagnosticReply correlation="));
                 alone.Command("quit");
                 await alone.WaitForExit();

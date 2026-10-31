@@ -21,6 +21,9 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private bool _stopped;
     private bool _previousObjectDecoding;
     private bool _configuredApi;
+    private Callable _previousAuthCallback;
+    private double _previousAuthTimeout;
+    private byte[] _authPayload = Array.Empty<byte>();
     public bool SessionStopped => _stopped;
     public bool DiagnosticMode => _startup?.Diagnostic == true;
     public NetworkRole NetworkRole { get; private set; }
@@ -74,6 +77,16 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             _previousObjectDecoding = api.AllowObjectDecoding;
             api.AllowObjectDecoding = false;
             _configuredApi = true;
+            if (DiagnosticMode)
+            {
+                _previousAuthCallback = api.AuthCallback;
+                _previousAuthTimeout = api.AuthTimeout;
+                _authPayload = System.Text.Encoding.UTF8.GetBytes($"sMPGWM:diagnostic:{DiagnosticExchange.ProtocolVersion}:{sMPGWM.Scripts.GameConfigSystem.GameConfig.Version}");
+                api.AuthTimeout = 10;
+                api.AuthCallback = Callable.From<long, byte[]>(ReceiveAuthentication);
+                api.PeerAuthenticating += AuthenticatePeer;
+                api.PeerAuthenticationFailed += AuthenticationFailed;
+            }
         }
         if (NetworkType == NetworkType.Lan)
         {
@@ -91,6 +104,43 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             AssignRole();
         }
         catch (Exception e) { CancelDiagnostic($"Network startup failed: {e.Message}"); }
+    }
+
+    private void AuthenticatePeer(long peer)
+    {
+        if (_stopped) return;
+        var api = (SceneMultiplayer)Multiplayer;
+        if (NetworkRole == NetworkRole.Host &&
+            api.GetPeers().Length + api.GetAuthenticatingPeers().Length >= _startup!.MaxPlayers)
+        {
+            api.DisconnectPeer(checked((int)peer));
+            return;
+        }
+        var result = api.SendAuth(checked((int)peer), _authPayload);
+        Logger.Info($"NET00 auth_send peer={peer} result={result}");
+        if (result != Error.Ok) api.DisconnectPeer(checked((int)peer));
+    }
+
+    private void ReceiveAuthentication(long peer, byte[] data)
+    {
+        if (_stopped) return;
+        var api = (SceneMultiplayer)Multiplayer;
+        if (!data.AsSpan().SequenceEqual(_authPayload) || (NetworkRole == NetworkRole.Client && peer != 1))
+        {
+            Logger.Warning($"NET00 auth_rejected peer={peer} bytes={data.Length}");
+            api.DisconnectPeer(checked((int)peer));
+            return;
+        }
+        var result = api.CompleteAuth(checked((int)peer));
+        Logger.Info($"NET00 auth_complete peer={peer} result={result}");
+        if (result != Error.Ok) api.DisconnectPeer(checked((int)peer));
+    }
+
+    private void AuthenticationFailed(long peer)
+    {
+        Logger.Warning($"NET00 auth_failed peer={peer}");
+        if (!_stopped && NetworkRole == NetworkRole.Client)
+            CancelDiagnostic("Native diagnostic authentication failed or timed out.");
     }
 
     public void AssignRole()
@@ -148,6 +198,14 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _activeNetwork = null;
         if (_configuredApi && Multiplayer is SceneMultiplayer api)
         {
+            if (DiagnosticMode)
+            {
+                api.PeerAuthenticating -= AuthenticatePeer;
+                api.PeerAuthenticationFailed -= AuthenticationFailed;
+                api.AuthCallback = _previousAuthCallback;
+                api.AuthTimeout = _previousAuthTimeout;
+                _authPayload = Array.Empty<byte>();
+            }
             api.AllowObjectDecoding = _previousObjectDecoding;
             _configuredApi = false;
         }

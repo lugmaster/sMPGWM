@@ -434,3 +434,38 @@ Reviewed user-supplied host and client logs against the committed baseline. NET-
 This records user-tested graceful host-loss and retry, not abrupt transport loss/refusal or full native capability acceptance. No code changes or test reruns were needed to assess these logs. Export packaging, native auth, actual peer/Steam identity mapping, broader channel behavior and remaining NET-00 matrix remain unverified.
 
 Concrete next implementation action: add bounded native-auth and identity-mapping verification to the production diagnostic path, configure auth before peer assignment, validate locally with ENet as control, and prepare a new two-device UI test. Do not request repeats of the now-evidenced lifecycle scenarios without a relevant implementation change.
+
+### NET-00 bounded native-auth increment (2026-10-31)
+
+Status remains **Needs verification**. Diagnostic sessions configure SceneMultiplayer authentication before transport assignment, exchange an exact protocol/game-version marker, and use a 10-second native auth deadline. This is capability verification, not the final build fingerprint/preflight contract. Capacity includes authenticating peers; host-only rejection occurs before RPC eligibility. Cleanup restores prior auth callback/timeout and removes owned handlers.
+
+Steam verifies native peer-to-Steam and reverse mapping during authentication, requires current lobby membership, and on clients requires server peer 1 to match the pinned host. Mapping failure disconnects the peer; no fallback is selected. Evidence logs use Logger: NET00 auth_send, auth_complete, auth_failed and identity (including member/valid). Remote timing/availability of these mapping methods remains unverified.
+
+Validation: focused Network suite passes 7/7 with GODOT_BIN=C:/Users/lober/godot_engine/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64.exe. ENet control asserts successful native auth and exchange; process matrix covers refusal, retry and Steam host cleanup. Fixed issues exposed during testing: conditional Steam handler removal and capacity rejection during auth. The default test executable fallback still targets obsolete 4.6; explicitly set GODOT_BIN. Existing compiler warnings remain. No exported build or remote auth/identity success is claimed.
+
+Concrete next action: run the updated build on both Steam accounts/devices. Through menus, Host Steam Game; on the other device Join Steam Game, enter the newly displayed lobby ID, Look up, select row, Join. Expect MessageExchangeSucceeded. Collect both full game.log files from the paths displayed in the overlay, including NET00 identity valid=True and auth_complete result=Ok before exchange. A failed identity check is evidence to investigate, not permission to bypass it. Export packaging, malformed/silent auth-peer coverage, channel coverage and remaining NET-00 matrix remain outstanding. Previous lifecycle evidence is retained.
+
+### Returned two-device native-auth and identity test (2026-10-31 22:22)
+
+Both supplied logs identify Godot 4.7.2-stable Mono official ed1daf0bf. The happy path for remote Steam native authentication and identity mapping is now **verified**; NET-00 as a whole remains **Needs verification**.
+
+- Client: auth_send peer=1 result=Ok; identity peer=1 steam=76561198611770214 reverse=1 member=True valid=True; auth_complete peer=1 result=Ok; then Connected and MessageExchangeSucceeded.
+- Host: lobby 109775243038245658 records client membership for Steam ID 76561198011927782; auth_send peer=268647482 result=Ok; identity maps that peer to the same Steam ID and back, with member=True valid=True; auth_complete result=Ok precedes DiagnosticHello receipt and DiagnosticReply.
+- Both logs match correlation 61975c1005254cebb2403b3914f2ad04 and host session d4f0f644782a42e6bcde9c9665894d7e. Client-side host identity matches the host Steam initialization log. The shared payload text 'ENet diagnostic hello' does not identify the transport; this run uses Steam.
+- The host reports two native SteamNetworkingSockets assertions at steamnetworkingsockets_internal.h (769): !IsLocked(), before authentication. The session subsequently authenticates and exchanges successfully. Cause is unknown; retain this observation for investigation, without claiming it harmless or an application cleanup failure. Wall clocks differ between devices; use correlation/session IDs, not cross-device timestamps, to match events or infer latency.
+
+No code changes or test reruns were needed for this evidence review. This does not verify timeout/rejection of malformed or silent auth peers, broader channels, abrupt transport loss, export packaging or the remaining native matrix. Previous lifecycle evidence remains valid; do not request a repeat of this successful happy path without a relevant change.
+
+Concrete next action: add deterministic malformed/silent-auth coverage to the existing production-path ENet control harness, asserting bounded rejection, host survival and successful subsequent valid admission to the diagnostic exchange; retain Steam negative-path and channel checks as outstanding NET-00 acceptance. Investigate the native assertion's source/provenance before closing the gate.
+
+### Fresh-context handoff after successful Steam auth test (2026-10-31)
+
+User requested recording the outcome and continuing in a new context; no further implementation or test execution in this context. This is the authoritative next-action handoff.
+
+Outcome: the two-device Steam happy path above passed on both sides, including native auth, identity mapping/membership checks and matched diagnostic exchange. Local focused Network suite previously passed 7/7 with Godot 4.7.2. NET-00 remains Needs verification for the outstanding cases; no later story is declared complete.
+
+No manual E2E test is currently requested or awaiting the user. The next tests are agent-owned automation: extend the existing ENet production-path harness with invalid authentication data and a silent authentication peer; assert rejection/10-second timeout, no diagnostic exchange for rejected peers, host survival and successful subsequent valid-client exchange. Normal menus cannot produce these malformed/silent cases. Do not ask the user to reproduce them through the UI or repeat the successful Steam happy path now.
+
+Start the new context by reviewing and preserving the existing uncommitted changes in NetworkManager.cs, NetworkInternal/SteamNetwork.cs, EnetProcessTests.cs and this plan. Reuse retained passing evidence; set GODOT_BIN explicitly to the documented 4.7.2 executable because the test fallback is obsolete. Keep mandatory Steam startup, transport exclusivity and the existing UI layout. Logger.cs was not changed.
+
+After automated negative-path coverage, reassess remaining NET-00 acceptance, including the unexplained native !IsLocked() assertions, Steam negative paths, channels and packaging. If another manual Steam E2E test becomes necessary, first prepare a concrete testable build and give its identity, device/account prerequisites, exact numbered menu/button steps, expected outcomes and both log locations. User testing must remain full-build/UI-only; no editor steps, launch flags or harness commands. Do not represent native-auth happy-path success as timeout/rejection coverage or full NET-00 completion.
