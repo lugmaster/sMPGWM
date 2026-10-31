@@ -2,6 +2,28 @@
 
 Status: discussion draft, 2026-10-31. Architecture and story refinement only.
 
+**Cross-story performance requirement:** target stable operation at the 30 ms network interval for a co-op session of typically 5 players, at most 10. Avoid unnecessary allocations in recurring tick, message and health paths; reuse bounded storage where useful and do not explicitly force GC. Validate timing and GC impact on the actual engine under representative load. This is a practical multiplayer performance requirement, not an absolute prohibition on allocations or automatic collection.
+
+**Connection timeout:** use `GameConfig.ConnectionTimeout`, in milliseconds, loaded from `[general] connection_timeout` (currently `60000`). Capture it for each attempt rather than hardcoding another connection timeout. Diagnostic exchange, gameplay-phase and health deadlines remain separate.
+
+**Host/client error exit:** for a failure that ends the local attempt/session, invalidate it and perform the manager's idempotent resource cleanup, then route through `GameFlowManager.Instance.QuitToStartMenuBlocking(reason)` (`showAsError` defaults to `true`). Flows/adapters report errors; `GameFlowManager` owns navigation. A rejected or failed remote client does not exit the healthy host or other clients. Reserve `GameFlowManager.Instance.QuitWithOsError(reason)` for genuinely unrecoverable whole-game failures, not ordinary connection, timeout or session errors. Scene changes already free outgoing scene Nodes; use their lifecycle cleanup without duplicating it. Explicitly release session resources that survive navigation, including persistent-owner state, peers, lobby membership and outstanding callbacks.
+
+## Refinement tracker
+
+This tracks discussion agreement, not implementation completion. Resume with the first unfinished row in a new context.
+
+| Story | Refinement status | Agreed scope / next discussion |
+| --- | --- | --- |
+| NET-14 diagnostic exchange | Finished | Seven-step request/reply sequence accepted; roster synchronization deferred beyond this epic |
+| Host setup | Finished | Setup completes once; manager owns the running session; client departure preserves host; diagnostic hosting remains separate from public gameplay publication |
+| Client connection | Finished | Explicit target through actual connection and diagnostic exchange; cancellation/retry and pinned-host loss; configured timeout and shared error-exit contract |
+| Lobby discovery | Ready | Next chat: refine lobby-list ownership, discovery filters, snapshots, selection and handoff to joining |
+| Heartbeat and RTT | Pending | Review after lobby discovery |
+
+Handoff: continue refinement with **Lobby discovery**, using this tracker and [the lobby-list plan](network-lobby-list-implementation-plan.md). Discuss before changing proposals; record agreed decisions concisely. No networking implementation has been completed by these refinement discussions.
+
+Roster synchronization is future work: see the [short follow-up plan](network-roster-synchronization-plan.md). The controller/roster proposals below are retained as discussion background only; they do not add requirements to the current message-exchange epic. The physics-loop ticker requirement still applies.
+
 The epic proves that a host and a separate client can connect and exchange an application message. Use a correlated request and reply so both processes demonstrate reception. A connected socket, Steam lobby membership, or local method call alone does not satisfy the epic.
 
 Start with **NET-14: Host and client exchange a diagnostic message**. This enabling story crosses the host and client boundaries and establishes the smallest usable architecture. Then refine host setup, client connection, lobby discovery, and health against that working path.
@@ -14,12 +36,12 @@ Proposal from the multiplayer-manager design: every participating player has exa
 
 Preserve that requirement while discussing who owns the dictionary, when a connected peer becomes a participant, how the roster reaches existing and newly joining clients, and who drives each tick. A controller must enter and leave the Godot scene tree so future derived classes receive the engine lifecycle. Construction alone is insufficient.
 
-The requirement to represent every participant is user direction. The ownership, role mapping, roster protocol and scheduling below are proposals to settle before implementation. Once adopted, carry these decisions into every story and the shared contract. Do not silently apply an unsettled proposal to the four implementation plans.
+The requirements to represent every participant and to use the fixed-rate physics loop as the ticker source are user direction. Registry ownership, role mapping, roster protocol and tick dispatch wiring below remain proposals to settle before implementation. Carry the physics-loop requirement through every story; carry the remaining decisions once adopted.
 
 Two decisions deserve discussion first:
 
-1. **Participation boundary:** should controllers appear on transport connection, or once the host explicitly accepts a player into the roster? Proposed: host-approved participation, with a small diagnostic participation gate in NET-14 and gameplay admission as the later gate. Failed/pending connections do not create player controllers.
-2. **Tick ownership:** should every controller own a network timer, or should one session scheduler dispatch network ticks? Proposed: one scheduler, while controllers retain normal Godot lifecycle and any appropriate frame/physics callbacks.
+1. **Participation boundary (deferred):** should controllers appear on transport connection, or once the host explicitly accepts a player into the roster? Proposed: host-approved participation. Failed/pending connections do not create player controllers. Settle this after the current epic; NET-14 has no roster participation gate.
+2. **Tick dispatch:** use `_PhysicsProcess` as the ticker source, as in the supplied reference. Proposed wiring: one session-owned `NetworkTicker` dispatches each physics step through the owner to ready controllers. The exact physics frequency and any lower packet-send cadence remain to be settled separately.
 
 ## Architecture to discuss and adopt
 
@@ -42,6 +64,7 @@ Proposed tree ownership:
 GameFlowManager
   NetworkManager
     SessionProtocolNode
+    NetworkTicker
     Controllers
       Player_<host peer ID>   : MpController
       Player_<client A ID>    : MpController
@@ -77,44 +100,54 @@ Proposed roster flow:
 
 During node attachment, keep any reservation for a peer ID outside the published ready-controller dictionary so reentrant/duplicate roster application cannot create another Node. Lifecycle readiness is separate from gameplay admission and remains subject to cancellation/session checks. The three-controller invariant holds once roster reconciliation completes; it cannot hold instantaneously across machines during joins, leaves or a partition.
 
-This adds roster synchronization and real empty controller Nodes to the message epic if adopted. It does not replicate a world or spawn a gameplay avatar. The earlier logging-only spawn seam would remain about gameplay spawning; it would no longer mean that no player-related Node exists.
+Roster synchronization and real controller Nodes are deferred beyond the message epic. This proposal does not replicate a world or spawn a gameplay avatar. The earlier logging-only spawn seam remains about gameplay spawning.
 
 ### Tick loop discussion
 
-The README specifies 60 FPS and a 30 ms network interval. These are different schedules: 30 ms is about 33.33 network ticks per second, whereas 30 ticks per second is about 33.33 ms. Keep the stated 30 ms interval unless we explicitly change it.
+**Confirmed carryover:** use the constant configured rate of Godot's physics loop as the ticker. The supplied [legacy NetworkTicker](../../sMPGWM.Game/Scripts/Network/NetworkTicker.cs) is reference code for this decision. Replace the earlier proposal to dispatch network ticks from frame-based monotonic due times. No independent timer or frame accumulator determines the tick rate.
+
+Proposed implementation: a persistent `NetworkTicker : Node`, owned by `NetworkManager`, calls the owner's tick entry point once from each `_PhysicsProcess(delta)` while the session is active. The manager applies pending changes and dispatches to a stable set of ready controllers. The ticker only supplies local tick number and physics delta; session policy, controller membership, health and RPC definitions remain with their respective owners.
 
 | Schedule | Proposed owner and work | Controller involvement |
 | --- | --- | --- |
-| Frame processing | Godot frame callbacks; manager advances setup, queued roster changes and monotonic deadlines | Controller `_Process` can later handle presentation/interpolation |
-| Physics processing | Godot physics callbacks; propose explicitly configuring 60 Hz separately from the frame cap | Controller `_PhysicsProcess` can later handle appropriate simulation; host decides authoritative results |
-| Network send interval | One scheduler owned and driven by `NetworkManager`; target every 30 ms while a session is active | Explicit `NetworkTick` dispatch to ready participating controllers when behavior exists |
-| Control and liveness | Persistent protocol endpoint handles control messages promptly; manager checks deadlines each frame | Empty controllers are not required to answer health probes or complete setup |
+| Frame processing | Godot frame callbacks; presentation and UI | Controller `_Process` can later handle presentation/interpolation; it does not drive the network tick |
+| Physics/network tick | One `NetworkTicker._PhysicsProcess` callback per local physics step; manager advances tick work and dispatches ready controllers | Explicit tick callback when behavior exists; do not repeat that work in each controller's own `_PhysicsProcess` |
+| Packet send cadence | Protocol sends immediately for control, or at a separately agreed cadence from physics steps for future state updates | A physics tick need not produce a packet; state publication follows completed simulation |
+| Control and liveness | Persistent protocol endpoint receives/replies promptly; manager advances health/setup deadlines from the physics ticker using real monotonic time | Empty controllers are not required to answer health probes or complete setup |
 
 Godot frame processing varies with rendered frames; physics processing has its own fixed-rate setting. Inheriting Node does not require one timer per controller. See [Godot processing](https://docs.godotengine.org/en/4.6/tutorials/scripting/idle_and_physics_processing.html) and [Node lifecycle](https://docs.godotengine.org/en/4.6/classes/class_node.html).
 
-Proposed manager frame order: apply validated pending membership changes, advance session/health deadlines, then dispatch a due network tick over a stable set of ready controllers. Mutations raised during dispatch are queued until the boundary; a controller marked for removal is skipped. Keep ordered controller iteration if later behavior needs reproducibility; dictionary iteration is not an agreed simulation order.
+Proposed physics-tick order: apply validated queued membership/control changes, check session/health deadlines, dispatch the local tick to ready controllers, then publish any due state from completed simulation. Mutations raised during dispatch are queued until the boundary; a controller marked for removal is skipped. Keep ordered controller iteration if later behavior needs reproducibility; dictionary iteration is not an agreed simulation order. Future physics-body integration/order must be verified when actual simulation is introduced.
 
-Use a monotonic due time rather than an independent repeating delay per controller. At 60 rendered frames per second, 30 ms deadlines fall between frames; callbacks are quantized to available frames. Preserve the cadence without claiming exact wall-clock execution. After a stall, send current state once and advance the next deadline past missed send intervals rather than bursting obsolete snapshots. That send policy does not skip authoritative physics work or solve simulation catch-up; decide simulation overload behavior with actual gameplay.
+The README's 60 FPS frame cap does not select the physics frequency. Its 30 ms network interval also cannot describe a tick on every physics step at 60 Hz: that step is about 16.67 ms. Decide whether 30 ms remains a separate packet-send target or is replaced by the selected physics tick contract. For example, sending every second 60 Hz physics step gives 30 sends/second, about 33.33 ms, not 30 ms. Leave the README values unchanged until that frequency decision is made.
 
-Keep Godot's normal multiplayer polling initially and verify it on the custom peer. Do not also poll manually from the network scheduler. Control messages, roster changes, diagnostic replies and health responses need not wait for the 30 ms state-send interval. Future gameplay RPCs validate/enqueue inputs for the simulation boundary instead of moving physics bodies inside receive handlers. Per-frame/physics lifecycle callbacks must not also duplicate work assigned to the explicit network tick.
+The engine schedules physics steps; do not add a second simulation catch-up loop to the ticker. During catch-up, future state publication should avoid sending a burst of obsolete snapshots. Fixed-step scheduling is not a promise of uninterrupted wall-clock execution: stalls still delay processing. Tune/test engine catch-up and simulation overload behavior with actual gameplay.
 
-Network tick numbers are local scheduling counters unless explicitly defined otherwise. They are not automatically host simulation ticks, synchronized client clocks or roster revisions. Health uses elapsed monotonic time and its own interval, independent of controller tick counts. Pause may stop gameplay simulation while the session endpoint, Steam callbacks and health continue according to the supported pause policy.
+Keep Godot's normal multiplayer polling initially and verify it on the custom peer. Do not also poll manually from the ticker. Control messages, diagnostic replies and health responses need not wait for a periodic state packet. Future gameplay RPCs validate/enqueue inputs for the simulation boundary instead of moving physics bodies inside receive handlers.
 
-For NET-14, prove controller creation/readiness/removal and log scheduler dispatch; leave controller behavior empty. Add two-player roster convergence to the first demonstration and a three-process check for the exact role/count matrix. Do not implement movement or prediction to exercise the loop.
+Each process advances its own local physics tick. Keep it separate from the latest observed host tick and any future estimate of the current host tick. Received host tick messages are observations, not instructions to execute another local simulation step. Lost or delayed host tick packets must not stop or double-drive the client's loop. Keep tick counters and subscriptions session-scoped rather than static across attempts.
+
+Carry over the physics source from the reference, but replace its static `HostDelta` event, static mutable counters and RPC-based client tick delivery. In particular, clients must not depend on receiving `EmitTick` to advance controllers. Keep RPC declarations in `SessionProtocolNode`; send host simulation tick information with protocol messages when required. Do not copy the reference's hard overwrite of the local tick when it differs by more than two: clock/tick estimation is separate future work.
+
+RTT is measured from local monotonic send and receive timestamps for a matched probe, not from `delta * tickCount`, remote timestamps or a difference between host/client tick counters. Physics steps schedule health checks; elapsed real time decides deadlines. This remains correct across differing tick origins, engine time scale and stalls. Receiving a matching reply records its timestamp promptly rather than waiting for a controller tick. Configure the persistent ticker/endpoint for supported pause processing while gating gameplay dispatch separately, so health can continue when gameplay is paused.
+
+For NET-14, prove physics-driven manager tick dispatch in both processes without requiring incoming tick packets. Controller creation/readiness/removal and roster checks are deferred beyond this epic. Do not implement movement, prediction or tick correction to exercise the loop.
 
 ### Carryover after adoption
 
+Deferred follow-up only: this table does not amend the current epic's accepted stories.
+
 | Story area | Required amendment once decisions are adopted |
 | --- | --- |
-| NET-01 ownership | Own and globally expose the registry; define controller container, factory location, scheduling and teardown |
+| NET-01 ownership | Own and globally expose the registry; define controller container, factory location, session-owned physics ticker and teardown |
 | NET-14 first exchange and NET-08 protocol | Add host roster snapshot/update messages, ordering/session checks and controller convergence; keep diagnostic success distinct from gameplay admission |
 | Host and NET-02/03 transport | Create host participation once; hand actual remote connections to the participation gate; no controller construction in adapters |
 | Client and NET-09 admission | Bootstrap the complete roster; instantiate each local role once; later use admission as the participation gate and keep roster updates consistent for existing clients |
 | NET-04/05 browser and menus | Browsing/selection creates no controller; menu return removes all session controllers; a new join starts cleanly |
 | NET-06/07 initialization | Controller Node readiness and effective gameplay readiness are separate conditions; bind the current world explicitly |
 | NET-10/13 spawn and world seam | Separate persistent participant controllers from avatar spawning/world replication; reconcile the old logging-only wording |
-| NET-11 health | Keep probes session-owned; route removal through roster/registry cleanup; remove only the affected controller on host/other clients |
-| NET-00/12 verification | Verify callback/readiness order, no duplicate Nodes/ticks, late join, three-player counts, departure/rejoin and teardown |
+| NET-11 health | Advance checks from the physics ticker using monotonic timestamps, not tick counts; keep probes session-owned; route removal through roster/registry cleanup |
+| NET-00/12 verification | Verify physics dispatch without incoming tick packets, callback/readiness order, no duplicate Nodes/ticks, pause/stalls, late join, three-player counts, departure/rejoin and teardown |
 
 The architecture below remains the earlier baseline. Extend its diagram/table with the controller container and scheduler once these proposals are adopted; do not treat their current omission as a rejection of the requirement.
 
@@ -127,6 +160,8 @@ flowchart TD
     Manager --> Host[HostSessionFlow]
     Manager --> Client[ClientSessionFlow]
     Manager --> Protocol[SessionProtocolNode]
+    Manager --> Ticker[NetworkTicker physics callback]
+    Ticker --> Tick[Manager tick entry point]
     Host --> Transport[EnetPeerAdapter or SteamPeerAdapter]
     Client --> Transport
     Host --> Lobby[SteamLobbyService]
@@ -144,6 +179,7 @@ Arrows show collaboration. `NetworkManager` owns the flows, active transport, pr
 | --- | --- | --- |
 | `GameFlowManager` | Existing persistent Node; create the network owner, submit requests, await outcomes, coordinate navigation and later gameplay activation | Does not construct native peers or interpret RPCs |
 | `NetworkManager` | Persistent child Node; own one active attempt/session, attach the peer, track connection state, tick plain classes, route loss/removal, perform idempotent teardown | Does not render UI, discover rows, hash gameplay data or implement every flow step |
+| `NetworkTicker` | Persistent child Node; use `_PhysicsProcess` as the single local tick source and call the manager's tick entry point | No RPC declarations, per-controller timers, static global tick state or packet-driven client simulation |
 | `SessionProtocolNode` | Persistent deterministically named child Node; declare RPCs, capture actual sender, validate bounded wire fields and delegate | Same path on both processes; exists before peer assignment; contains no navigation or native lobby operations |
 | `HostSessionFlow` | Plain C# class; sequence one host setup using immutable settings and cancellation | Requests resources from adapters/services; does not independently own global peer assignment |
 | `ClientSessionFlow` | Plain C# class; sequence one join, distinguish lobby membership from actual transport connection | Receives a target; does not search for one or claim gameplay admission |

@@ -4,6 +4,10 @@ Status: revised proposal, 2026-10-27. Planning only; implementation has not star
 
 For the smaller host/client message-exchange epic, see the [vertical slice refinement discussion](network-vertical-slice-refinement-plan.md). It proposes NET-14 as the first implementation story and separates basic transport proof from the larger gameplay admission scope below.
 
+Across host/client stories, use the refinement plan's shared timeout and error-exit contracts: `GameConfig.ConnectionTimeout` is in milliseconds; local session failures clean up before `GameFlowManager.Instance.QuitToStartMenuBlocking(reason)`. Reserve `QuitWithOsError(reason)` for unrecoverable whole-game failures. An individual client's failure must not exit a healthy host or another client.
+
+Ticker carryover: use the configured fixed-rate physics loop as the session tick source. The legacy `NetworkTicker.cs` is reference code; proposed replacement wiring is a session-owned `NetworkTicker._PhysicsProcess` calling the manager. Every process ticks locally; received host ticks do not drive client simulation. Health/RTT use monotonic elapsed time, not tick counts. Physics frequency and the README's separate 30 ms value still need reconciliation; see the refinement discussion.
+
 The host runs a persistent world for the lifetime of its process. Players discover a running game, join, leave, and join again while the host continues playing. Steam lobbies implement discovery/membership; the product is a server browser, not a pre-match waiting room. A player's departure must not tear down the host's world. Durable saves across host restarts are separate work.
 
 This increment establishes sessions, lists running games, verifies gameplay compatibility and explicit initialization, and invokes a host-owned spawning method that logs for now. It defines the world synchronization boundary required before real players can join a running world. Player instantiation, world replication, prediction, and generated-content distribution are subsequent work; connection/checksum success must not be reported as completion of those features.
@@ -25,7 +29,8 @@ Implement common ownership/native verification once in the host workstream, then
 
 | Type / responsibility | Decision and lifetime |
 | --- | --- |
-| NetworkManager | Persistent Node child of GameFlowManager; sole session/peer owner; ticks ordinary state machines |
+| NetworkManager | Persistent Node child of GameFlowManager; sole session/peer owner; advances ordinary state machines from the physics tick |
+| NetworkTicker | Proposed persistent Node child of NetworkManager; `_PhysicsProcess` supplies the local tick; no RPC or static tick ownership |
 | SessionProtocolNode | Deterministically named persistent Node child of NetworkManager; same RPC path on all peers; created before peer assignment |
 | GameFlowManager / GamePlayManager | Existing Nodes; navigation and scene initialization respectively |
 | SteamworksHelper | Existing persistent Node for Steam runtime/callback pumping; no duplicate autoload |

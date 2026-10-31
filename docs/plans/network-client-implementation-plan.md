@@ -4,9 +4,13 @@ Status: proposed, 2026-10-31. Planning only; no implementation in this split.
 
 Shared ownership, compatibility, initialization, protocol and cleanup contracts: [network plan](network-lobby-implementation-plan.md). Target code: `sMPGWM.Game/Scripts/Network`.
 
+Tick requirement: the client's local fixed-rate physics loop drives its ticker independently of incoming host tick packets. Host tick observations remain separate from the local counter and do not trigger another simulation step. Proposed wiring is in the [refinement discussion](network-vertical-slice-refinement-plan.md#tick-loop-discussion).
+
 ## Scope and ownership
 
 Input is an already selected Steam lobby ID, or a validated LAN endpoint. Searching, displaying or choosing lobbies belongs exclusively to the lobby-list plan. A selected ID is a target, not proof that the lobby is still valid.
+
+Use `GameConfig.ConnectionTimeout` in milliseconds for the connection attempt (from `[general] connection_timeout`, currently `60000`); capture the value per attempt. Keep diagnostic, gameplay-phase and health deadlines independent. Follow the shared host/client error-exit contract in the refinement plan.
 
 `ClientSessionFlow` is an ordinary class owned by `NetworkManager`. Reuse the host plan's lobby service and adapters. `PeerAdmission`, immutable requests/results, `PlayerJoinData` and fingerprint values are ordinary C# types. Only `SessionProtocolNode` receives RPCs; existing scene Nodes provide explicit initialization results. World-join and spawn coordinators are plain classes for the logging-only increment; future instantiated players will be scene Nodes.
 

@@ -4,6 +4,8 @@ Status: proposed, 2026-10-31. Planning only; no implementation in this split.
 
 Shared ownership, compatibility, initialization, protocol and cleanup contracts: [network plan](network-lobby-implementation-plan.md). Target code: `sMPGWM.Game/Scripts/Network`.
 
+Tick requirement: the fixed-rate physics loop drives the local session ticker. Host setup owns its start/stop through the session owner; it does not create a timer per player. Proposed ticker wiring and the unresolved frequency/send-cadence distinction are in the [refinement discussion](network-vertical-slice-refinement-plan.md#tick-loop-discussion).
+
 ## Scope and ownership
 
 Final Host action through a running, locally admitted host and published Steam lobby (or listening LAN server). Host continues while clients join/leave. No waiting room or real player spawning in this increment.

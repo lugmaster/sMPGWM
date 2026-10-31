@@ -4,6 +4,8 @@ Status: proposed, 2026-10-31. Planning only; no implementation in this split.
 
 Shared ownership, compatibility, initialization, protocol and cleanup contracts: [network plan](network-lobby-implementation-plan.md). Target code: `sMPGWM.Game/Scripts/Network`.
 
+Tick boundary: browsing does not start a session ticker. After selected-target handoff, the session uses the fixed-rate physics loop; discovery callbacks/UI remain separate. See the [refinement discussion](network-vertical-slice-refinement-plan.md#tick-loop-discussion).
+
 ## Scope and ownership
 
 Discover running Steam games and pass a selected lobby ID to the client plan. Browsing never creates a game peer or joins a lobby. LAN discovery remains outside scope; LAN uses an address input.

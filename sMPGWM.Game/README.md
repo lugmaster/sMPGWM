@@ -4,7 +4,7 @@
 
 **sMPGWM** stands for **some Multiplayer Game With Modding** and is the project's working title.
 
-sMPGWM is a **2D top-down multiplayer space shooter** developed in **Godot 4.6 with C#**. The engine is self-compiled with **GodotSteam**, and networking uses **GodotSteam MultiplayerPeer**.
+sMPGWM is a **2D top-down coop multiplayer space shooter** developed in **Godot 4.6 with C#**. The engine is self-compiled with **GodotSteam**, and networking uses **GodotSteam MultiplayerPeer**.
 
 ## Development Stack
 
@@ -33,6 +33,8 @@ sMPGWM is a **2D top-down multiplayer space shooter** developed in **Godot 4.6 w
 - **Frame rate:** Locked at 60 FPS.
 - **Network tick interval:** 30 ms.
 - **Authority model:** Host-authoritative multiplayer.
+- **Session scale:** Co-op, typically 5 players and at most 10.
+- **Performance:** Keep the 30 ms network interval stable at this scale. Avoid unnecessary recurring allocations, reuse storage where useful, and do not explicitly force garbage collection. Measure timing and GC impact; an absolute absence of automatic GC is not required.
 
 ### Multiplayer Terminology
 

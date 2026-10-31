@@ -8,7 +8,7 @@ Shared ownership, compatibility, initialization, protocol and cleanup contracts:
 
 Measure application liveness and RTT for host-to-client and client-to-host connections using the same probes. No client mesh and no server-list ping protocol.
 
-`PeerHealthMonitor`, per-peer probe state and metrics snapshots are ordinary C# types with an injected monotonic clock. `NetworkManager._Process` drives their tick on the main thread, including supported paused states. `SessionProtocolNode` sends/receives probes and captures sender identity. Do not create one Node or Timer per peer or a separate health autoload. Existing SteamworksHelper keeps pumping Steam; health does not initialize another Steam runtime.
+`PeerHealthMonitor`, per-peer probe state and metrics snapshots are ordinary C# types with an injected monotonic clock. The fixed-rate physics ticker drives the manager's health checks on the main thread, including supported paused states. Proposed wiring is a session-owned `NetworkTicker._PhysicsProcess` calling the manager, as described in the [refinement discussion](network-vertical-slice-refinement-plan.md#tick-loop-discussion). Physics schedules checks; real monotonic timestamps determine probe intervals, expiry and RTT. Do not derive elapsed time from tick counts or physics delta. `SessionProtocolNode` sends/receives probes, captures sender identity and records matching receive timestamps promptly. Do not create one Node or Timer per peer or a separate health autoload. Existing SteamworksHelper keeps pumping Steam; health does not initialize another Steam runtime.
 
 ## Steps
 
