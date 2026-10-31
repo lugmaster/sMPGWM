@@ -8,6 +8,7 @@ namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
 internal sealed record ItemCellBinding(ItemLocation Location, ItemEntity? Entity, long Revision, int? HotbarPosition = null)
 {
+    internal int? VisualSlot { get; init; }
     internal int Address => Location.InventoryAddress ?? -1;
     internal string? SlotKey => Location.EquipmentSlotKey;
     internal bool IsHotbar => HotbarPosition.HasValue;

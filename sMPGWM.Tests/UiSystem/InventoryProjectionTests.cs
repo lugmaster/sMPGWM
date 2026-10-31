@@ -64,6 +64,37 @@ public class InventoryProjectionTests
         Assert.That(inventory.Snapshot, Is.SameAs(before));
     }
 
+    [Test]
+    public void ManualLayout_PreservesStorageAndSurvivesFilteringAndExplicitSort()
+    {
+        using var inventory = new InventoryController();
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 0, Engine);
+        ItemFixture.Place(inventory.ItemRequestService, inventory.Container, 3, "mock_advanced_engine");
+        var snapshot = inventory.Snapshot;
+        var state = new InventoryViewState();
+        var cells = InventoryProjection.Create(snapshot, state);
+        var id = cells[0].Entity!.Id;
+        state.Place(id, 12);
+        Assert.That(state.AllSort, Is.EqualTo(2));
+        Assert.That(InventoryProjection.Create(snapshot, state)[0].Entity, Is.Null);
+        Assert.That(InventoryProjection.Create(snapshot, state)[12].Entity!.Id, Is.EqualTo(id));
+        state.SelectedTab = 1;
+        state.SelectedSort = 1;
+        InventoryProjection.Create(snapshot, state);
+        state.SelectedTab = 0;
+        state.SearchText = "missing";
+        InventoryProjection.Create(snapshot, state);
+        state.SearchText = "";
+        Assert.That(InventoryProjection.Create(snapshot, state)[12].Entity!.Id, Is.EqualTo(id));
+        Assert.That(state.AllSort, Is.EqualTo(2));
+        Assert.That(inventory.Snapshot, Is.SameAs(snapshot));
+        state.AllSort = 0;
+        state.SortRequested = true;
+        cells = InventoryProjection.Create(snapshot, state);
+        Assert.That(cells.Take(2).All(cell => cell.Entity != null), Is.True);
+        Assert.That(cells[12].Entity, Is.Null);
+    }
+
     private static readonly string Engine = "mock_standard_engine";
 
     [Test]

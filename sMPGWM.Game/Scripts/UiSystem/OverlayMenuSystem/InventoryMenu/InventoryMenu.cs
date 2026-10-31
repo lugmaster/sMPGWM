@@ -55,6 +55,33 @@ public partial class InventoryMenu : GameOverlayMenu
         CancelInteraction();
         _interaction = transfers == null ? null : new ItemInteractionController(transfers);
         _interaction?.SetSession(session);
+        if (_interaction != null)
+        {
+            _interaction.Placement = PlaceVisual;
+            _interaction.Placed = (source, target) =>
+            {
+                if (source.Address < 0 && target.VisualSlot is { } slot && _viewState.CanArrange)
+                {
+                    _viewState.Reconcile(_inventory!.Snapshot);
+                    _viewState.Place(source.Entity!.Id, slot);
+                    RefreshView();
+                }
+            };
+        }
+    }
+
+    private TransferResult? PlaceVisual(ItemCellBinding source, ItemCellBinding target, bool commit)
+    {
+        if (source.Address < 0 || target.Address < 0) return null;
+        if (!_viewState.CanArrange || target.VisualSlot == null) return TransferResult.IncompatiblePlacement;
+        if (target.Entity != null && source.Entity!.DefinitionId == target.Entity.DefinitionId && source.Entity.Definition.CanStack)
+            return null;
+        if (commit)
+        {
+            _viewState.Place(source.Entity!.Id, target.VisualSlot.Value);
+            RefreshView();
+        }
+        return TransferResult.Success;
     }
 
     internal void Bind(IInventoryView inventoryImpl, IEquipmentView equipmentImpl, InventoryViewState state)
@@ -183,6 +210,10 @@ public partial class InventoryMenu : GameOverlayMenu
     internal void CancelInteraction()
     {
         _interaction?.Cancel();
+        // Button focus outlives the carried item unless explicitly released.
+        // Leave toolbar focus alone (for example, when typing in search).
+        if (IsInsideTree() && GetViewport().GuiGetFocusOwner() is ClickableIcon focused && _cells.Contains(focused))
+            focused.ReleaseFocus();
         _pressedIcon = null;
         _pressedBinding = null;
         RestoreHighlight(_sourceIcon);

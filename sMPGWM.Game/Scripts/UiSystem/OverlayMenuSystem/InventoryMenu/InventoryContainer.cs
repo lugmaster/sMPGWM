@@ -48,6 +48,8 @@ public partial class InventoryContainer : VBoxContainer
         _sort.Clear();
         _sort.AddItem("Name ascending");
         _sort.AddItem("Name descending");
+        _sort.AddItem("Custom");
+        _sort.AllowReselect = true;
         _emptyResult = GetNodeOrNull<Label>("EmptyResult");
         if (_emptyResult == null)
         {
@@ -76,6 +78,9 @@ public partial class InventoryContainer : VBoxContainer
     internal void Render(InventorySnapshot snapshot, ItemVisuals visuals)
     {
         var cells = InventoryProjection.Create(snapshot, _viewState);
+        _sort.SetItemDisabled(2, _viewState.SelectedTab != 0);
+        _sort.Disabled = !string.IsNullOrWhiteSpace(_viewState.SearchText);
+        _sort.Select(_viewState.SelectedSort);
         _emptyResult.Visible = cells.Count == snapshot.EmptyAddresses.Count;
         _grid.Render(cells,
             (icon, binding) => visuals.Apply(icon, binding.Entity));
@@ -87,5 +92,5 @@ public partial class InventoryContainer : VBoxContainer
 
     private void OnSearchChanged(string text) { ViewChanging?.Invoke(); _viewState.SearchText = text; ViewChanged?.Invoke(); }
     private void OnTabChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedTab = (int)index; ViewChanged?.Invoke(); }
-    private void OnSortChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedSort = (int)index; ViewChanged?.Invoke(); }
+    private void OnSortChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedSort = (int)index; _viewState.SortRequested = _viewState.SelectedTab == 0; ViewChanged?.Invoke(); }
 }

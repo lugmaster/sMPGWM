@@ -12,6 +12,8 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
 {
     internal enum PlacementMode { Idle, Click, NativeDrag }
 
+    internal Func<ItemCellBinding, ItemCellBinding, bool, TransferResult?>? Placement { get; set; }
+    internal Action<ItemCellBinding, ItemCellBinding>? Placed { get; set; }
     private ulong _session;
     private long _inventoryRevision;
     private long _equipmentRevision;
@@ -123,7 +125,13 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
             if (source.IsHotbar) return TransferResult.IncompatiblePlacement;
             if (target.Revision != (target.Location.InventoryAddress.HasValue ? _inventoryRevision : _equipmentRevision))
                 return TransferResult.StaleRevision;
-            return commit ? transfers.Transfer(Request(target)) : transfers.Validate(Request(target));
+            var transferValidation = transfers.Validate(Request(target));
+            if (transferValidation != TransferResult.Success) return transferValidation;
+            var placement = Placement?.Invoke(source, target, commit);
+            if (placement.HasValue) return placement.Value;
+            var result = commit ? transfers.Transfer(Request(target)) : transferValidation;
+            if (commit && result == TransferResult.Success) Placed?.Invoke(source, target);
+            return result;
         }
         if (_hotbar == null || _adapter == null) return TransferResult.InvalidSession;
         var validation = _hotbar.ValidateEdit(_session, _hotbarRevision, target.HotbarPosition!.Value);

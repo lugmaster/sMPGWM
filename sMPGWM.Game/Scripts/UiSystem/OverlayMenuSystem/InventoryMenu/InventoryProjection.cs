@@ -19,19 +19,37 @@ internal static class InventoryProjection
             if ((category == null || definition.CategoryName == category) &&
                 definition.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)) matches.Add(entry);
         }
-        matches.Sort((left, right) =>
+        state.Reconcile(snapshot);
+        if (state.SelectedTab == 0)
         {
-            var order = StringComparer.OrdinalIgnoreCase.Compare(left.Entity.Definition.DisplayName,
-                right.Entity.Definition.DisplayName);
-            if (order != 0) return state.SelectedSort == 1 ? -order : order;
-            order = StringComparer.Ordinal.Compare(left.Entity.DefinitionId, right.Entity.DefinitionId);
-            return order != 0 ? order : left.Entity.Id.Value.CompareTo(right.Entity.Id.Value);
-        });
+            var byId = new Dictionary<ItemEntityId, InventoryEntry>();
+            foreach (var entry in matches) byId.Add(entry.Entity.Id, entry);
+            var result = new List<ItemCellBinding>();
+            var empty = 0;
+            for (var slot = 0; slot < state.Layout.Count; slot++)
+            {
+                var id = state.Layout[slot];
+                if (id.HasValue && byId.TryGetValue(id.Value, out var entry))
+                    result.Add(ItemCellBinding.Bag(entry.Address, entry.Entity, snapshot.Revision) with { VisualSlot = slot });
+                else if (!id.HasValue)
+                    result.Add(ItemCellBinding.Bag(snapshot.EmptyAddresses[empty++], null, snapshot.Revision) with { VisualSlot = slot });
+            }
+            return result.AsReadOnly();
+        }
+        matches.Sort((left, right) => Compare(left, right, state.CategorySort));
         var cells = new ItemCellBinding[matches.Count + snapshot.EmptyAddresses.Count];
         var index = 0;
         foreach (var entry in matches) cells[index++] = ItemCellBinding.Bag(entry.Address, entry.Entity, snapshot.Revision);
         foreach (var address in snapshot.EmptyAddresses) cells[index++] = ItemCellBinding.Bag(address, null, snapshot.Revision);
         return Array.AsReadOnly(cells);
+    }
+
+    internal static int Compare(InventoryEntry left, InventoryEntry right, int sort)
+    {
+        var order = StringComparer.OrdinalIgnoreCase.Compare(left.Entity.Definition.DisplayName, right.Entity.Definition.DisplayName);
+        if (order != 0) return sort == 1 ? -order : order;
+        order = StringComparer.Ordinal.Compare(left.Entity.DefinitionId, right.Entity.DefinitionId);
+        return order != 0 ? order : left.Entity.Id.Value.CompareTo(right.Entity.Id.Value);
     }
 
     internal static IReadOnlyList<ItemCellBinding> Create(InventorySnapshot snapshot)
