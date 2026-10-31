@@ -19,19 +19,35 @@ Introduce types only when needed. The harness uses production classes; avoid gen
 
 | Component | Responsibility |
 | --- | --- |
-| `GameFlowManager` | Navigation; owns persistent `NetworkManager`; coordinates loading/activation |
-| `NetworkManager` | Sole attempt/session owner; peer assignment, API settings/subscriptions, state, ticker and teardown |
-| `NetworkTicker` | Persistent Node supplying local physics ticks to the manager |
-| `SessionProtocolNode` | Persistent matching name/path RPC endpoint, created before peer assignment |
+| `GameFlowManager` | Navigation and startup-data handover into `main_game.tscn`; does not own network state or a persistent network manager |
+| `NetworkManager : AbstractSingleton<NetworkManager>` | Node in `main_game.tscn`; sole attempt/session owner; stores `NetworkType` and `NetworkRole`, retains its active network child through `IActiveNetwork`, coordinates API settings/subscriptions, state, ticker and teardown |
+| `NetworkTicker` | Session-scoped Node supplying local physics ticks to the manager |
+| `SessionProtocolNode` | Session-scoped matching name/path RPC endpoint, ready before peer assignment |
 | `HostSessionFlow` / `ClientSessionFlow` | Plain classes sequencing immutable requests, cancellation and explicit results |
-| `EnetPeerAdapter` / `SteamPeerAdapter` | Peer creation, immediate errors, actual connection/loss and native cleanup; no navigation |
+| `EnetNetwork` / `SteamNetwork` | Nodes extending `BaseNetwork` and implementing `IActiveNetwork`; create and assign their own peers, handle transport-specific operations and native cleanup; children of `NetworkManager` |
+| `SteamMultiplayerPeerWrapper` | Existing native Steam peer bridge used by `SteamNetwork`; also supplies typed wrapper methods for required GodotSteam calls missing from the C# bindings |
 | `SteamworksHelper` | Existing Steam initialization/pumping/shutdown; failure leaves LAN usable |
-| `SteamLobbyService` / `SteamServerBrowser` | Plain classes for serialized operations/membership and immutable discovery snapshots |
+| `SteamLobbyService` / `SteamServerBrowser` | Internal helpers for serialized native operations/membership and immutable discovery snapshots; active-session operations remain behind `IActiveNetwork`, with no independent session owner |
 | `PeerAdmission` / `PeerHealthMonitor` | Plain state machines driven by manager and monotonic clock |
 | `GamePlayManager` | Explicit scene initialization result; activation only after admission |
 | Compatibility, world-join and spawn helpers | Plain data/logic/coordinators; no additional session owner |
 
-Replace static completion events, mutable global request inputs, legacy `MpManager`, `BaseNetwork` and `IActiveNetwork.GetNode()` as needed for the first buildable slice. Reuse useful native calls without retaining a second manager. Follow README no-LINQ, namespace/path and file-per-type conventions.
+Keep `BaseNetwork` and `IActiveNetwork`; do not replace this structure with peer adapters or a second manager. Replace static completion events and mutable global session inputs as needed. All consumers access the manager directly as `NetworkManager.Instance`; never cache it in a field/local variable or resolve it with `GetNode`. This rule concerns manager access, not the internal conversion of an active network implementation to a Node for `AddChild`.
+
+Follow README no-LINQ, namespace/path and file-per-type conventions. All logging, including diagnostic exchange and spawn logs, uses `using Logger = sMPGWM.Scripts.LoggingSystem.Logger;` and the appropriate `Logger` methods, never `GD.Print`.
+
+Use `SteamMultiplayerPeerWrapper` for native Steam multiplayer peer access. For other Steam interactions, use the existing bindings in `sMPGWM.Game/addons/godotsteam_csharpbindings` wherever available. If a required GodotSteam operation is not exposed there, add a typed method to `SteamMultiplayerPeerWrapper` that invokes the GodotSteam method exposed to GDScript via Godot's dynamic call API on the appropriate native object/singleton. Keep method names, argument/Variant conversion, return validation and errors inside the wrapper; do not scatter raw dynamic calls through manager, gameplay or UI code. Verify the native method/signature against the installed GodotSteam build; a missing C# binding alone does not mean the native capability is unsupported. The wrapper remains an implementation detail behind `IActiveNetwork` for active-session interactions.
+
+### Scene entry and transport boundary
+
+- Main menu selects `NetworkType` and `NetworkRole` and hands them over as startup data when navigating to `main_game.tscn`. A selected Steam lobby ID or LAN endpoint is target data, not connection state. Menu browsing may display discovery snapshots, but the menu never creates a session, hosts/joins, observes connection state or retains `NetworkManager`.
+- Deliver startup data before the manager starts. Store role/type in `NetworkManager`, consume and clear temporary handover data, and read session choices only from `NetworkManager.Instance` thereafter. Start hosting/joining once the loaded main-game scene's manager, RPC endpoint and active child are ready; no connection attempt precedes scene entry.
+- Manager constructs the selected `BaseNetwork` implementation, retains it as `IActiveNetwork`, adds it as a child and starts it only after child readiness. It stays alive for the manager's lifetime. Subscribe to connection/failure events and configure the shared Multiplayer API before peer creation/assignment.
+- `IActiveNetwork` is the sole access point for transport-specific operations and underlying peer ownership. Keep peers/wrappers private to their implementing Node; neither manager nor gameplay code creates or assigns them. Expose required Steam session interactions through this same interface. ENet implements intentionally unsupported Steam-only methods by throwing `NotSupportedException` with a clear reason; `NotImplementedException` is reserved for unfinished code. Do not use exceptions as normal transport selection flow.
+- ENet host calls `var result = _peer.CreateServer(GameConfig.Port, maxConnections);`, checks `Error.Ok`, then assigns `Multiplayer.MultiplayerPeer = _peer;` in `EnetNetwork`. Client similarly captures/checks `_peer.CreateClient(GameConfig.ServerIpAddress, GameConfig.Port)` before the same assignment. Creation failure exits the local attempt; never assign a failed peer. Host reports listening without waiting for clients; client awaits actual connection/failure with cancellation and timeout.
+- Steam host starts its peer only from successful `OnLobbyCreated`; Steam client starts its peer only from successful `OnLobbyJoined`. After successful wrapper host/client creation, `SteamNetwork` executes `Multiplayer.MultiplayerPeer = (MultiplayerPeer)_steamMultiplayerPeerWrapper.GetPeer();`. A failed callback for the chosen role, or peer creation failure, ends the local attempt and returns to the main menu after cleanup. Host's incidental `LobbyJoined` never starts a client or completes host startup. Ignore unrelated/stale callbacks; drain late membership as described below.
+- After peer assignment, gameplay networking uses Godot's high-level Multiplayer API and Node RPCs, with matching endpoint paths and the same Multiplayer API context. Steam lobby operations and transport cleanup stay behind `IActiveNetwork`; no custom peer packet path for gameplay.
+- World changes require a complete quit to the main menu and fresh entry. Manager, network child, ticker, protocol endpoint and world never persist across that transition. Scene presence alone does not authorize gameplay; initialization/admission still gate activation.
 
 Engine/Steam calls stay on the main thread. Subscribe before native work, handle reentrancy and observe async callback exceptions. Each attempt has one terminal result; stale callbacks cannot complete a newer attempt. Membership, connection, diagnostic success and gameplay admission are separate outcomes.
 
@@ -41,7 +57,8 @@ Engine/Steam calls stay on the main thread. Subscribe before native work, handle
 - Control/diagnostic/health replies are prompt. Monotonic time determines deadlines/RTT independently of tick counts, time scale and gameplay cadence. Test supported pause/background behavior and blocking-load stalls.
 - Target typically 5 players, maximum 10 including host; pending peers count toward capacity. ENet remote slots equal `MaxPlayers - 1`; explicitly handle host-only configuration. Reuse bounded storage, avoid unnecessary recurring allocations, never force GC, and measure timing/GC under representative load.
 - Capture `GameConfig.ConnectionTimeout` per attempt in milliseconds (currently `60000`). Diagnostic, preflight, scene, admission and health budgets remain independent. Initial scene budget: 60 seconds; admission after local readiness: 15 seconds. Bound waiting for `HostReady` too. Pongs never extend phase budgets.
-- Cleanup invalidates the attempt/session first, cancels work, disables input, removes peers, unpublishes hosting, leaves membership, clears only its assigned peer, closes/disposes resources and detaches owned subscriptions. Reset fingerprint, DTOs, timers, counters and API settings; retain only outstanding native callback draining until completion/shutdown.
+- Cleanup invalidates the attempt/session first, cancels work, disables input and detaches owned subscriptions, including Multiplayer, Steam, GameFlowManager and static event subscriptions. Through `IActiveNetwork`, unpublish hosting, leave membership, clear only the implementation's assigned peer and close/dispose native transport resources. Clear session static references and singleton `Instance` on exit (only if it still refers to that instance), the retained active-network reference and pending handover data; reset fingerprint, DTOs, timers, counters and API settings. Let Godot free the scene-owned Node subtree; no manual duplicate Node-disposal scheme. Godot scene freeing does not substitute for native peer/lobby cleanup or removal of external/static references.
+- Outstanding native callbacks may require an application-lifetime drain owned by the existing Steam runtime helper. Such draining retains only operation identifiers/cleanup data, never the old manager, scene Nodes or their delegates, and cannot complete a fresh session. No live session state survives return to the menu.
 - Cleanup is idempotent on cancel, scene failure, menu return and exit, and precedes Steam shutdown. Local session-ending errors clean up before `QuitToStartMenuBlocking(reason)`; reserve `QuitWithOsError` for unrecoverable whole-game failures. Failed remote clients remove only their own pending work/slot, preserving host and healthy clients.
 
 ## Execution order
@@ -69,9 +86,9 @@ Statuses: Pending, In progress, Needs verification, Verified. A partial checkpoi
 
 ### NET-14: diagnostic exchange
 
-Use a developer scene or launch arguments through the owner, endpoint, ENet adapter, small flows and immutable requests/results. No gameplay scene, browser, fingerprint, health or roster is needed for this first proof.
+Use launch arguments or a developer harness entering `main_game.tscn` through the production scene-owned manager, endpoint, `EnetNetwork` child and immutable startup data/results. Browser, fingerprint, health, roster and gameplay activation are unnecessary for this first proof; preserve the production scene-entry/lifetime contract.
 
-1. Create persistent owner/endpoint in both processes; subscribe before assigning peers.
+1. Enter the main-game scene in both processes with role/type startup data; prepare manager, child and endpoint and subscribe before child-owned peer creation/assignment.
 2. Host reports `Listening` without waiting for a client; create a fresh diagnostic session identity.
 3. Client validates LAN endpoint, checks `CreateClient` immediately and awaits actual connection with cancellation/timeout.
 4. Client sends reliable bounded `DiagnosticHello`: protocol version, fresh correlation ID and small text payload.
@@ -83,13 +100,13 @@ Use a developer scene or launch arguments through the owner, endpoint, ENet adap
 
 ### NET-01: ownership completion
 
-Finish shared lifetime contracts as resources are introduced: one active attempt, explicit resource handoff, instance loss events and persistent endpoint across scene changes. Use distinct LAN endpoint and Steam lobby targets.
+Finish shared lifetime contracts as resources are introduced: one active attempt, startup-data handoff, instance loss events and an endpoint lasting only for the current main-game scene/session. Use distinct LAN endpoint and Steam lobby targets. World changes always quit to menu and create a fresh manager/session on reentry.
 
-**Acceptance:** late callbacks, scene exit, repeated cleanup, duplicate starts and retry cannot cause stale transitions, leaked ownership or a second completion.
+**Acceptance:** late callbacks, scene exit, repeated cleanup, duplicate starts and retry cannot cause stale transitions, leaked ownership or a second completion. Repeated main-menu round trips clear singleton/static session references and external subscriptions; each entry constructs a fresh manager and active child. No menu connection attempt or cached/GetNode-resolved manager access exists.
 
 ### NET-03: ENet completion
 
-Validate address/UDP port and capacity; distinguish immediate creation errors from connection/refusal. Preserve configured LAN inputs. Current `EnetNetwork.cs` ignores `CreateClient`'s result and polls connection status without cancellation; replace those behaviors through the shared adapter/flow contract.
+Validate address/UDP port and capacity; distinguish immediate creation errors from connection/refusal. Preserve configured LAN inputs. Current `EnetNetwork.cs` ignores `CreateClient`'s result and polls connection status without cancellation; fix those behaviors within `EnetNetwork` and the shared `IActiveNetwork` startup contract. Verify intentionally unsupported Steam operations throw `NotSupportedException` on ENet.
 
 **Acceptance:** occupied port, invalid endpoint/capacity, host-only configuration, pending slots, refusal, cancellation, leave/retry and Steam-unavailable LAN startup.
 
@@ -97,7 +114,7 @@ Validate address/UDP port and capacity; distinguish immediate creation errors fr
 
 Use the exact custom Godot executable with ENet as control. Record engine/GodotSteam/MultiplayerPeer identity and evidence for native construction/errors/status, server peer ID, signal ordering, targeted reliable RPC, channels, auth, identity mapping, refusal/loss and close/retry. Complete third-peer checks at checkpoint 16.
 
-Prefer `AuthCallback`/`SendAuth`/`CompleteAuth` for finite game/protocol/build preflight configured before peer assignment. Never hold native auth open for scene loading: normal RPCs are unavailable then. If the build demonstrably cannot support this, record evidence and select one bounded RPC preflight before loading; no selectable dual protocols or silent fallback.
+Prefer `AuthCallback`/`SendAuth`/`CompleteAuth` for finite game/protocol/build preflight configured before peer assignment. Never hold native auth open for world/data initialization: normal RPCs are unavailable then. If the build demonstrably cannot support this, record evidence and select one bounded RPC preflight before admission; no selectable dual protocols or silent fallback. Both paths start after main-game scene entry.
 
 Where supported, compare native Steam identity with lobby membership. Claimed DTO identity is not authentication; document unavailable mapping. Disable client relay if supported while still validating senders.
 
@@ -105,13 +122,13 @@ Where supported, compare native Steam identity with lobby membership. Claimed DT
 
 ### NET-02: Steam hosting and joining
 
-`SteamLobbyService` outlives screens and owns create/join/search callbacks. Inspect installed correlation; serialize each operation kind, correlate lobby IDs where possible and drain canceled work. Leave late successful membership. Local generations cannot distinguish identical native callbacks. If an uncorrelatable operation never returns, mark that kind unavailable until Steam runtime restart, with a reason; safe operations/LAN remain usable.
+`SteamNetwork` exposes active-session Steam interactions through `IActiveNetwork`, using internal lobby helpers as needed. Menu discovery exposes only snapshots/selection, never active-session state. Inspect installed correlation; serialize each operation kind, correlate lobby IDs where possible and drain canceled work through the Steam runtime helper without retaining exited scenes. Leave late successful membership. Local generations cannot distinguish identical native callbacks. If an uncorrelatable operation never returns, mark that kind unavailable until Steam runtime restart, with a reason; safe operations/LAN remain usable.
 
 **Metadata:** publish/check `game_id` equal to configured `lobby_game_id` (`f6c96d72-6afb-4ac1-a14b-ee12daba65c6`), name, mode, version, protocol/build, original `host_steam_id`, `session_id` and state. `CoOP` is display mode, not pool identity. Initially use `DefaultHostedGameName = "sMPGWM TestLobby"` plus session suffix captured in the request; future input replaces only the base. Lobby/session IDs remain identity.
 
-**Host:** create private unjoinable lobby, record membership immediately, check metadata writes with state=preparing, validate server peer on virtual port 0 and assign through manager. Creator `LobbyJoined` is bookkeeping, never another completion/client connection. At checkpoint 5, make the private diagnostic lobby joinable once its endpoint is usable, without advertising a ready game. At checkpoint 13, await fingerprint, initialization and local-host admission before state=ready/public/joinable publication. Publish/update admitted-player count and capacity separately from membership count. Publication failure cleans up with a reason.
+**Host:** create private unjoinable lobby; successful `OnLobbyCreated` records membership, checks metadata writes with state=preparing, creates/checks the server peer on virtual port 0 and assigns it inside `SteamNetwork`. Failed `OnLobbyCreated` or peer creation cleans up and exits to the main menu. Creator `LobbyJoined` is bookkeeping, never another completion/client connection. At checkpoint 5, make the private diagnostic lobby joinable once its endpoint is usable, without advertising a ready game. At checkpoint 13, await fingerprint, initialization and local-host admission before state=ready/public/joinable publication. Publish/update admitted-player count and capacity separately from membership count. Publication failure cleans up with a reason.
 
-**Client:** join selected ID, record membership, revalidate pool/version/protocol/build and diagnostic/gameplay readiness, reject self/full/stale targets and pin original host/session. Require host membership/current ownership; create peer to that host on virtual port 0 and await connection/preflight. Membership and `CreateClient` success are intermediate. Revalidate on metadata/membership changes; pinned-host departure, owner/session inconsistency or server loss ends the client session. Ownership transfer never migrates the world. Rejoin uses fresh admission identity/token and current world/content state.
+**Client:** join selected ID; successful `OnLobbyJoined` records membership, revalidates pool/version/protocol/build and diagnostic/gameplay readiness, rejects self/full/stale targets and pins original host/session. Require host membership/current ownership; create/check the peer to that host on virtual port 0, assign inside `SteamNetwork` and await connection/preflight. Failed `OnLobbyJoined`, peer creation or connection cleans up and exits to the main menu. Membership and `CreateClient` success are intermediate. Revalidate on metadata/membership changes; pinned-host departure, owner/session inconsistency or server loss ends the client session. Ownership transfer never migrates the world. Rejoin uses a fresh main-game scene/session locally and fresh admission identity/token against the host's current world/content state.
 
 **Acceptance:** real exchange with two accounts/devices; single creator completion; cancellation at each stage; late membership cleanup; wrong-pool/self/full/stale targets; construction/metadata/publication failures; host loss/owner transfer; repeated host/exit/retry; no leaked membership/callbacks. Public hosting proves readiness gates and unchanged host/world during client churn. Optional Steam failure leaves LAN usable.
 
@@ -159,7 +176,7 @@ Make `ChecksumGenerator` pure: SHA-256 each canonical input, concatenate fixed-w
 
 ### NET-07: explicit initialization
 
-`GamePlayManager` returns one result/task per local scene generation after data/fingerprint, services, UI/input binding, world setup and spawn coordinator dependencies complete. Replace unconditional deferred `Start`. Flow is Connecting -> Loading -> Synchronizing -> InGame; scene arrival alone cannot activate gameplay.
+`GamePlayManager` returns one result/task per local scene generation after data/fingerprint, services, UI/input binding, world setup and spawn coordinator dependencies complete. Replace unconditional deferred `Start`. Flow is main-game scene entry -> Connecting -> Initializing -> Synchronizing -> InGame; connection starts in the loaded scene, and scene arrival alone cannot activate gameplay. Initialization may prepare dependencies while connecting, but activation awaits all gates.
 
 **Acceptance:** await actual async/deferred dependencies. Failure, required-node exit, cancellation, stale completion and deadlines cannot activate input; admission gates activation.
 
@@ -173,7 +190,7 @@ Make `ChecksumGenerator` pure: SHA-256 each canonical input, concatenate fixed-w
 
 Implement both ends together over reliable control:
 
-1. `HostReady`: after host initialization, send current epoch/content fingerprint and per-peer token; persistent endpoint receives while client loads.
+1. `HostReady`: after host initialization, send current epoch/content fingerprint and per-peer token; the scene-owned endpoint receives while the client initializes its world/data.
 2. `ClientReady`: after initialization and host fingerprint comparison, send client fingerprint/DTO. Host checks actual sender, token, current readiness/revision, capacity, policy entries and DTO.
 3. Await current world-join result; input remains blocked.
 4. `AdmissionAccepted`: record admission, invoke host spawn seam once, then send acceptance. Client activates only with matching acceptance and valid local initialization.
@@ -200,15 +217,15 @@ Serialize refresh through lobby service; deactivate UI listeners/publication whi
 
 ### NET-05: menus
 
-Preserve main menu -> Host/Join -> LAN/Steam; allocate resources only on final action. Replace sample rows in actual Steam join/entry scenes through `StartMenuProvider`. No waiting room or ready-up/Start screen.
+Preserve main menu -> Host/Join -> LAN/Steam; final action hands off role/type and target data and enters `main_game.tscn`. Only then does `NetworkManager` allocate its active network child and begin hosting/joining. Replace sample rows in actual Steam join/entry scenes through `StartMenuProvider`. No waiting room or ready-up/Start screen. Main menu has no connection/session state.
 
-Auto-refresh on activation; show loading/empty/error and Refresh/Back. One keyboard-accessible selection by stable lobby ID; Join requires visible valid selection and no pending search/connect. Sorting preserves selection; filter/refresh removal clears it. Client revalidates handed-off target. LAN uses address/configured port. Back cancels setup before navigation; Steam failure disables Steam actions with a reason.
+Auto-refresh discovery on activation; show loading/empty/error and Refresh/Back. One keyboard-accessible selection by stable lobby ID; Join requires visible valid selection and no pending search/navigation. Sorting preserves selection; filter/refresh removal clears it. Client revalidates handed-off target inside the main-game scene. LAN uses address/configured port. Menu Back deactivates discovery before navigation; cancellation after scene entry goes through `NetworkManager.Instance`, cleans up and returns to the main menu. Steam capability failure disables Steam actions with a reason; this is runtime availability, not connection state.
 
 **Acceptance:** scene navigation, status, LAN input, target handoff, keyboard selection, sort/filter/refresh, duplicate Join/Refresh prevention and shared inventory `FilterToolbar` paths/options regression.
 
 ### NET-12: integration
 
-Exercise production flows: repeated host/client startup, join/leave/rejoin, three-peer isolation and last-slot races with unchanged host session/world identity. Cover host loss, scene/init/data/health failures, late callbacks, cleanup before Steam shutdown, optional-Steam LAN, pause/background and representative-load timing/GC. Finish NET-00 multi-peer matrix and every story's acceptance; record stub/native limitations.
+Exercise production flows: repeated host/client startup, join/leave/rejoin, three-peer isolation and last-slot races with unchanged host session/world identity. Cover host loss, scene/init/data/health failures, late callbacks, cleanup before Steam shutdown, optional-Steam LAN, pause/background and representative-load timing/GC. Verify world change requires quit to menu and fresh scene entry, with no retained singleton/static session references or external subscriptions. Verify role-specific Steam callback failures exit locally and cannot initialize the other role. Finish NET-00 multi-peer matrix and every story's acceptance; record stub/native limitations.
 
 ## Verification and handoff
 
