@@ -21,6 +21,8 @@ Discover running Steam games and pass a selected lobby ID to the client plan. Br
 
 ## Behavior
 
+Identity contract: `lobby_game_id` (`f6c96d72-6afb-4ac1-a14b-ee12daba65c6`) identifies the shared sMPGWM discovery pool and is published as `game_id`; require exact equality on every native search and validate it again before displaying results and during joining, including supplied-ID joins. Missing/mismatched pool IDs are rejected. `lobby_mode` (`CoOP`) describes the host's mode, not the pool. The host supplies a display name separately: initially use a `DefaultHostedGameName` constant (`sMPGWM TestLobby`, the current `lobby_name` value) plus a session-specific suffix. Keep full lobby/session IDs as identity; names are display/search text and need not be globally unique. Later host-name input replaces the constant base through the host request, without changing pool identity.
+
 Use running games/servers in UI language, with Join/host/players. Auto-request on activation; provide Refresh/loading/empty/error states. Reapply exact game_id/version plus Worldwide each request; filter protocol/build for this contract. Read only needed metadata, persona names with fallback, and exclude invalid/self/not-ready entries locally.
 
 Serialize refresh and stop publication/listeners on deactivation while the lobby service drains unresolved work. Preserve discovery order by default. Search name/host and sort locally with stable-ID tie-breaks and bounded result count; do not issue new Steam calls for local filtering.

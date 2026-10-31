@@ -24,7 +24,7 @@ Hosting:
 
 1. Final Host submits a validated request. Reject duplicates and retain the menu during setup.
 2. Create an initially private lobby, record membership immediately, and make it unjoinable while preparing. Avoid publishing an incomplete public entry; revalidate every join regardless of visibility.
-3. Set name/game_id/mode/version, protocol/build, pinned host_steam_id, session_id and state=preparing. Check writes. Pin the actual owner at creation.
+3. Set name/game_id/mode/version, protocol/build, pinned host_steam_id, session_id and state=preparing. `game_id` is the shared configured `lobby_game_id`, never generated per host. Initially supply the display-name base through a `DefaultHostedGameName` constant (`sMPGWM TestLobby`, the current `lobby_name` value), append a session-specific suffix and capture it in the host request. Lobby/session IDs remain the authoritative identity. Later host-name input replaces only that base; no input UI in this increment. Check writes. Pin the actual owner at creation.
 4. Create/validate server peer on virtual port 0, configure API/protocol, assign peer. Automatic creator LobbyJoined is bookkeeping, never another completion/client connect.
 5. Complete setup once usable, load/initialize the scene, finalize gameplay fingerprint and admit local host through the logging stub.
 6. Publish state=ready/public/joinable. Publication failure releases session with a reason. Keep the running game open while host can accept players.

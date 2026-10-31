@@ -2,7 +2,9 @@
 
 Status: discussion draft, 2026-10-31. Architecture and story refinement only.
 
-**Cross-story performance requirement:** target stable operation at the 30 ms network interval for a co-op session of typically 5 players, at most 10. Avoid unnecessary allocations in recurring tick, message and health paths; reuse bounded storage where useful and do not explicitly force GC. Validate timing and GC impact on the actual engine under representative load. This is a practical multiplayer performance requirement, not an absolute prohibition on allocations or automatic collection.
+Implementation entry point: [Network epic implementation handoff](network-epic-implementation-plan.md). Use its execution order, verification gates and progress tracker in fresh contexts; this file retains refinement context.
+
+**Cross-story performance requirement:** target stable operation at the agreed physics-driven cadence (gameplay network cycle every second physics update; 30 cycles/second at 60 Hz physics) for a co-op session of typically 5 players, at most 10. This supersedes the earlier nominal 30 ms interval in this plan. Avoid unnecessary allocations in recurring tick, message and health paths; reuse bounded storage where useful and do not explicitly force GC. Validate timing and GC impact on the actual engine under representative load. This is a practical multiplayer performance requirement, not an absolute prohibition on allocations or automatic collection.
 
 **Connection timeout:** use `GameConfig.ConnectionTimeout`, in milliseconds, loaded from `[general] connection_timeout` (currently `60000`). Capture it for each attempt rather than hardcoding another connection timeout. Diagnostic exchange, gameplay-phase and health deadlines remain separate.
 
@@ -17,10 +19,10 @@ This tracks discussion agreement, not implementation completion. Resume with the
 | NET-14 diagnostic exchange | Finished | Seven-step request/reply sequence accepted; roster synchronization deferred beyond this epic |
 | Host setup | Finished | Setup completes once; manager owns the running session; client departure preserves host; diagnostic hosting remains separate from public gameplay publication |
 | Client connection | Finished | Explicit target through actual connection and diagnostic exchange; cancellation/retry and pinned-host loss; configured timeout and shared error-exit contract |
-| Lobby discovery | Ready | Next chat: refine lobby-list ownership, discovery filters, snapshots, selection and handoff to joining |
-| Heartbeat and RTT | Pending | Review after lobby discovery |
+| Lobby discovery | Finished | Shared configured pool ID checked on search/results/join; constant host-name base plus session suffix; mode is display metadata; existing browser/service handoff retained |
+| Heartbeat and RTT | Finished | Initial 2-second probes / 10-second deadline accepted during loading; heartbeat timing remains separate from gameplay network cadence |
 
-Handoff: continue refinement with **Lobby discovery**, using this tracker and [the lobby-list plan](network-lobby-list-implementation-plan.md). Discuss before changing proposals; record agreed decisions concisely. No networking implementation has been completed by these refinement discussions.
+Handoff: all five tracker topics have completed refinement. Next implementation story is **NET-14 diagnostic exchange**, beginning with ENet; no additional refinement story is queued here. No networking implementation has been completed by these refinement discussions.
 
 Roster synchronization is future work: see the [short follow-up plan](network-roster-synchronization-plan.md). The controller/roster proposals below are retained as discussion background only; they do not add requirements to the current message-exchange epic. The physics-loop ticker requirement still applies.
 
@@ -119,7 +121,7 @@ Godot frame processing varies with rendered frames; physics processing has its o
 
 Proposed physics-tick order: apply validated queued membership/control changes, check session/health deadlines, dispatch the local tick to ready controllers, then publish any due state from completed simulation. Mutations raised during dispatch are queued until the boundary; a controller marked for removal is skipped. Keep ordered controller iteration if later behavior needs reproducibility; dictionary iteration is not an agreed simulation order. Future physics-body integration/order must be verified when actual simulation is introduced.
 
-The README's 60 FPS frame cap does not select the physics frequency. Its 30 ms network interval also cannot describe a tick on every physics step at 60 Hz: that step is about 16.67 ms. Decide whether 30 ms remains a separate packet-send target or is replaced by the selected physics tick contract. For example, sending every second 60 Hz physics step gives 30 sends/second, about 33.33 ms, not 30 ms. Leave the README values unchanged until that frequency decision is made.
+**Agreed cadence:** the gameplay network cycle runs every second physics update: at 60 Hz physics this is 30 cycles/second, about 33.33 ms, replacing the earlier nominal 30 ms target. The ticker still observes every physics step for manager work and monotonic health deadlines; not every system must publish each network cycle. System-specific replication schedules are deferred beyond this epic. Control/diagnostic replies remain prompt and independent of periodic gameplay publication. The README's frame cap does not select physics frequency; verify the actual physics setting during implementation and reconcile its older interval wording then.
 
 The engine schedules physics steps; do not add a second simulation catch-up loop to the ticker. During catch-up, future state publication should avoid sending a burst of obsolete snapshots. Fixed-step scheduling is not a promise of uninterrupted wall-clock execution: stalls still delay processing. Tune/test engine catch-up and simulation overload behavior with actual gameplay.
 
@@ -273,6 +275,8 @@ The diagnostic increment stops after the correlated exchange. Later `PeerAdmissi
 
 **Architecture:** `SteamServerBrowser` requests immutable entry snapshots from `SteamLobbyService`. Existing menu and row Controls render them and own selection. A selected ID becomes client-flow input. Neither browsing nor selection allocates a peer or joins a lobby.
 
+**Agreed identity:** configured `lobby_game_id` identifies the shared pool, checked on each search, returned entry and join. `lobby_mode` describes the game. Initially the host supplies a constant display-name base (`DefaultHostedGameName = "sMPGWM TestLobby"`) plus a session-specific suffix; future host input replaces the base. Lobby/session IDs remain identity. See the lobby-list plan for the metadata contract.
+
 Keep service lifetime independent from screen visibility. Hidden history screens can remain in the tree, so activate/deactivate browser subscriptions explicitly. Serialize refreshes according to the installed callback contract and drain canceled work. Apply native game/version/protocol/build filters on every request; search and sorting operate on the snapshot.
 
 **Refinement discussion:** agree the entry fields shared with host publication, loading/empty/error/inactive states, stable-ID selection and admitted-player count semantics. Keep membership count distinct from admitted players. Do not show connected-peer RTT as browser ping.
@@ -287,7 +291,7 @@ This story follows the supplied-ID Steam exchange. It becomes an epic requiremen
 
 Use one correlated probe exchange for both liveness and RTT. Store local send time, consume a matching reply once, compute local elapsed time and update metrics. Invalid, stale, duplicate, wrong-session and wrong-peer replies cannot refresh health. Start health after preflight and permit it during loading; gameplay phase deadlines remain independent.
 
-**Refinement discussion:** choose interval/deadline/grace values after loading measurements, verify channel behavior on the custom engine and agree stale/unavailable metrics. Retain the proposed 2-second interval, 10-second deadline and EMA alpha 0.125 as initial values to validate. A blocked main thread cannot run its own watchdog.
+**Agreed timing:** initial 2-second probes and a 10-second response deadline are acceptable during loading. Keep health timing independent of the gameplay network cycle; this agreement does not require a probe every network cycle. Retain EMA alpha 0.125, validate timing/grace against actual loading and verify channel behavior on the custom engine. A blocked main thread cannot run its own watchdog.
 
 **Acceptance demonstration:** deterministic clock checks include 100 ms then 180 ms producing 110 ms smoothed RTT, stale/reset/out-of-order handling and bounded storage. Real-process checks cover pause, delay/loss and congestion. Host expiry removes only the affected client; client expiry exits that client's session.
 

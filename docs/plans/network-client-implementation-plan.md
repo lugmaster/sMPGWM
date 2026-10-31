@@ -25,7 +25,7 @@ Use `GameConfig.ConnectionTimeout` in milliseconds for the connection attempt (f
 
 Joining:
 
-1. Join selected ID, record membership, revalidate required metadata/readiness/game/version, pin host/session. Initially require host membership/current ownership. Reject self-join.
+1. Join selected ID, record membership, revalidate required metadata/readiness/game/version, pin host/session. Require exact `game_id` equality with configured `lobby_game_id` even for supplied-ID joins; missing/mismatched pool identity fails and releases membership. Display name and mode do not establish pool identity. Initially require host membership/current ownership. Reject self-join.
 2. Create client peer to pinned host on virtual port 0. Membership/CreateClient Ok are intermediate, not connection success.
 3. Await actual connection/short preflight, then load/initialize, compare gameplay, synchronize current world, and activate on host acceptance.
 4. Revalidate host/session on metadata/membership changes. Steam ownership may transfer when owner leaves; this does not migrate the authoritative world. Pinned host departure, owner/session inconsistency or server loss ends the client session. Never reconnect to a new owner automatically.

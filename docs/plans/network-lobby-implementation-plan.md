@@ -2,6 +2,8 @@
 
 Status: revised proposal, 2026-10-27. Planning only; implementation has not started.
 
+Execution entry point: [Network epic implementation handoff](network-epic-implementation-plan.md). Its checkpoint order and verification gates supersede the older delivery order below; use it to resume implementation in fresh contexts.
+
 For the smaller host/client message-exchange epic, see the [vertical slice refinement discussion](network-vertical-slice-refinement-plan.md). It proposes NET-14 as the first implementation story and separates basic transport proof from the larger gameplay admission scope below.
 
 Across host/client stories, use the refinement plan's shared timeout and error-exit contracts: `GameConfig.ConnectionTimeout` is in milliseconds; local session failures clean up before `GameFlowManager.Instance.QuitToStartMenuBlocking(reason)`. Reserve `QuitWithOsError(reason)` for unrecoverable whole-game failures. An individual client's failure must not exit a healthy host or another client.
@@ -79,7 +81,7 @@ These are design comparisons, not verification of the custom native build. NET-0
 - Publish a joinable running game after transport, host initialization, and fingerprint succeed. Keep it open while the host runs, subject to capacity and temporary synchronization/content barriers. Playing does not close the server.
 - Rejoining performs fresh connection/admission/world synchronization with new peer ID/token. Stable Steam identity is distinct from connection identity. Automatic reconnect and restoration of player progress are separate features.
 - MaxPlayers includes host; ENet remote slots equal MaxPlayers - 1. Validate supported limits and explicitly handle host-only capacity rather than assuming a zero ENet limit means the intended thing.
-- Keep configured name plus suffix, public discovery, Worldwide search, and exact game_id/version filters each request. Display host-selected mode without requiring equal local preference. Worldwide means reach, not low latency. Preserve Steam discovery order until a local sort is selected.
+- Use configured `lobby_game_id` as the shared pool identity (`game_id` metadata): exact search filter on every request, validate results and recheck on all joins. Initially use a `DefaultHostedGameName` constant (`sMPGWM TestLobby`, the current `lobby_name` value) plus a session-specific suffix for the host's display name; later host input replaces the base through the host request. Lobby/session IDs remain identity. Keep public discovery, Worldwide search and exact version filters each request. Display host-selected `lobby_mode` without requiring equal local preference. Worldwide means reach, not low latency. Preserve Steam discovery order until a local sort is selected.
 - Steam failure disables Steam actions with a reason and leaves LAN usable. Initialize/pump/shutdown Steam conditionally and idempotently.
 - Compare gameplay definitions/rules, not comments, file formatting, local cosmetics, schemas, or unrelated settings. Compatibility is cooperative; no anti-cheat or tamper-proofing is intended.
 - Carry initially empty PlayerJoinData through admission/spawn signatures. Keep bidirectional application health checks.
