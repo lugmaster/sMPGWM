@@ -21,6 +21,11 @@ ConfigLoader="*res://Scripts/GameConfigSystem/ConfigLoader.cs"
 IconDefinitions="*res://Scripts/Util/UiComponents/IconDefinitions.cs"
 SteamworksHelper="*uid://cwgdwq3g3khns"
 
+[debug]
+
+file_logging/enable_file_logging=true
+file_logging/log_path="user://game.log"
+
 [display]
 
 window/size/viewport_width=1920

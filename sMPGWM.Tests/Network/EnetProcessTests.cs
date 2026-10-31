@@ -47,6 +47,29 @@ public class EnetProcessTests
             await host.WaitFor("Listening session=");
             var session = Regex.Match(host.Output, @"Listening session=(\w+)").Groups[1].Value;
             Assert.That(session, Has.Length.EqualTo(32), host.Output);
+            foreach (var mode in new[] { "malformed", "silent" })
+            {
+                using var rejected = Start("auth-" + mode, "--no-network");
+                await rejected.WaitFor("Steam initialized successfully");
+                var sentBefore = Regex.Matches(host.Output, "NET00 auth_send peer=").Count;
+                var failedBefore = Regex.Matches(host.Output, "NET00 auth_failed peer=").Count;
+                rejected.Command($"auth|{mode}|{port}");
+                await host.WaitForCount("NET00 auth_send peer=", sentBefore + 1);
+                var deadline = Stopwatch.StartNew();
+                if (mode == "malformed") await host.WaitFor("NET00 auth_rejected peer=");
+                else await host.WaitForCount("NET00 auth_failed peer=", failedBefore + 1);
+                var disconnectDeadline = Stopwatch.StartNew();
+                var evidence = Path.Combine(stage, "auth-" + mode + ".command.auth-failed");
+                while (!File.Exists(evidence) && disconnectDeadline.Elapsed.TotalSeconds < 3)
+                    await Task.Delay(25);
+                Assert.That(File.Exists(evidence), Is.True, rejected.Output);
+                Assert.That(deadline.Elapsed.TotalSeconds, Is.LessThan(mode == "silent" ? 15 : 5));
+                if (mode == "silent") Assert.That(deadline.Elapsed.TotalSeconds, Is.GreaterThan(8));
+                Assert.That(host.Output, Does.Not.Contain("DiagnosticHello correlation="));
+                Assert.That(host.Output, Does.Not.Contain("NET00 auth_complete peer="));
+                Assert.That(host.Output, Does.Not.Contain("Network session stopped"));
+                Assert.That(rejected.Output, Does.Not.Contain("MessageExchangeSucceeded"));
+            }
             using (var occupied = Start("occupied", "--enet-host"))
                 await occupied.WaitFor("CreateServer:");
             for (var attempt = 0; attempt < 2; attempt++)

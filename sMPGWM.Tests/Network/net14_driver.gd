@@ -1,5 +1,8 @@
 extends Node
 
+func _receive_auth(_peer: int, _data: PackedByteArray) -> void:
+    pass
+
 # @test-context: drives production scene lifecycle from the external integration test.
 func _process(_delta: float) -> void:
     var path := OS.get_environment("NET14_COMMAND_FILE")
@@ -9,6 +12,22 @@ func _process(_delta: float) -> void:
     DirAccess.remove_absolute(path)
     var manager := get_node_or_null("/root/MainGame/NetworkManager")
     var flow := get_node("/root/GameFlowManager")
+    if command.begins_with("auth|"):
+        var parts := command.split("|")
+        var api := multiplayer as SceneMultiplayer
+        api.auth_callback = _receive_auth
+        # Longer than the production host deadline: only the host may end this wait.
+        api.auth_timeout = 30.0
+        api.peer_authentication_failed.connect(func(_peer: int):
+            var evidence := FileAccess.open(path + ".auth-failed", FileAccess.WRITE)
+            evidence.store_string("disconnected"))
+        if parts[1] == "malformed":
+            api.peer_authenticating.connect(func(peer: int):
+                assert(api.send_auth(peer, "invalid-auth-marker".to_utf8_buffer()) == OK))
+        var peer := ENetMultiplayerPeer.new()
+        assert(peer.create_client("127.0.0.1", int(parts[2])) == OK)
+        api.multiplayer_peer = peer
+        return
     if command.begins_with("reply|"):
         var parts := command.split("|")
         manager.get_node("SessionProtocol").rpc_id(int(parts[1]), "DiagnosticReply", int(parts[2]), parts[3], parts[4], parts[5])

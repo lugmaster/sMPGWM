@@ -24,7 +24,10 @@ public static class Logger
 
         if (WriteToFile)
         {
-            using var file = FileAccess.Open(LogFilePath, FileAccess.ModeFlags.WriteRead);
+            var mode = FileAccess.FileExists(LogFilePath)
+                ? FileAccess.ModeFlags.ReadWrite
+                : FileAccess.ModeFlags.WriteRead;
+            using var file = FileAccess.Open(LogFilePath, mode);
 
             if (file == null)
                 throw new InvalidOperationException($"Could not open log file: {LogFilePath}");

@@ -1,6 +1,6 @@
 # Network implementation plan
 
-Status: NET-14, NET-01 and NET-03 Verified; NET-00 Needs verification, 2026-10-31. Next action: verification/readiness review, not automatic implementation of another story. Follow the final fresh-context handoff below.
+Status: NET-14, NET-01 and NET-03 Verified; NET-00 Needs verification, 2026-10-31. Next action: remaining native capability verification, not automatic implementation of another story. Follow the latest increment below.
 
 Single source for NET-00 through NET-14, replacing the host, client, lobby, lobby-list, heartbeat and refinement plans. Target: `sMPGWM.Game/Scripts/Network`.
 
@@ -469,3 +469,21 @@ No manual E2E test is currently requested or awaiting the user. The next tests a
 Start the new context by reviewing and preserving the existing uncommitted changes in NetworkManager.cs, NetworkInternal/SteamNetwork.cs, EnetProcessTests.cs and this plan. Reuse retained passing evidence; set GODOT_BIN explicitly to the documented 4.7.2 executable because the test fallback is obsolete. Keep mandatory Steam startup, transport exclusivity and the existing UI layout. Logger.cs was not changed.
 
 After automated negative-path coverage, reassess remaining NET-00 acceptance, including the unexplained native !IsLocked() assertions, Steam negative paths, channels and packaging. If another manual Steam E2E test becomes necessary, first prepare a concrete testable build and give its identity, device/account prerequisites, exact numbered menu/button steps, expected outcomes and both log locations. User testing must remain full-build/UI-only; no editor steps, launch flags or harness commands. Do not represent native-auth happy-path success as timeout/rejection coverage or full NET-00 completion.
+
+### NET-00 automated negative-auth control (2026-10-31)
+
+Extended the existing ENet process harness with malformed and silent native-auth peers against the production host. Malformed data is rejected within five seconds; the silent peer times out between eight and fifteen seconds against the configured ten-second budget. Both cases require client-side authentication-failure evidence, no host auth completion or diagnostic hello, and no host session stop. Existing subsequent valid-client exchanges verify the same host session remains usable. The adversarial peers use a thirty-second local auth timeout so it cannot cause the host's ten-second timeout result.
+
+Validation: focused Network suite passed 7/7 with the documented Godot 4.7.2 executable explicitly selected via GODOT_BIN. Initial test assumption corrected: explicit host DisconnectPeer does not emit its own auth_failed signal; malformed rejection now requires auth_rejected plus remote disconnect evidence. No production code or Logger changes were needed.
+
+NET-00 remains Needs verification. Steam negative paths, channel coverage, abrupt loss, export packaging and native !IsLocked() source/provenance remain outstanding. Next action: investigate retained native assertion provenance and prepare remaining capability checks; no repeat happy-path manual test is requested.
+
+### NET-00 logging and exported-build readiness increment (2026-10-31)
+
+Fixed Logger direct-file truncation and configured normal Godot output at user://game.log to match the diagnostic overlay. The new engine-run logger regression passed; the integration suite retains its known unrelated inventory failure. Prior Network 7/7 evidence is retained, not rerun for this logging change.
+
+Prepared artifacts/net00-windows using Godot 4.7.2 Mono and the installed Windows debug template from an isolated project copy. Final export has no engine ERROR lines. Exported startup smoke passed with Steam initialization, main-menu load and complete game.log output. This is local headless packaging evidence, not remote or visual UI acceptance.
+
+Reviewed current DLL hashes and the public Valve assertion source; a matching configuration-value lock assertion was found, but exact binary provenance and the triggering native call remain unverified. Details, build identity, evidence locations and remaining test preparation are in [logging/export review](evidence/net00/logging-export-review.md).
+
+Next action: prepare bounded Steam negative-auth/channel verification controls and continue native assertion provenance investigation before requesting another UI-only two-account test. No manual test is pending. NET-00 remains Needs verification.
