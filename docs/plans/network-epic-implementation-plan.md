@@ -374,3 +374,23 @@ Apply this decision order:
 4. **Once the latest implemented story is fully verified and the backlog of past verification is up to date, start the next pending checkpoint in the execution order.** At present that means NET-02 private Steam diagnostic exchange after NET-00; account for any test-enabling pieces already implemented. If verification remains outstanding, continue the current checkpoint or its explicitly identified test-enabling dependency rather than silently advancing.
 
 End the next work session with updated statuses, evidence, outstanding user-test results and one concrete next action. Preserve mandatory Steam startup, transport exclusivity, the existing UI layout, and the user's full-build/UI-only testing constraint.
+
+### NET-00 readiness review (2026-10-31)
+
+Status remains **Needs verification**. Reviewed the clean working tree, wrapper, retained host traces and join menu. Reused prior passing evidence. Local engine/module source provenance and native signatures are now recorded in [local source review](evidence/net00/local-source-review.md); exact compiled module revision and remote behavior remain unverified. No code changed or tests rerun in this increment. The join menu still lacks a selected lobby target, so no UI-only user test is actionable yet.
+
+Concrete next action: implement the minimum selected-lobby UI and private diagnostic dependencies, preserving layout and mandatory Steam startup, then reassess exported-build test readiness. NET-00 remains the active checkpoint; no later story is marked complete.
+
+
+### NET-00 UI test-enabling increment (2026-10-31)
+
+Status: **Needs verification**; NET-02/NET-05 supporting work implemented, neither story complete. This supersedes the previous next action to implement lobby selection.
+
+- Implemented LobbyList in the existing panel and row scene. The existing FilterToolbar container holds private-lobby ID entry and lookup; successful metadata lookup creates a selectable row. Invalid input, missing/incompatible/self-hosted targets and lookup timeout keep Join disabled. Changing the ID clears selection. Exit detaches the Steam metadata callback. This is supplied-ID lookup, not public discovery; sorting/search remain deferred.
+- Join passes the selected lobby ID through immutable startup data. Host and Join Steam menu buttons now enter the production diagnostic flow. Gameplay remains inactive. The host shows its private lobby ID; a diagnostic overlay shows connection/result, the full log path and Return to menu.
+- Host checks metadata writes and joinability results, remains private, and becomes joinable after peer assignment with state=diagnostic. Clients revalidate pool/version/protocol, pin original host/session, check host membership, and terminate on host departure or metadata inconsistency. Build fingerprint comparison, native identity comparison and native authentication remain outstanding.
+- Native capability tracing is automatic for these diagnostic sessions, including CreateClient result/status. Reliable hello/reply logs use the existing production endpoint. No preflight fallback has been selected.
+- Validation: `dotnet test sMPGWM.Tests --filter FullyQualifiedName~Network`: **7 passed** after extending the real-engine driver to instantiate the join scene, assert initially disabled Join and empty rows, reject invalid ID input, and press the actual host button for two private diagnostic host/leave cycles. The matrix asserts diagnostic-ready logging and no engine ERROR. Builds retain existing compiler warnings. `git diff --check` passed. Full-suite known inventory failure was not rerun.
+- These local tests do not prove remote metadata lookup, selection of a remote row, successful remote exchange, visual layout or export packaging. No two-account test is claimed or requested yet.
+
+Concrete next action: prepare and smoke-test a Windows exported build with the installed custom Steam templates, then request the UI-only two-device test with build identity and both log files. No export preset currently exists in the repository. Test sequence: host uses Host Steam Game and shares the displayed private lobby ID; second account/device uses Join Steam Game, enters ID, clicks Look up, selects the row and clicks Join; expect MessageExchangeSucceeded on client and matching correlated hello/reply in both logs. Client returns to menu and repeats against the same host; then verify host loss. Logs are `user://game.log`, with the absolute location displayed in the diagnostic UI. Auth, remote identity, channel coverage and the rest of NET-00 remain separate outstanding acceptance checks even if this first exchange passes.

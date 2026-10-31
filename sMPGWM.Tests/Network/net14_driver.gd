@@ -20,7 +20,21 @@ func _process(_delta: float) -> void:
             get_node("/root/MainGame/NetworkManager").call("CreateNetwork")
             flow.call("QuitToStartMenuBlocking", "NET01 canceled native create", false)
         "steam-host":
-            flow.call("StartGame", 0, 1)
+            var join_menu = load("res://scenes/ui/menu/start_menu/join_steam_game_menu.tscn").instantiate()
+            get_tree().root.add_child(join_menu)
+            var join_button = join_menu.get_node("%JoinSteamGameButton")
+            assert(join_button.disabled)
+            var list = join_menu.get_node("%LobbyListPanel")
+            assert(list.get_node("VBoxContainer/LobbyScroll/LobbyEntries").get_child_count() == 0)
+            var toolbar = list.get_node("VBoxContainer").get_child(0)
+            toolbar.get_child(0).text = "invalid"
+            toolbar.get_child(1).pressed.emit()
+            assert(join_button.disabled)
+            join_menu.queue_free()
+            var host_menu = load("res://scenes/ui/menu/start_menu/host_steam_game_menu.tscn").instantiate()
+            get_tree().root.add_child(host_menu)
+            host_menu.get_node("%HostSteamGameButton").pressed.emit()
+            host_menu.queue_free()
         "delayed-leave":
             flow.call("QuitToStartMenu", "NET01 delayed quit", 1500)
             manager.call("StopSession")

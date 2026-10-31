@@ -6,6 +6,7 @@ namespace sMPGWM.Scripts.StartMenuSystem;
 
 public partial class JoinSteamGameMenu: BaseStartMenu
 {
+    private LobbyList.LobbyList _lobbies = null!;
     private Button _joinSteamGameButton = null!;
     protected override string ScreenTitle => "Start Steam Game";
 
@@ -18,13 +19,17 @@ public partial class JoinSteamGameMenu: BaseStartMenu
     protected override void OnReady()
     {
         base.OnReady();
+        _lobbies = GetNode<LobbyList.LobbyList>("%LobbyListPanel");
+        _joinSteamGameButton.Disabled = true;
+        _lobbies.SelectionChanged += id => _joinSteamGameButton.Disabled = id == 0;
         _joinSteamGameButton.Pressed += OnJoinSteamGameButtonPressed;
     }
 
     private void OnJoinSteamGameButtonPressed()
     {
-        StartMenuManager.Instance.InitializeGame(NetworkRole.Client, NetworkType.Steam);
+        if (_lobbies.SelectedLobbyId != 0)
+            StartMenuManager.Instance.StartSteamDiagnostic(NetworkRole.Client, _lobbies.SelectedLobbyId);
     }
     
-    // TODO add Lobby - Query, Selection and Join Selected
+
 }

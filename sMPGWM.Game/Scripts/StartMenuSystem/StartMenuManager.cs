@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Godot;
+using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.scripts.Network;
 using sMPGWM.Scripts.Network;
@@ -58,6 +59,15 @@ public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
         GameFlowManager.Instance.StartGame(networkRole, networkType);
     }
     
+    public void StartSteamDiagnostic(NetworkRole role, ulong lobbyId = 0)
+    {
+        GameFlowManager.Instance.StartNetworkGame(new NetworkStartupData(NetworkType.Steam, role,
+            GameConfig.ServerIpAddress,
+            GameConfig.Port,
+            GameConfig.MaxPlayers,
+            GameConfig.ConnectionTimeout, true, lobbyId));
+    }
+
     private readonly Stack<Control> _screenHistory = new();
 
     private Control _currentScreen = null!;

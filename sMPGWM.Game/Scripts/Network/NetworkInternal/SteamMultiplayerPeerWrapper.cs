@@ -9,6 +9,7 @@ namespace sMPGWM.scripts.Network.NetworkInternal;
 public class SteamMultiplayerPeerWrapper
 {
     private GodotObject _nativePeer;
+    public bool DiagnosticTracing { get; init; }
 
     public SteamMultiplayerPeerWrapper()
     {
@@ -23,7 +24,7 @@ public class SteamMultiplayerPeerWrapper
 
     private void TraceCapabilities(string phase, Error result = Error.Ok)
     {
-        if (OS.GetEnvironment("NET00_CAPABILITIES") != "1")
+        if (!DiagnosticTracing && OS.GetEnvironment("NET00_CAPABILITIES") != "1")
             return;
 
         var peer = (MultiplayerPeer)_nativePeer;
@@ -63,6 +64,7 @@ public class SteamMultiplayerPeerWrapper
 
         if (result.VariantType == Variant.Type.Int)
         {
+            TraceCapabilities("client", (Error)result.AsInt32());
             return (Error)result.AsInt32();
         }
 

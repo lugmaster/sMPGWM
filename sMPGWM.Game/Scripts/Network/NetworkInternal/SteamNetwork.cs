@@ -20,6 +20,8 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
     private bool _hosting;
     private bool _completed;
     private ulong _targetLobby;
+    private ulong _pinnedHost;
+    private string _pinnedSession = "";
     public NetworkStartupData? Startup { get; init; }
     private ulong _deadline;
     private MultiplayerPeer? _ownedPeer;
@@ -65,12 +67,13 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             $"{nameof(SteamNetwork)}.{nameof(_Ready)} Steam network ready.");
         try
         {
-            _steamMultiplayerPeerWrapper = new SteamMultiplayerPeerWrapper();
+            _steamMultiplayerPeerWrapper = new SteamMultiplayerPeerWrapper { DiagnosticTracing = Startup?.Diagnostic == true };
 
             Multiplayer.ConnectedToServer += Connected;
             Multiplayer.ConnectionFailed += Failed;
             Multiplayer.ServerDisconnected += Disconnected;
             Steam.LobbyChatUpdate += OnLobbyChatUpdate;
+            Steam.LobbyDataUpdate += OnLobbyDataUpdate;
             GameFlowManager.Instance.OnSuddenExit += SetLobbyUnjoinable;
 
             Logger.Debug(
@@ -137,12 +140,16 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         {
             Logger.Debug(
                 $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} created lobby with {nameof(lobbyId)}={lobbyId}.");
-            Steam.SetLobbyJoinable(lobbyId, false);
+            if (!Steam.SetLobbyJoinable(lobbyId, false)) throw new InvalidOperationException("Cannot lock lobby.");
 
-            Steam.SetLobbyData(lobbyId, "name", GameConfig.LobbyName + ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds().ToString("X"));
-            Steam.SetLobbyData(lobbyId, "game_id", GameConfig.LobbyGameId);
-            Steam.SetLobbyData(lobbyId, "mode", GameConfig.LobbyMode);
-            Steam.SetLobbyData(lobbyId, "version", GameConfig.Version);
+            SetData(lobbyId, "name", GameConfig.LobbyName + " " + Guid.NewGuid().ToString("N")[..8]);
+            SetData(lobbyId, "game_id", GameConfig.LobbyGameId);
+            SetData(lobbyId, "mode", GameConfig.LobbyMode);
+            SetData(lobbyId, "version", GameConfig.Version);
+            SetData(lobbyId, "protocol", DiagnosticExchange.ProtocolVersion.ToString());
+            SetData(lobbyId, "host_steam_id", Steam.GetSteamID().ToString());
+            SetData(lobbyId, "session_id", Guid.NewGuid().ToString("N"));
+            SetData(lobbyId, "state", "preparing");
 
             Logger.Debug(
                 $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} creating host with lobby name={Steam.GetLobbyData(lobbyId, "name")}.");
@@ -154,6 +161,16 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
                 Multiplayer.MultiplayerPeer = _ownedPeer;
                 Logger.Debug(
                     $"{nameof(SteamNetwork)}.{nameof(OnLobbyCreated)} created host from lobby.");
+                if (Startup?.Diagnostic == true)
+                {
+                    SetData(lobbyId, "state", "diagnostic");
+                    if (!Steam.SetLobbyJoinable(lobbyId, true)) throw new InvalidOperationException("Cannot open diagnostic lobby.");
+                    var layer = new CanvasLayer { Layer = 101 };
+                    var label = new Label { Text = $"Private lobby ID: {lobbyId}", Position = new Vector2(20, 150) };
+                    layer.AddChild(label);
+                    AddChild(layer);
+                    Logger.Info($"Steam diagnostic lobby={lobbyId} ready; gameplay inactive.");
+                }
                 Report(true, "Listening");
             }
             else
@@ -176,6 +193,13 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         {
             _currentLobbyId = lobby;
             var lobbyId = Steam.GetLobbyOwner(lobby);
+            _pinnedHost = lobbyId;
+            _pinnedSession = Steam.GetLobbyData(lobby, "session_id");
+            if (Startup?.Diagnostic == true && !ValidDiagnosticLobby(lobby))
+            {
+                Report(false, "Steam lobby is stale or incompatible.");
+                return;
+            }
 
             // Host joins lobby itself compare with SteamId
             if (lobbyId == Steam.GetSteamID())
@@ -210,6 +234,34 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         }
     }
 
+    private static void SetData(ulong lobby, string key, string value)
+    {
+        if (!Steam.SetLobbyData(lobby, key, value))
+            throw new InvalidOperationException($"Steam metadata write failed: {key}");
+    }
+
+    private bool ValidDiagnosticLobby(ulong lobby)
+    {
+        if (_pinnedHost == 0 || Steam.GetLobbyOwner(lobby) != _pinnedHost ||
+            Steam.GetLobbyData(lobby, "host_steam_id") != _pinnedHost.ToString() ||
+            !Guid.TryParseExact(_pinnedSession, "N", out _) ||
+            Steam.GetLobbyData(lobby, "session_id") != _pinnedSession ||
+            Steam.GetLobbyData(lobby, "game_id") != GameConfig.LobbyGameId ||
+            Steam.GetLobbyData(lobby, "version") != GameConfig.Version ||
+            Steam.GetLobbyData(lobby, "protocol") != DiagnosticExchange.ProtocolVersion.ToString() ||
+            Steam.GetLobbyData(lobby, "state") != "diagnostic") return false;
+        for (var i = 0; i < Steam.GetNumLobbyMembers(lobby); i++)
+            if (Steam.GetLobbyMemberByIndex(lobby, i) == _pinnedHost) return true;
+        return false;
+    }
+
+    private void OnLobbyDataUpdate(uint success, ulong lobby, ulong member)
+    {
+        if (_cleaned || _hosting || _currentLobbyId != lobby || member != lobby || Startup?.Diagnostic != true) return;
+        if (success != 1 || !ValidDiagnosticLobby(lobby))
+            EmitConnected(false, "Steam diagnostic lobby changed or original host was lost.");
+    }
+
     private void ConnectSocket(ulong steamId)
     {
         try
@@ -224,6 +276,12 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
     private void OnLobbyChatUpdate(ulong lobbyId, long changedId, long makingChangeId, long chatState)
     {
+        if (_cleaned || _currentLobbyId != lobbyId) return;
+        if (!_hosting && (ulong)changedId == _pinnedHost && (chatState & (StateLeft | StateDisconnected | StateKicked | StateBanned)) != 0)
+        {
+            EmitConnected(false, "Original Steam host left the lobby.");
+            return;
+        }
         if ((chatState & StateLeft) != 0)
         {
             Logger.Info(
@@ -283,6 +341,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
         if (_currentLobbyId.HasValue) Steam.LeaveLobby(_currentLobbyId.Value);
         SteamworksHelper.Instance?.CancelLobbyOperations(LobbyResult);
         Steam.LobbyChatUpdate -= OnLobbyChatUpdate;
+        Steam.LobbyDataUpdate -= OnLobbyDataUpdate;
 
         _steamMultiplayerPeerWrapper?.Cleanup();
         _steamMultiplayerPeerWrapper = null;

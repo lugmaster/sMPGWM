@@ -14,6 +14,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
 {
     public event Action? OnNetworkReady;
     private bool _roleAssigned;
+    private Label? _diagnosticStatus;
     private IActiveNetwork? _activeNetwork;
     private SessionProtocolNode? _protocol;
     private NetworkTicker? _ticker;
@@ -35,6 +36,19 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         NetworkType = _startup.Type;
         if (DiagnosticMode)
         {
+            if (_startup.Type == NetworkType.Steam)
+            {
+                var layer = new CanvasLayer { Layer = 100 };
+                var panel = new VBoxContainer { Position = new Vector2(20, 20) };
+                _diagnosticStatus = new Label { Text = $"Steam {NetworkRole}: connecting (gameplay inactive)" };
+                panel.AddChild(_diagnosticStatus);
+                var leave = new Button { Text = "Return to menu" };
+                leave.Pressed += () => CancelDiagnostic("Left diagnostic session.");
+                panel.AddChild(leave);
+                panel.AddChild(new Label { Text = $"Logs: {ProjectSettings.GlobalizePath(Logger.LogFilePath)}" });
+                layer.AddChild(panel);
+                AddChild(layer);
+            }
             _protocol = new SessionProtocolNode { Name = "SessionProtocol" };
             _protocol.Completed += CompleteDiagnostic;
             AddChild(_protocol);
@@ -93,6 +107,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_stopped) return;
         if (!connected) { CancelDiagnostic(reason); return; }
         Logger.Info($"Network {NetworkRole}: {reason}");
+        if (_diagnosticStatus != null) _diagnosticStatus.Text = $"Steam {NetworkRole}: {reason} (gameplay inactive)";
         if (DiagnosticMode)
         {
             if (NetworkRole == NetworkRole.Client) _protocol!.SendHello();
@@ -105,6 +120,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped || DiagnosticResult != null) return;
         DiagnosticResult = result;
+        if (_diagnosticStatus != null) _diagnosticStatus.Text = result.Reason;
         Logger.Info($"Diagnostic result={result.Reason} correlation={result.Correlation} session={result.HostSession} tick={NetworkTicker.GetTicksSinceStart()}");
         if (!result.Succeeded) CancelDiagnostic(result.Reason);
     }

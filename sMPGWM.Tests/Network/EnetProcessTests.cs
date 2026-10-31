@@ -174,6 +174,7 @@ public class EnetProcessTests
                     await steam.WaitForCount("Network Host: Listening", round);
                     Assert.That(steam.Output, Does.Contain("NET00 server_id=1"));
                     Assert.That(steam.Output, Does.Contain("NET00 phase=host"));
+                    Assert.That(steam.Output, Does.Contain("ready; gameplay inactive."));
                     steam.Command("leave");
                     await steam.WaitForCount("returning to start menu.", round + 1);
                     await Task.Delay(200);
