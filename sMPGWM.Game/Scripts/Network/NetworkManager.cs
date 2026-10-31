@@ -16,10 +16,12 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private bool _roleAssigned;
     private IActiveNetwork? _activeNetwork;
     private SessionProtocolNode? _protocol;
+    private NetworkTicker? _ticker;
     private NetworkStartupData? _startup;
     private bool _stopped;
     private bool _previousObjectDecoding;
     private bool _configuredApi;
+    public bool SessionStopped => _stopped;
     public bool DiagnosticMode => _startup?.Diagnostic == true;
     public NetworkRole NetworkRole { get; private set; }
     public NetworkType NetworkType { get; private set; }
@@ -36,7 +38,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             _protocol = new SessionProtocolNode { Name = "SessionProtocol" };
             _protocol.Completed += CompleteDiagnostic;
             AddChild(_protocol);
-            AddChild(new NetworkTicker { Name = "NetworkTicker" });
+            _ticker = new NetworkTicker { Name = "NetworkTicker" };
+            AddChild(_ticker);
         }
         // Defer until the main-game scene and all its children have finished readiness.
         CallDeferred(nameof(CreateNetwork));
@@ -66,11 +69,15 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         }
         else
         {
-            _activeNetwork = new SteamNetwork();
+            _activeNetwork = new SteamNetwork { Startup = _startup };
         }
         _activeNetwork.ConnectionChanged += OnNetworkConnected;
-        AddChild(_activeNetwork.GetNode());
-        AssignRole();
+        try
+        {
+            AddChild(_activeNetwork.GetNode());
+            AssignRole();
+        }
+        catch (Exception e) { CancelDiagnostic($"Network startup failed: {e.Message}"); }
     }
 
     public void AssignRole()
@@ -78,7 +85,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_activeNetwork == null || _stopped || _roleAssigned) return;
         _roleAssigned = true;
         if (NetworkRole == NetworkRole.Host) _activeNetwork.BecomeHost(_startup!.MaxPlayers);
-        else _activeNetwork.BecomeClient(_startup!.LobbyId);
+        else _activeNetwork.BecomeClient(_startup!.SteamTarget?.LobbyId ?? 0);
     }
 
     private void OnNetworkConnected(bool connected, string reason)
@@ -114,6 +121,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped) return;
         _stopped = true;
+        _ticker?.SetPhysicsProcess(false);
+        sMPGWM.Scripts.GamePlaySystem.GamePlayManager.Instance?.StopSession();
         if (_protocol != null)
         {
             _protocol.Completed -= CompleteDiagnostic;
@@ -135,6 +144,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         StopSession();
         _startup = null;
         _protocol = null;
+        _ticker = null;
         DiagnosticResult = null;
         OnNetworkReady = null;
     }

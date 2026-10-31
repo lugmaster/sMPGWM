@@ -14,6 +14,17 @@ func _process(_delta: float) -> void:
         manager.get_node("SessionProtocol").rpc_id(int(parts[1]), "DiagnosticReply", int(parts[2]), parts[3], parts[4], parts[5])
         return
     match command:
+        "steam-cancel":
+            flow.call("StartGame", 0, 1)
+            await get_tree().scene_changed
+            get_node("/root/MainGame/NetworkManager").call("CreateNetwork")
+            flow.call("QuitToStartMenuBlocking", "NET01 canceled native create", false)
+        "steam-host":
+            flow.call("StartGame", 0, 1)
+        "delayed-leave":
+            flow.call("QuitToStartMenu", "NET01 delayed quit", 1500)
+            manager.call("StopSession")
+            flow.call("QuitToStartMenuBlocking", "NET01 immediate quit", false)
         "leave":
             flow.call("QuitToStartMenuBlocking", "NET14 deliberate leave", false)
         "restart":

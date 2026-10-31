@@ -120,7 +120,16 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _canvas.OnRequestHotbarAction -= _playerActions.RequestHotbarActivation;
     }
 
-    private void Start() => SetGameState(MainGameState.Active);
+    public void StopSession()
+    {
+        if (_canvas != null && _inputController != null) SetGameState(MainGameState.Inactive);
+    }
+
+    private void Start()
+    {
+        if (sMPGWM.scripts.Network.NetworkManager.Instance?.SessionStopped == false)
+            SetGameState(MainGameState.Active);
+    }
 
     internal void BindInventoryPresentation(InventoryController inventory, EquipmentController equipment, InventoryEquipmentTransferService? transfers = null)
     {

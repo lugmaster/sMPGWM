@@ -11,6 +11,46 @@ namespace sMPGWM.Scripts.Steam;
 public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 {
     private const uint SteamAppId = 480;
+    private readonly PendingLobbyOperation _create = new();
+    private readonly PendingLobbyOperation _join = new();
+
+    public bool CreateSessionLobby(int capacity, Action<long, ulong> completion)
+    {
+        if (!_create.Begin(0, completion)) return false;
+        GodotSteam.Steam.CreateLobby(GodotSteam.Steam.LobbyType.Private, capacity);
+        return true;
+    }
+
+    public bool JoinSessionLobby(ulong lobby, Action<long, ulong> completion)
+    {
+        if (!_join.Begin(lobby, completion)) return false;
+        GodotSteam.Steam.JoinLobby(lobby);
+        return true;
+    }
+
+    public void CancelLobbyOperations(Action<long, ulong> completion)
+    {
+        _create.Cancel(completion);
+        _join.Cancel(completion);
+    }
+
+    private void LobbyCreated(long result, ulong lobby) =>
+        _create.Complete(result, lobby, LeaveLateLobby);
+
+    private void LobbyJoined(ulong lobby, long permissions, bool locked, long result) =>
+        _join.Complete(result, lobby, LeaveLateLobby);
+
+    private static void LeaveLateLobby(ulong lobby)
+    {
+        GodotSteam.Steam.LeaveLobby(lobby);
+        Logger.Info("Canceled Steam lobby membership drained.");
+    }
+
+    protected override void OnExitTree()
+    {
+        GodotSteam.Steam.LobbyCreated -= LobbyCreated;
+        GodotSteam.Steam.LobbyJoined -= LobbyJoined;
+    }
 
     protected override void OnEnterTree()
     {
@@ -21,6 +61,8 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     protected override void OnReady()
     {
+        GodotSteam.Steam.LobbyCreated += LobbyCreated;
+        GodotSteam.Steam.LobbyJoined += LobbyJoined;
         try
         {
             Logger.Debug(GodotSteam.Steam.IsSteamRunning() ? "Steam is running" : "Steam is not running");

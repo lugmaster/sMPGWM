@@ -1,6 +1,6 @@
 # Network implementation plan
 
-Status: NET-14 Verified, 2026-10-31. Remaining checkpoints are Pending. See the NET-14 handoff and evidence below.
+Status: NET-14, NET-01 and NET-03 Verified, 2026-10-31. Next checkpoint: NET-00 native capability gate. See the final handoff below.
 
 Single source for NET-00 through NET-14, replacing the host, client, lobby, lobby-list, heartbeat and refinement plans. Target: `sMPGWM.Game/Scripts/Network`.
 
@@ -68,8 +68,8 @@ Statuses: Pending, In progress, Needs verification, Verified. A partial checkpoi
 | Order | Story checkpoint | Status |
 | --- | --- | --- |
 | 1 | NET-14: ENet diagnostic exchange | Verified |
-| 2 | NET-01: shared ownership completion | In progress |
-| 3 | NET-03: ENet completion | Pending |
+| 2 | NET-01: shared ownership completion | Verified |
+| 3 | NET-03: ENet completion | Verified |
 | 4 | NET-00: Steam capability gate | Pending |
 | 5 | NET-02: private Steam diagnostic exchange | Pending |
 | 6 | NET-08: protocol/preflight completion | Pending |
@@ -235,7 +235,7 @@ Record checkpoint/status, changed files, exact commands/build/inputs, results, e
 
 **Message milestone:** checkpoints 1-5 Verified, including actual separate-process ENet and Steam exchanges. **Full planned slice:** all checkpoints Verified, public discovery reaches production admission and host survives churn. Neither claims real replication/player spawning.
 
-**Current checkpoint:** 2 - NET-01 In progress; see handoff below.
+**Current checkpoint:** checkpoints 1-3 complete; next is checkpoint 4, NET-00. Earlier handoffs are superseded by the final NET-01/NET-03 handoff.
 
 ### NET-14 implementation handoff (2026-10-31)
 
@@ -288,3 +288,35 @@ Status: **In progress**, not Verified. Menu startup now uses the consumed-once i
 Validation: dotnet test sMPGWM.Tests --filter FullyQualifiedName~Network: all 5 passed, including multi-process ENet lifecycle scenarios; game/test builds successful with compiler warnings. git diff --check passed.
 
 Remaining before acceptance: native Steam operation serialization/draining, role-specific callback and terminal completion guards, main-thread loss handling instead of polling, clearing only the owned peer, distinct typed transport targets, input shutdown and delayed menu-transition generation guards. Verify canceled native operations and repeated Steam round trips using the custom engine. Do not advance to NET-03; existing ENet tests do not prove Steam ownership acceptance.
+
+### NET-01 continuation (2026-10-31)
+
+Status: **In progress**. `SteamNetwork.cs` now guards duplicate starts and startup completion, restricts native callbacks to the selected role/target, completes hosting only after successful peer creation, replaces asynchronous status polling with Multiplayer API signals and a monotonic physics deadline, detaches those signals on cleanup, unpublishes host membership before leaving, and clears only its owned peer. Mandatory Steam initialization remains unchanged.
+
+Validation: `dotnet test sMPGWM.Tests --filter FullyQualifiedName~Network` passed all 5 tests (including the ENet process matrix); game and tests compiled with warnings. `git diff --check` passed. These tests do not verify native Steam signal ordering or callbacks.
+
+Remaining: application-lifetime native operation serialization/draining (including canceled create/join and indistinguishable callbacks across retries), typed transport targets, input shutdown, delayed menu-transition generation guards, and real Steam round-trip/loss/cancellation verification. Resume NET-01; do not advance to NET-03 or treat the current role/target guards as protection against indistinguishable callbacks from an older attempt.
+
+### NET-01 / NET-03 final handoff (2026-10-31)
+
+Status: **Verified** for shared ownership and ENet completion. This supersedes the earlier NET-01 unfinished-work lists. It does not verify the later Steam exchange, public hosting, compatibility or admission stories.
+
+Implementation:
+- SteamworksHelper owns serialized create/join callback slots. Cancellation drops the scene delegate immediately, retains only operation/target state, blocks that operation kind until its callback returns, and leaves late successful membership. A callback that never returns keeps that kind unavailable with an explicit runtime-restart reason. Mandatory Steam initialization/failure behavior is preserved.
+- SteamNetwork guards startup completion and role/target, uses connection/loss signals and a captured monotonic timeout, creates private lobbies, completes hosting after peer assignment, handles callback exceptions and clears only its owned peer. Native peer cleanup disposes its reference. Creator LobbyJoined cannot start or complete a client.
+- Startup exposes distinct immutable LanEndpoint and SteamLobbyTarget values consumed by the selected transport. Existing constructor inputs remain compatible with callers.
+- Session stop disables gameplay input/navigation and ticker processing. Deferred gameplay start respects a stopped session. Menu transitions carry generations so an earlier delayed quit cannot remove a newer scene. Scene exit clears singleton ownership; cleanup removes external Steam/Multiplayer subscriptions.
+- ENet validates host port as well as client endpoint/capacity, refuses starts after cleanup, and reserves MaxPlayers minus one native remote slots. Host-only mode explicitly disconnects arriving peers: native RefuseNewConnections alone allowed a client-side connection followed by diagnostic timeout on this executable. Host-only verification checks server loss and no diagnostic reply.
+- IActiveNetwork currently exposes no Steam-only operations and has no NotImplementedException stubs. Add unsupported ENet implementations when later Steam-specific interface operations are introduced.
+
+Validation:
+- `dotnet test sMPGWM.Tests --filter FullyQualifiedName~Network`: **7 passed**, including two callback ownership tests and the production multi-process matrix. The subsequent full suite also passed the expanded matrix with pending-slot and delayed-transition checks.
+- `dotnet test sMPGWM.Tests`: **179 passed, 1 failed**. The unchanged Godot inventory case `UnknownDefinitions_AreRejectedIncludingDefaultAndZeroQuantity` at InventoryControllerTests.cs:131 still expects UnknownDefinition and receives NoChange (same baseline failure as NET-14). Its inner Godot report has 129 passed and this one failure. Game/test builds succeeded with warnings.
+- Runtime: Godot v4.6.2.stable.mono.custom_build.001aa128b, `C:/Users/lober/godot_engine/Godot_v4.6.2_mono_steam/editor/godot.windows.editor.x86_64.mono.console.exe`. Tests stage production scripts/assembly/scenes with isolated user data. ENet uses loopback, an OS-selected UDP port, a 1000 ms connection budget, capacities 1, 2, 10 and rejected 0/11. Steam lifecycle uses a 10000 ms budget and the existing local Steam account.
+- Native Steam test cancels creation before callback delivery, observes late membership draining, then hosts/leaves twice with fresh managers/peers. Successful paths contain no engine ERROR. Deterministic tests additionally cover canceled join target matching, unrelated callbacks, blocked retries, late success/failure, reentrancy and duplicate completion.
+- ENet matrix proves exchange/rejoin, duplicate starts, repeated cleanup, delayed quit invalidation across reentry, occupied port, invalid address/zero port/capacity, timeout, cancellation, host-only refusal, pending-slot capacity and retry. Existing protocol fault-injection checks still pass.
+- Retained sanitized lifecycle excerpts: [NET-01/NET-03 evidence](evidence/net01-net03/). Full logs are NUnit attachments (`enet-*.log`); NET-14 evidence records full diagnostic commands and RPC exchange.
+
+Scope boundaries: Steam-unavailable LAN is excluded by the user's mandatory Steam startup constraint recorded above. Two-account Steam exchange, client native signal/identity capability matrix, publication and host-loss policy remain NET-00/NET-02 work. Shared canceled-operation ownership is verified with native creation/draining plus deterministic join-callback tests; no two-account Steam exchange is claimed.
+
+Fresh-context handoff: next is checkpoint 4, NET-00. Preserve mandatory Steam startup and transport exclusivity. NET-01/NET-03 completion does not imply completion of NET-00/NET-02: execution order, not numeric ID, defines these checkpoints.

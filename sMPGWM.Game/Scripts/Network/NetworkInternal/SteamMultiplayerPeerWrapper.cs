@@ -1,4 +1,5 @@
-﻿using Godot;
+﻿using System;
+using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
 
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
@@ -16,7 +17,7 @@ public class SteamMultiplayerPeerWrapper
         _nativePeer = (GodotObject)ClassDB.Instantiate("SteamMultiplayerPeer");
         if (_nativePeer == null)
         {
-            GameFlowManager.Instance.QuitToStartMenuBlocking("Failed to create SteamMultiplayerPeer instance!");
+            throw new InvalidOperationException("Failed to create SteamMultiplayerPeer instance!");
         }
     }
 
@@ -76,6 +77,7 @@ public class SteamMultiplayerPeerWrapper
             _nativePeer.Call("close");
         }
 
+        _nativePeer?.Dispose();
         _nativePeer = null;
 
         Logger.Debug(

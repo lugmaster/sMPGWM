@@ -58,12 +58,14 @@ public class EnetProcessTests
                 client.Command("duplicate");
                 await Task.Delay(150);
                 Assert.That(Regex.Matches(client.Output, "Diagnostic result=MessageExchangeSucceeded").Count, Is.EqualTo(1));
-                client.Command("leave");
+                client.Command("delayed-leave");
                 await client.WaitFor("Network session stopped");
                 await client.WaitFor("returning to start menu.");
                 await Task.Delay(150);
                 client.Command("restart");
                 await client.WaitForCount("Diagnostic result=MessageExchangeSucceeded", 2);
+                await Task.Delay(1600);
+                Assert.That(Regex.Matches(client.Output, "returning to start menu.").Count, Is.EqualTo(1));
                 Assert.That(client.Output, Does.Not.Contain("ERROR:"));
                 client.Command("quit");
                 await client.WaitFor("completed Steam shutdown.");
@@ -128,9 +130,55 @@ public class EnetProcessTests
             using (var alone = Start("host-only", "--enet-host"))
             {
                 await alone.WaitFor("Listening session=");
+                using (var refused = Start("refused", "--enet-client"))
+                    await refused.WaitFor("Server disconnected.");
+                Assert.That(alone.Output, Does.Not.Contain("DiagnosticReply correlation="));
                 alone.Command("quit");
                 await alone.WaitForExit();
                 Assert.That(alone.Output, Does.Not.Contain("ERROR:"));
+            }
+            File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("max_players = 10", "max_players = 2"));
+            using (var bounded = Start("bounded-host", "--enet-host"))
+            {
+                await bounded.WaitFor("Listening session=");
+                bounded.Command("suppress");
+                await Task.Delay(100);
+                using var pending = Start("pending-slot", "--enet-client");
+                await pending.WaitFor("DiagnosticHello correlation=");
+                using var overflow = Start("overflow", "--enet-client");
+                await overflow.WaitFor("ENet connection failed or disconnected.");
+                Assert.That(overflow.Output, Does.Not.Contain("MessageExchangeSucceeded"));
+                bounded.Command("quit");
+                await bounded.WaitForExit();
+            }
+            foreach (var capacity in new[] { 0, 11 })
+            {
+                File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("max_players = 10", $"max_players = {capacity}"));
+                using var invalidCapacity = Start("capacity" + capacity, "--enet-host");
+                await invalidCapacity.WaitFor("requires 1-10 player capacity");
+            }
+            File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace($"port = {port}", "port = 0"));
+            using (var invalidPort = Start("invalid-port", "--enet-host"))
+                await invalidPort.WaitFor("Invalid LAN endpoint.");
+            File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("connection_timeout = 1000", "connection_timeout = 10000"));
+            using (var steam = Start("steam-lifecycle", "--no-network"))
+            {
+                await steam.WaitFor("Steam initialized successfully");
+                steam.Command("steam-cancel");
+                await steam.WaitFor("Canceled Steam lobby membership drained.");
+                await steam.WaitFor("returning to start menu.");
+                await Task.Delay(200);
+                for (var round = 1; round <= 2; round++)
+                {
+                    steam.Command("steam-host");
+                    await steam.WaitForCount("Network Host: Listening", round);
+                    steam.Command("leave");
+                    await steam.WaitForCount("returning to start menu.", round + 1);
+                    await Task.Delay(200);
+                }
+                steam.Command("quit");
+                await steam.WaitForExit();
+                Assert.That(steam.Output, Does.Not.Contain("ERROR:"));
             }
             File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("127.0.0.1", "invalid-address"));
             using (var invalid = Start("invalid-endpoint", "--enet-client"))

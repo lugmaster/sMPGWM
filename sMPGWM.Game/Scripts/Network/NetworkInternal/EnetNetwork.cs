@@ -12,6 +12,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
 {
     private ENetMultiplayerPeer? _peer;
     public NetworkStartupData? Startup { get; init; }
+    private bool _hostOnly;
+    private bool _hostSubscribed;
     private bool _finished;
     private bool _cleaned;
     private bool _subscribed;
@@ -27,26 +29,29 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
 
     public void BecomeHost(int maxConnections)
     {
-        if (_started) return;
+        if (_started || _cleaned) return;
         _started = true;
         if (maxConnections < 1 || maxConnections > 10)
         {
             Report(false, "ENet diagnostic hosting requires 1-10 player capacity.");
             return;
         }
+        if ((Startup?.LanTarget?.Port ?? GameConfig.Port) is < 1 or > 65535) { Report(false, "Invalid LAN endpoint."); return; }
         _peer = new ENetMultiplayerPeer();
-        var result = _peer.CreateServer(Startup?.Port ?? GameConfig.Port, Math.Max(1, maxConnections - 1));
+        var result = _peer.CreateServer(Startup?.LanTarget?.Port ?? GameConfig.Port, Math.Max(1, maxConnections - 1));
         if (result != Error.Ok) { Report(false, $"CreateServer: {result}"); return; }
-        _peer.RefuseNewConnections = maxConnections == 1;
+        _hostOnly = maxConnections == 1;
+        Multiplayer.PeerConnected += HostPeerConnected;
+        _hostSubscribed = true;
         Multiplayer.MultiplayerPeer = _peer;
         Report(true, "Listening");
     }
 
     public void BecomeClient(ulong lobbyId = 0)
     {
-        if (_started) return;
+        if (_started || _cleaned) return;
         _started = true;
-        if (!IPAddress.TryParse(Startup?.Address ?? GameConfig.ServerIpAddress, out _) || (Startup?.Port ?? GameConfig.Port) is < 1 or > 65535)
+        if (!IPAddress.TryParse(Startup?.LanTarget?.Address ?? GameConfig.ServerIpAddress, out _) || (Startup?.LanTarget?.Port ?? GameConfig.Port) is < 1 or > 65535)
         {
             Report(false, "Invalid LAN endpoint.");
             return;
@@ -56,11 +61,16 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
         Multiplayer.ConnectionFailed += Failed;
         Multiplayer.ServerDisconnected += Disconnected;
         _peer = new ENetMultiplayerPeer();
-        var result = _peer.CreateClient(Startup?.Address ?? GameConfig.ServerIpAddress, Startup?.Port ?? GameConfig.Port);
+        var result = _peer.CreateClient(Startup?.LanTarget?.Address ?? GameConfig.ServerIpAddress, Startup?.LanTarget?.Port ?? GameConfig.Port);
         if (result != Error.Ok) { Report(false, $"CreateClient: {result}"); return; }
         _waiting = true;
         _deadline = Time.GetTicksMsec() + (ulong)Math.Max(1, Startup?.ConnectionTimeoutMs ?? ConnectionTimeout);
         Multiplayer.MultiplayerPeer = _peer;
+    }
+
+    private void HostPeerConnected(long peer)
+    {
+        if (!_cleaned && _hostOnly) _peer?.DisconnectPeer((int)peer);
     }
 
     private void Connected() { if (!_waiting) return; _waiting = false; Report(true); }
@@ -78,6 +88,8 @@ public partial class EnetNetwork : BaseNetwork, IActiveNetwork
         if (_cleaned) return;
         _cleaned = true;
         _waiting = false;
+        if (_hostSubscribed) Multiplayer.PeerConnected -= HostPeerConnected;
+        _hostSubscribed = false;
         if (_subscribed)
         {
             _subscribed = false;

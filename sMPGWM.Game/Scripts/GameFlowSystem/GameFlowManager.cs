@@ -13,6 +13,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     private GameFlowState _gameFlowState = GameFlowState.StartMenu;
     private GameFlowState _pendingGameFlowState = GameFlowState.StartMenu;
     private NetworkStartupData? _pendingNetworkStartup;
+    private long _navigationGeneration;
 
     public NetworkStartupData? ConsumeNetworkStartup()
     {
@@ -59,6 +60,8 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     protected override void OnExitTree()
     {
+        ++_navigationGeneration;
+        _pendingNetworkStartup = null;
         GetTree().SceneChanged -= OnSceneChanged;
     }
 
@@ -75,7 +78,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
                 $"{nameof(GameFlowManager)}.{nameof(QuitToStartMenu)} quit triggered with {nameof(reason)}={reason}.");
         }
 
-        Instance.CallDeferred(nameof(Instance.StartQuitAsync), delayMs);
+        Instance.CallDeferred(nameof(Instance.StartQuitAsync), delayMs, ++_navigationGeneration);
     }
 
     public void QuitToStartMenuBlocking(string reason, bool showAsError = true)
@@ -103,7 +106,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
                 $"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuBlocking)} completed with {nameof(combinedReason)}={combinedReason}.");
         }
 
-        Instance.CallDeferred(nameof(QuitToStartMenuInternal));
+        Instance.CallDeferred(nameof(QuitToStartMenuInternal), ++_navigationGeneration);
     }
 
     public void QuitGame(string reason)
@@ -120,10 +123,11 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         GetTree().Quit();
     }
 
-    private async void StartQuitAsync(int delayMs)
+    private async void StartQuitAsync(int delayMs, long generation)
     {
-        await Task.Delay(delayMs);
-        CallDeferred(nameof(QuitToStartMenuInternal));
+        await Task.Delay(Math.Max(0, delayMs));
+        if (!IsInsideTree() || generation != _navigationGeneration) return;
+        CallDeferred(nameof(QuitToStartMenuInternal), generation);
     }
 
     public void StartGame(NetworkRole networkRole, NetworkType networkType)
@@ -133,8 +137,9 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
             GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout));
     }
 
-    private void QuitToStartMenuInternal()
+    private void QuitToStartMenuInternal(long generation)
     {
+        if (generation != _navigationGeneration) return;
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuInternal)} returning to start menu.");
         ChangeScene(GameFlowSceneProvider.StartMenuScene, GameFlowState.StartMenu);
     }
@@ -153,6 +158,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     private void ChangeScene(PackedScene scene, GameFlowState targetState)
     {
+        ++_navigationGeneration;
         _gameFlowState = GameFlowState.Loading;
         _pendingGameFlowState = targetState;
 
