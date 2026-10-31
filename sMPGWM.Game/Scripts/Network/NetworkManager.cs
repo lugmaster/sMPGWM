@@ -42,7 +42,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
                 _diagnosticStatus = new Label { Text = $"Steam {NetworkRole}: connecting (gameplay inactive)" };
                 panel.AddChild(_diagnosticStatus);
                 var leave = new Button { Text = "Return to menu" };
-                leave.Pressed += () => CancelDiagnostic("Left diagnostic session.");
+                leave.Pressed += () => GameFlowManager.Instance.QuitToStartMenu("Left diagnostic session.");
                 panel.AddChild(leave);
                 panel.AddChild(new Label { Text = $"Logs: {ProjectSettings.GlobalizePath(Logger.LogFilePath)}" });
                 layer.AddChild(panel);
