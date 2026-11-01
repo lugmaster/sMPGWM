@@ -11,39 +11,20 @@ namespace sMPGWM.Scripts.GameFlowSystem;
 public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 {
     private GameFlowState _gameFlowState = GameFlowState.StartMenu;
-    private NetworkStartupData? _pendingNetworkStartup;
+    private NetworkStartupData? _pendingStartupData;
     private long _navigationGeneration;
 
     public NetworkStartupData? ConsumeNetworkStartup()
     {
-        var startup = _pendingNetworkStartup;
-        _pendingNetworkStartup = null;
+        var startup = _pendingStartupData;
+        _pendingStartupData = null;
         return startup;
     }
 
-    protected override void OnReady()
-    {
-        CallDeferred(nameof(StartFromArguments));
-    }
-
-    private void StartFromArguments()
-    {
-        foreach (var argument in OS.GetCmdlineUserArgs())
-        {
-            if (argument != "--enet-host" && argument != "--enet-client") continue;
-            var config = new NetworkStartupData(
-                argument == "--enet-host" ? NetworkRole.Host : NetworkRole.Client,
-                NetworkType.Lan, GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout,
-                GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port);
-            StartNetworkGame(config);
-            return;
-        }
-    }
-
-    public void StartNetworkGame(NetworkStartupData startup)
+    public void StartNetworkGame(NetworkStartupData startupData)
     {
         if (_gameFlowState != GameFlowState.StartMenu || NetworkManager.Instance != null) return;
-        _pendingNetworkStartup = startup;
+        _pendingStartupData = startupData;
         ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.Loading);
     }
     
@@ -78,14 +59,14 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     protected override void OnExitTree()
     {
         ++_navigationGeneration;
-        _pendingNetworkStartup = null;
+        _pendingStartupData = null;
         GetTree().SceneChanged -= OnSceneChanged;
     }
 
 
     public void QuitToStartMenu(string reason = null, int delayMs = 35)
     {
-        _pendingNetworkStartup = null;
+        _pendingStartupData = null;
         SetState(GameFlowState.Disconnecting);
         NetworkManager.Instance?.StopSession();
         
@@ -100,7 +81,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void QuitToStartMenuBlocking(string reason, bool showAsError = true)
     {
-        _pendingNetworkStartup = null;
+        _pendingStartupData = null;
         SetState(GameFlowState.Disconnecting);
         NetworkManager.Instance?.StopSession();
         Logger.Debug(
@@ -183,7 +164,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
         if (error != Error.Ok)
         {
-            _pendingNetworkStartup = null;
+            _pendingStartupData = null;
             Logger.Error(
                 $"{nameof(GameFlowManager)} scene change failed with {nameof(error)}={error}."
             );
