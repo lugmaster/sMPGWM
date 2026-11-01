@@ -34,6 +34,7 @@ public class PlayerSpawningTests
             manager.Spawn(1, new PlayerStartupData("here i am 1"));
             manager.Spawn(2, new PlayerStartupData("here i am 2"));
             var player = manager.MpControllers[2];
+            
             Assert.That(player.ControllingPeerId, Is.EqualTo(2));
             manager.Spawn(2, new PlayerStartupData("here i am 3"));
             Assert.That(manager.MpControllers.Count, Is.EqualTo(2));

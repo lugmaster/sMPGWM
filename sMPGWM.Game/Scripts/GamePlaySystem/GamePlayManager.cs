@@ -1,12 +1,14 @@
 using System;
 using Godot;
-using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.HotbarSystem;
 using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.MessageSystem;
+using sMPGWM.scripts.Network;
+using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
@@ -55,7 +57,8 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         MessageMock.PopulateWelcomeMessage(MessageController);
         _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
         _canvas.BindInventory(InventoryController, EquipmentController, IeTransferService);
-        _inputController = InputController.Instance;
+        _inputController = new InputController { Name = nameof(InputController) };
+        AddChild(_inputController);
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var actions = player.GetHotBarSkills();
         HotbarController = new ItemHotbarController(InventoryController, EquipmentController, IeTransferService,
@@ -77,6 +80,10 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ApplyPlayerInputAvailability(_inputPolicy.CanControlPlayer);
         GameFlowManager.Instance.StateChanged += NetworkStateChanged;
         NetworkStateChanged(GameFlowManager.Instance.GameFlowState);
+
+        // Gameplay is ready before networking can spawn players or publish session events.
+        AddChild(new MpManager { Name = nameof(MpManager) });
+        AddChild(new NetworkManager { Name = nameof(NetworkManager) });
     }
 
     public override void _Process(double delta)
