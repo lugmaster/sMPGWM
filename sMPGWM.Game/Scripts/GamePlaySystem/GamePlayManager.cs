@@ -17,9 +17,8 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
     private UiCanvas _canvas = null!;
-    private InventoryEquipmentTransferService? _presentationTransfers;
     private InputController _inputController = null!;
-    private PlayerActionController _playerActions = null!;
+    private PlayerActionController _playerActionController = null!;
     private readonly PlayerInputPolicy _inputPolicy = new();
     private MainGameState _gameState = MainGameState.Inactive;
 
@@ -30,10 +29,10 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public ItemController ItemController { get; private set; } = null!;
     public InventoryController InventoryController { get; private set; } = null!;
     public EquipmentController EquipmentController { get; private set; } = null!;
-    public InventoryEquipmentTransferService ItemTransfers { get; private set; } = null!;
+    private InventoryEquipmentTransferService IeTransferService { get; set; } = null!;
     public ItemHotbarController HotbarController { get; private set; } = null!;
 
-    public MessageStore Messages { get; private set; } = null!;
+    public MessageStore MessageStore { get; private set; } = null!;
     private MessageAcknowledgements _acknowledgements = null!;
 
     private void RefreshAcknowledgement()
@@ -55,30 +54,30 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         InventoryController = new InventoryController(ItemRequestService);
         if (PopulateMockInventory) player.PopulateInventory(InventoryController);
         EquipmentController = new EquipmentController(InventoryController.ItemRequestService);
-        ItemTransfers = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
+        IeTransferService = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
-        Messages = new MessageStore(exception => Logger.Error($"Message observer failed: {exception}"));
-        _acknowledgements = new MessageAcknowledgements(Messages);
+        MessageStore = new MessageStore(exception => Logger.Error($"Message observer failed: {exception}"));
+        _acknowledgements = new MessageAcknowledgements(MessageStore);
         _acknowledgements.Changed += RefreshAcknowledgement;
         _canvas.MessageAcknowledged += AcknowledgeMessage;
-        Messages.RegisterSender(new MessageSender("system", "System"));
-        Messages.Receive("welcome", "system", "Welcome", "Welcome, this is test message", MessageType.NonBlocking);
-        _canvas.BindMessages(Messages);
+        MessageStore.RegisterSender(new MessageSender("system", "System"));
+        MessageStore.Receive("welcome", "system", "Welcome", "Welcome, this is test message", MessageType.NonBlocking);
+        _canvas.BindMessages(MessageStore);
         _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
-        BindInventoryPresentation(InventoryController, EquipmentController, ItemTransfers);
+        _canvas.BindInventory(InventoryController, EquipmentController, IeTransferService);
         _inputController = InputController.Instance;
         _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var actions = player.GetHotBarSkills();
-        HotbarController = new ItemHotbarController(InventoryController, EquipmentController, ItemTransfers,
+        HotbarController = new ItemHotbarController(InventoryController, EquipmentController, IeTransferService,
             exception => Logger.Error($"Hotbar observer failed: {exception}"));
-        _playerActions = new PlayerActionController(
+        _playerActionController = new PlayerActionController(
             _inputPolicy, position => HotbarController.Activate(position,
                 key => player.OnHotbarSlotPressed(int.Parse(key)),
                 request => Logger.Info($"Item hotbar activation requested: {request}")),
             () => _inputController.IsGameplayInputAvailable);
 
-        _canvas.OnRequestHotbarAction += _playerActions.RequestHotbarActivation;
+        _canvas.OnRequestHotbarAction += _playerActionController.RequestHotbarActivation;
         _canvas.BlockingChanged += _inputPolicy.SetHasBlockingWindow;
         _inputPolicy.CanControlPlayerChanged += ApplyPlayerInputAvailability;
 
@@ -99,28 +98,27 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
             _canvas.MessageAcknowledged -= AcknowledgeMessage;
             _canvas.EndMessageSession();
             _acknowledgements?.Dispose();
-            Messages?.Dispose();
+            MessageStore?.Dispose();
             _inputPolicy.SetHasPendingAcknowledgement(false);
             _canvas.UnbindInventory();
             _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
         }
-        _presentationTransfers = null;
-        ItemTransfers?.Dispose();
+        IeTransferService?.Dispose();
         HotbarController?.Dispose();
         HotbarController = null!;
         EquipmentController?.Dispose();
         InventoryController?.Dispose();
-        ItemTransfers = null!;
+        IeTransferService = null!;
         EquipmentController = null!;
         InventoryController = null!;
         ItemController = null!;
         ItemRequestService = null!;
-        if (_playerActions is null)
+        if (_playerActionController is null)
             return;
 
         _inputPolicy.CanControlPlayerChanged -= ApplyPlayerInputAvailability;
         _canvas.BlockingChanged -= _inputPolicy.SetHasBlockingWindow;
-        _canvas.OnRequestHotbarAction -= _playerActions.RequestHotbarActivation;
+        _canvas.OnRequestHotbarAction -= _playerActionController.RequestHotbarActivation;
     }
 
     public void StopSession()
@@ -133,18 +131,11 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         SetGameState(state == GameFlowState.InGame ? MainGameState.Active : MainGameState.Inactive);
     }
 
-    internal void BindInventoryPresentation(InventoryController inventory, EquipmentController equipment, InventoryEquipmentTransferService? transfers = null)
-    {
-        _canvas.UnbindInventory();
-        _presentationTransfers = transfers;
-        _canvas.BindInventory(inventory, equipment, transfers);
-    }
-
     private void SetInventoryEditing(bool available)
     {
-        _presentationTransfers?.RevokeEditSession();
-        var session = available && GameState == MainGameState.Active && _presentationTransfers != null
-            ? _presentationTransfers.OpenEditSession() : 0UL;
+        IeTransferService?.RevokeEditSession();
+        var session = available && GameState == MainGameState.Active && IeTransferService != null
+            ? IeTransferService.OpenEditSession() : 0UL;
         _canvas.SetInventoryEditSession(session);
     }
 

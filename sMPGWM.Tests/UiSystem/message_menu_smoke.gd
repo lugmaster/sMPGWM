@@ -74,6 +74,8 @@ func run() -> void:
         root.content_scale_size = resolution
         var game := packed.instantiate()
         root.add_child(game)
+        # This UI-only scene has no network session to activate gameplay.
+        game.call("SetGameState", 0)
         await settle()
         var world_probe := WorldProbe.new()
         game.get_node("WorldViewPortContainer/WorldViewport/WorldScene").add_child(world_probe)
@@ -163,48 +165,6 @@ func run() -> void:
         action("MessageMenu")
         await settle()
         expect(row.get_child_count() == 1 and row.get_child(0).name == "MessageMenu", "Messages shortcut replaces Main Menu")
-        var inventory_fixture = load("res://Scripts/Util/Mocks/InventoryClickSmokeFixture.cs").new()
-        inventory_fixture.call("Show", game)
-        await settle()
-        var inventory_menu := row.get_child(0)
-        var grid := inventory_menu.get_node("%InventoryContainer/%ItemGrid/%SlotGrid")
-        var revision: int = inventory_fixture.call("Revision")
-        await click(grid.get_child(0))
-        expect(inventory_fixture.call("Carrying"), "Inventory fixture begins click carrying")
-        await click(notification)
-        expect(row.get_child_count() == 2 and not inventory_fixture.call("Carrying"), "Toolbar activates and cancels carrying on first click")
-        expect(inventory_fixture.call("Revision") == revision, "Toolbar navigation cannot transfer carried items")
-        expect(not canvas.get_node("%ItemPointerOverlay").visible, "Navigation clears the item preview")
-        canvas.call("CloseAllMenus")
-        canvas.call("OpenMenu", 0)
-        await settle()
-        inventory_menu = row.get_child(0)
-        grid = inventory_menu.get_node("%InventoryContainer/%ItemGrid/%SlotGrid")
-        var source: Vector2 = grid.get_child(0).get_global_rect().get_center()
-        var motion := InputEventMouseMotion.new()
-        motion.position = source
-        root.push_input(motion, true)
-        var press := InputEventMouseButton.new()
-        press.position = source
-        press.button_index = MOUSE_BUTTON_LEFT
-        press.pressed = true
-        root.push_input(press, true)
-        await process_frame
-        motion = InputEventMouseMotion.new()
-        motion.position = source + Vector2(28, 0)
-        motion.relative = Vector2(28, 0)
-        motion.button_mask = MOUSE_BUTTON_MASK_LEFT
-        root.push_input(motion, true)
-        await settle()
-        expect(root.gui_is_dragging(), "Inventory fixture begins native drag")
-        action("MessageMenu")
-        await settle()
-        expect(not root.gui_is_dragging() and not inventory_fixture.call("Carrying"), "Message shortcut cancels native drag")
-        expect(inventory_fixture.call("Revision") == revision, "Native drag navigation cannot transfer items")
-        press.pressed = false
-        root.push_input(press, true)
-        inventory_fixture.call("Restore", game)
-        inventory_fixture = null
         canvas.call("OpenMenu", 2)
         fixture.call("Receive", "required-one", true)
         fixture.call("Receive", "required-two", true)

@@ -13,19 +13,19 @@ public partial class MessageSmokeFixture : RefCounted
     private GamePlayManager _game = null!;
     private MessageStore? _empty;
     public void Bind(GamePlayManager game) => _game = game;
-    public int Count() => _game.Messages.Snapshot.Messages.Count;
-    public int Unread() => _game.Messages.Snapshot.UnreadCount;
-    public bool Read(string id) => _game.Messages.Snapshot.Find(id)?.IsRead == true;
+    public int Count() => _game.MessageStore.Snapshot.Messages.Count;
+    public int Unread() => _game.MessageStore.Snapshot.UnreadCount;
+    public bool Read(string id) => _game.MessageStore.Snapshot.Find(id)?.IsRead == true;
     public string Selected() => _game.GetNode<UiCanvas>("UiCanvas").GetNodeOrNull<MessageMenu>(
         "Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow/MessageMenu")?.GetNode<Label>("%MessageEntry/Heading").Text ?? "";
     public bool Receive(string id, bool blocking = false)
     {
-        return _game.Messages.Receive(id, "system", id, "Body: " + id,
+        return _game.MessageStore.Receive(id, "system", id, "Body: " + id,
             blocking ? MessageType.Blocking : MessageType.NonBlocking);
     }
     public void Populate()
     {
-        var store = _game.Messages;
+        var store = _game.MessageStore;
         store.RegisterSender(new MessageSender("station", "Station Command"));
         store.RegisterSender(new MessageSender("trading", "Trading Guild"));
         store.RegisterSender(new MessageSender("security", "Security Office"));
@@ -40,8 +40,8 @@ public partial class MessageSmokeFixture : RefCounted
     }
     public void PrepareReadHistory()
     {
-        var snapshot = _game.Messages.Snapshot;
-        foreach (var message in snapshot.Messages) _game.Messages.MarkRead(message.Id);
+        var snapshot = _game.MessageStore.Snapshot;
+        foreach (var message in snapshot.Messages) _game.MessageStore.MarkRead(message.Id);
     }
 
     public void LargeCount()
@@ -68,7 +68,7 @@ public partial class MessageSmokeFixture : RefCounted
     }
     public void Restore()
     {
-        _game.GetNode<UiCanvas>("UiCanvas").BindMessages(_game.Messages);
+        _game.GetNode<UiCanvas>("UiCanvas").BindMessages(_game.MessageStore);
         _empty?.Dispose();
         _empty = null;
     }

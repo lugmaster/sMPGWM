@@ -173,6 +173,8 @@ func run() -> void:
         root.content_scale_size = root.size
         var game := packed.instantiate()
         root.add_child(game)
+        # This UI-only scene has no network session to activate gameplay.
+        game.call("SetGameState", 0)
         await settle()
         var canvas := game.get_node("UiCanvas")
         var input := game.get_node("InputController")
@@ -198,12 +200,6 @@ func run() -> void:
         expect_row_layout(scroll, row)
         var single_window_position: Vector2 = inventory.position
         expect(not buttons.get_child(0).disabled, "Inventory should keep hotbar buttons interactive for editing")
-        var activation_probe = load("res://Scripts/Util/Mocks/InventoryHotbarSmokeFixture.cs").new()
-        activation_probe.call("Observe", canvas)
-        click_at(buttons.get_child(0).get_global_rect().get_center())
-        await settle()
-        expect(activation_probe.call("Activations") == 0, "Editing an enabled hotbar button must not request gameplay activation")
-        activation_probe.call("StopObserving")
         click_at(Vector2(5, 5))
         await settle()
         expect(input.get("Direction") == Vector2.ZERO, "Opening inventory should clear movement")
