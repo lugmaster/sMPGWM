@@ -7,7 +7,7 @@ public partial class JoinSteamGameMenu: BaseStartMenu
 {
     private LobbyList.LobbyList _lobbies = null!;
     private Button _joinSteamGameButton = null!;
-    protected override string ScreenTitle => "Start Steam Game";
+    protected override string ScreenTitle => "Join Steam Game";
 
     protected override void OnEnterTree()
     {

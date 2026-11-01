@@ -33,7 +33,7 @@ text = "Lobby name"
 [node name="HostNameHeaderLabel" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyListHeader" index="1" unique_id=1119932178]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Purpose"
+text = "Mode"
 
 [node name="PlayerCountHeaderLabel" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/LobbyListPanel/VBoxContainer/LobbyListHeader" index="2" unique_id=1210451228]
 layout_mode = 2

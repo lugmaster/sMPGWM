@@ -26,7 +26,7 @@ internal sealed class SessionAuthentication : IDisposable
         _previousObjectDecoding = api.AllowObjectDecoding;
         _previousCallback = api.AuthCallback;
         _previousTimeout = api.AuthTimeout;
-        _payload = Encoding.UTF8.GetBytes($"sMPGWM:preflight:{typeof(NetworkManager).Module.ModuleVersionId:N}:{DiagnosticExchange.ProtocolVersion}:{GameConfigSystem.GameConfig.Version}");
+        _payload = Compatibility.Payload();
         api.AllowObjectDecoding = false;
         api.AuthTimeout = 10;
         api.AuthCallback = Callable.From<long, byte[]>(Receive);
@@ -51,7 +51,7 @@ internal sealed class SessionAuthentication : IDisposable
     private void Receive(long peer, byte[] data)
     {
         if (_disposed) return;
-        if (!data.AsSpan().SequenceEqual(_payload) || (_startup.Role == NetworkRole.Client && peer != 1))
+        if (!Compatibility.Accept(data) || (_startup.Role == NetworkRole.Client && peer != 1))
         {
             Logger.Warning($"NET00 auth_rejected peer={peer} bytes={data.Length}");
             _api.DisconnectPeer(checked((int)peer));

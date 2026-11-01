@@ -74,7 +74,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             {
                 _previousAuthCallback = api.AuthCallback;
                 _previousAuthTimeout = api.AuthTimeout;
-                _authPayload = System.Text.Encoding.UTF8.GetBytes($"sMPGWM:preflight:{typeof(NetworkManager).Module.ModuleVersionId:N}:{DiagnosticExchange.ProtocolVersion}:{sMPGWM.Scripts.GameConfigSystem.GameConfig.Version}");
+                _authPayload = Compatibility.Payload();
                 api.AuthTimeout = 10;
                 api.AuthCallback = Callable.From<long, byte[]>(ReceiveAuthentication);
                 api.PeerAuthenticating += AuthenticatePeer;
@@ -120,7 +120,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped) return;
         var api = (SceneMultiplayer)Multiplayer;
-        if (!data.AsSpan().SequenceEqual(_authPayload) || (NetworkRole == NetworkRole.Client && peer != 1))
+        if (!Compatibility.Accept(data) || (NetworkRole == NetworkRole.Client && peer != 1))
         {
             Logger.Warning($"NET00 auth_rejected peer={peer} bytes={data.Length}");
             api.DisconnectPeer(checked((int)peer));

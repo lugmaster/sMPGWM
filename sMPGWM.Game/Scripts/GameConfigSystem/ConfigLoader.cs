@@ -112,6 +112,19 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
         }
     }
 
+    internal System.Collections.Generic.Dictionary<string, string> CaptureValues()
+    {
+        var values = new System.Collections.Generic.Dictionary<string, string>();
+        foreach (var config in new[] { _defaultConfig, _userConfig })
+            foreach (var section in config.GetSections())
+                foreach (var key in config.GetSectionKeys(section))
+                {
+                    var value = GetValue(section, key);
+                    values[$"{section.Length}:{section}{key}"] = $"{value.VariantType}:{GD.VarToStr(value)}";
+                }
+        return values;
+    }
+
     public Variant GetValue(string section, string key)
     {
         if (_userConfig.HasSectionKey(section, key))

@@ -124,11 +124,11 @@ Where supported, compare native Steam identity with lobby membership. Claimed DT
 
 `SteamNetwork` exposes active-session Steam interactions through `IActiveNetwork`, using internal lobby helpers as needed. Menu discovery exposes only snapshots/selection, never active-session state. Inspect installed correlation; serialize each operation kind, correlate lobby IDs where possible and drain canceled work through the Steam runtime helper without retaining exited scenes. Leave late successful membership. Local generations cannot distinguish identical native callbacks. If an uncorrelatable operation never returns, mark that kind unavailable until Steam runtime restart, with a reason; safe operations/LAN remain usable.
 
-**Metadata:** publish/check `game_id` equal to configured `lobby_game_id` (`f6c96d72-6afb-4ac1-a14b-ee12daba65c6`), name, mode, version, protocol/build, original `host_steam_id`, `session_id` and state. `CoOP` is display mode, not pool identity. Initially use `DefaultHostedGameName = "sMPGWM TestLobby"` plus session suffix captured in the request; future input replaces only the base. Lobby/session IDs remain identity.
+**Discovery:** the server browser searches automatically and on refresh with Steam distance Far and equality filters for configured game_id, mode and version. It displays published names (configured base plus random suffix), modes and member counts. Names, host IDs, session IDs, checksums and assembly IDs are not search filters. Search callbacks are serialized and canceled requests drain before reuse; timeout and empty results are visible.
 
-**Host:** create private unjoinable lobby; successful `OnLobbyCreated` records membership, checks metadata writes with state=preparing, creates/checks the server peer on virtual port 0 and assigns it inside `SteamNetwork`. Failed `OnLobbyCreated` or peer creation cleans up and exits to the main menu. Creator `LobbyJoined` is bookkeeping, never another completion/client connection. At checkpoint 5, make the private diagnostic lobby joinable once its endpoint is usable, without advertising a ready game. At checkpoint 13, await fingerprint, initialization and local-host admission before state=ready/public/joinable publication. Publish/update admitted-player count and capacity separately from membership count. Publication failure cleans up with a reason.
+**Host:** create a public lobby, lock it during preparation, publish compatibility and session metadata, and make it joinable after peer creation succeeds. Diagnostic sessions advertise state=diagnostic; production sessions advertise state=ready. Publication failure cleans up with a reason. Future world admission readiness remains part of NET-13.
 
-**Client:** join selected ID; successful `OnLobbyJoined` records membership, revalidates pool/version/protocol/build and diagnostic/gameplay readiness, rejects self/full/stale targets and pins original host/session. Require host membership/current ownership; create/check the peer to that host on virtual port 0, assign inside `SteamNetwork` and await connection/preflight. Failed `OnLobbyJoined`, peer creation or connection cleans up and exits to the main menu. Membership and `CreateClient` success are intermediate. Revalidate on metadata/membership changes; pinned-host departure, owner/session inconsistency or server loss ends the client session. Ownership transfer never migrates the world. Rejoin uses a fresh main-game scene/session locally and fresh admission identity/token against the host's current world/content state.
+**Client:** join the selected lobby ID, then ask Steam for its owner through GetLobbyOwner. No host ID needs to be configured or known before discovery. Pin that owner and the host session, validate their metadata consistency, and compare full effective config/game-data checksums and development settings before opening the socket. Assembly equality is required only in release. Protocol, game ID, mode, version and appropriate readiness remain required. Native authentication enforces compatibility again. Metadata changes, owner transfer and host departure invalidate the session.
 
 **Acceptance:** real exchange with two accounts/devices; single creator completion; cancellation at each stage; late membership cleanup; wrong-pool/self/full/stale targets; construction/metadata/publication failures; host loss/owner transfer; repeated host/exit/retry; no leaked membership/callbacks. Public hosting proves readiness gates and unchanged host/world during client churn. Mandatory Steam startup remains unchanged; session failures never switch transport.
 
@@ -150,29 +150,15 @@ Show unavailable before sampling and stale/unavailable after the response deadli
 
 **Acceptance:** clock tests for known RTT, first sample, 100 then 180 ms -> 110 ms EMA, invalid/duplicate/out-of-order replies, bounded storage and unavailable/stale/reset. Engine tests cover loading, pause/background, stalls, loss/delay/congestion and isolation. Health never extends gameplay deadlines.
 
-### NET-06: gameplay compatibility
+### NET-06: compatibility fingerprints
 
-One versioned typed policy carries logical ID, provider, comparison mode and serializer version; update table and implementation together. Each enabled entry requires exactly one successful provider output. Missing/duplicate/unsupported required entries fail; no directory scanner or silent empty hashes.
+Handshake v2 and Steam metadata share game ID, mode, release version, protocol, development setting, config checksum and game-data checksum. Development peers log assembly identity without requiring equality; release peers require it. Mixed policies reject.
 
-| Entry | Comparison |
-| --- | --- |
-| Effective item categories | Canonical gameplay IDs/relationships; exclude presentation |
-| Effective item definitions | Canonical IDs, gameplay values/references |
-| Future gameplay config overrides | Effective rules after defaults/fallback, once a provider exists |
-| Future passives/effects/weapons/ships | Simulation values only when actually loaded; path constants are insufficient |
-| Future generated definitions | Reserve provider; immutable host-accepted content/revision before use; distribution deferred |
-| Schemas / packaged default files | No standalone hashing; validate locally and compare effective values above |
-| Local config / presentation | Exclude logging, Steam/address/timeout/discovery preferences, cosmetics/labels |
-| Host session settings | Communicate mode/capacity; include future simulation rules in effective gameplay policy, not local preference equality |
-| Player instance state | Future synchronization, not global definition equality |
+Hash every effective configuration value after key fallback with typed encoding and ordinal key ordering, including local logging, addresses, lobby name and reload settings. Hash an explicit inventory of all eight game_data files, including schemas. Item definition/schema text is captured by the loader after reload resolution; remaining definitions and schemas use packaged text. Normalize BOM and line endings, include logical filenames and retain per-file diagnostic hashes. Missing/read-failed inputs prevent publication.
 
-Capture inputs once, validate/build effective models and fingerprint those models. Honor loader semantics: YAML effective user file/default copy; config key fallback. Do not invent per-key YAML merging. Freeze session gameplay data.
+Initialize the lazy item registry before fingerprint publication. Preserve its captured inputs and checksum across reconnects for the process lifetime. Other text formatting and presentation changes intentionally affect compatibility.
 
-Canonical projections include logical ID/serializer version, ordinally sorted entries/ID-keyed collections, gameplay-significant order and invariant numeric/enum/bool/null/default encoding. Reject unsupported/nonfinite values. Exclude presentation deliberately; review/version new simulation fields.
-
-Make `ChecksumGenerator` pure: SHA-256 each canonical input, concatenate fixed-width lowercase digests deterministically, then hash the combination. Empty inventories/read failures return failure, never partial checksums or navigation. Raw path hashing may remain diagnostic. Immutable `SessionFingerprint` carries policy/canonical-format versions and gameplay digest; game/protocol/build checks remain separate. Reset at teardown; static config checksums cannot authorize admission. Report logical mismatches where available; no automatic mod downloads or anti-cheat claim.
-
-**Acceptance:** equal effective overrides/default fallback match; formatting/property order/path/cosmetics are irrelevant; gameplay changes reject. Check required entries, excluded schemas/local config, read/capture failure and reset.
+**Acceptance:** development build differences pass; release build differences and mixed development settings reject. Config/data mismatches and malformed/oversized authentication reject. Equal input order and normalized line endings produce equal hashes.
 
 ### NET-07: explicit initialization
 
@@ -310,3 +296,5 @@ Source controls are removed and clean source was rebuilt/tested. Automatic appro
 - C:/Users/lober/AppData/Local/Temp/sMPGWM-export-bc0b8529793c467baae1ff57ec8fa346
 
 Preserve evidence logs, SHA256 manifests and test results. The old auth package contains removed fault controls; it is not the current clean build. Housekeeping does not block epic implementation.
+
+NET-06 scope update: handshake v2 requires game ID, mode, release version, matching development settings, full effective configuration (including local settings), and all eight game_data definitions and schemas. Item inputs are captured after reload/fallback during loading. Assembly equality is required in release and logged only in development. Fingerprints stay aligned with the process registry across reconnects.

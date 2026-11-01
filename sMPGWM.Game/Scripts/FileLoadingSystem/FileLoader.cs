@@ -9,6 +9,8 @@ namespace sMPGWM.Scripts.FileLoadingSystem;
 
 public static class FileLoader
 {
+    internal static readonly System.Collections.Generic.Dictionary<string, string> CapturedInputs = new();
+
     public static void AbortLoad(DataLoadError error)
     {
         var message = error.ToDisplayString();
@@ -70,6 +72,8 @@ public static class FileLoader
         if (!schemaResult.IsSuccess)
             return LoadResult<DefinitionFileContents>.Failure(schemaResult.Error!);
 
+        CapturedInputs[defaultPath.GetFile()] = definitionResult.Value!;
+        CapturedInputs[schemaPath.GetFile()] = schemaResult.Value!;
         return LoadResult<DefinitionFileContents>.Success(
             new DefinitionFileContents(definitionResult.Value!, schemaResult.Value!));
     }

@@ -39,6 +39,7 @@ public static class GameConfig
             Development = GetConfigValue("general", "development").AsBool();
             LobbyGameId = GetConfigValue("general", "lobby_game_id").AsString();
             MaxPlayers = GetConfigValue("general", "max_players").AsInt32();
+            ConfigDataChecksum = ChecksumGenerator.Compute(ConfigLoader.Instance.CaptureValues());
             Logger.Info("Successfully loaded config values.");
         }
         catch (Exception ex)
@@ -47,6 +48,26 @@ public static class GameConfig
         }
     }
     
+    public static void EnsureCompatibilityData()
+    {
+        if (!string.IsNullOrEmpty(GameDataChecksum)) return;
+        if (string.IsNullOrEmpty(ConfigDataChecksum))
+            throw new InvalidOperationException("Configuration is not loaded.");
+        _ = ItemSystem.ItemRegistry.GetAll();
+        var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoadingSystem.FileLoader.CapturedInputs);
+        foreach (var name in new[] { "EffectDefinitions.yml", "EffectSchemas.yml", "PassiveDefinitions.yml", "PassiveSchemas.yml" })
+        {
+            using var file = FileAccess.Open("res://assets/game_data/" + name, FileAccess.ModeFlags.Read)
+                ?? throw new InvalidOperationException("Missing game data: " + name);
+            inputs[name] = file.GetAsText();
+            if (file.GetError() != Error.Ok) throw new InvalidOperationException("Cannot read game data: " + name);
+        }
+        if (inputs.Count != 8) throw new InvalidOperationException("Incomplete game data inventory.");
+        GameDataChecksum = ChecksumGenerator.Compute(inputs);
+        foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
+        Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={GameDataChecksum}");
+    }
+
     private static Variant GetConfigValue(string section, string key)
     {
         return ConfigLoader.Instance.GetValue(section, key);

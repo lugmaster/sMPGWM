@@ -14,6 +14,8 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
     private const uint SteamAppId = 480;
     private readonly PendingLobbyOperation _create = new();
     private readonly PendingLobbyOperation _join = new();
+    private readonly PendingLobbySearch _search = new();
+    private bool _lobbySearchSubscribed;
     private bool _lobbyCreatedSubscribed;
     private bool _lobbyJoinedSubscribed;
 
@@ -42,6 +44,11 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
 
     public void UnsubscribeLobbyEvents()
     {
+        if (_lobbySearchSubscribed)
+        {
+            Api.LobbyMatchListSignal -= LobbySearchCompleted;
+            _lobbySearchSubscribed = false;
+        }
         if (_lobbyCreatedSubscribed)
         {
             Api.LobbyCreatedSignal -= LobbyCreated;
@@ -59,7 +66,33 @@ public partial class SteamworksHelper : AbstractSingleton<SteamworksHelper>
     {
         SubscribeLobbyEvents();
         return _create.Submit(0, completion,
-            () => Api.CreateLobby(GDExtension.Wrappers.Steam.LobbyType.Private, capacity));
+            () => Api.CreateLobby(GDExtension.Wrappers.Steam.LobbyType.Public, capacity));
+    }
+
+    internal bool SearchLobbies(LobbyDiscovery discovery, Action<long[]> completion)
+    {
+        if (!_lobbySearchSubscribed)
+        {
+            Api.LobbyMatchListSignal += LobbySearchCompleted;
+            _lobbySearchSubscribed = true;
+        }
+        return _search.Submit(completion, () =>
+        {
+            Api.AddRequestLobbyListDistanceFilter(GDExtension.Wrappers.Steam.LobbyDistanceFilter.Far);
+            foreach (var filter in discovery.Filters)
+                Api.AddRequestLobbyListStringFilter(filter.Key, filter.Value,
+                    GDExtension.Wrappers.Steam.LobbyComparison.Equal);
+            Api.RequestLobbyList();
+        });
+    }
+
+    internal void CancelLobbySearch(Action<long[]> completion) => _search.Cancel(completion);
+
+    private void LobbySearchCompleted(Godot.Collections.Array lobbies)
+    {
+        var ids = new long[lobbies.Count];
+        for (var i = 0; i < ids.Length; i++) ids[i] = lobbies[i].AsInt64();
+        _search.Complete(ids);
     }
 
     public bool JoinSessionLobby(ulong lobby, Action<long, ulong> completion)

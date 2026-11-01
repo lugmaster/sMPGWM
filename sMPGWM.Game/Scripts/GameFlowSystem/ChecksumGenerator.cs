@@ -1,43 +1,17 @@
-﻿using System.Security.Cryptography;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
-using Godot;
 
 namespace sMPGWM.Scripts.GameFlowSystem;
 
 public static class ChecksumGenerator
 {
-    public static string ComputeCombinedHash(params string[] filePaths)
-    {
-        var sb = new StringBuilder();
+    public static string Hash(string text) => Convert.ToHexString(SHA256.HashData(
+        Encoding.UTF8.GetBytes(text.TrimStart('\uFEFF').Replace("\r\n", "\n").Replace("\r", "\n")))).ToLowerInvariant();
 
-        foreach (var path in filePaths)
-        {
-            if (!FileAccess.FileExists(path))
-            {
-                GameFlowManager.Instance.QuitWithOsError($"Cannot compute hash. Missing file: {path}");
-                continue;
-            }
-
-            var content = FileAccess.GetFileAsString(path);
-            var hash = ComputeSha256(content);
-            sb.Append(hash);
-        }
-
-        return ComputeSha256(sb.ToString());
-    }
-
-    private static string ComputeSha256(string input)
-    {
-        var bytes = Encoding.UTF8.GetBytes(input);
-        var hash = SHA256.HashData(bytes);
-        return ConvertToHex(hash);
-    }
-
-    private static string ConvertToHex(byte[] bytes)
-    {
-        var sb = new StringBuilder();
-        foreach (var b in bytes)
-            sb.Append(b.ToString("x2"));
-        return sb.ToString();
-    }
+    public static string Compute(IReadOnlyDictionary<string, string> inputs) =>
+        Hash(string.Concat(inputs.OrderBy(x => x.Key, StringComparer.Ordinal)
+            .Select(x => $"{x.Key.Length}:{x.Key}:{Hash(x.Value)}\n")));
 }

@@ -172,7 +172,7 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             SetData(lobbyId, "host_steam_id", SteamworksHelper.Api.GetSteamId().ToString());
             SetData(lobbyId, "session_id", NetworkManager.Instance.HostSession);
             LogBuildIdentity(lobbyId);
-            SetData(lobbyId, "build", typeof(NetworkManager).Module.ModuleVersionId.ToString("N"));
+            foreach (var field in Compatibility.Capture()) SetData(lobbyId, field.Key, field.Value);
             SetData(lobbyId, "state", "preparing");
 
             Logger.Debug(
@@ -216,7 +216,8 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             var lobbyId = SteamworksHelper.Api.GetLobbyOwner(checked((long)lobby));
             _pinnedHost = checked((ulong)lobbyId);
             _pinnedSession = SteamworksHelper.Api.GetLobbyData(checked((long)lobby), "session_id");
-            if (Startup?.Diagnostic == true && !ValidDiagnosticLobby(lobby))
+            // Steam supplies the owner only after lobby entry. It is never a discovery filter.
+            if (!ValidDiagnosticLobby(lobby))
             {
                 FailTransport($"Steam lobby is stale or incompatible: {_lobbyValidationFailure}");
                 return;
@@ -285,6 +286,8 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             return RejectLobby("session_id is missing or invalid.");
 
         LogBuildIdentity(lobby);
+        if (!Compatibility.Matches(key => SteamworksHelper.Api.GetLobbyData(checked((long)lobby), key)))
+            return RejectLobby("Compatibility mismatch; see compatibility log.");
         string? firstMismatch = null;
         foreach (var (key, expected) in new[]
         {
@@ -292,9 +295,8 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
             ("session_id", _pinnedSession),
             ("game_id", GameConfig.LobbyGameId),
             ("version", GameConfig.Version),
-            ("build", typeof(NetworkManager).Module.ModuleVersionId.ToString("N")),
             ("protocol", DiagnosticExchange.ProtocolVersion.ToString()),
-            ("state", "diagnostic")
+            ("state", Startup.Diagnostic ? "diagnostic" : "ready")
         })
         {
             var actual = SteamworksHelper.Api.GetLobbyData(checked((long)lobby), key);
@@ -322,11 +324,11 @@ public partial class SteamNetwork : BaseNetwork, IActiveNetwork
 
     private void OnLobbyDataUpdate(long success, long lobby, long member)
     {
-        if (State == TransportState.Stopped || Hosting || _currentLobbyId != (ulong)lobby || member != lobby || Startup?.Diagnostic != true) return;
+        if (State == TransportState.Stopped || Hosting || _currentLobbyId != (ulong)lobby || member != lobby) return;
         if (success != 1)
-            FailTransport("Steam diagnostic lobby metadata update failed.");
+            FailTransport("Steam lobby metadata update failed.");
         else if (!ValidDiagnosticLobby(checked((ulong)lobby)))
-            FailTransport($"Steam diagnostic lobby changed: {_lobbyValidationFailure}");
+            FailTransport($"Steam lobby changed: {_lobbyValidationFailure}");
     }
 
     private void ConnectSocket(ulong steamId)
