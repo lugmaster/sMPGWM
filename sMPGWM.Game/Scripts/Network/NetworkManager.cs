@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Network.NetworkInternal;
@@ -237,7 +238,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         var peer = Multiplayer.GetRemoteSenderId();
         if (!IsHost() || !_joins.TryGetValue(peer, out var state) || state != JoinState.Spawning) return;
-        if (RpcId(peer, nameof(JoinComplete), sMPGWM.Scripts.GameConfigSystem.GameConfig.LobbyName) != Error.Ok)
+        if (RpcId(peer, nameof(JoinComplete), GameConfig.LobbyName) != Error.Ok)
         {
             RejectJoin(peer, "Join completion send failed.");
             return;
