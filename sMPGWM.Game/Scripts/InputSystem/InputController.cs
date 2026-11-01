@@ -121,7 +121,10 @@ public partial class InputController : AbstractSingleton<InputController>
     private void ResetInputState()
     {
         for (var i = 0; i < _inputModes.Count; i++)
-            _inputModes[i].ResetState();
+        {
+            // Automatic braking is a persistent setting, not a held input.
+            if (_inputModes[i] != _enableAutoBreaking) _inputModes[i].ResetState();
+        }
 
         Direction = Vector2.Zero;
         TargetSwitchJustReleased = false;
