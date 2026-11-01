@@ -8,6 +8,7 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Remove="Scripts\Network\legacy\**\*.cs" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
         <PackageReference Include="YamlDotNet" Version="18.1.0" />

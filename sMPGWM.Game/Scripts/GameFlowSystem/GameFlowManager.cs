@@ -38,7 +38,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         if (state == GameFlowState.Loading)
             ModalController.Instance.ShowLoadingScreen(() =>
                 GetTree().CurrentScene?.SceneFilePath == GameFlowSceneProvider.MainGameScene.ResourcePath
-                    ? (50, "Preparing world and connecting session...")
+                    ? (50, "Connecting session and spawning players...")
                     : (0, "Loading game scene..."));
         else
             ModalController.Instance.HideLoadingScreen();

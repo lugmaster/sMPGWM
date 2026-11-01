@@ -22,7 +22,7 @@ public class GodotIntegrationTests
             CopyTree(Path.Combine(game, "assets/ui/icons/atlases"), Path.Combine(staging, "assets/ui/icons/atlases"));
             foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "icons_0.png-*"))
                 Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
-            foreach (var file in new[] { "Scripts/Util/AbstractSingleton.cs", "Scripts/Util/Mocks/HeadlessTestHost.cs", "Scripts/Util/UiComponents/IconDefinitions.cs" })
+            foreach (var file in new[] { "Scripts/Util/AbstractSingleton.cs", "Scripts/Util/Mocks/HeadlessTestHost.cs", "Scripts/Util/UiComponents/IconDefinitions.cs", "Scripts/Network/MpManager.cs", "Scripts/Network/MpController.cs" })
                 Copy(Path.Combine(game, file), Path.Combine(staging, file));
             File.WriteAllText(Path.Combine(staging, "project.godot"), """
                 config_version=5

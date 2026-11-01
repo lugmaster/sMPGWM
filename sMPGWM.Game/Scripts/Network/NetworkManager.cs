@@ -23,6 +23,12 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private string? _helloToken;
     private ulong _replyDeadline;
     private readonly HashSet<int> _answered = new();
+    private enum JoinState { Connected, Verified, Spawning, Ready }
+    private readonly Dictionary<int, JoinState> _joins = new();
+    private readonly Dictionary<int, ulong> _joinDeadlines = new();
+    private bool _spawnRequested;
+    private bool _spawnApplied;
+    private ulong JoinDeadline() => Time.GetTicksMsec() + (ulong)Math.Max(1, _startup!.ConnectionTimeoutMs);
 
     protected override void OnReady()
     {
@@ -53,6 +59,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             api.PeerAuthenticating += AuthenticatePeer;
             api.PeerAuthenticationFailed += AuthenticationFailed;
             api.PeerDisconnected += PeerLeft;
+            api.PeerConnected += PeerJoined;
             _activeNetwork = _startup.Type == NetworkType.Lan
                 ? new EnetNetwork { Startup = _startup }
                 : new SteamNetwork { Startup = _startup };
@@ -108,6 +115,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_startup!.Role == NetworkRole.Host)
         {
             Logger.Info("Network Host: Listening");
+            MpManager.Instance.Spawn(1, _startup.Player);
             GameFlowManager.Instance.CompleteLoading();
             return;
         }
@@ -125,6 +133,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         var sender = Multiplayer.GetRemoteSenderId();
         if (!IsHost() || !Guid.TryParseExact(token, "N", out _) ||
             Array.IndexOf(Multiplayer.GetPeers(), sender) < 0 || !_answered.Add(sender)) return;
+        _joins[sender] = JoinState.Verified;
+        _joinDeadlines[sender] = JoinDeadline();
         var result = RpcId(sender, nameof(HelloReply), token);
         if (result != Error.Ok)
         {
@@ -139,18 +149,152 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_stopped || _helloToken == null || Multiplayer.GetRemoteSenderId() != 1 ||
             token != _helloToken || Time.GetTicksMsec() >= _replyDeadline) return;
         _helloToken = null;
-        _replyDeadline = 0;
+        _replyDeadline = JoinDeadline();
         Logger.Info("Network Client: host round trip complete");
+        _spawnRequested = true;
+        Logger.Info($"NET spawn_request message='{_startup!.Player.Message}'");
+        if (RpcId(1, nameof(RequestSpawn), _startup.Player.ToVariant()) != Error.Ok)
+            FailSession("Spawn request failed.");
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void RequestSpawn(Variant payload)
+    {
+        var peer = Multiplayer.GetRemoteSenderId();
+        if (!IsHost() || !_joins.TryGetValue(peer, out var state) || state != JoinState.Verified) return;
+        if (!PlayerStartupData.TryFromVariant(payload, out var data))
+        {
+            RejectJoin(peer, "Invalid player startup payload.");
+            return;
+        }
+        try
+        {
+            MpManager.Instance.Spawn(peer, data);
+            // All spawn messages share the reliable channel: snapshot, later additions, then completion.
+            var snapshot = new Godot.Collections.Dictionary<int, string>();
+            foreach (var entry in MpManager.Instance.StartupData) snapshot.Add(entry.Key, entry.Value.Message);
+            if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot) != Error.Ok)
+            {
+                RejectJoin(peer, "Initial spawn send failed.");
+                return;
+            }
+            _joins[peer] = JoinState.Spawning;
+            _joinDeadlines[peer] = JoinDeadline();
+            foreach (var other in new List<int>(_joins.Keys))
+                if (other != peer && _joins[other] is JoinState.Spawning or JoinState.Ready)
+                    if (RpcId(other, nameof(ReceiveSpawn), peer, data.ToVariant()) != Error.Ok)
+                        RejectJoin(other, "Spawn announcement failed.");
+        }
+        catch (Exception e) { RejectJoin(peer, $"Spawning failed: {e.Message}"); }
+    }
+
+    private bool IsHostMessage() => !_stopped && _startup?.Role == NetworkRole.Client &&
+        Multiplayer.GetRemoteSenderId() == 1;
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReceiveInitialSpawns(Godot.Collections.Dictionary<int, string> snapshot)
+    {
+        if (!IsHostMessage() || !_spawnRequested || _spawnApplied) return;
+        var localPeer = Multiplayer.GetUniqueId();
+        if (!snapshot.ContainsKey(1) || !snapshot.TryGetValue(localPeer, out var ownMessage) ||
+            ownMessage != _startup!.Player.Message || snapshot.Count > 10)
+        {
+            FailSession("Invalid initial spawn snapshot.");
+            return;
+        }
+        try
+        {
+            foreach (var entry in snapshot)
+            {
+                if (entry.Key <= 0 || !PlayerStartupData.TryFromVariant(entry.Value, out var data))
+                    throw new InvalidOperationException("Invalid spawn record.");
+                MpManager.Instance.Spawn(entry.Key, data);
+            }
+            _spawnApplied = true;
+            if (RpcId(1, nameof(ConfirmSpawnReady)) != Error.Ok) FailSession("Spawn acknowledgement failed.");
+        }
+        catch (Exception e) { FailSession($"Applying initial spawns failed: {e.Message}"); }
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReceiveSpawn(int peer, Variant payload)
+    {
+        if (!IsHostMessage() || !_spawnApplied) return;
+        try
+        {
+            if (peer <= 0 || !PlayerStartupData.TryFromVariant(payload, out var data))
+                throw new InvalidOperationException("Invalid spawn record.");
+            MpManager.Instance.Spawn(peer, data);
+        }
+        catch (Exception e) { FailSession($"Applying spawn failed: {e.Message}"); }
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ConfirmSpawnReady()
+    {
+        var peer = Multiplayer.GetRemoteSenderId();
+        if (!IsHost() || !_joins.TryGetValue(peer, out var state) || state != JoinState.Spawning) return;
+        if (RpcId(peer, nameof(JoinComplete)) != Error.Ok)
+        {
+            RejectJoin(peer, "Join completion send failed.");
+            return;
+        }
+        _joins[peer] = JoinState.Ready;
+        _joinDeadlines.Remove(peer);
+        Logger.Info($"NET join_ready peer={peer}");
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void JoinComplete()
+    {
+        if (!IsHostMessage() || !_spawnRequested || !_spawnApplied || Time.GetTicksMsec() >= _replyDeadline) return;
+        _spawnRequested = false;
+        _replyDeadline = 0;
+        Logger.Info("NET local spawn complete; entering game");
         GameFlowManager.Instance.CompleteLoading();
+    }
+
+    private void PeerJoined(long peer)
+    {
+        if (!IsHost()) return;
+        _joins[(int)peer] = JoinState.Connected;
+        _joinDeadlines[(int)peer] = JoinDeadline();
+    }
+
+    private void RejectJoin(int peer, string reason)
+    {
+        Logger.Warning($"NET join_rejected peer={peer}: {reason}");
+        PeerLeft(peer);
+        ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
     }
 
     public override void _PhysicsProcess(double delta)
     {
         if (!_stopped && _replyDeadline != 0 && Time.GetTicksMsec() >= _replyDeadline)
-            FailSession("Host reply timed out.");
+            FailSession(_spawnRequested ? "Player spawning timed out." : "Host reply timed out.");
+        if (!IsHost()) return;
+        foreach (var peer in new List<int>(_joinDeadlines.Keys))
+            if (_joinDeadlines.TryGetValue(peer, out var deadline) && Time.GetTicksMsec() >= deadline)
+                RejectJoin(peer, "Player join timed out.");
     }
 
-    private void PeerLeft(long peer) => _answered.Remove((int)peer);
+    private void PeerLeft(long peer)
+    {
+        _answered.Remove((int)peer);
+        _joins.Remove((int)peer);
+        _joinDeadlines.Remove((int)peer);
+        MpManager.Instance?.Despawn((int)peer);
+        if (!IsHost()) return;
+        foreach (var other in _joins)
+            if (other.Value is JoinState.Spawning or JoinState.Ready)
+                RpcId(other.Key, nameof(ReceiveDespawn), (int)peer);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReceiveDespawn(int peer)
+    {
+        if (IsHostMessage() && _spawnApplied) MpManager.Instance.Despawn(peer);
+    }
 
     public void FailSession(string reason)
     {
@@ -166,6 +310,11 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _helloToken = null;
         _replyDeadline = 0;
         _answered.Clear();
+        _joins.Clear();
+        _joinDeadlines.Clear();
+        _spawnRequested = false;
+        _spawnApplied = false;
+        MpManager.Instance?.Clear();
         try
         {
             _activeNetwork?.Cleanup();
@@ -181,6 +330,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
                 api.PeerAuthenticating -= AuthenticatePeer;
                 api.PeerAuthenticationFailed -= AuthenticationFailed;
                 api.PeerDisconnected -= PeerLeft;
+                api.PeerConnected -= PeerJoined;
                 api.AuthCallback = _previousAuthCallback;
                 api.AuthTimeout = _previousAuthTimeout;
                 api.AllowObjectDecoding = _previousObjectDecoding;
