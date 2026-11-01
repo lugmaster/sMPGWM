@@ -35,6 +35,13 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     {
         if (_gameFlowState == state) return;
         _gameFlowState = state;
+        if (state == GameFlowState.Loading)
+            ModalController.Instance.ShowLoadingScreen(() =>
+                GetTree().CurrentScene?.SceneFilePath == GameFlowSceneProvider.MainGameScene.ResourcePath
+                    ? (50, "Preparing world and connecting session...")
+                    : (0, "Loading game scene..."));
+        else
+            ModalController.Instance.HideLoadingScreen();
         Logger.Info($"Game flow: {state}");
         StateChanged?.Invoke(state);
     }
