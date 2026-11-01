@@ -16,6 +16,7 @@ config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 
 [autoload]
 
+ModalController="*res://Scripts/Util/UiComponents/ModalController.cs"
 GameFlowManager="*uid://dnk44tr6vs3ar"
 ConfigLoader="*res://Scripts/GameConfigSystem/ConfigLoader.cs"
 IconDefinitions="*res://Scripts/Util/UiComponents/IconDefinitions.cs"

@@ -49,7 +49,7 @@ public partial class GameOverlayMenu : BaseMenu
             focused.ReleaseFocus();
     }
 
-    protected void RequestClose()
+    protected virtual void RequestClose()
     {
         OnMenuClosed?.Invoke();
     }

@@ -4,6 +4,7 @@ using Godot;
 using sMPGWM.scripts.Network;
 using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GameFlowSystem;
@@ -90,10 +91,6 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         var combinedReason = showAsError
             ? $"Error: {reason}\nClick to return to Main Menu."
             : $"Success: {reason}\nClick to return to Main Menu.";
-        // StartMenuManager.Instance.ShowNotificationBlocking(
-        //     combinedReason,
-        //     () => Instance.CallDeferred(nameof(QuitToStartMenuInternal))
-        // );
         if (showAsError)
         {
             Logger.Error(combinedReason);
@@ -104,7 +101,12 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
                 $"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuBlocking)} completed with {nameof(combinedReason)}={combinedReason}.");
         }
 
-        Instance.CallDeferred(nameof(QuitToStartMenuInternal), ++_navigationGeneration);
+        var generation = ++_navigationGeneration;
+        ModalController.Instance.ShowAlert(
+            GD.Load<Texture2D>("res://assets/mocks/diamond.png"),
+            showAsError ? "Error" : "Success",
+            combinedReason,
+            () => CallDeferred(nameof(QuitToStartMenuInternal), generation));
     }
 
     public void QuitGame(string reason)
