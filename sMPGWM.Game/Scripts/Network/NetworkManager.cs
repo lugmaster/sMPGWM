@@ -237,7 +237,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         var peer = Multiplayer.GetRemoteSenderId();
         if (!IsHost() || !_joins.TryGetValue(peer, out var state) || state != JoinState.Spawning) return;
-        if (RpcId(peer, nameof(JoinComplete)) != Error.Ok)
+        if (RpcId(peer, nameof(JoinComplete), sMPGWM.Scripts.GameConfigSystem.GameConfig.LobbyName) != Error.Ok)
         {
             RejectJoin(peer, "Join completion send failed.");
             return;
@@ -257,6 +257,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _replyDeadline = 0;
         Logger.Info("NET local spawn complete; entering game");
         GameFlowManager.Instance.CompleteLoading();
+        MpManager.Instance.NotifyLocalJoin(gameName);
     }
 
     private void PeerJoined(long peer)
