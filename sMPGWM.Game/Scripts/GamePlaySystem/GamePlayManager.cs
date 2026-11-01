@@ -21,6 +21,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     private PlayerActionController _playerActionController = null!;
     private readonly PlayerInputPolicy _inputPolicy = new();
     private MainGameState _gameState = MainGameState.Inactive;
+    private double _mockMessageGameplaySeconds;
+    private double _nextMockMessageLogSeconds = 3.0;
+    private bool _mockAcknowledgementSent;
 
     public event Action<MainGameState>? OnGameStateChanged;
 
@@ -74,6 +77,24 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         ApplyPlayerInputAvailability(_inputPolicy.CanControlPlayer);
         GameFlowManager.Instance.StateChanged += NetworkStateChanged;
         NetworkStateChanged(GameFlowManager.Instance.GameFlowState);
+    }
+
+    public override void _Process(double delta)
+    {
+        if (GameState != MainGameState.Active || _mockAcknowledgementSent) return;
+
+        _mockMessageGameplaySeconds += delta;
+        if (_mockMessageGameplaySeconds >= _nextMockMessageLogSeconds)
+        {
+            Logger.Info($"Mock message timer: {_mockMessageGameplaySeconds:F1}/30 seconds of active gameplay.");
+            _nextMockMessageLogSeconds += 3.0;
+        }
+        if (_mockMessageGameplaySeconds < 30.0) return;
+
+        _mockAcknowledgementSent = true;
+        Logger.Info("Mock message timer: sending acknowledgement message.");
+        MessageMock.SendAcknowledgementMessage(MessageController);
+        Logger.Info("Mock message timer: send completed.");
     }
 
     protected override void OnExitTree()
