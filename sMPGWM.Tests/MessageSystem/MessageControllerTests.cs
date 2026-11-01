@@ -3,11 +3,11 @@ using sMPGWM.Scripts.GamePlaySystem;
 
 namespace sMPGWM.Tests.MessageSystem;
 
-public class MessageStoreTests
+public class MessageControllerTests
 {
-    private static MessageStore Create()
+    private static MessageController Create()
     {
-        var store = new MessageStore();
+        var store = new MessageController();
         store.RegisterSender(new MessageSender("a", "Sender"));
         store.RegisterSender(new MessageSender("b", "Sender"));
         return store;
@@ -90,27 +90,31 @@ public class MessageStoreTests
     public void Acknowledgement_IsIndependentOfReadingAndProcessesOneArrivalAtATime()
     {
         using var store = Create();
-        using var queue = new MessageAcknowledgements(store);
         store.Receive("first", "a", "", "", MessageType.Blocking);
         store.Receive("ordinary", "a", "", "", MessageType.NonBlocking);
         store.Receive("second", "b", "", "", MessageType.Blocking);
+        Assert.That(store.Snapshot.Find("ordinary")!.OutstandingAcknowledgement, Is.False);
+        Assert.That(store.Snapshot.Find("first")!.OutstandingAcknowledgement, Is.True);
+        var beforeAcknowledgement = store.Snapshot;
         store.MarkRead("first");
         store.MarkRead("second");
-        Assert.That(queue.Current!.Id, Is.EqualTo("first"));
+        Assert.That(store.PendingAcknowledgement!.Id, Is.EqualTo("first"));
         Assert.That(store.Receive("first", "a", "", "", MessageType.Blocking), Is.False);
-        queue.AcknowledgeCurrent();
-        Assert.That(queue.Current!.Id, Is.EqualTo("second"));
-        queue.AcknowledgeCurrent();
-        Assert.That(queue.Current, Is.Null);
+        store.AcknowledgeCurrent();
+        Assert.That(store.Snapshot.Find("first")!.OutstandingAcknowledgement, Is.False);
+        Assert.That(beforeAcknowledgement.Find("first")!.OutstandingAcknowledgement, Is.True);
+        Assert.That(store.PendingAcknowledgement!.Id, Is.EqualTo("second"));
+        store.AcknowledgeCurrent();
+        Assert.That(store.PendingAcknowledgement, Is.Null);
         store.MarkRead("ordinary");
-        Assert.That(queue.Current, Is.Null);
+        Assert.That(store.PendingAcknowledgement, Is.Null);
     }
 
     [Test]
     public void ObserverFailure_DoesNotSkipOtherObserversAndReentrantWritesAreRejected()
     {
         var errors = new List<Exception>();
-        using var store = new MessageStore(errors.Add);
+        using var store = new MessageController(errors.Add);
         store.RegisterSender(new MessageSender("a", "A"));
         store.Changed += _ => throw new InvalidOperationException();
         var observed = false;

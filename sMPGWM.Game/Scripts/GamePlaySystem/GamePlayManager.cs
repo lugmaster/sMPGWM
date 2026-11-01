@@ -32,17 +32,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     private InventoryEquipmentTransferService IeTransferService { get; set; } = null!;
     public ItemHotbarController HotbarController { get; private set; } = null!;
 
-    public MessageStore MessageStore { get; private set; } = null!;
-    private MessageAcknowledgements _acknowledgements = null!;
-
-    private void RefreshAcknowledgement()
-    {
-        var required = _acknowledgements.Current;
-        _inputPolicy.SetHasPendingAcknowledgement(required != null);
-        if (GameState == MainGameState.Active) _canvas.PresentRequiredMessage(required);
-    }
-
-    private void AcknowledgeMessage() => _acknowledgements.AcknowledgeCurrent();
+    public MessageController MessageController { get; private set; } = null!;
 
     [Export] public bool PopulateMockInventory { get; set; } = true;
 
@@ -57,13 +47,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         IeTransferService = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
-        MessageStore = new MessageStore(exception => Logger.Error($"Message observer failed: {exception}"));
-        _acknowledgements = new MessageAcknowledgements(MessageStore);
-        _acknowledgements.Changed += RefreshAcknowledgement;
-        _canvas.MessageAcknowledged += AcknowledgeMessage;
-        MessageStore.RegisterSender(new MessageSender("system", "System"));
-        MessageStore.Receive("welcome", "system", "Welcome", "Welcome, this is test message", MessageType.NonBlocking);
-        _canvas.BindMessages(MessageStore);
+        MessageController = new MessageController(_canvas, _inputPolicy,
+            exception => Logger.Error($"Message observer failed: {exception}"));
+        MessageMock.PopulateWelcomeMessage(MessageController);
         _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
         _canvas.BindInventory(InventoryController, EquipmentController, IeTransferService);
         _inputController = InputController.Instance;
@@ -95,11 +81,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         GameFlowManager.Instance.StateChanged -= NetworkStateChanged;
         if (_canvas != null)
         {
-            _canvas.MessageAcknowledged -= AcknowledgeMessage;
-            _canvas.EndMessageSession();
-            _acknowledgements?.Dispose();
-            MessageStore?.Dispose();
-            _inputPolicy.SetHasPendingAcknowledgement(false);
+            MessageController?.Dispose();
             _canvas.UnbindInventory();
             _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
         }
@@ -149,7 +131,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (newGameState != MainGameState.Active) SetInventoryEditing(false);
         _inputPolicy.SetSessionActive(newGameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(newGameState == MainGameState.Active);
-        if (newGameState == MainGameState.Active) RefreshAcknowledgement();
+        MessageController.SetActive(newGameState == MainGameState.Active);
         OnGameStateChanged?.Invoke(newGameState);
     }
 

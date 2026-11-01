@@ -11,7 +11,7 @@ namespace sMPGWM.Scripts.UiSystem.MessageStackSystem;
 public partial class MessageMenu : GameOverlayMenu
 {
     protected override string ScreenTitle => "Messages";
-    private MessageStore? _store;
+    private MessageController? _store;
     private MessageViewState _state = new();
     private string? _requiredId;
     private VBoxContainer _senders = null!;
@@ -33,7 +33,7 @@ public partial class MessageMenu : GameOverlayMenu
     private string? _revealId;
     internal event Action? Acknowledged;
 
-    internal void Bind(MessageStore? store, MessageViewState state)
+    internal void Bind(MessageController? store, MessageViewState state)
     {
         Unbind();
         _state = state;

@@ -16,13 +16,13 @@ namespace sMPGWM.Scripts.UiSystem;
 
 public partial class UiCanvas : CanvasLayer
 {
-    private MessageStore? _messages;
+    private MessageController? _messages;
     private MessageMenu? _messageMenu;
     private MessageViewState _messageViewState = new();
     private string? _requiredMessageId;
     internal event Action? MessageAcknowledged;
 
-    internal void BindMessages(MessageStore store)
+    internal void BindMessages(MessageController store)
     {
         if (_requiredMessageId != null)
         {

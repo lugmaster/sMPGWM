@@ -1,10 +1,12 @@
 
 using System;
 using System.Collections.Generic;
+using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.UiSystem;
 
 namespace sMPGWM.Scripts.MessageSystem;
 
-public sealed class MessageStore : IDisposable
+public sealed class MessageController : IDisposable
 {
     private readonly Dictionary<string, MessageSender> _senders = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PlayerMessage> _messages = new(StringComparer.Ordinal);
@@ -12,10 +14,55 @@ public sealed class MessageStore : IDisposable
     private bool _publishing;
     private bool _disposed;
     private long _sequence;
+    private UiCanvas? _canvas;
+    private PlayerInputPolicy? _inputPolicy;
+    private bool _active;
+
+    public PlayerMessage? PendingAcknowledgement
+    {
+        get
+        {
+            PlayerMessage? first = null;
+            foreach (var message in _messages.Values)
+                if (message.OutstandingAcknowledgement &&
+                    (first == null || message.ArrivalSequence < first.ArrivalSequence)) first = message;
+            return first;
+        }
+    }
+
+    internal MessageController(UiCanvas canvas, PlayerInputPolicy inputPolicy, Action<Exception> reportObserverError)
+        : this(reportObserverError)
+    {
+        _canvas = canvas;
+        _inputPolicy = inputPolicy;
+        canvas.MessageAcknowledged += AcknowledgeCurrent;
+        canvas.BindMessages(this);
+    }
+
+    public void SetActive(bool active)
+    {
+        if (_disposed) return;
+        _active = active;
+        if (active) RefreshAcknowledgement();
+    }
+
+    private void RefreshAcknowledgement()
+    {
+        var required = PendingAcknowledgement;
+        _inputPolicy?.SetHasPendingAcknowledgement(required != null);
+        if (_active) _canvas?.PresentRequiredMessage(required);
+    }
+
+    internal void AcknowledgeCurrent()
+    {
+        if (_disposed || _publishing || PendingAcknowledgement is not { } message) return;
+        _messages[message.Id] = message with { OutstandingAcknowledgement = false };
+        Publish(acknowledgementChanged: true);
+    }
     public MessageSnapshot Snapshot { get; private set; } = new(Array.Empty<PlayerMessage>());
     public event Action<MessageSnapshot>? Changed;
 
-    public MessageStore(Action<Exception>? reportObserverError = null) => _reportObserverError = reportObserverError;
+    public MessageController(Action<Exception>? reportObserverError = null) => _reportObserverError = reportObserverError;
 
     public bool RegisterSender(MessageSender sender)
     {
@@ -36,8 +83,8 @@ public sealed class MessageStore : IDisposable
         if (!_senders.TryGetValue(senderId, out var sender)) throw new ArgumentException("Unknown sender.", nameof(senderId));
         if (_disposed || _publishing || _messages.ContainsKey(id)) return false;
         _messages.Add(id, new PlayerMessage(id, sender, subject, body, receivedAt ?? DateTimeOffset.UtcNow,
-            ++_sequence, type, false));
-        Publish();
+            ++_sequence, type, false, type == MessageType.Blocking));
+        Publish(acknowledgementChanged: type == MessageType.Blocking);
         return true;
     }
 
@@ -49,7 +96,7 @@ public sealed class MessageStore : IDisposable
         return true;
     }
 
-    private void Publish()
+    private void Publish(bool acknowledgementChanged = false)
     {
         var messages = new PlayerMessage[_messages.Count];
         _messages.Values.CopyTo(messages, 0);
@@ -57,6 +104,7 @@ public sealed class MessageStore : IDisposable
         _publishing = true;
         try
         {
+            if (acknowledgementChanged) RefreshAcknowledgement();
             if (Changed == null) return;
             foreach (Action<MessageSnapshot> observer in Changed.GetInvocationList())
                 try { observer(Snapshot); }
@@ -69,5 +117,18 @@ public sealed class MessageStore : IDisposable
         finally { _publishing = false; }
     }
 
-    public void Dispose() { _disposed = true; Changed = null; }
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        if (_canvas != null)
+        {
+            _canvas.MessageAcknowledged -= AcknowledgeCurrent;
+            _canvas.EndMessageSession();
+        }
+        _inputPolicy?.SetHasPendingAcknowledgement(false);
+        _canvas = null;
+        _inputPolicy = null;
+        Changed = null;
+    }
 }
