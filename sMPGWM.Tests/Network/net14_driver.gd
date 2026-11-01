@@ -1,9 +1,33 @@
 extends Node
 
-func _receive_auth(_peer: int, _data: PackedByteArray) -> void:
+class DelayedHost extends Node:
+    var sender := 0
+    var token := ""
+
+    @rpc("any_peer", "call_remote", "reliable")
+    func Hello(value: String) -> void:
+        sender = multiplayer.get_remote_sender_id()
+        token = value
+        print("NET hello received")
+
+    @rpc("authority", "call_remote", "reliable")
+    func HelloReply(_value: String) -> void:
+        pass
+
+var fake_host: DelayedHost
+
+func _ready() -> void:
+    print("NET driver ready")
+
+func _authenticate(peer: int, data: PackedByteArray) -> void:
+    var api := multiplayer as SceneMultiplayer
+    assert(api.send_auth(peer, data) == OK)
+    assert(api.complete_auth(peer) == OK)
+
+func _ignore_auth(_peer: int, _data: PackedByteArray) -> void:
     pass
 
-# @test-context: drives production scene lifecycle from the external integration test.
+# Drives production state transitions; only the delayed server is a test double.
 func _process(_delta: float) -> void:
     var path := OS.get_environment("NET14_COMMAND_FILE")
     if path.is_empty() or not FileAccess.file_exists(path):
@@ -15,86 +39,54 @@ func _process(_delta: float) -> void:
     if command.begins_with("auth|"):
         var parts := command.split("|")
         var api := multiplayer as SceneMultiplayer
-        api.auth_callback = _receive_auth
-        # Longer than the production host deadline: only the host may end this wait.
+        api.auth_callback = _ignore_auth
         api.auth_timeout = 30.0
-        api.peer_authentication_failed.connect(func(_peer: int):
-            var evidence := FileAccess.open(path + ".auth-failed", FileAccess.WRITE)
-            evidence.store_string("disconnected"))
         if parts[1] == "malformed":
             api.peer_authenticating.connect(func(peer: int):
-                assert(api.send_auth(peer, "invalid-auth-marker".to_utf8_buffer()) == OK))
+                assert(api.send_auth(peer, "invalid".to_utf8_buffer()) == OK))
         var peer := ENetMultiplayerPeer.new()
         assert(peer.create_client("127.0.0.1", int(parts[2])) == OK)
         api.multiplayer_peer = peer
         return
-    if command.begins_with("reply|"):
-        var parts := command.split("|")
-        manager.get_node("SessionProtocol").rpc_id(int(parts[1]), "DiagnosticReply", int(parts[2]), parts[3], parts[4], parts[5])
+    if command.begins_with("fake-host|"):
+        var root := Node.new()
+        root.name = "MainGame"
+        get_tree().root.add_child(root)
+        fake_host = DelayedHost.new()
+        fake_host.name = "NetworkManager"
+        root.add_child(fake_host)
+        var api := multiplayer as SceneMultiplayer
+        api.auth_callback = _authenticate
+        var peer := ENetMultiplayerPeer.new()
+        assert(peer.create_server(int(command.split("|")[1]), 9) == OK)
+        api.multiplayer_peer = peer
+        print("NET fake host ready")
         return
     match command:
-        "normal-wait":
-            flow.call("StartGame", 1, 0)
-            await get_tree().scene_changed
+        "reply", "wrong-reply":
+            fake_host.rpc_id(fake_host.sender, "HelloReply", fake_host.token if command == "reply" else "wrong")
+        "check-loading":
+            assert(flow.get("GameFlowState") == 1)
             assert(get_node("/root/MainGame").get("GameState") == 1)
-            await get_tree().create_timer(0.3).timeout
-            assert(get_node("/root/MainGame").get("GameState") == 1)
-            print("NET lifecycle gameplay inactive while connecting")
-        "normal-host", "normal-client", "normal-steam-host":
-            flow.call("StartGame", 1 if command == "normal-client" else 0, 1 if command == "normal-steam-host" else 0)
-            await get_tree().scene_changed
-            var deadline = Time.get_ticks_msec() + 10000
-            while get_node("/root/MainGame").get("GameState") != 0 and Time.get_ticks_msec() < deadline:
-                await get_tree().process_frame
+            print("NET loading keeps gameplay inactive")
+        "check-ingame":
+            assert(flow.get("GameFlowState") == 2)
             assert(get_node("/root/MainGame").get("GameState") == 0)
-            print("NET lifecycle gameplay active after readiness")
-        "normal-stop":
-            manager.call("StopSession")
-            assert(get_node("/root/MainGame").get("GameState") == 1)
-            print("NET lifecycle gameplay inactive after stop")
-            flow.call("QuitToStartMenuBlocking", "Normal session stopped", false)
-        "steam-cancel":
-            flow.call("StartGame", 0, 1)
-            await get_tree().scene_changed
-            get_node("/root/MainGame/NetworkManager").call("CreateNetwork")
-            flow.call("QuitToStartMenuBlocking", "NET01 canceled native create", false)
-        "steam-host":
-            var join_menu = load("res://scenes/ui/menu/start_menu/join_steam_game_menu.tscn").instantiate()
-            get_tree().root.add_child(join_menu)
-            var join_button = join_menu.get_node("%JoinSteamGameButton")
-            assert(join_button.disabled)
-            var list = join_menu.get_node("%LobbyListPanel")
-            assert(list.get_node("VBoxContainer/LobbyScroll/LobbyEntries").get_child_count() == 0)
-            var toolbar = list.get_node("VBoxContainer").get_child(0)
-            toolbar.get_child(0).text = "invalid"
-            toolbar.get_child(1).pressed.emit()
-            assert(join_button.disabled)
-            join_menu.queue_free()
-            var host_menu = load("res://scenes/ui/menu/start_menu/host_steam_game_menu.tscn").instantiate()
-            get_tree().root.add_child(host_menu)
-            host_menu.get_node("%HostSteamGameButton").pressed.emit()
-            host_menu.queue_free()
+            print("NET InGame enables gameplay")
+        "late-ready":
+            flow.call("CompleteLoading")
+            assert(flow.get("GameFlowState") == 0)
+            print("NET late completion ignored")
         "delayed-leave":
-            flow.call("QuitToStartMenu", "NET01 delayed quit", 1500)
-            manager.call("StopSession")
-            flow.call("QuitToStartMenuBlocking", "NET01 immediate quit", false)
+            flow.call("QuitToStartMenu", "Delayed leave", 1500)
+            assert(flow.get("GameFlowState") == 3)
+            assert(get_node("/root/MainGame").get("GameState") == 1)
+            print("NET Disconnecting disables gameplay")
+            flow.call("QuitToStartMenuBlocking", "Immediate leave", false)
         "leave":
-            flow.call("QuitToStartMenuBlocking", "NET14 deliberate leave", false)
+            flow.call("QuitToStartMenuBlocking", "Deliberate leave", false)
         "restart":
-            flow.call("StartDiagnosticFromArguments")
+            flow.call("StartFromArguments")
         "duplicate":
             manager.call("CreateNetwork")
-            manager.call("AssignRole")
-            manager.get_node("SessionProtocol").call("SendHello")
-        "cancel":
-            manager.call("FailSession", "NET14 deliberate cancellation")
-        "quit":
-            flow.call("QuitGame", "NET14 finished")
-        "suppress":
-            manager.get_node("SessionProtocol").call("Stop")
-        "send-error":
-            var script = load("res://Scripts/Network/SessionProtocolNode.cs")
-            var endpoint = script.new()
-            add_child(endpoint)
-            endpoint.call("SendHello")
-            endpoint.queue_free()
+            flow.call("CompleteLoading")

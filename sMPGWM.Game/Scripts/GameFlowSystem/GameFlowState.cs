@@ -1,22 +1,9 @@
 namespace sMPGWM.Scripts.GameFlowSystem;
 
-/// <summary>
-///  
-///  StartMenu
-///     -> Join / Host
-///  
-///  Loading  
-///     -> World synchronized / make game ready  
-///  
-///  InGame  
-///     -> User leaves OR connection recovery failed  
-///  
-///  Disconnecting  
-///     -> Session / world cleanup complete  
-///  
-///  StartMenu
-/// 
-/// </summary>  
+// StartMenu -> Loading -> InGame -> Disconnecting -> StartMenu.
+// Host: Loading ends after world readiness and lobby creation.
+// Client: Loading ends after a validated hello/reply RPC round trip.
+// Failure or leaving during Loading also enters Disconnecting.
 public enum GameFlowState
 {
     StartMenu,

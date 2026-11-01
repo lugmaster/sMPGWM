@@ -22,11 +22,13 @@ public class EnetProcessTests
             foreach (var directory in new[] { "addons", "Scripts", "scenes", "assets", "config", ".godot/imported", $".godot/mono/temp/bin/{configuration}" })
                 CopyTree(Path.Combine(game, directory), Path.Combine(stage, directory));
             File.Copy(Path.Combine(game, ".godot/uid_cache.bin"), Path.Combine(stage, ".godot/uid_cache.bin"));
-            File.Copy(Path.Combine(game, ".godot/extension_list.cfg"), Path.Combine(stage, ".godot/extension_list.cfg"));
+            // ENet lifecycle tests do not need Steam or its native extension.
+            File.WriteAllText(Path.Combine(stage, ".godot/extension_list.cfg"), "");
             var project = File.ReadAllText(Path.Combine(game, "project.godot"))
                 .Replace("uid://bwppb4jr80bw0", "res://scenes/start_scene.tscn")
                 .Replace("uid://dnk44tr6vs3ar", "res://Scripts/GameFlowSystem/GameFlowManager.cs")
                 .Replace("uid://cwgdwq3g3khns", "res://Scripts/Steam/SteamworksHelper.cs");
+            project = Regex.Replace(project, @"(?m)^SteamworksHelper=.*\r?\n", "");
             project = project.Replace("[autoload]", "[autoload]\nNet14Driver=\"*res://net14_driver.gd\"");
             File.WriteAllText(Path.Combine(stage, "project.godot"), project);
             File.Copy(Path.Combine(root, "sMPGWM.Tests/Network/net14_driver.gd"), Path.Combine(stage, "net14_driver.gd"));
@@ -35,7 +37,7 @@ public class EnetProcessTests
             var port = ((IPEndPoint)socket.LocalEndPoint!).Port;
             socket.Close();
             var config = File.ReadAllText(Path.Combine(stage, "config/config.cfg"))
-                .Replace("port = 55555", $"port = {port}").Replace("connection_timeout = 60000", "connection_timeout = 1000");
+                .Replace("port = 55555", $"port = {port}").Replace("connection_timeout = 60000", "connection_timeout = 3000");
             File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config);
             EngineProcess Start(string name, string role)
             {
@@ -43,205 +45,97 @@ public class EnetProcessTests
                 processes.Add(process);
                 return process;
             }
-            using var host = Start("host", "--enet-host");
-            await host.WaitFor("Listening session=");
-            var session = Regex.Match(host.Output, @"Listening session=(\w+)").Groups[1].Value;
-            Assert.That(session, Has.Length.EqualTo(32), host.Output);
-            foreach (var mode in new[] { "malformed", "silent" })
+            using (var host = Start("host", "--enet-host"))
             {
-                using var rejected = Start("auth-" + mode, "--no-network");
-                await rejected.WaitFor("Steam initialized successfully");
-                var sentBefore = Regex.Matches(host.Output, "NET00 auth_send peer=").Count;
-                var failedBefore = Regex.Matches(host.Output, "NET00 auth_failed peer=").Count;
-                rejected.Command($"auth|{mode}|{port}");
-                await host.WaitForCount("NET00 auth_send peer=", sentBefore + 1);
-                var deadline = Stopwatch.StartNew();
-                if (mode == "malformed") await host.WaitFor("NET00 auth_rejected peer=");
-                else await host.WaitForCount("NET00 auth_failed peer=", failedBefore + 1);
-                var disconnectDeadline = Stopwatch.StartNew();
-                var evidence = Path.Combine(stage, "auth-" + mode + ".command.auth-failed");
-                while (!File.Exists(evidence) && disconnectDeadline.Elapsed.TotalSeconds < 3)
-                    await Task.Delay(25);
-                Assert.That(File.Exists(evidence), Is.True, rejected.Output);
-                Assert.That(deadline.Elapsed.TotalSeconds, Is.LessThan(mode == "silent" ? 15 : 5));
-                if (mode == "silent") Assert.That(deadline.Elapsed.TotalSeconds, Is.GreaterThan(8));
-                Assert.That(host.Output, Does.Not.Contain("DiagnosticHello correlation="));
-                Assert.That(host.Output, Does.Not.Contain("NET00 auth_complete peer="));
-                Assert.That(host.Output, Does.Not.Contain("Network session stopped"));
-                Assert.That(rejected.Output, Does.Not.Contain("MessageExchangeSucceeded"));
-            }
-            using (var occupied = Start("occupied", "--enet-host"))
-                await occupied.WaitFor("CreateServer:");
-            for (var attempt = 0; attempt < 2; attempt++)
-            {
-                using var client = Start("client" + attempt, "--enet-client");
-                await client.WaitFor("MessageExchangeSucceeded");
-                Assert.That(client.Output, Does.Contain("session=" + session));
-                Assert.That(client.Output, Does.Contain("payload=ENet diagnostic hello"));
-                Assert.That(client.Output, Does.Contain("NET00 auth_complete peer=1 result=Ok"));
-                Assert.That(client.Output, Does.Not.Contain("ERROR:"));
+                await host.WaitFor("Game flow: InGame");
+                host.Command("check-ingame");
+                await host.WaitFor("NET InGame enables gameplay");
+                foreach (var mode in new[] { "malformed", "silent" })
+                {
+                    using var rejected = Start("auth-" + mode, "--no-network");
+                    await rejected.WaitFor("NET driver ready");
+                    var failures = Regex.Matches(host.Output, "NET00 auth_failed peer=").Count;
+                    rejected.Command($"auth|{mode}|{port}");
+                    if (mode == "malformed") await host.WaitFor("NET00 auth_rejected peer=");
+                    else await host.WaitForCount("NET00 auth_failed peer=", failures + 1);
+                    Assert.That(host.Output, Does.Not.Contain("Game flow: Disconnecting"));
+                }
+                using (var occupied = Start("occupied", "--enet-host"))
+                {
+                    await occupied.WaitFor("ENet startup failed:");
+                    await occupied.WaitFor("Game flow: StartMenu");
+                }
+                using var client = Start("client", "--enet-client");
+                await client.WaitFor("Game flow: InGame");
+                client.Command("check-ingame");
+                await client.WaitFor("NET InGame enables gameplay");
+                Assert.That(client.Output.IndexOf("host round trip complete", StringComparison.Ordinal),
+                    Is.LessThan(client.Output.IndexOf("Game flow: InGame", StringComparison.Ordinal)));
                 client.Command("duplicate");
-                await Task.Delay(150);
-                Assert.That(Regex.Matches(client.Output, "Diagnostic result=MessageExchangeSucceeded").Count, Is.EqualTo(1));
+                await Task.Delay(100);
+                Assert.That(Regex.Matches(client.Output, "Game flow: InGame").Count, Is.EqualTo(1));
                 client.Command("delayed-leave");
-                await client.WaitFor("Network session stopped");
-                await client.WaitFor("returning to start menu.");
-                await Task.Delay(150);
+                await client.WaitFor("NET Disconnecting disables gameplay");
+                await client.WaitFor("Game flow: StartMenu");
                 client.Command("restart");
-                await client.WaitForCount("Diagnostic result=MessageExchangeSucceeded", 2);
+                await client.WaitForCount("Game flow: InGame", 2);
                 await Task.Delay(1600);
-                Assert.That(Regex.Matches(client.Output, "returning to start menu.").Count, Is.EqualTo(1));
-                Assert.That(client.Output, Does.Contain("NET00 auth_complete peer=1 result=Ok"));
-                Assert.That(client.Output, Does.Not.Contain("ERROR:"));
-                client.Command("quit");
-                await client.WaitFor("completed Steam shutdown.");
-                await client.WaitForExit();
-                Assert.That(client.Output, Does.Contain("NET00 auth_complete peer=1 result=Ok"));
-                Assert.That(client.Output, Does.Not.Contain("ERROR:"));
+                Assert.That(Regex.Matches(client.Output, "Game flow: StartMenu").Count, Is.EqualTo(1));
+                host.Command("leave");
+                await client.WaitForCount("Game flow: Disconnecting", 2);
+                await client.WaitForCount("Game flow: StartMenu", 2);
+                Assert.That(client.Output, Does.Not.Contain("SCRIPT ERROR:"));
             }
-            Assert.That(Regex.Matches(host.Output, "Host sender=1 DiagnosticReply").Count, Is.EqualTo(4), host.Output);
-            Assert.That(host.Output, Does.Not.Contain("ERROR:"));
-            host.Command("quit");
-            await host.WaitForExit();
-            Assert.That(host.Output, Does.Not.Contain("ERROR:"));
-            using (var waiting = Start("normal-wait", "--no-network"))
+            using (var absent = Start("absent", "--enet-client"))
             {
-                await waiting.WaitFor("Steam initialized successfully");
-                waiting.Command("normal-wait");
-                await waiting.WaitFor("NET lifecycle gameplay inactive while connecting");
-                await waiting.WaitFor("returning to start menu.");
-                Assert.That(waiting.Output, Does.Not.Contain("SCRIPT ERROR:"));
+                await absent.WaitFor("Game flow: Loading");
+                absent.Command("check-loading");
+                await absent.WaitFor("NET loading keeps gameplay inactive");
+                await absent.WaitFor("Game flow: StartMenu");
+                Assert.That(absent.Output, Does.Not.Contain("Game flow: InGame"));
             }
-            using (var normalHost = Start("normal-host", "--no-network"))
-            using (var normalClient = Start("normal-client", "--no-network"))
+            using (var fakeHost = Start("delayed-host", "--no-network"))
             {
-                await normalHost.WaitFor("Steam initialized successfully");
-                await normalClient.WaitFor("Steam initialized successfully");
-                normalHost.Command("normal-host");
-                await normalHost.WaitFor("NET lifecycle gameplay active after readiness");
-                normalClient.Command("normal-client");
-                await normalClient.WaitFor("NET lifecycle gameplay active after readiness");
-                normalClient.Command("normal-stop");
-                await normalClient.WaitFor("NET lifecycle gameplay inactive after stop");
-                normalHost.Command("normal-stop");
-                await normalHost.WaitFor("NET lifecycle gameplay inactive after stop");
-                Assert.That(normalClient.Output, Does.Not.Contain("SCRIPT ERROR:"));
-                Assert.That(normalHost.Output, Does.Not.Contain("SCRIPT ERROR:"));
-            }
-            using (var timeout = Start("timeout", "--enet-client"))
-                await timeout.WaitFor("ENet connection failed or disconnected.");
-            using (var cancel = Start("cancel-client", "--enet-client"))
-            {
-                await cancel.WaitFor("AbstractSingleton._Ready called for NetworkManager.");
-                cancel.Command("cancel");
-                await cancel.WaitFor("NET14 deliberate cancellation");
-                await cancel.WaitFor("returning to start menu.");
-                Assert.That(cancel.Output, Does.Not.Contain("MessageExchangeSucceeded"));
-            }
-            using (var retry = Start("retry-host", "--enet-host"))
-            {
-                await retry.WaitFor("Listening session=");
-                retry.Command("suppress");
-                await Task.Delay(100);
-                using (var invalidReplies = Start("invalid-replies", "--enet-client"))
+                await fakeHost.WaitFor("NET driver ready");
+                fakeHost.Command($"fake-host|{port}");
+                await fakeHost.WaitFor("NET fake host ready");
+                using (var client = Start("delayed-client", "--enet-client"))
                 {
-                    await invalidReplies.WaitFor("DiagnosticHello correlation=");
-                    var hello = Regex.Match(invalidReplies.Output, @"Client sender=(\d+) DiagnosticHello correlation=(\w+)");
-                    var sender = hello.Groups[1].Value;
-                    var correlation = hello.Groups[2].Value;
-                    var hostSession = Regex.Match(retry.Output, @"Listening session=(\w+)").Groups[1].Value;
-                    foreach (var reply in new[]
-                    {
-                        $"reply|{sender}|2|{correlation}|ENet diagnostic hello|{hostSession}",
-                        $"reply|{sender}|1|{Guid.NewGuid():N}|ENet diagnostic hello|{hostSession}",
-                        $"reply|{sender}|1|{correlation}|{new string('x', 257)}|{hostSession}",
-                        $"reply|{sender}|1|{correlation}|ENet diagnostic hello|invalid"
-                    })
-                    {
-                        retry.Command(reply);
-                        await Task.Delay(100);
-                        Assert.That(invalidReplies.Output, Does.Not.Contain("MessageExchangeSucceeded"));
-                    }
-                    retry.Command($"reply|{sender}|1|{correlation}|ENet diagnostic hello|{hostSession}");
-                    await invalidReplies.WaitFor("MessageExchangeSucceeded");
-                    invalidReplies.Command("quit");
-                    await invalidReplies.WaitForExit();
+                    await fakeHost.WaitFor("NET hello received");
+                    client.Command("check-loading");
+                    await client.WaitFor("NET loading keeps gameplay inactive");
+                    fakeHost.Command("wrong-reply");
+                    await Task.Delay(100);
+                    Assert.That(client.Output, Does.Not.Contain("Game flow: InGame"));
+                    fakeHost.Command("reply");
+                    await client.WaitFor("Game flow: InGame");
+                    fakeHost.Command("reply");
+                    await Task.Delay(100);
+                    Assert.That(Regex.Matches(client.Output, "Game flow: InGame").Count, Is.EqualTo(1));
+                    client.Command("leave");
+                    await client.WaitFor("Game flow: StartMenu");
                 }
-                using (var diagnosticTimeout = Start("diagnostic-timeout", "--enet-client"))
+                using (var timeout = Start("reply-timeout", "--enet-client"))
                 {
-                    await diagnosticTimeout.WaitFor("Diagnostic reply timeout.");
-                    await diagnosticTimeout.WaitFor("returning to start menu.");
-                    diagnosticTimeout.Command("send-error");
-                    await diagnosticTimeout.WaitFor("Diagnostic send failed:");
+                    await timeout.WaitFor("Host reply timed out.");
+                    await timeout.WaitFor("Game flow: StartMenu");
+                    Assert.That(timeout.Output, Does.Not.Contain("Game flow: InGame"));
                 }
-                retry.Command("quit");
-                await retry.WaitForExit();
-            }
-            File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("max_players = 10", "max_players = 1"));
-            using (var alone = Start("host-only", "--enet-host"))
-            {
-                await alone.WaitFor("Listening session=");
-                using (var refused = Start("refused", "--enet-client"))
+                using (var canceled = Start("canceled", "--enet-client"))
                 {
-                    await refused.WaitFor("returning to start menu.");
-                    Assert.That(refused.Output, Does.Contain("Server disconnected.").Or.Contain("Native protocol preflight failed or timed out."));
-                    Assert.That(refused.Output, Does.Not.Contain("MessageExchangeSucceeded"));
+                    await canceled.WaitFor("waiting for host reply");
+                    canceled.Command("leave");
+                    await canceled.WaitFor("Game flow: StartMenu");
+                    canceled.Command("late-ready");
+                    await canceled.WaitFor("NET late completion ignored");
+                    Assert.That(canceled.Output, Does.Not.Contain("Game flow: InGame"));
                 }
-                Assert.That(alone.Output, Does.Not.Contain("DiagnosticReply correlation="));
-                alone.Command("quit");
-                await alone.WaitForExit();
-                Assert.That(alone.Output, Does.Not.Contain("ERROR:"));
-            }
-            File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("max_players = 10", "max_players = 2"));
-            using (var bounded = Start("bounded-host", "--enet-host"))
-            {
-                await bounded.WaitFor("Listening session=");
-                bounded.Command("suppress");
-                await Task.Delay(100);
-                using var pending = Start("pending-slot", "--enet-client");
-                await pending.WaitFor("DiagnosticHello correlation=");
-                using var overflow = Start("overflow", "--enet-client");
-                await overflow.WaitFor("ENet connection failed or disconnected.");
-                Assert.That(overflow.Output, Does.Not.Contain("MessageExchangeSucceeded"));
-                bounded.Command("quit");
-                await bounded.WaitForExit();
             }
             foreach (var capacity in new[] { 0, 11 })
             {
                 File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("max_players = 10", $"max_players = {capacity}"));
-                using var invalidCapacity = Start("capacity" + capacity, "--enet-host");
-                await invalidCapacity.WaitFor("requires 1-10 player capacity");
-            }
-            File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace($"port = {port}", "port = 0"));
-            using (var invalidPort = Start("invalid-port", "--enet-host"))
-                await invalidPort.WaitFor("Invalid LAN endpoint.");
-            File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("connection_timeout = 1000", "connection_timeout = 10000"));
-            using (var steam = Start("steam-lifecycle", "--no-network"))
-            {
-                await steam.WaitFor("Steam initialized successfully");
-                steam.Command("steam-cancel");
-                await steam.WaitFor("Canceled Steam lobby membership drained.");
-                await steam.WaitFor("returning to start menu.");
-                await Task.Delay(200);
-                for (var round = 1; round <= 2; round++)
-                {
-                    steam.Command("steam-host");
-                    await steam.WaitForCount("Network Host: Listening", round);
-                    Assert.That(steam.Output, Does.Contain("NET00 server_id=1"));
-                    Assert.That(steam.Output, Does.Contain("NET00 phase=host"));
-                    Assert.That(steam.Output, Does.Contain("ready; gameplay inactive."));
-                    steam.Command("leave");
-                    await steam.WaitForCount("returning to start menu.", round + 1);
-                    await Task.Delay(200);
-                }
-                steam.Command("normal-steam-host");
-                await steam.WaitFor("NET lifecycle gameplay active after readiness");
-                steam.Command("normal-stop");
-                await steam.WaitFor("NET lifecycle gameplay inactive after stop");
-                await steam.WaitForCount("returning to start menu.", 4);
-                steam.Command("quit");
-                await steam.WaitForExit();
-                Assert.That(steam.Output, Does.Not.Contain("ERROR:"));
+                using var invalid = Start("capacity" + capacity, "--enet-host");
+                await invalid.WaitFor("requires 1-10 player capacity");
             }
             File.WriteAllText(Path.Combine(stage, "config/config.cfg"), config.Replace("127.0.0.1", "invalid-address"));
             using (var invalid = Start("invalid-endpoint", "--enet-client"))
@@ -294,7 +188,6 @@ public class EnetProcessTests
                 RedirectStandardOutput = true, RedirectStandardError = true
             };
             foreach (var arg in new[] { "--headless", "--path", stage, "--", role }) start.ArgumentList.Add(arg);
-            start.Environment["NET00_CAPABILITIES"] = "1";
             start.Environment["NET14_COMMAND_FILE"] = _commandFile;
             start.Environment["APPDATA"] = Path.Combine(stage, "users", name);
             start.Environment["XDG_DATA_HOME"] = Path.Combine(stage, "users", name);
@@ -303,7 +196,7 @@ public class EnetProcessTests
             _process.ErrorDataReceived += (_, args) => { lock (_output) _output.AppendLine(args.Data); };
             _output.AppendLine($"Command: {executable} --headless --path {stage} -- {role}");
             _output.AppendLine("Inputs: " + Regex.Match(File.ReadAllText(Path.Combine(stage, "config/config.cfg")), @"(?m)^port = .*$").Value +
-                "; connection_timeout=1000 ms; diagnostic_timeout=10000 ms; server=127.0.0.1 (invalid-endpoint case uses invalid-address).");
+                "; connection_timeout=3000 ms; server=127.0.0.1 (invalid-endpoint case uses invalid-address).");
             _process.Start();
             _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();

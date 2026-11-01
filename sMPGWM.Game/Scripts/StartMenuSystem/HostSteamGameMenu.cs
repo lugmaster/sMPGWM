@@ -24,6 +24,6 @@ public partial class HostSteamGameMenu : BaseStartMenu
 
     private void OnHostSteamGameButtonPressed()
     {
-        StartMenuManager.Instance.StartSteamDiagnostic(NetworkRole.Host);
+        StartMenuManager.Instance.StartSteamGame(NetworkRole.Host);
     }
 }

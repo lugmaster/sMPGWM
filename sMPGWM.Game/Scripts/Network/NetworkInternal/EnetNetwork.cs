@@ -1,68 +1,33 @@
 using System;
 using System.Net;
 using Godot;
+using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Network.NetworkInternal;
-using static Godot.MultiplayerPeer;
 
 namespace sMPGWM.scripts.Network.NetworkInternal;
 
-public partial class EnetNetwork : BaseNetwork, IActiveNetwork
+public partial class EnetNetwork : BaseNetwork
 {
-    private ENetMultiplayerPeer? _peer;
-    protected override string TimeoutReason => "ENet connection failed or disconnected.";
-
-    public void BecomeHost(int maxConnections)
+    protected override void StartTransport()
     {
-        if (!Begin()) return;
-        if (maxConnections is < 1 or > 10)
-        {
-            FailTransport("ENet diagnostic hosting requires 1-10 player capacity.");
-            return;
-        }
-        if (Startup.LanTarget?.Port is not (>= 1 and <= 65535))
+        var hosting = Startup.Role == NetworkRole.Host;
+        if (Startup.Port is < 1 or > 65535 || (!hosting && !IPAddress.TryParse(Startup.Address, out _)))
         {
             FailTransport("Invalid LAN endpoint.");
             return;
         }
-        _peer = new ENetMultiplayerPeer();
-        var result = _peer.CreateServer(Startup.LanTarget.Port, Math.Max(1, maxConnections - 1));
-        if (result != Error.Ok) { FailTransport($"CreateServer: {result}"); return; }
-        // Authentication enforces capacity, including host-only sessions.
-        Multiplayer.MultiplayerPeer = _peer;
-        ReadyTransport("Listening");
-    }
-
-    public void BecomeClient(ulong lobbyId = 0)
-    {
-        if (!Begin()) return;
-        var target = Startup.LanTarget;
-        if (target == null || !IPAddress.TryParse(target.Address, out _) || target.Port is < 1 or > 65535)
-        {
-            FailTransport("Invalid LAN endpoint.");
-            return;
-        }
-        Subscribe(() => Multiplayer.ConnectedToServer += Connected, () => Multiplayer.ConnectedToServer -= Connected);
-        Subscribe(() => Multiplayer.ConnectionFailed += Failed, () => Multiplayer.ConnectionFailed -= Failed);
+        Subscribe(() => Multiplayer.ConnectedToServer += ReadyTransport, () => Multiplayer.ConnectedToServer -= ReadyTransport);
+        Subscribe(() => Multiplayer.ConnectionFailed += Disconnected, () => Multiplayer.ConnectionFailed -= Disconnected);
         Subscribe(() => Multiplayer.ServerDisconnected += Disconnected, () => Multiplayer.ServerDisconnected -= Disconnected);
-        _peer = new ENetMultiplayerPeer();
-        var result = _peer.CreateClient(target.Address, target.Port);
-        if (result != Error.Ok) { FailTransport($"CreateClient: {result}"); return; }
-        Multiplayer.MultiplayerPeer = _peer;
+        var peer = new ENetMultiplayerPeer();
+        Peer = peer;
+        var result = hosting
+            ? peer.CreateServer(Startup.Port, Math.Max(1, Startup.MaxPlayers - 1))
+            : peer.CreateClient(Startup.Address, Startup.Port);
+        if (result != Error.Ok) { FailTransport($"ENet startup failed: {result}"); return; }
+        Multiplayer.MultiplayerPeer = peer;
+        if (hosting) ReadyTransport();
     }
 
-    private void Connected() => ReadyTransport();
-    private void Failed() => FailTransport(TimeoutReason);
-    private void Disconnected() => FailTransport("Server disconnected.");
-    public bool IsConnected() => State == TransportState.Ready;
-    public ConnectionStatus GetConnectionStatus() => _peer?.GetConnectionStatus() ?? ConnectionStatus.Disconnected;
-    public Node GetNode() => this;
-
-    protected override void ReleaseResources()
-    {
-        if (_peer == null) return;
-        if (Multiplayer.MultiplayerPeer == _peer) Multiplayer.MultiplayerPeer = null;
-        _peer.Close();
-        _peer.Dispose();
-        _peer = null;
-    }
+    private void Disconnected() => FailTransport("Server disconnected or connection failed.");
 }

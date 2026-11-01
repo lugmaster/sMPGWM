@@ -6,11 +6,13 @@ namespace sMPGWM.Scripts.Network.NetworkInternal;
 
 public abstract partial class BaseNetwork : Node
 {
-    public event Action<string>? TransportReady;
-    public event Action<string>? StartupFailed;
-    public event Action<string>? ConnectionLost;
+    public event Action? TransportReady;
+    public event Action<string>? Failed;
     public NetworkStartupData Startup { get; init; } = null!;
-    protected TransportState State { get; private set; }
+    protected MultiplayerPeer? Peer;
+    protected bool Stopped { get; private set; }
+    protected bool Starting => !Stopped && _deadline != 0;
+    private bool _started;
     private ulong _deadline;
     private readonly List<Action> _disconnectSignals = new();
 
@@ -20,50 +22,62 @@ public abstract partial class BaseNetwork : Node
         _disconnectSignals.Add(disconnect);
     }
 
-    protected bool Begin()
+    public void Start()
     {
-        if (State != TransportState.Created) return false;
-        State = TransportState.Starting;
+        if (_started || Stopped) return;
+        _started = true;
         _deadline = Time.GetTicksMsec() + (ulong)Math.Max(1, Startup.ConnectionTimeoutMs);
-        return true;
+        if (Startup.MaxPlayers is < 1 or > 10)
+        {
+            FailTransport("Hosting requires 1-10 player capacity.");
+            return;
+        }
+        StartTransport();
     }
 
-    protected void ReadyTransport(string reason = "Connected")
+    protected abstract void StartTransport();
+
+    protected void ReadyTransport()
     {
-        if (State != TransportState.Starting) return;
-        State = TransportState.Ready;
-        TransportReady?.Invoke(reason);
+        if (!Starting) return;
+        _deadline = 0;
+        TransportReady?.Invoke();
     }
 
     protected void FailTransport(string reason)
     {
-        var previous = State;
-        if (previous is TransportState.Failed or TransportState.Stopped) return;
-        State = TransportState.Failed;
-        if (previous == TransportState.Ready) ConnectionLost?.Invoke(reason);
-        else StartupFailed?.Invoke(reason);
+        if (Stopped) return;
+        Failed?.Invoke(reason);
+        Cleanup();
     }
 
-    protected abstract string TimeoutReason { get; }
     public override void _PhysicsProcess(double delta)
     {
-        if (State == TransportState.Starting && Time.GetTicksMsec() >= _deadline)
-            FailTransport(TimeoutReason);
+        if (Starting && Time.GetTicksMsec() >= _deadline) FailTransport("Connection timed out.");
     }
 
     public void Cleanup()
     {
-        if (State == TransportState.Stopped) return;
-        State = TransportState.Stopped;
+        if (Stopped) return;
+        Stopped = true;
         SetPhysicsProcess(false);
         TransportReady = null;
-        StartupFailed = null;
-        ConnectionLost = null;
+        Failed = null;
         foreach (var disconnect in _disconnectSignals) disconnect();
         _disconnectSignals.Clear();
-        ReleaseResources();
+        try { ReleaseResources(); }
+        finally
+        {
+            if (Peer != null)
+            {
+                if (Multiplayer.MultiplayerPeer == Peer) Multiplayer.MultiplayerPeer = null;
+                Peer.Close();
+                Peer.Dispose();
+                Peer = null;
+            }
+        }
     }
 
-    protected abstract void ReleaseResources();
+    protected virtual void ReleaseResources() { }
     public override void _ExitTree() => Cleanup();
 }

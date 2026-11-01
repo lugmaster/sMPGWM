@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.HotbarSystem;
 using sMPGWM.Scripts.InputSystem;
@@ -15,7 +16,6 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 
 public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
-    private sMPGWM.scripts.Network.NetworkManager? _network;
     private UiCanvas _canvas = null!;
     private InventoryEquipmentTransferService? _presentationTransfers;
     private InputController _inputController = null!;
@@ -87,15 +87,13 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         _inputPolicy.SetSessionActive(GameState == MainGameState.Active);
         _canvas.SetNavigationEnabled(GameState == MainGameState.Active);
         ApplyPlayerInputAvailability(_inputPolicy.CanControlPlayer);
-        _network = sMPGWM.scripts.Network.NetworkManager.Instance;
-        _network.Session.Changed += NetworkStateChanged;
-        NetworkStateChanged(_network.Session.State);
+        GameFlowManager.Instance.StateChanged += NetworkStateChanged;
+        NetworkStateChanged(GameFlowManager.Instance.GameFlowState);
     }
 
     protected override void OnExitTree()
     {
-        if (_network != null) _network.Session.Changed -= NetworkStateChanged;
-        _network = null;
+        GameFlowManager.Instance.StateChanged -= NetworkStateChanged;
         if (_canvas != null)
         {
             _canvas.MessageAcknowledged -= AcknowledgeMessage;
@@ -130,9 +128,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (_canvas != null && _inputController != null) SetGameState(MainGameState.Inactive);
     }
 
-    private void NetworkStateChanged(sMPGWM.Scripts.Network.SessionState state)
+    private void NetworkStateChanged(GameFlowState state)
     {
-        SetGameState(_network?.CanPlay == true ? MainGameState.Active : MainGameState.Inactive);
+        SetGameState(state == GameFlowState.InGame ? MainGameState.Active : MainGameState.Inactive);
     }
 
     internal void BindInventoryPresentation(InventoryController inventory, EquipmentController equipment, InventoryEquipmentTransferService? transfers = null)

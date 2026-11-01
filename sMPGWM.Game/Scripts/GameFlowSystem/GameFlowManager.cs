@@ -11,7 +11,6 @@ namespace sMPGWM.Scripts.GameFlowSystem;
 public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 {
     private GameFlowState _gameFlowState = GameFlowState.StartMenu;
-    private GameFlowState _pendingGameFlowState = GameFlowState.StartMenu;
     private NetworkStartupData? _pendingNetworkStartup;
     private long _navigationGeneration;
 
@@ -24,18 +23,18 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     protected override void OnReady()
     {
-        CallDeferred(nameof(StartDiagnosticFromArguments));
+        CallDeferred(nameof(StartFromArguments));
     }
 
-    private void StartDiagnosticFromArguments()
+    private void StartFromArguments()
     {
         foreach (var argument in OS.GetCmdlineUserArgs())
         {
             if (argument != "--enet-host" && argument != "--enet-client") continue;
             var config = new NetworkStartupData(
                 argument == "--enet-host" ? NetworkRole.Host : NetworkRole.Client,
-                new LanEndpoint(GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port),
-                GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout, true);
+                NetworkType.Lan, GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout,
+                GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port);
             StartNetworkGame(config);
             return;
         }
@@ -43,13 +42,31 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void StartNetworkGame(NetworkStartupData startup)
     {
-        if (_gameFlowState == GameFlowState.Loading || NetworkManager.Instance != null) return;
+        if (_gameFlowState != GameFlowState.StartMenu || NetworkManager.Instance != null) return;
         _pendingNetworkStartup = startup;
-        ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.InGame);
+        ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.Loading);
     }
     
-    // TODO use this to handle SuddenExits and inform other systems
-    public event Action OnSuddenExit;
+    public event Action<GameFlowState>? StateChanged;
+
+    private void SetState(GameFlowState state)
+    {
+        if (_gameFlowState == state) return;
+        _gameFlowState = state;
+        Logger.Info($"Game flow: {state}");
+        StateChanged?.Invoke(state);
+    }
+
+    internal void BeginDisconnecting()
+    {
+        if (_gameFlowState is GameFlowState.Loading or GameFlowState.InGame)
+            SetState(GameFlowState.Disconnecting);
+    }
+
+    public void CompleteLoading()
+    {
+        if (_gameFlowState == GameFlowState.Loading) SetState(GameFlowState.InGame);
+    }
     
     public GameFlowState GameFlowState => _gameFlowState;
 
@@ -69,8 +86,8 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     public void QuitToStartMenu(string reason = null, int delayMs = 35)
     {
         _pendingNetworkStartup = null;
+        SetState(GameFlowState.Disconnecting);
         NetworkManager.Instance?.StopSession();
-        _gameFlowState = GameFlowState.Disconnecting;
         
         if (!string.IsNullOrEmpty(reason))
         {
@@ -84,8 +101,8 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     public void QuitToStartMenuBlocking(string reason, bool showAsError = true)
     {
         _pendingNetworkStartup = null;
+        SetState(GameFlowState.Disconnecting);
         NetworkManager.Instance?.StopSession();
-        _gameFlowState = GameFlowState.Disconnecting;
         Logger.Debug(
             $"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuBlocking)} graceful quit triggered with {nameof(reason)}={reason}.");
 
@@ -112,8 +129,9 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     public void QuitGame(string reason)
     {
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitGame)} requested with {nameof(reason)}={reason}.");
+        SetState(GameFlowState.Disconnecting);
         NetworkManager.Instance?.StopSession();
-        Steam.SteamworksHelper.ShutdownSteam();
+        if (Steam.SteamworksHelper.Instance != null) Steam.SteamworksHelper.ShutdownSteam();
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitGame)} completed Steam shutdown.");
         Instance.CallDeferred(nameof(QuitGameInternal));
     }
@@ -132,14 +150,9 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void StartGame(NetworkRole networkRole, NetworkType networkType)
     {
-        NetworkTarget target = networkType switch
-        {
-            NetworkType.Lan => new LanEndpoint(GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port),
-            NetworkType.Steam => new SteamLobbyTarget(0),
-            _ => throw new ArgumentOutOfRangeException(nameof(networkType))
-        };
-        StartNetworkGame(new NetworkStartupData(networkRole, target,
-            GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout));
+        StartNetworkGame(new NetworkStartupData(networkRole, networkType,
+            GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout,
+            GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port));
     }
 
     private void QuitToStartMenuInternal(long generation)
@@ -164,8 +177,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     private void ChangeScene(PackedScene scene, GameFlowState targetState)
     {
         ++_navigationGeneration;
-        _gameFlowState = GameFlowState.Loading;
-        _pendingGameFlowState = targetState;
+        if (targetState == GameFlowState.Loading) SetState(GameFlowState.Loading);
 
         var error = GetTree().ChangeSceneToPacked(scene);
 
@@ -175,13 +187,15 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
             Logger.Error(
                 $"{nameof(GameFlowManager)} scene change failed with {nameof(error)}={error}."
             );
-
+            if (targetState == GameFlowState.Loading) QuitToStartMenuBlocking($"Cannot load game: {error}");
             return;
         }
     }
 
     private void OnSceneChanged()
     {
-        _gameFlowState = _pendingGameFlowState;
+        if (_gameFlowState == GameFlowState.Disconnecting &&
+            GetTree().CurrentScene?.SceneFilePath == GameFlowSceneProvider.StartMenuScene.ResourcePath)
+            SetState(GameFlowState.StartMenu);
     }
 }

@@ -27,7 +27,7 @@ public partial class JoinSteamGameMenu: BaseStartMenu
     private void OnJoinSteamGameButtonPressed()
     {
         if (_lobbies.SelectedLobbyId != 0)
-            StartMenuManager.Instance.StartSteamDiagnostic(NetworkRole.Client, _lobbies.SelectedLobbyId);
+            StartMenuManager.Instance.StartSteamGame(NetworkRole.Client, _lobbies.SelectedLobbyId);
     }
     
 

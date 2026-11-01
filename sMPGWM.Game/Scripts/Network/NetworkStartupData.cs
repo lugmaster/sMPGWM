@@ -1,15 +1,6 @@
 using sMPGWM.scripts.Network;
+
 namespace sMPGWM.Scripts.Network;
 
-public sealed record NetworkStartupData(NetworkRole Role, NetworkTarget Target,
-    int MaxPlayers, int ConnectionTimeoutMs, bool Diagnostic = false)
-{
-    public NetworkType Type => Target switch
-    {
-        LanEndpoint => NetworkType.Lan,
-        SteamLobbyTarget => NetworkType.Steam,
-        _ => throw new System.ArgumentException("Unknown network target.")
-    };
-    public LanEndpoint? LanTarget => Target as LanEndpoint;
-    public SteamLobbyTarget? SteamTarget => Target as SteamLobbyTarget;
-}
+public sealed record NetworkStartupData(NetworkRole Role, NetworkType Type,
+    int MaxPlayers, int ConnectionTimeoutMs, string Address = "", int Port = 0, ulong LobbyId = 0);

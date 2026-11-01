@@ -47,11 +47,11 @@ These conventions should be used consistently in architecture discussions, imple
 
 ### Session lifecycle
 
-The menu passes a `NetworkStartupData` request with either a `LanEndpoint` or a `SteamLobbyTarget` to `GameFlowManager`. The main-game scene consumes it and starts networking deferred, after scene consumers have subscribed.
+The menu passes one `NetworkStartupData` record to `GameFlowManager`. `StateChanged` publishes `StartMenu -> Loading -> InGame -> Disconnecting -> StartMenu`. Gameplay observes this event directly.
 
-`NetworkManager` coordinates a single `NetworkSession`: `Created -> Starting -> Ready -> Stopping -> Stopped`. A stopped session cannot restart; returning through the menu creates a fresh one. Gameplay observes session changes and stays inactive until a non-diagnostic session is ready. Diagnostic clients also require the hello/reply exchange before readiness; the Steam menu currently retains this diagnostic flow.
+The main-game scene starts networking deferred, after the world and gameplay children finish readiness. Hosts finish Loading after transport setup and, for Steam, lobby creation. Clients finish Loading only after an authenticated hello/reply RPC round trip. Leaving or failure enters Disconnecting before cleanup. Late replies cannot reactivate a stopped session.
 
-ENet and Steam share startup deadlines, terminal transport events, and subscription cleanup in `BaseNetwork`. `SessionAuthentication` owns the temporary multiplayer authentication settings, `SessionProtocolNode` handles control messages and health probes, and `NetworkDiagnosticPanel` owns diagnostic controls. Steam lobby operations remain in `SteamworksHelper`: canceled submitted requests drain late callbacks, while synchronous submission failures permit immediate retry.
+`NetworkManager` owns authentication and the two readiness RPCs. ENet and Steam share startup deadlines, connection events and cleanup in `BaseNetwork`. Connection-loss detection uses the native transport, without a second heartbeat/RTT protocol. `Compatibility` checks game/mod/build data for both transports. Steam lobby operations stay in `SteamworksHelper`, which drains canceled callbacks before allowing another request.
 
 ## Tests
 
@@ -60,3 +60,5 @@ Run `dotnet test sMPGWM.Tests` from the repository root. The NUnit project targe
 The command runs standalone tests directly and runs the `Godot` category through `GodotIntegrationTests` in a separate headless engine process. These cases use the real static registry, packaged YAML, and imported icon atlas. A temporary project and user-data directory keep test runs separate from gameplay, Steam, and player configuration. The engine runs tests on its main thread and writes individual NUnit results to `godot-results.xml`, attached to the orchestration test. Engine failures, skipped cases, or a timeout fail the orchestration test. Run the orchestration test in Rider to execute this category; directly launching an individual engine-dependent case through the ordinary .NET test host does not supply Godot bindings.
 
 The equipment compatibility test checks every category/slot combination in one matrix test with fresh inventory and equipment owners per combination. Stack tests derive bulk quantities from loaded limits rather than assuming test-only unlimited stacks. The existing explicit stress benchmark remains an opt-in performance run.
+
+The ENet process test runs the production scene without the Steam autoload/native extension. It verifies host/client readiness, delayed and invalid replies, duplicate completion, timeout, cancellation, reconnect and host loss. Steam lobby behavior requires a separate live Steam check.

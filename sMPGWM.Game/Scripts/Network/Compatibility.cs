@@ -14,7 +14,7 @@ internal static class Compatibility
         return new()
         {
             ["handshake"] = "2",
-            ["protocol"] = DiagnosticExchange.ProtocolVersion.ToString(),
+            ["protocol"] = "2",
             ["game_id"] = GameConfig.LobbyGameId,
             ["mode"] = GameConfig.LobbyMode,
             ["version"] = GameConfig.Version,
