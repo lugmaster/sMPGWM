@@ -67,6 +67,9 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             _activeNetwork.Failed += FailSession;
             AddChild(_activeNetwork);
             AddChild(new NetworkTicker());
+            var heartbeat = new HeartbeatMonitor { Name = "HeartbeatMonitor" };
+            AddChild(heartbeat);
+            heartbeat.Initialize(_startup.Role == NetworkRole.Host);
             _activeNetwork.Start();
         }
         catch (Exception e) { FailSession($"Network startup failed: {e.Message}"); }
@@ -241,14 +244,16 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         }
         _joins[peer] = JoinState.Ready;
         _joinDeadlines.Remove(peer);
+        MpManager.Instance.AcceptReady(peer);
         Logger.Info($"NET join_ready peer={peer}");
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void JoinComplete()
+    private void JoinComplete(string gameName)
     {
         if (!IsHostMessage() || !_spawnRequested || !_spawnApplied || Time.GetTicksMsec() >= _replyDeadline) return;
         _spawnRequested = false;
+        HeartbeatMonitor.Instance.ActivateClient();
         _replyDeadline = 0;
         Logger.Info("NET local spawn complete; entering game");
         GameFlowManager.Instance.CompleteLoading();
@@ -257,6 +262,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private void PeerJoined(long peer)
     {
         if (!IsHost()) return;
+        MpManager.Instance.BeginPeer((int)peer);
         _joins[(int)peer] = JoinState.Connected;
         _joinDeadlines[(int)peer] = JoinDeadline();
     }
@@ -264,8 +270,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private void RejectJoin(int peer, string reason)
     {
         Logger.Warning($"NET join_rejected peer={peer}: {reason}");
-        PeerLeft(peer);
-        ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
+        MpManager.Instance.Depart(peer, reason);
     }
 
     public override void _PhysicsProcess(double delta)
@@ -280,14 +285,36 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
 
     private void PeerLeft(long peer)
     {
-        _answered.Remove((int)peer);
-        _joins.Remove((int)peer);
-        _joinDeadlines.Remove((int)peer);
-        MpManager.Instance?.Despawn((int)peer);
-        if (!IsHost()) return;
+        if (_stopped) return;
+        if (IsHost()) MpManager.Instance.Depart((int)peer, "Disconnected");
+        else if (peer == 1) MpManager.Instance.HostLost("Host disconnected");
+    }
+
+    public void RemovePeer(int peer)
+    {
+        _answered.Remove(peer);
+        _joins.Remove(peer);
+        _joinDeadlines.Remove(peer);
+        if (Array.IndexOf(Multiplayer.GetPeers(), peer) >= 0)
+            ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
+        MpManager.Instance.Despawn(peer);
         foreach (var other in _joins)
             if (other.Value is JoinState.Spawning or JoinState.Ready)
-                RpcId(other.Key, nameof(ReceiveDespawn), (int)peer);
+                RpcId(other.Key, nameof(ReceiveDespawn), peer);
+    }
+
+    public void AnnounceMembership(int peer, bool joined, string reason)
+    {
+        foreach (var other in _joins)
+            if (other.Key != peer && other.Value == JoinState.Ready)
+                RpcId(other.Key, nameof(ReceiveMembership), peer, joined, reason);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReceiveMembership(int peer, bool joined, string reason)
+    {
+        if (IsHostMessage() && !_spawnRequested && _spawnApplied)
+            MpManager.Instance.NotifyMembership(peer, joined, reason);
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -298,13 +325,16 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
 
     public void FailSession(string reason)
     {
-        if (!_stopped) GameFlowManager.Instance.QuitToStartMenuBlocking(reason);
+        if (_stopped) return;
+        MpManager.Instance.HostLost(reason);
     }
 
     public void StopSession()
     {
         if (_stopped) return;
         _stopped = true;
+        HeartbeatMonitor.Instance?.Stop();
+        MpManager.Instance?.StopMembership();
         GameFlowManager.Instance?.BeginDisconnecting();
         ProcessMode = ProcessModeEnum.Disabled;
         _helloToken = null;
