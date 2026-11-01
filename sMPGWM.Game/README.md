@@ -61,4 +61,4 @@ The command runs standalone tests directly and runs the `Godot` category through
 
 The equipment compatibility test checks every category/slot combination in one matrix test with fresh inventory and equipment owners per combination. Stack tests derive bulk quantities from loaded limits rather than assuming test-only unlimited stacks. The existing explicit stress benchmark remains an opt-in performance run.
 
-The ENet process test runs the production scene without the Steam autoload/native extension. It verifies host/client readiness, delayed and invalid replies, duplicate completion, timeout, cancellation, reconnect and host loss. Steam lobby behavior requires a separate live Steam check.
+The current network tests cover compatibility, lobby discovery, and pending lobby operations. ENet session readiness, timeout, cancellation, reconnect, and host loss require runtime checks; they are not covered by a current process test. Steam lobby behavior requires a separate live Steam check.

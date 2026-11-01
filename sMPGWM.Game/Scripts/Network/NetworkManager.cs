@@ -125,7 +125,12 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         var sender = Multiplayer.GetRemoteSenderId();
         if (!IsHost() || !Guid.TryParseExact(token, "N", out _) ||
             Array.IndexOf(Multiplayer.GetPeers(), sender) < 0 || !_answered.Add(sender)) return;
-        RpcId(sender, nameof(HelloReply), token);
+        var result = RpcId(sender, nameof(HelloReply), token);
+        if (result != Error.Ok)
+        {
+            Logger.Warning($"Hello reply failed for peer {sender}: {result}");
+            ((SceneMultiplayer)Multiplayer).DisconnectPeer(sender);
+        }
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -161,22 +166,32 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _helloToken = null;
         _replyDeadline = 0;
         _answered.Clear();
-        _activeNetwork?.Cleanup();
-        if (_configuredApi && Multiplayer is SceneMultiplayer api)
+        try
         {
-            api.PeerAuthenticating -= AuthenticatePeer;
-            api.PeerAuthenticationFailed -= AuthenticationFailed;
-            api.PeerDisconnected -= PeerLeft;
-            api.AuthCallback = _previousAuthCallback;
-            api.AuthTimeout = _previousAuthTimeout;
-            api.AllowObjectDecoding = _previousObjectDecoding;
-            _configuredApi = false;
+            _activeNetwork?.Cleanup();
+        }
+        catch (Exception e)
+        {
+            Logger.Error($"Network cleanup failed: {e.Message}");
+        }
+        finally
+        {
+            if (_configuredApi && Multiplayer is SceneMultiplayer api)
+            {
+                api.PeerAuthenticating -= AuthenticatePeer;
+                api.PeerAuthenticationFailed -= AuthenticationFailed;
+                api.PeerDisconnected -= PeerLeft;
+                api.AuthCallback = _previousAuthCallback;
+                api.AuthTimeout = _previousAuthTimeout;
+                api.AllowObjectDecoding = _previousObjectDecoding;
+                _configuredApi = false;
+            }
         }
         Logger.Info("Network session stopped");
     }
 
     protected override void OnExitTree() => StopSession();
     public bool IsHost() => !_stopped && _startup?.Role == NetworkRole.Host && IsConnected();
-    public bool IsConnected() => Multiplayer.HasMultiplayerPeer() &&
+    public bool IsConnected() => !_stopped && Multiplayer.HasMultiplayerPeer() &&
         Multiplayer.MultiplayerPeer.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected;
 }
