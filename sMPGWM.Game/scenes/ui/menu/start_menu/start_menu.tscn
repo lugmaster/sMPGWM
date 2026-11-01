@@ -1,10 +1,14 @@
 [gd_scene format=3 uid="uid://6ov4wdhkeic1"]
 
 [ext_resource type="PackedScene" uid="uid://csfidmr8pe45n" path="res://scenes/ui/base/base_start_menu.tscn" id="1_thu50"]
-[ext_resource type="Script" uid="uid://bn3f7fn5s8i4b" path="res://Scripts/Ui/StartMenu.cs" id="2_m7x51"]
+[ext_resource type="Script" uid="uid://bn3f7fn5s8i4b" path="res://Scripts/StartMenuSystem/StartMenu.cs" id="2_m7x51"]
+[ext_resource type="Texture2D" uid="uid://30cltcogsrru" path="res://assets/ui/backgrounds/nasa_earth.png" id="3_jwf5b"]
 
 [node name="StartMenu" unique_id=1431156458 instance=ExtResource("1_thu50")]
 script = ExtResource("2_m7x51")
+
+[node name="Background" parent="." index="0" unique_id=1548305126]
+texture = ExtResource("3_jwf5b")
 
 [node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
 text = "Main Menu"

@@ -19,4 +19,11 @@ public partial class ModalController : AbstractSingleton<ModalController>
         AddChild(layer);
         layer.AddChild(alert);
     }
+
+    public void ShowLoadinScreen()
+    {
+        // implement instantiating LoadingScreen in canvas from ModalController. This Canvas should be most top Ui Element that is possible, as it will per godot editor settings block all mouse input. 
+        // the layer should be destroyed with the loading screen after it is finished. Caller of loadingScreen should provide a function that provides messages and percent value for progressbar. 
+        // goal: well known loading screen that shows progress and one or more messages. 
+    }
 }
