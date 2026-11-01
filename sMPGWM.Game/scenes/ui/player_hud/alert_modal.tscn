@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://blpeeet1wau7f"]
+
+[ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_u3bbg"]
+[ext_resource type="Script" uid="uid://d4f1bm0wpg3bd" path="res://Scripts/Util/UiComponents/AlertModal.cs" id="2_r7lag"]
+[ext_resource type="Texture2D" uid="uid://bf2ajse5k1pat" path="res://assets/mocks/diamond.png" id="2_v2rh6"]
+
+[node name="AlertModal" unique_id=1431156458 instance=ExtResource("1_u3bbg")]
+script = ExtResource("2_r7lag")
+
+[node name="HeaderContainer" parent="CenterContainer/MenuPanel/MarginContainer/RootContent" parent_id_path=PackedInt32Array(1149754016) index="0" unique_id=20106782]
+theme_override_constants/separation = 8
+
+[node name="TitleIcon" type="TextureRect" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" index="0" unique_id=1474993717]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2_v2rh6")
+expand_mode = 1
+stretch_mode = 3
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=1955632694]
+layout_mode = 2
+
+[node name="MessageLabel" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="1" unique_id=604329733]
+layout_mode = 2
+text = "Lore Ipsum"
+
+[node name="OkButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="2" unique_id=767761114]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 18
+text = "OK"
