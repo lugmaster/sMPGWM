@@ -19,10 +19,13 @@
         <Folder Include="assets\ui\icons\" />
         <Folder Include="scenes\ui\controls\" />
         <Folder Include="scenes\ui\screens\" />
+        <Folder Include="Scripts\PlayerController\" />
     </ItemGroup>
     <ItemGroup>
         <Content Include="assets\game_data\EffectDefinitions.yml" />
         <Content Include="assets\game_data\EffectSchemas.yml" />
+        <Content Include="assets\game_data\Ships.yml" />
+        <Content Include="assets\game_data\ShipsSchema.yml" />
         <Content Include="assets\ui\mocks\ship_fighter_reference.png" />
         <Content Include="assets\ui\mocks\ship_fighter_reference.png.import" />
         <Content Include="config\config.cfg" />

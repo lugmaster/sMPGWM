@@ -1,7 +1,6 @@
-using System;
 using Godot;
 
-namespace sMPGWM.Scripts.Network.Movement;
+namespace sMPGWM.Scripts.Movement;
 
 public static class MovementPhysics
 {

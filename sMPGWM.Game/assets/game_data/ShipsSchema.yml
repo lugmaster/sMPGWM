@@ -1,0 +1,76 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: Ship definitions
+type: object
+additionalProperties: false
+required:
+  - ships
+properties:
+  ships:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - texture_path
+        - collider_points
+        - ship_stats
+        - weapon_slots
+      properties:
+        name:
+          type: string
+          pattern: '\S'
+        texture_path:
+          type: string
+          pattern: '^res://.+'
+        collider_points:
+          type: array
+          minItems: 3
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items:
+              type: number
+        ship_stats:
+          type: object
+          additionalProperties: false
+          required:
+            - Speed
+            - AfterBurnerSpeed
+            - RotationSpeed
+            - Acceleration
+            - AfterBurnerAcceleration
+            - ShipMass
+          properties:
+            Speed:
+              type: number
+              minimum: 0
+            AfterBurnerSpeed:
+              type: number
+              minimum: 0
+            RotationSpeed:
+              type: number
+              minimum: 0
+            Acceleration:
+              type: number
+              minimum: 0
+            AfterBurnerAcceleration:
+              type: number
+              minimum: 0
+            ShipMass:
+              type: number
+              minimum: 0
+        weapon_slots:
+          type: object
+          additionalProperties: false
+          required:
+            - light
+            - heavy
+          properties:
+            light:
+              type: integer
+              minimum: 0
+            heavy:
+              type: integer
+              minimum: 0
