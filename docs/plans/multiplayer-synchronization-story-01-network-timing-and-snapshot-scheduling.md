@@ -1,41 +1,26 @@
 # Synchronization Story 1 — Network timing and snapshot scheduling
 
-Plan: [Multiplayer synchronization](multiplayer-synchronization-story-summary.md). Replaces part of original epic Story 8.
+Plan: [Multiplayer synchronization](multiplayer-synchronization-story-summary.md).
 
-Status: refinement documented; implementation pending. Timing margins remain configurable and require measurement.
+Status: planned. Implementation and measured network quality remain to be verified.
 
-*As a participant, my game shares a meaningful simulation timeline with the host while world snapshots are published at a predictable cadence.*
+As a participant, I share the host timeline and receive completed world snapshots.
 
-## Timing contract
+## Implementation
 
-- The host advances an authoritative simulation tick at 60 physics steps per second, each with a fixed `1/60` second timestep.
-- After every second completed step, capture and publish a snapshot at nominal 30 Hz. Complete movement for all ships before capturing any published world state.
-- Snapshot tick means the completed simulation tick, not packet number. Example: simulate 100, 101, 102, 103; publish states for 101 and 103.
-- Physics callbacks can run late or in batches under load. Do not assume equally spaced packet arrivals or drive simulation from packet arrival or render FPS.
-- A snapshot publisher is host-only. Clients still run local input/prediction scheduling and maintain a host-time estimate.
+1. Add a session-owned synchronization coordinator through GameSessionFactory/SessionScope, with role and readiness supplied by NetworkManager. Disable processing synchronously during teardown before deferred node deletion.
+2. Establish explicit 60 Hz physics configuration/validation and session-local tick numbering. Audit NetworkTicker consumers before replacing its static timing role; HostDelta is not proof that all ships have completed movement.
+3. Own ordering explicitly: acquire permitted input, select commands, simulate eligible ships, capture all completed state, publish every second step. Remove direct simulation scheduling from PlayerController when connecting the pipeline; ships retain no independent physics tick.
+4. Define baseline tick zero, step 1 producing state 1, and publications at ticks 2, 4, 6. Never combine two movement steps into one doubled delta.
+5. Define shared envelopes for session, entity/control generation, discontinuity revision, and completed tick. Specify integer limits/overflow behavior and bounded payload formats.
+6. Initialize client host-time estimates from the reliable join baseline. Measure RTT with monotonic timestamps and bounded outstanding probes; smooth jitter and incorporate Story 2 input-arrival feedback.
+7. Distinguish current host estimate, future prediction tick, and delayed presentation cursor. Lead includes outbound transit, batching, and jitter; RTT/2 is an estimate. Slew routine corrections without changing movement delta. Bound catch-up work and route excessive stalls to Story 5.
+8. Expose host/prediction tick, RTT/jitter, lead, arrival age, publication count, and recovery diagnostics. Reset every timing resource on failure/restart.
 
-## Implementation plan
+## Acceptance and validation
 
-1. Establish explicit ordering between input acquisition, movement, completed-tick state capture, and publication. A callback every second physics frame is insufficient unless it runs after all authoritative movement for that step.
-2. Keep scheduling separate from movement and message serialization. Integrate lifecycle under the existing gameplay/network managers without moving these responsibilities into `PlayerController`.
-3. Establish an initial host tick reference and latency estimate during joining, before predicted movement is enabled. Use monotonic timing rather than wall-clock synchronization.
-4. Track smoothed RTT and arrival variation. Use host feedback on how early/late targeted commands arrive to tune the client's prediction lead.
-5. Account for outbound travel, input batching, and ordinary jitter in that lead. RTT/2 is an estimate, not an exact one-way measurement.
-6. Keep three concepts distinct: estimated current host tick, local prediction tick ahead of it, and buffered remote presentation time behind it.
-7. Adjust scheduling gradually during normal operation without changing the movement timestep or speed according to ping. Bound catch-up work; large stalls use the explicit resynchronization path from Story 5.
-8. Expose diagnostics for host tick, client prediction tick, RTT/jitter estimate, input lead, late-input count, and snapshot-buffer occupancy. Reset scheduling state on session teardown.
+A controlled 60-step run publishes exactly 30 complete multi-ship snapshots. Render-rate changes do not alter fixed-step movement or publication cadence. Only the host publishes authority; host-local handlers never simulate twice. Client commands target host ticks. Timing estimates, lead, probes, and catch-up remain bounded.
 
-## Acceptance criteria
+Add controlled ordering/timing tests, including teardown and partial startup. Exercise latency/jitter and stalls with H/A/B in Story 5. Choose explicit lead, probe, and recovery bounds before enabling prediction.
 
-- With 60 completed host physics steps, normal scheduling produces 30 snapshot publications, each representing a complete world step.
-- Rendering rate does not change simulation timestep or publication cadence relative to physics steps.
-- Only the host publishes authoritative world snapshots; clients continue local prediction between arrivals.
-- Clients share host tick numbering and target future host steps rather than numbering inputs from an unrelated local origin.
-- Host feedback can adjust lead without abrupt routine clock jumps or ping-dependent movement speed.
-- Session restart does not reuse clock estimates or tick state.
-
-## Validation
-
-Check scheduling/order with a controlled tick driver and multiple ships. Exercise H/A/B with different latency and jitter, observing input arrival age and client lead. Simulate a host/client stall to ensure bounded recovery rather than unlimited catch-up. Exact clock-filter parameters and recovery thresholds must be recorded when implemented.
-
-Dependencies: original Stories 6–7 and their required milestone playtest. This scheduling foundation can be verified with synthetic state before full ship replication exists.
+Dependencies: implemented session/spawn foundation. Story 2 supplies real arrival feedback.

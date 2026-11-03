@@ -1,45 +1,28 @@
 # Synchronization Story 4 — Remote ship interpolation
 
-Plan: [Multiplayer synchronization](multiplayer-synchronization-story-summary.md). Replaces part of original epic Story 8.
+Plan: [Multiplayer synchronization](multiplayer-synchronization-story-summary.md).
 
-Status: refinement documented; implementation pending. Buffer and recovery settings require playtesting.
+Status: planned. Implementation and measured network quality remain to be verified.
 
-*As a participant, I see remote ships move smoothly despite snapshots arriving less frequently and less regularly than rendered frames.*
+As a participant, I see remote ships move smoothly between snapshots.
 
-## Presentation contract
+## Implementation
 
-- Clients buffer accepted full snapshots by completed host simulation tick.
-- All remote ships use one shared remote presentation timeline. The local ship remains on its prediction/presentation path from Story 3.
-- Start with two snapshot intervals, approximately 67 ms, of buffering behind the estimated incoming snapshot timeline. Transit delay is additional; this is not a fixed 67 ms total delay behind the current host.
-- Express the presentation cursor in host simulation time, including fractional ticks, and define its offset once. Do not add latency twice or reset the cursor to every irregular arrival.
-- Interpolate position and shortest-path rotation between the snapshots bracketing presentation time. Applied presentation flags are discrete state, not numeric values to blend; use a consistent sample-boundary policy when effects are integrated.
-- Keep authoritative state and interpolated presentation separate. Presentation transforms must not overwrite authoritative host movement or local prediction history.
+1. Add session-owned bounded snapshot buffers and a presentation sampler. Resolve validated entity/control identity through MpManager; movement packets cannot instantiate unknown ships.
+2. Separate authoritative samples, collision/body placement, and ShipVisuals. Clients never use local input to move remote ships. Coordinate collision proxies/layers with Story 3; display transforms cannot become replay state.
+3. Use one fractional host-tick presentation cursor for all remote ships. Start with two snapshot intervals (about 67 ms) beyond estimated transit delay. Compute the offset once without counting latency twice.
+4. Advance the cursor monotonically rather than resetting it on irregular arrivals. Interpolate global position and shortest-path rotation, converting to parent-local visual coordinates at presentation.
+5. Sample discrete applied flags from the lower bracket until reaching the upper sample time. Effects implementation remains deferred.
+6. Hold the initial baseline until buffered. Bridge missing intermediate packets using available surrounding states. On underrun hold the newest sample; no indefinite extrapolation.
+7. Restore ordinary buffering gradually without rewinding presentation. Large interruption invokes Story 5 recovery. Entity/control/discontinuity changes reset affected buffers and snap.
+8. Bound samples, ages, pending unknown-entity state, and per-frame work. Ignore stale/duplicate state without rollback. Clear references on despawn/teardown.
 
-## Delivery behavior
-
-| Situation | Agreed response |
-|---|---|
-| Snapshots bracket presentation time | Interpolate between them. |
-| Intermediate snapshot missing | Interpolate across available surrounding snapshots. |
-| Cursor reaches newest available state | Hold at that state; no indefinite extrapolation. |
-| Normal delivery resumes | Recover buffering smoothly. |
-| Substantial interruption | Reset/rebaseline the buffer using lifecycle recovery. |
-| Teleport, replacement, or discontinuity | Snap/reset; do not interpolate across it. |
-
-Ignore stale/duplicate state without rewinding presentation. Bound buffers and discard samples no longer needed. Startup may hold the initial baseline until enough data exists for interpolation.
-
-The host already simulates remote participants authoritatively. Its rendering may use ordinary physics presentation smoothing; it must not feed its own snapshots back into authoritative ship movement.
+Host rendering uses authoritative movement without applying its snapshots back to simulation. Ordinary host physics smoothing must preserve authority and camera behavior.
 
 ## Acceptance and validation
 
-- H/A/B each see every remote ship moving; local input never controls a remote ship.
-- Remote presentation remains smooth between ordinary 30 Hz arrivals at different render rates.
-- All remote ships are sampled at the same presentation time.
-- A lost intermediate packet can be bridged when surrounding snapshots exist.
-- Buffer exhaustion holds the newest state rather than extrapolating indefinitely.
-- Resumed traffic recovers without replaying obsolete visual history; replacements and teleports reset immediately.
-- Queues remain bounded through reordering, duplication, stalls, and teardown.
+Test interpolation, angle wrap, common cursor, parent transforms, missing samples, reordering, duplicate traffic, underrun, and discontinuity reset with synthetic sequences. Run H/A/B at differing render rates under jitter/loss.
 
-Use controlled snapshot sequences for interpolation/wraparound/buffer checks, then three-player visual tests with jitter and loss. Tune smoothness against visible latency. Short bounded extrapolation is a possible future response to playtest findings, not part of the initial agreed behavior.
+All remote ships share one presentation time and move smoothly under normal 30 Hz delivery. Local prediction stays independent. Recovery cannot replay obsolete visual history or retain despawned entities. Measure occupancy, underruns, and visible delay in Story 5.
 
-Dependencies: synchronization Stories 1–2 and shared state contracts with Story 3. Actual thruster/effect implementation remains original Story 10. Advanced collision prediction remains deferred.
+Dependencies: Stories 1–2 and Story 3 presentation/collision separation.
