@@ -7,20 +7,20 @@ namespace sMPGWM.Scripts.GameConfigSystem;
 
 public static class GameConfig
 {
-    public static string LogLevelValue { get; private set; }
+    public static string LogLevelValue { get; private set; } = string.Empty;
     public static bool RunSteamEx { get; private set; }
-    public static string LobbyName { get; private set; }
-    public static string LobbyMode { get; private set; }
-    public static string LobbyGameId { get; private set; }
+    public static string LobbyName { get; private set; } = string.Empty;
+    public static string LobbyMode { get; private set; } = string.Empty;
+    public static string LobbyGameId { get; private set; } = string.Empty;
     public static int MaxPlayers { get; private set; }
     public static int Port { get; private set; }
-    public static string ServerIpAddress { get; set; }
-    public static string Version { get; private set; }
+    public static string ServerIpAddress { get; set; } = string.Empty;
+    public static string Version { get; private set; } = string.Empty;
     public static int ConnectionTimeout { get; private set; }
     public static bool ReloadConfigOnStart { get; private set; }
     public static bool Development { get; private set; }
-    public static string GameDataChecksum { get; private set; }
-    public static string ConfigDataChecksum { get; private set; }
+    public static string GameDataChecksum { get; private set; } = string.Empty;
+    public static string ConfigDataChecksum { get; private set; } = string.Empty;
     
     public static void Load()
     {

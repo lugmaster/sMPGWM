@@ -71,7 +71,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     }
 
 
-    public void QuitToStartMenu(string reason = null, int delayMs = 35)
+    public void QuitToStartMenu(string? reason = null, int delayMs = 35)
     {
         _pendingStartupData = null;
         SetState(GameFlowState.Disconnecting);

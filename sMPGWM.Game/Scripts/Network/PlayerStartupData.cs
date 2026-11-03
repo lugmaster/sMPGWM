@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Godot;
 
 namespace sMPGWM.Scripts.Network;
@@ -6,9 +7,9 @@ public sealed record PlayerStartupData(string ShipId)
 {
     public static PlayerStartupData Create() => new("fighter");
     public Variant ToVariant() => ShipId;
-    public static bool TryFromVariant(Variant value, out PlayerStartupData data)
+    public static bool TryFromVariant(Variant value, [NotNullWhen(true)] out PlayerStartupData? data)
     {
-        data = null!;
+        data = null;
         if (value.VariantType != Variant.Type.String) return false;
         var id = value.AsString();
         if (string.IsNullOrWhiteSpace(id) || id.Length > 256) return false;

@@ -5,7 +5,7 @@ namespace sMPGWM.Scripts.Network;
 
 public partial class NetworkTicker : Node
 {
-    public static event Action<float> HostDelta;
+    public static event Action<float>? HostDelta;
     private static long _tickNumber;
     public override void _PhysicsProcess(double delta)
     {

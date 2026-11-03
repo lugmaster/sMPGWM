@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System;
 using System.Runtime.CompilerServices;
 using sMPGWM.Scripts.TagSystem.Definitions;
@@ -286,7 +287,7 @@ public sealed class TagSet
     /// <summary>
     /// Attempts to retrieve a tag in this set's domain while enforcing assignment rules.
     /// </summary>
-    private bool TryValidateTagForMutation(TagId tagId, out TagDefinition tag)
+    private bool TryValidateTagForMutation(TagId tagId, [NotNullWhen(true)] out TagDefinition? tag)
     {
         if (!TryValidateTagForRead(tagId, out tag))
         {
@@ -314,7 +315,7 @@ public sealed class TagSet
     /// <summary>
     /// Attempts to retrieve a tag belonging to this set's domain.
     /// </summary>
-    private bool TryValidateTagForRead(TagId tagId, out TagDefinition tag)
+    private bool TryValidateTagForRead(TagId tagId, [NotNullWhen(true)] out TagDefinition? tag)
     {
         if (!_registry.TryGetTag(tagId, out tag))
         {

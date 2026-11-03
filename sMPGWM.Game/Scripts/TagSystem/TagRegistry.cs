@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -123,11 +124,11 @@ public sealed class TagRegistry
     /// <param name="domainId">The domain identifier relative to this registry.</param>
     /// <param name="domain">Receives the compiled domain, or null when the identifier is invalid.</param>
     /// <returns>True if the domain identifier is valid; otherwise, false.</returns>
-    private bool TryGetDomain(TagDomainId domainId, out TagDomain domain)
+    private bool TryGetDomain(TagDomainId domainId, [NotNullWhen(true)] out TagDomain? domain)
     {
         if (!domainId.IsValid || domainId.Value > (ulong)_domainsByIndex.Length)
         {
-            domain = null!;
+            domain = null;
             return false;
         }
 
@@ -184,11 +185,11 @@ public sealed class TagRegistry
     /// <param name="tagId">The tag identifier relative to this registry.</param>
     /// <param name="tag">Receives the compiled tag, or null when the identifier is invalid.</param>
     /// <returns>True if the tag identifier is valid; otherwise, false.</returns>
-    internal bool TryGetTag(TagId tagId, out TagDefinition tag)
+    internal bool TryGetTag(TagId tagId, [NotNullWhen(true)] out TagDefinition? tag)
     {
         if (!tagId.IsValid || tagId.Value > (ulong)_tagsByIndex.Length)
         {
-            tag = null!;
+            tag = null;
             return false;
         }
 
@@ -245,11 +246,11 @@ public sealed class TagRegistry
     /// <param name="queryId">The query identifier relative to this registry.</param>
     /// <param name="query">The compiled query owned by this set's registry.</param>
     /// <returns>True if the query identifier is valid; otherwise, false.</returns>
-    internal bool TryGetQuery(TagQueryId queryId, out CompiledTagQuery query)
+    internal bool TryGetQuery(TagQueryId queryId, [NotNullWhen(true)] out CompiledTagQuery? query)
     {
         if (!queryId.IsValid || queryId.Value > (ulong)_queriesByIndex.Length)
         {
-            query = null!;
+            query = null;
             return false;
         }
 
