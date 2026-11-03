@@ -125,7 +125,7 @@ public class PlayerSpawningTests
     }
 
     [Test]
-    public void ReliableReplacementAdvancesGenerationAndIgnoresStaleBinding()
+    public void ReliableReplacementAdvancesGenerationAndRejectsStaleTopology()
     {
         var manager = new MpManager();
         try
@@ -133,10 +133,11 @@ public class PlayerSpawningTests
             var first = new ShipSpawnRecord(1, Guid.NewGuid().ToString("N"), "fighter", Vector2.Zero, 0, Vector2.Zero);
             manager.Spawn(first);
             var replacement = first with { EntityId = Guid.NewGuid().ToString("N"), Position = Vector2.One };
-            manager.ApplyBinding(replacement, 2);
+            manager.ApplyTopology(new WorldTopology(new[] { new ParticipantBinding(1, 2, replacement.EntityId) }, new[] { EntitySpawnRecord.From(replacement) }));
             Assert.That(manager.MpControllers[1].ControlGeneration, Is.EqualTo(2));
             Assert.That(manager.MpControllers[1].ControlledShip!.EntityId, Is.EqualTo(replacement.EntityId));
-            manager.ApplyBinding(first, 1);
+            Assert.Throws<InvalidOperationException>(() => manager.ApplyTopology(
+                new WorldTopology(new[] { new ParticipantBinding(1, 1, first.EntityId) }, new[] { EntitySpawnRecord.From(first) })));
             Assert.That(manager.MpControllers[1].ControlledShip!.EntityId, Is.EqualTo(replacement.EntityId));
         }
         finally { manager.Free(); }

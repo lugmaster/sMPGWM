@@ -57,8 +57,17 @@ public class LocalCameraTests
             ship.Teleport(new Vector2(900, 500), 2, Vector2.Zero);
             Assert.That(camera.GetScreenCenterPosition().DistanceTo(ship.GlobalPosition), Is.LessThan(0.01f));
 
+            player.UsePredictionCamera(true);
+            ship.Presentation.Present(new Vector2(890, 495), 2);
+            Assert.That(camera.GlobalPosition, Is.EqualTo(ship.DisplayedPosition));
+            ship.Presentation.Snap();
+            Assert.That(camera.GlobalPosition, Is.EqualTo(ship.GlobalPosition));
+
             participant.AssignShip(replacement);
             Assert.That(replacement.GetNode<Camera2D>("LocalCamera"), Is.SameAs(camera));
+            var currentCameraPosition = camera.GlobalPosition;
+            ship.Presentation.Present(Vector2.Zero, 0);
+            Assert.That(camera.GlobalPosition, Is.EqualTo(currentCameraPosition), "Old presentation must no longer drive the camera.");
             ship.Free();
             Assert.That(GodotObject.IsInstanceValid(camera), Is.True);
             var lastView = camera.GetScreenCenterPosition();

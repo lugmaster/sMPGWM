@@ -156,3 +156,55 @@ with session tests inspecting real baselines instead of test-only runtime events
 
 The automated measurements above are historical evidence from before cleanup,
 not commands or instrumentation available in the cleaned runtime.
+
+## Architecture review refactoring (2026-11-03)
+
+Protocol compatibility is now **5**. The measurements and transport playtests above
+describe the earlier implementation; they have not been repeated for this refactoring.
+Full-world rollback remains out of scope.
+
+The runtime responsibilities are now separated as follows:
+
+| Component | Responsibility |
+|---|---|
+| SynchronizationCoordinator | Orders input acquisition, fixed simulation, snapshot application and publication. |
+| NetworkManager | Authenticated RPC routing, join readiness and reliable topology publication. |
+| MpManager / MpController | Entity and participant lifetime / local control association and generation. |
+| WorldTopology / EntitySpawnRecord | Reliable atomic participant, entity and binding transaction; entity construction has no owner field. |
+| ClientSynchronizationState | Explicit awaiting-baseline, warming, predicting, recovering and stopped phases; liveness, request identity, retries and timeout. |
+| NetworkClock | Host tick estimation, RTT/jitter, bounded prediction lead and timing probes, using an injected monotonic time source. |
+| LocalMovementPrediction | Bounded command/state history, correction comparison and local replay. |
+| CommandQueue | Host command deadlines, duplicate policy and held-input fallback, independent of the codec. |
+| RemoteMovementPresentation | Remote sample buffers, interpolation cursor and delayed presentation. |
+| ShipPresentation | Visual transforms, movement flags and local correction offsets. |
+| PlayerController | Input/UI policy and camera attachment, presentation following and smoothing reset. |
+| MovementStateAdapter / MovementWire / SnapshotEnvelope | Movement state capture/restore, payload codec and reusable session/completed-tick framing. |
+
+Snapshot application first validates/classifies records, then restores **every**
+remote collision proxy, then reconciles the local ship. Replay still uses the
+latest remote collision positions, rather than historical world rollback, but its
+inputs no longer depend on snapshot record order. Authoritative restoration also
+restores discontinuity revision and applied movement flags.
+
+Reliable topology transactions detach changed bindings before assigning any new
+owners. Transfers and swaps retain entity instances. Releasing control preserves
+the entity; DestroyEntity is the explicit destruction operation. Uncontrolled
+ships are frozen by the current movement scheduler, and their final authoritative
+placement is included in topology updates. Participant departure removes the
+departing participant's currently controlled ship, while a ship already transferred
+to another participant survives. Late joins include shipless participants and
+uncontrolled entities. Topology is bounded to ten participants and 128 entities.
+
+Warm-up snapshots refresh liveness and update remote proxies while local history
+is being built; local reconciliation starts after warm-up completes. Timing and
+recovery policies can be tested without engine time or live networking.
+
+Regression coverage includes transfer ordering, simultaneous transfer/departure,
+swaps, stale topology rejection, shipless late joins, remote-proxy application
+before local replay, camera follow/unsubscription, warm-up liveness, recovery
+identity/retries/timeouts and clock slew. Moving-ship contact quality under real
+network latency still requires the dedicated gameplay assessment described above.
+
+Validation after refactoring: the retained `dotnet test` command passed all 230
+outer cases, including the Godot integration runner. `git diff --check` passed.
+The build still reports the existing `UiIcon.Size` member-hiding warning.

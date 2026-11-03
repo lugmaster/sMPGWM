@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.Network;
@@ -182,11 +183,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         }
         try
         {
-            var record = World.ApproveSpawn(peer, data);
-            World.RefreshConstructionRecords();
-            // All spawn messages share the reliable channel: snapshot, later additions, then completion.
-            var snapshot = new Godot.Collections.Array();
-            foreach (var entry in World.SpawnRecords.Values) snapshot.Add(entry.ToVariant());
+            World.ApproveSpawn(peer, data);
+            var snapshot = World.CaptureTopology().ToVariant();
             if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot, Synchronization!.Baseline()) != Error.Ok)
             {
                 RejectJoin(peer, "Initial spawn send failed.");
@@ -199,7 +197,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             }
             foreach (var other in _joins.Snapshot())
                 if (other.Key != peer && other.Value.ReceivesWorld)
-                    if (RpcId(other.Key, nameof(ReceiveSpawn), record.ToVariant()) != Error.Ok)
+                    if (RpcId(other.Key, nameof(ReceiveWorldTopology), Synchronization!.Session.ToString("N"), snapshot) != Error.Ok)
                         RejectJoin(other.Key, "Spawn announcement failed.");
         }
         catch (Exception e) { FailSession($"Spawning failed: {e.Message}"); }
@@ -214,19 +212,12 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (!IsHostMessage() || _clientJoin.Phase != ClientJoinPhase.AwaitingSnapshot || _clientJoin.Expired(Time.GetTicksMsec())) return;
         try
         {
-            var records = new Dictionary<int, ShipSpawnRecord>();
-            var entities = new HashSet<string>(StringComparer.Ordinal);
-            if (snapshot.Count > 10) throw new InvalidOperationException("Oversized spawn snapshot.");
-            foreach (var payload in snapshot)
-            {
-                if (!ShipSpawnRecord.TryFromVariant(payload, out var record) ||
-                    !records.TryAdd(record.PeerId, record) || !entities.Add(record.EntityId) ||
-                    !ShipRegistry.TryGetById(record.ShipId, out _))
-                    throw new InvalidOperationException("Invalid spawn record.");
-            }
-            if (!records.ContainsKey(1) || !records.TryGetValue(Multiplayer.GetUniqueId(), out var own) ||
-                own.ShipId != _startup!.Player.ShipId) throw new InvalidOperationException("Missing local or host spawn.");
-            foreach (var record in records.Values) World.Spawn(record);
+            if (!WorldTopology.TryRead(snapshot, out var topology) || !topology.Participants.Any(p => p.Peer == 1))
+                throw new InvalidOperationException("Invalid initial world topology.");
+            var own = topology.Participants.SingleOrDefault(p => p.Peer == Multiplayer.GetUniqueId());
+            if (own == null || !topology.Entities.Any(e => e.EntityId == own.Entity && e.ShipId == _startup!.Player.ShipId))
+                throw new InvalidOperationException("Missing local ship.");
+            World.ApplyTopology(topology);
             if (World.LocalPlayer?.Participant?.ControlledShip == null)
                 throw new InvalidOperationException("Local controls were not bound.");
             if (Synchronization == null || !Synchronization.Receive(movement, true))
@@ -236,19 +227,6 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             if (RpcId(1, nameof(ConfirmSpawnReady)) != Error.Ok) FailSession("Spawn acknowledgement failed.");
         }
         catch (Exception e) { FailSession($"Applying initial spawns failed: {e.Message}"); }
-    }
-
-    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveSpawn(Variant payload)
-    {
-        if (!IsHostMessage() || !_clientJoin.HasWorld) return;
-        try
-        {
-            if (!ShipSpawnRecord.TryFromVariant(payload, out var record))
-                throw new InvalidOperationException("Invalid spawn record.");
-            World.Spawn(record);
-        }
-        catch (Exception e) { FailSession($"Applying spawn failed: {e.Message}"); }
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -339,9 +317,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
         _baselineRequests.Remove(peer); _timingRequests.Remove(peer);
         World.Despawn(peer);
-        foreach (var other in _joins.Snapshot())
-            if (other.Value.ReceivesWorld)
-                RpcId(other.Key, nameof(ReceiveDespawn), peer);
+        PublishWorldTopology();
         if (!wasReady) return;
         MembershipChanged?.Invoke(peer, false, reason);
         AnnounceMembership(peer, false, reason);
@@ -361,54 +337,28 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             MembershipChanged?.Invoke(peer, joined, reason);
     }
 
-    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveDespawn(int peer)
-    {
-        if (IsHostMessage() && _clientJoin.HasWorld) World.Despawn(peer);
-    }
-
-    public void PublishControlBinding(ShipSpawnRecord record, long generation)
+    private string? _publishedTopology;
+    public void PublishWorldTopology()
     {
         if (!IsHost()) return;
+        var topology = World.CaptureTopology();
+        if (topology.Identity == _publishedTopology) return;
+        _publishedTopology = topology.Identity;
+        var payload = topology.ToVariant();
         foreach (var (peer, join) in _joins.Snapshot())
             if (join.ReceivesWorld)
-                RpcId(peer, nameof(ReceiveControlBinding), Synchronization!.Session.ToString("N"), generation, record.ToVariant());
-    }
-    public void PublishControlRelease(int owner, long generation)
-    {
-        if (!IsHost()) return;
-        foreach (var (peer, join) in _joins.Snapshot())
-            if (join.ReceivesWorld)
-                RpcId(peer, nameof(ReceiveControlRelease), Synchronization!.Session.ToString("N"), owner, generation);
+                RpcId(peer, nameof(ReceiveWorldTopology), Synchronization!.Session.ToString("N"), payload);
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveControlRelease(string session, int peer, long generation)
+    private void ReceiveWorldTopology(string session, Godot.Collections.Array payload)
     {
-        if (!IsHostMessage() || !_clientJoin.HasWorld || session != Synchronization!.Session.ToString("N") ||
-            generation < 1 || generation > MovementWire.MaxTick ||
-            !World.MpControllers.TryGetValue(peer, out var owner) || generation <= owner.ControlGeneration) return;
-        World.ReleaseBinding(peer, generation);
-        Synchronization.BindingChanged(peer);
-    }
-    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveControlBinding(string session, long generation, Variant payload)
-    {
-        if (!IsHostMessage() || !_clientJoin.HasWorld || session != Synchronization!.Session.ToString("N") ||
-            generation < 1 || generation > MovementWire.MaxTick || !ShipSpawnRecord.TryFromVariant(payload, out var record) ||
-            !ShipRegistry.TryGetById(record.ShipId, out _)) return;
+        if (!IsHostMessage() || !_clientJoin.HasWorld || session != Synchronization!.Session.ToString("N")) return;
         try
         {
-            if (!World.MpControllers.TryGetValue(record.PeerId, out var owner))
-            {
-                if (World.MpControllers.Count >= MovementWire.MaxPlayers) return;
-                World.Spawn(record);
-                World.MpControllers[record.PeerId].ApplyGeneration(generation);
-            }
-            else if (generation <= owner.ControlGeneration) return;
-            World.ApplyBinding(record, generation);
-            Synchronization.BindingChanged(record.PeerId);
+            if (!WorldTopology.TryRead(payload, out var topology)) throw new InvalidOperationException("Invalid world topology.");
+            foreach (int peer in World.ApplyTopology(topology)) Synchronization.BindingChanged(peer);
         }
-        catch (Exception error) { FailSession($"Control binding failed: {error.Message}"); }
+        catch (Exception error) { FailSession($"Applying world topology failed: {error.Message}"); }
     }
 
     public bool MovementReady(int peer) => peer == 1 || _joins.Is(peer, PeerJoinPhase.Ready);
@@ -465,6 +415,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         int peer = Multiplayer.GetRemoteSenderId();
         if (IsHost() && session == Synchronization!.Session.ToString("N") && MovementReady(peer) && request > 0 && AllowRequest(_baselineRequests, peer, 500))
         {
+            PublishWorldTopology();
             Synchronization!.ResetCommands(peer);
             RpcId(peer, nameof(ReceiveBaseline), request, Synchronization.Baseline());
         }

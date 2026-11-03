@@ -67,6 +67,8 @@ public partial class PlayerController : Node
         if (_ship != null)
         {
             _ship.Teleported -= SnapCamera;
+            _ship.Presentation.Presented -= PresentCamera;
+            _ship.Presentation.Snapped -= SnapCamera;
             _ship.TreeExiting -= TargetExiting;
             _ship.SetLocalControl(false);
         }
@@ -86,12 +88,15 @@ public partial class PlayerController : Node
             _camera.Rotation = 0;
             next.SetLocalControl(true);
             next.Teleported += SnapCamera;
+            next.Presentation.Presented += PresentCamera;
+            next.Presentation.Snapped += SnapCamera;
             next.TreeExiting += TargetExiting;
             SnapCamera();
         }
         ApplyAvailability(InputPolicy.CanControlPlayer);
     }
     private void TargetExiting() => ShipChanged(_ship, null);
+    private void PresentCamera(Vector2 position) => _camera.GlobalPosition = position;
     private void SnapCamera()
     {
         if (_ship == null) return;

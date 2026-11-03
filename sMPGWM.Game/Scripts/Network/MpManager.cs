@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.GamePlaySystem;
@@ -13,6 +14,25 @@ public partial class MpManager : AbstractSingleton<MpManager>
     private readonly Dictionary<int, MpController> _controllers = new();
     private readonly Dictionary<int, ShipSpawnRecord> _records = new();
     private int _spawnIndex;
+    private readonly Dictionary<string, ShipController> _entities = new();
+    public IReadOnlyDictionary<string, ShipController> Entities => _entities;
+
+    private void TrackBinding(ShipController? previous, ShipController? next)
+    {
+        if (previous != null) { previous.ClearInput(); _entities[previous.EntityId] = previous; }
+        if (next != null) _entities[next.EntityId] = next;
+    }
+    private MpController EnsureParticipant(int peer)
+    {
+        if (_controllers.TryGetValue(peer, out var existing)) return existing;
+        var participant = new MpController { Name = $"Player_{peer}", ControllingPeerId = peer };
+        AddChild(participant);
+        participant.ControlledShipChanged += TrackBinding;
+        _controllers.Add(peer, participant);
+        if (IsInsideTree() && peer == Multiplayer.GetUniqueId()) LocalPlayer?.BindParticipant(participant);
+        return participant;
+    }
+
     public PlayerController? LocalPlayer { get; set; }
     public IReadOnlyDictionary<int, MpController> MpControllers => _controllers;
     public IReadOnlyDictionary<int, ShipSpawnRecord> SpawnRecords => _records;
@@ -49,6 +69,7 @@ public partial class MpManager : AbstractSingleton<MpManager>
                 record.Position, record.Rotation, record.Velocity);
             participant = new MpController { Name = $"Player_{record.PeerId}", ControllingPeerId = record.PeerId };
             AddChild(participant);
+            participant.ControlledShipChanged += TrackBinding;
             participant.AssignShip(ship);
             ship.Restore(record.Position, record.Rotation, record.Velocity, default);
             _controllers.Add(record.PeerId, participant);
@@ -60,7 +81,7 @@ public partial class MpManager : AbstractSingleton<MpManager>
         {
             _controllers.Remove(record.PeerId); _records.Remove(record.PeerId);
             if (participant != null) participant.Free();
-            if (ship != null && GodotObject.IsInstanceValid(ship)) ship.Free();
+            if (ship != null && GodotObject.IsInstanceValid(ship)) { _entities.Remove(ship.EntityId); ship.Free(); }
             throw;
         }
     }
@@ -70,14 +91,17 @@ public partial class MpManager : AbstractSingleton<MpManager>
         if (_controllers.Remove(peerId, out var controller))
         {
             if (LocalPlayer?.Participant == controller) LocalPlayer.UnbindParticipant();
-            controller.RemoveShip();
+            var ship = controller.ControlledShip;
+            controller.AssignShip(null);
+            if (ship != null) DestroyEntity(ship.EntityId);
+            controller.ControlledShipChanged -= TrackBinding;
             RemoveChild(controller);
             controller.QueueFree();
         }
         _records.Remove(peerId);
     }
 
-    internal ShipSpawnRecord CurrentRecord(int peer)
+    internal ShipSpawnRecord CaptureConstructionRecord(int peer)
     {
         var ship = _controllers[peer].ControlledShip!;
         var record = new ShipSpawnRecord(peer, ship.EntityId, ship.Data.Name,
@@ -86,7 +110,6 @@ public partial class MpManager : AbstractSingleton<MpManager>
         return record;
     }
 
-    internal void RemoveConstructionRecord(int peer) => _records.Remove(peer);
 
     internal void RefreshConstructionRecords()
     {
@@ -94,37 +117,84 @@ public partial class MpManager : AbstractSingleton<MpManager>
         {
             if (owner.ControlledShip == null) _records.Remove(peer);
             else if (!_records.TryGetValue(peer, out var record) || record.EntityId != owner.ControlledShip.EntityId)
-                CurrentRecord(peer);
+                CaptureConstructionRecord(peer);
         }
     }
 
-    internal void ReleaseBinding(int peer, long generation)
+    public void DestroyEntity(string entity)
     {
-        if (!_controllers.TryGetValue(peer, out var owner) || generation <= owner.ControlGeneration) return;
-        owner.RemoveShip();
-        owner.ApplyGeneration(generation);
-        _records.Remove(peer);
+        if (!_entities.TryGetValue(entity, out var ship)) return;
+        foreach (var owner in _controllers.Values)
+            if (owner.ControlledShip == ship) { owner.AssignShip(null); _records.Remove(owner.ControllingPeerId); }
+        _entities.Remove(entity);
+        if (GodotObject.IsInstanceValid(ship)) ship.QueueFree();
     }
 
-    internal void ApplyBinding(ShipSpawnRecord record, long generation)
+    public WorldTopology CaptureTopology()
     {
-        if (!_controllers.TryGetValue(record.PeerId, out var owner) || generation <= owner.ControlGeneration) return;
-        ShipController? existing = null;
-        foreach (var participant in _controllers.Values)
-            if (participant.ControlledShip?.EntityId == record.EntityId) existing = participant.ControlledShip;
-        var previous = owner.ControlledShip;
-        var ship = existing ?? ShipFactory.Create(ShipRegistry.GetById(record.ShipId), record.EntityId,
-            record.Position, record.Rotation, record.Velocity);
-        owner.AssignShip(ship);
-        ship.Restore(record.Position, record.Rotation, record.Velocity, default);
-        owner.ApplyGeneration(generation);
-        _records[record.PeerId] = record;
-        if (previous != null && previous != ship) previous.QueueFree();
+        foreach (var id in _entities.Keys.ToArray())
+            if (!GodotObject.IsInstanceValid(_entities[id]) || _entities[id].IsQueuedForDeletion()) _entities.Remove(id);
+        RefreshConstructionRecords();
+        var participants = _controllers.Select(p => new ParticipantBinding(p.Key, p.Value.ControlGeneration,
+            p.Value.ControlledShip?.EntityId ?? "")).ToArray();
+        var entities = _entities.Values.Select(ship => new EntitySpawnRecord(ship.EntityId, ship.Data.Name, ship.GlobalPosition, ship.GlobalRotation, ship.Velocity)).ToArray();
+        var topology = new WorldTopology(participants, entities);
+        if (!topology.IsValid()) throw new InvalidOperationException("Invalid world topology.");
+        return topology;
+    }
+
+    public int[] ApplyTopology(WorldTopology topology)
+    {
+        if (!topology.IsValid()) throw new InvalidOperationException("Invalid world topology.");
+        // Reject stale or conflicting generations before mutating any existing association.
+        foreach (var p in topology.Participants)
+            if (_controllers.TryGetValue(p.Peer, out var owner) &&
+                (p.Generation < owner.ControlGeneration || (p.Generation == owner.ControlGeneration &&
+                p.Entity != (owner.ControlledShip?.EntityId ?? ""))))
+                throw new InvalidOperationException("Stale control topology.");
+        var changed = topology.Participants.Where(p => !_controllers.TryGetValue(p.Peer, out var owner) ||
+            owner.ControlGeneration != p.Generation || (owner.ControlledShip?.EntityId ?? "") != p.Entity)
+            .Select(p => p.Peer).Concat(_controllers.Keys.Where(peer => !topology.Participants.Any(p => p.Peer == peer))).Distinct().ToArray();
+        // Detach every changed owner before assigning any ship: transfers and swaps preserve instances.
+        foreach (int peer in changed)
+            if (_controllers.TryGetValue(peer, out var owner)) owner.AssignShip(null);
+        foreach (var record in topology.Entities)
+        {
+            if (_entities.ContainsKey(record.EntityId)) continue;
+            var ship = ShipFactory.Create(ShipRegistry.GetById(record.ShipId), record.EntityId,
+                record.Position, record.Rotation, record.Velocity);
+            AddChild(ship);
+            ship.Restore(record.Position, record.Rotation, record.Velocity, default);
+            _entities.Add(record.EntityId, ship);
+        }
+        foreach (var p in topology.Participants)
+        {
+            var owner = EnsureParticipant(p.Peer);
+            owner.AssignShip(p.Entity == "" ? null : _entities[p.Entity]);
+            owner.ApplyGeneration(p.Generation);
+        }
+        // Released entities remain frozen, so their final authoritative placement travels with topology.
+        foreach (var record in topology.Entities)
+            if (!topology.Participants.Any(p => p.Entity == record.EntityId))
+            {
+                var ship = _entities[record.EntityId];
+                ship.Restore(record.Position, record.Rotation, record.Velocity, default);
+                ship.Presentation.Snap();
+            }
+        foreach (var peer in _controllers.Keys.ToArray())
+            if (!topology.Participants.Any(p => p.Peer == peer)) Despawn(peer);
+        foreach (var entity in _entities.Keys.ToArray())
+            if (!topology.Entities.Any(e => e.EntityId == entity)) DestroyEntity(entity);
+        _records.Clear();
+        foreach (var p in topology.Participants)
+            if (p.Entity != "") CaptureConstructionRecord(p.Peer);
+        return changed;
     }
 
     public void Clear()
     {
         foreach (var peerId in new List<int>(_controllers.Keys)) Despawn(peerId);
+        foreach (var entity in _entities.Keys.ToArray()) DestroyEntity(entity);
     }
 
     protected override void OnExitTree() => Clear();

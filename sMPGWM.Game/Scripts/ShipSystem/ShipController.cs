@@ -16,7 +16,11 @@ public partial class ShipController : CharacterBody2D
     public ShipState State { get; } = new();
     private ShipInputState _input;
     public byte AppliedMovementFlags { get; private set; }
-    public byte PresentedMovementFlags { get; set; }
+    public byte PresentedMovementFlags { get => Presentation.MovementFlags; set => Presentation.MovementFlags = value; }
+    private ShipPresentation? _presentation;
+    public ShipPresentation Presentation => _presentation ??= new(this);
+    internal void RestoreMovementMetadata(long revision, byte flags)
+    { DiscontinuityRevision = revision; AppliedMovementFlags = flags; }
     public ShipInputState InputState => _input;
     public long DiscontinuityRevision { get; private set; }
     public void Restore(Vector2 position, float rotation, Vector2 velocity, ShipInputState input)
@@ -24,16 +28,9 @@ public partial class ShipController : CharacterBody2D
         GlobalPosition = position; GlobalRotation = rotation; Velocity = velocity; _input = input;
         CaptureState();
     }
-    public void Present(Vector2 position, float rotation)
-    {
-        var visuals = GetNode<Node2D>("ShipVisuals");
-        visuals.GlobalPosition = position; visuals.GlobalRotation = rotation;
-        var camera = GetNodeOrNull<Camera2D>("LocalCamera");
-        if (camera != null) camera.GlobalPosition = position;
-    }
     public bool LocallyControlled { get; private set; }
     public event Action? Teleported;
-    public Vector2 DisplayedPosition => GetNode<Node2D>("ShipVisuals").GlobalPosition;
+    public Vector2 DisplayedPosition => Presentation.Position;
     public void SetLocalControl(bool enabled)
     {
         LocallyControlled = enabled;
