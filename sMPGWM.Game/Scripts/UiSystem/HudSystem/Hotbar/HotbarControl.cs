@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.HotbarSystem;
+using sMPGWM.Scripts.Items.Hotbar;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 using sMPGWM.Scripts.Util.UiComponents;

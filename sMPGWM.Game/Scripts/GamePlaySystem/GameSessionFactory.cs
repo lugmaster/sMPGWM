@@ -1,29 +1,29 @@
-using System;
 using Godot;
-using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.HotbarSystem;
-using sMPGWM.Scripts.InventorySystem;
-using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.Items.Hotbar;
+using sMPGWM.Scripts.Items.Inventory;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.Network;
 using sMPGWM.scripts.Network;
 using sMPGWM.Scripts.UiSystem;
+using sMPGWM.Scripts.World;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
 internal sealed record GameSession(
-    PlayerController Player, ItemRequestService Items, ItemController ItemController,
-    InventoryController Inventory, EquipmentController Equipment, ItemHotbarController Hotbar,
-    MessageController Messages, NetworkManager Network, IGameFixture Fixture);
+    PlayerController Player,
+    MessageController Messages,
+    NetworkManager Network,
+    IGameFixture Fixture);
 
 internal static class GameSessionFactory
 {
     public static GameSession Create(SessionScope scope, Node parent, UiCanvas canvas, Node world,
         NetworkStartupData startup, SessionCoordinator coordinator, IGameFixture fixture)
     {
-        var items = new ItemRequestService();
-        var itemController = new ItemController(items);
+        var items = new ItemStore();
         var inventory = scope.Own(new InventoryController(items));
         var equipment = scope.Own(new EquipmentController(items));
         var transfers = scope.Own(new InventoryEquipmentTransferService(inventory, equipment));
@@ -46,7 +46,7 @@ internal static class GameSessionFactory
         canvas.BindHotbar(hotbar, fixture.Actions);
         player.SetSessionActive(false);
 
-        var participants = new MpManager { Name = nameof(MpManager), LocalPlayer = player };
+        var participants = new GameWorld { Name = nameof(GameWorld), LocalPlayer = player };
         scope.Defer(() => ReleaseNode(participants));
         scope.Defer(participants.Clear);
         world.AddChild(participants);
@@ -68,7 +68,7 @@ internal static class GameSessionFactory
         network.MembershipChanged += notifications.MembershipChanged;
         network.LocalJoined += notifications.LocalJoined;
         parent.AddChild(network);
-        return new GameSession(player, items, itemController, inventory, equipment, hotbar, messages, network, fixture);
+        return new GameSession(player, messages, network, fixture);
     }
 
     private static void ReleaseNode(Node node)

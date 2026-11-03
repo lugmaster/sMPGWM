@@ -1,6 +1,6 @@
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.Items.Inventory;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.Network;
 using sMPGWM.scripts.Network;
@@ -51,7 +51,6 @@ public class GameSessionFactoryTests
             // QueueFree is deferred by production code to permit cleanup during RPC dispatch.
             // Drain those owned nodes synchronously here before constructing another session.
             FreeQueuedChildren(parent);
-            Assert.That(MpManager.Instance, Is.Null);
             Assert.That(NetworkManager.Instance, Is.Null);
             Assert.That(world.GetChildCount(), Is.Zero);
             var fresh = new SessionCoordinator(() => { }, failures.Add, cleanupErrors.Add);
@@ -128,8 +127,7 @@ public class GameSessionFactoryTests
                 Assert.That(api.AllowObjectDecoding, Is.EqualTo(decoding));
                 Assert.That(api.MultiplayerPeer, Is.SameAs(previousPeer));
                 FreeQueuedChildren(parent);
-                Assert.That(MpManager.Instance, Is.Null);
-                Assert.That(NetworkManager.Instance, Is.Null);
+                    Assert.That(NetworkManager.Instance, Is.Null);
                 Assert.That(HeartbeatMonitor.Instance, Is.Null);
                 Assert.That(cleanupErrors, Is.Empty);
             }

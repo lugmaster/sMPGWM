@@ -31,7 +31,7 @@
         <Content Include="config\config.cfg" />
         <Content Include="credits" />
         <Content Include="README.md" />
-        <Content Include="Scripts\Network\MpManager.cs.uid" />
+        <Content Include="Scripts\World\GameWorld.cs.uid" />
         <Content Include="Scripts\Network\NetworkManager.cs.uid" />
     </ItemGroup>
 </Project>

@@ -1,11 +1,9 @@
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
-using ItemLocation = sMPGWM.Scripts.EquipmentSystem.ItemLocation;
-using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.HotbarSystem;
-using sMPGWM.Scripts.InventorySystem;
-using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.Items.Hotbar;
+using sMPGWM.Scripts.Items.Inventory;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
@@ -24,7 +22,7 @@ public class ItemInteractionControllerTests
     public void SetUp()
     {
         _inventory = new InventoryController();
-        _equipment = new EquipmentController(_inventory.ItemRequestService);
+        _equipment = new EquipmentController(_inventory.Items);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
         _controller = new ItemInteractionController(_transfers);
         _controller.SetSession(_transfers.OpenEditSession());
@@ -41,12 +39,12 @@ public class ItemInteractionControllerTests
     private void Seed(params (string Definition, int Count)[] entries)
     {
         for (var index = 0; index < entries.Length; index++)
-            ItemFixture.Place(_inventory.ItemRequestService, _inventory.Container, index, entries[index].Definition, entries[index].Count);
+            ItemFixture.Place(_inventory.Items, _inventory.Container, index, entries[index].Definition, entries[index].Count);
     }
 
-    private ItemCellBinding Bag(int address) => new(ItemLocation.Inventory(address),
+    private ItemCellBinding Bag(int address) => new(ItemCellAddress.Inventory(address),
         _inventory.Snapshot.Slots[address], _inventory.Revision);
-    private ItemCellBinding Slot(string key) => new(ItemLocation.Equipment(key),
+    private ItemCellBinding Slot(string key) => new(ItemCellAddress.Equipment(key),
         _equipment.Snapshot.Slots[_equipment.FindSlot(key)], _equipment.Revision);
     private void Click(ItemCellBinding target, long mapping = 0) =>
         _controller.Click(target, _inventory.Revision, _equipment.Revision, mapping);
@@ -94,7 +92,7 @@ public class ItemInteractionControllerTests
             case "cancel": _controller.Cancel(); break;
             case "session": _controller.SetSession(_transfers.OpenEditSession()); break;
             case "mapping": _controller.Refresh(_inventory.Revision, _equipment.Revision, 1); break;
-            case "revision": _inventory.ItemRequestService.CreateItems(_inventory.Container, "mock_standard_engine", 1); break;
+            case "revision": _inventory.Items.CreateItems(_inventory.Container, "mock_standard_engine", 1); break;
         }
         var before = _inventory.Snapshot;
         Assert.That(_controller.Drop(token, Slot("engine")), Is.Not.EqualTo(TransferResult.Success));
@@ -192,7 +190,7 @@ public class ItemInteractionControllerTests
     {
         Seed(("mock_standard_engine", 1), ("mock_standard_engine", 1));
         Click(Bag(0));
-        if (revision) _inventory.ItemRequestService.CreateItems(_inventory.Container, "mock_standard_engine", 1);
+        if (revision) _inventory.Items.CreateItems(_inventory.Container, "mock_standard_engine", 1);
         var before = _inventory.Snapshot;
         Click(Bag(1), revision ? 0 : 1);
         Assert.That(_controller.IsCarrying, Is.False);
@@ -311,7 +309,7 @@ public class ItemInteractionControllerTests
     {
         Seed(("mock_standard_consumable", 3));
         var token = _controller.BeginDrag(Bag(0), _inventory.Revision, _equipment.Revision, 0);
-        _inventory.ItemRequestService.CreateItems(_inventory.Container, new("mock_standard_consumable"), 1);
+        _inventory.Items.CreateItems(_inventory.Container, new("mock_standard_consumable"), 1);
         var before = _inventory.Snapshot;
         Assert.That(_controller.Drop(token, Bag(1)), Is.EqualTo(TransferResult.StaleRevision));
         Assert.That(_inventory.Snapshot, Is.SameAs(before));
@@ -327,14 +325,14 @@ public class ItemInteractionControllerTests
         Seed(("mock_standard_consumable", 3), ("mock_standard_engine", 1));
         using var hotbar = ConfigureHotbar();
         var source = reason == "ineligible" ? Bag(1) : Bag(0);
-        if (reason == "location") source = source with { Location = ItemLocation.Inventory(_inventory.Capacity) };
+        if (reason == "location") source = source with { Location = ItemCellAddress.Inventory(_inventory.Capacity) };
         void Invalidate()
         {
             switch (reason)
             {
                 case "disposed": _transfers.Dispose(); break;
                 case "session": _transfers.RevokeEditSession(); break;
-                case "revision": _inventory.ItemRequestService.CreateItems(_inventory.Container, new("mock_standard_consumable"), 1); break;
+                case "revision": _inventory.Items.CreateItems(_inventory.Container, new("mock_standard_consumable"), 1); break;
             }
         }
         Click(source);

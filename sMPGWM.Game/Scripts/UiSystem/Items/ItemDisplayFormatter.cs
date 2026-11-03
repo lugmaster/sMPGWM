@@ -1,7 +1,7 @@
 
 
 using System.Globalization;
-using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.Items;
 using sMPGWM.Scripts.Util.UiComponents;
 
 namespace sMPGWM.Scripts.UiSystem.Items;

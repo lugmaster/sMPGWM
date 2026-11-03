@@ -1,16 +1,17 @@
 using System;
-using sMPGWM.Scripts.EquipmentSystem;
 using Godot;
 using sMPGWM.Scripts.InputSystem;
-using sMPGWM.Scripts.Network;
+using sMPGWM.Scripts.Items.Equipment;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.UiSystem;
+using sMPGWM.Scripts.World;
+
 namespace sMPGWM.Scripts.GamePlaySystem;
 
 public partial class PlayerController : Node
 {
     public PlayerInputPolicy InputPolicy { get; } = new();
-    public MpController? Participant { get; private set; }
+    public PlayerSession? Participant { get; private set; }
     public InputController Input { get; } = new() { Name = "InputController" };
     private UiCanvas _canvas = null!;
     private InventoryEquipmentTransferService _transfer = null!;
@@ -38,7 +39,7 @@ public partial class PlayerController : Node
         InputPolicy.SetHasBlockingWindow(canvas.HasBlockingWindow);
         ApplyAvailability(false);
     }
-    public void BindParticipant(MpController participant)
+    public void BindParticipant(PlayerSession participant)
     {
         if (Participant == participant) return;
         if (participant.ControllingPeerId != Multiplayer.GetUniqueId())

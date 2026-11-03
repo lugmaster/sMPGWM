@@ -208,3 +208,16 @@ network latency still requires the dedicated gameplay assessment described above
 Validation after refactoring: the retained `dotnet test` command passed all 230
 outer cases, including the Godot integration runner. `git diff --check` passed.
 The build still reports the existing `UiIcon.Size` member-hiding warning.
+
+
+## Architecture follow-up (2026-11-03)
+
+The ownership refactor supersedes the old MpManager/MpController names in the
+historical implementation notes: GameWorld now owns ship nodes; PlayerSession is
+a plain control binding and never reparents ships. Prediction, control generations,
+snapshot scheduling, and wire formats are retained. Item functionality is grouped
+under Scripts/Items. See [the architecture revision and remaining roadmap](backlog/game-architecture-refactorings.md#world-and-item-ownership-revision-2026-11-03).
+
+Automated regression coverage passes after the ownership change. Earlier live
+multiplayer evidence remains historical; ENet/Steam playtesting has not been
+repeated for this revision.

@@ -4,6 +4,7 @@ using System.Linq;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.scripts.Network;
+using sMPGWM.Scripts.World;
 
 namespace sMPGWM.Scripts.Network;
 
@@ -11,7 +12,7 @@ namespace sMPGWM.Scripts.Network;
 public partial class SynchronizationCoordinator : Node
 {
     public PlayerController Player { get; init; } = null!;
-    public MpManager World { get; init; } = null!;
+    public GameWorld World { get; init; } = null!;
     public NetworkManager Network { get; set; } = null!;
     public Guid Session { get; private set; }
     public long CompletedTick { get; private set; }
@@ -39,7 +40,7 @@ public partial class SynchronizationCoordinator : Node
     }
 
     public byte[] Baseline() => MovementWire.Snapshot(Session, CompletedTick,
-        World.MpControllers.Where(p => p.Value.ControlledShip != null).Select(p =>
+        World.Players.Where(p => p.Value.ControlledShip != null).Select(p =>
             MovementStateAdapter.Capture(p.Key, p.Value, _queues.TryGetValue(p.Key, out var q) ? q.LatestArrival : CompletedTick)).ToArray());
 
     public void AcceptCommands(int peer, byte[] bytes)
@@ -49,13 +50,13 @@ public partial class SynchronizationCoordinator : Node
         if (_traffic.TryGetValue(peer, out var last) && now - last < 8) return;
         _traffic[peer] = now;
         if (!MovementWire.ReadCommands(bytes, out var session, out var entity, out var generation, out var commands) ||
-            session != Session || !World.MpControllers.TryGetValue(peer, out var owner) ||
+            session != Session || !World.Players.TryGetValue(peer, out var owner) ||
             owner.ControlledShip?.EntityId != entity || owner.ControlGeneration != generation) return;
         var queue = Queue(peer, owner);
         foreach (var command in commands) queue.Accept(command, CompletedTick);
     }
 
-    private CommandQueue Queue(int peer, MpController owner)
+    private CommandQueue Queue(int peer, PlayerSession owner)
     {
         var binding = (owner.ControlledShip!.EntityId, owner.ControlGeneration);
         if (!_bindings.TryGetValue(peer, out var previous) || previous != binding)
@@ -71,14 +72,14 @@ public partial class SynchronizationCoordinator : Node
         if (CompletedTick >= MovementWire.MaxTick || PredictionTick >= MovementWire.MaxTick - 2)
         { Network.FailSession("Movement tick range exhausted."); return; }
         foreach (int peer in _queues.Keys.Concat(_traffic.Keys).Distinct().ToArray())
-            if (!World.MpControllers.TryGetValue(peer, out var owner) || owner.ControlledShip == null)
+            if (!World.Players.TryGetValue(peer, out var owner) || owner.ControlledShip == null)
             { ResetCommands(peer); _traffic.Remove(peer); }
         if (Network.IsHost())
         {
             Network.PublishWorldTopology();
             Player.SampleMovementInput();
             long tick = CompletedTick + 1;
-            foreach (var (peer, owner) in World.MpControllers)
+            foreach (var (peer, owner) in World.Players)
             {
                 var ship = owner.ControlledShip; if (ship == null) continue;
                 var q = Queue(peer, owner);
@@ -124,8 +125,8 @@ public partial class SynchronizationCoordinator : Node
         if (baseline)
         {
             if (!_client.AcceptsBaseline(session, request)) return false;
-            if (samples.Count != World.MpControllers.Count(p => p.Value.ControlledShip != null) || samples.Any(s =>
-                !World.MpControllers.TryGetValue(s.Peer, out var p) || p.ControlledShip?.EntityId != s.Entity ||
+            if (samples.Count != World.Players.Count(p => p.Value.ControlledShip != null) || samples.Any(s =>
+                !World.Players.TryGetValue(s.Peer, out var p) || p.ControlledShip?.EntityId != s.Entity ||
                 p.ControlGeneration != s.Generation)) return false;
             Session = session;
             _client.ApplyBaseline(session, tick);
@@ -136,7 +137,7 @@ public partial class SynchronizationCoordinator : Node
         _clock.Observe(tick, baseline);
         // Warm-up snapshots refresh liveness and remote proxies but cannot reconcile an unfinished history.
         bool reconcile = baseline || _client.Phase == ClientSynchronizationPhase.Predicting;
-        MovementSnapshotApplication.Apply(samples, World.MpControllers,
+        MovementSnapshotApplication.Apply(samples, World.Players,
             (owner, sample) => _remote.Apply(sample.Peer, owner.ControlledShip!, tick, sample, baseline),
             (owner, sample) =>
             {
@@ -149,7 +150,7 @@ public partial class SynchronizationCoordinator : Node
     public override void _Process(double delta)
     {
         if (!_active || Network.IsHost() || !_client.CanPresent) return;
-        _remote.Render(delta, _clock.PresentationTick, World.MpControllers);
+        _remote.Render(delta, _clock.PresentationTick, World.Players);
         Player.Participant?.ControlledShip?.Presentation.RenderLocal(delta);
     }
 

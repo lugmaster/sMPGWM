@@ -1,6 +1,6 @@
 using System.Reflection;
-using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.Items.Inventory;
 using sMPGWM.Scripts.UiSystem;
 
 namespace sMPGWM.Tests.UiSystem;

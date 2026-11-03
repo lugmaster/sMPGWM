@@ -1,10 +1,11 @@
 using sMPGWM.Scripts.ShipSystem;
+using sMPGWM.Scripts.World;
 
 namespace sMPGWM.Scripts.Network;
 
 internal static class MovementStateAdapter
 {
-    public static MovementSample Capture(int peer, MpController owner, long arrival)
+    public static MovementSample Capture(int peer, PlayerSession owner, long arrival)
     {
         var ship = owner.ControlledShip!;
         return new(peer, ship.EntityId, owner.ControlGeneration, ship.DiscontinuityRevision,

@@ -1,6 +1,8 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.Movement;
+using sMPGWM.Scripts.World;
+
 namespace sMPGWM.Scripts.ShipSystem;
 public readonly record struct ShipInputState(Vector2 Direction, float AimAngle, bool HasAim, bool Afterburner, bool Brake, bool AutomaticBraking);
 public sealed class ShipState
@@ -11,6 +13,7 @@ public sealed class ShipState
 }
 public partial class ShipController : CharacterBody2D
 {
+    internal PlayerSession? ControllingPlayer { get; set; }
     public string EntityId { get; internal set; } = "";
     public ShipData Data { get; internal set; } = null!;
     public ShipState State { get; } = new();

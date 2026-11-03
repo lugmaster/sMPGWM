@@ -8,6 +8,7 @@ using sMPGWM.Scripts.Network.NetworkInternal;
 using sMPGWM.scripts.Network.NetworkInternal;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.ShipSystem;
+using sMPGWM.Scripts.World;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.scripts.Network;
@@ -27,7 +28,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private ClientJoinProtocol _clientJoin = null!;
     private HeartbeatMonitor? _heartbeat;
     public SynchronizationCoordinator? Synchronization { get; set; }
-    public MpManager World { get; init; } = null!;
+    public GameWorld World { get; init; } = null!;
     public NetworkStartupData Startup { get; init; } = null!;
     public event Action<string>? Failed;
     public event Action? SessionReady;

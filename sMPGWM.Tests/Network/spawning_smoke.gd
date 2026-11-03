@@ -17,7 +17,7 @@ func run() -> void:
         await process_frame
         if current_scene == null:
             continue
-        var manager := current_scene.get_node_or_null("WorldViewPortContainer/WorldViewport/WorldScene/MpManager")
+        var manager := current_scene.get_node_or_null("WorldViewPortContainer/WorldViewport/WorldScene/GameWorld")
         if manager == null:
             continue
         var network := current_scene.find_child("NetworkManager", true, false)
@@ -39,7 +39,7 @@ func run() -> void:
             print("HEARTBEAT_SMOKE host loss: verify blocking alert")
             quit(0)
             return
-        # InGame must always have the local placeholder ready.
+        # InGame must always have the local ship ready.
         if flow.get("GameFlowState") == 2 and manager.get_child_count() == 0:
             push_error("Entered InGame before spawning")
             quit(1)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.ShipSystem;
+using sMPGWM.Scripts.World;
 
 namespace sMPGWM.Scripts.Network;
 
@@ -24,7 +25,7 @@ public sealed class RemoteMovementPresentation
         if (reset) ship.Presentation.Snap();
         else ship.Presentation.Present(oldPosition, oldAngle);
     }
-    public void Render(double delta, double target, IReadOnlyDictionary<int, MpController> owners)
+    public void Render(double delta, double target, IReadOnlyDictionary<int, PlayerSession> owners)
     {
         _cursor += Math.Clamp(target - _cursor, 0, delta * 66);
         foreach (var (peer, buffer) in _buffers)

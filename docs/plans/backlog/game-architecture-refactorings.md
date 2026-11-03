@@ -60,3 +60,69 @@ Primary files: [NetworkManager](../../../sMPGWM.Game/Scripts/Network/NetworkMana
 - Configuration compatibility hashing is deferred for later work.
 - Movement replication and current-state synchronization are known future work covered by the [multiplayer synchronization plan](../multiplayer-synchronization-story-summary.md).
 - `reload_config_on_start = true` is intentional in the development environment. It is not a defect or an urgent refactoring; retain the current configuration behavior.
+
+
+## World and item ownership revision (2026-11-03)
+
+The current workspace implementation now uses `Scripts/World/GameWorld.cs` instead of
+`Network/MpManager.cs`. GameWorld is session-owned, not a singleton. It owns ship
+nodes and the player binding table. `PlayerSession` replaces `MpController` with a
+plain C# object: changing control never reparents or destroys a ship. One scene
+node per participant and its associated cleanup are eliminated. `SpawnEntity`
+provides ship construction independently of player connections; topology loading
+and player spawning share this path. Disconnect still explicitly destroys the
+controlled ship, preserving the existing game policy until persistence is added.
+
+Items, inventory, equipment, and hotbar now live together in `Scripts/Items`, with
+matching namespaces. `ItemStore` is the existing item authority under a clearer
+name; the forwarding `ItemController` object is removed. Container ownership,
+revision checks, atomic transfers, equipment restrictions, and UI snapshots are
+retained. Storage `ItemLocation` and UI `ItemCellAddress` have distinct names.
+The unused global item-authority accessor is removed from GamePlayManager.
+
+The session factory and cleanup scope remain the composition and lifetime boundary.
+Prediction history, rendered positions, control generations, and authoritative
+movement are intentionally distinct. They are not duplicate state to merge.
+
+### Rules for the next gameplay features
+
+- World entities belong to the world, eventually to active chunks. A connection
+  references the ship it controls; it never owns that ship through scene parenting.
+- Chunk persistence stores durable entity IDs and gameplay data, not live Godot
+  nodes or network peer IDs. Runtime item/container IDs currently remain session
+  IDs: durable allocation and restoration must precede item persistence.
+- Player progression owns learned skills, attributes, and passives. Ships own hull,
+  shields, cargo, and installed equipment. This is the initial design assumption.
+- Cargo, station storage, wreck loot, and equipment use ItemStore containers.
+  Equipment adds slot rules. Pickups transfer items through the same authority.
+- Affixes and passives feed one stat calculation path. Start with ship requirements;
+  the broader StateEngine documents are future design, not implemented runtime.
+- AI and players provide commands to shared ship behavior. Bosses add encounter
+  behavior, not another item, movement, or stat implementation.
+- Asteroids and scrap fields are chunk content with persistent depletion and loot.
+  They do not require full player progression components.
+- Station services operate through docking and interaction commands. Walking
+  interiors can be added later without moving inventory authority into the UI.
+
+### Remaining roadmap, in dependency order
+
+1. Persistent chunk load/change/unload/reload slice; durable identities and save
+   schema; explicit boundary behavior. Inactive simulation initially freezes.
+2. Host-authoritative item commands and per-entity container ownership. The current
+   item authority is still local; do not treat it as replicated multiplayer state.
+3. Mining, pickups, and saved depletion as the first complete gameplay loop.
+4. Hull/shields, weapons, damage, destruction, basic AI, and dropped cargo.
+5. Stat modifiers, affixes, skills/passives, different ships, then boss encounters.
+6. Docking and station services; walking interiors remain undecided.
+
+The current movement protocol remains player-oriented, and WorldTopology still
+contains ship records with a 128-entity limit. Chunk interest management and AI
+replication must extend those contracts before a large universe is supported.
+No chunk persistence, AI simulation, combat, or RPG runtime is claimed by this refactor.
+
+Validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-restore --verbosity quiet`
+passed 230 outer tests including the Godot wrapper; its report contains 157 passing
+Godot cases. Added coverage for world-owned uncontrolled ships, duplicate entity
+rejection, control changes without reparenting, and cleanup. Existing transfer,
+camera, prediction, topology, startup rollback, and restart coverage passed.
+Live ENet/Steam multi-process playtests have not been repeated after this refactor.

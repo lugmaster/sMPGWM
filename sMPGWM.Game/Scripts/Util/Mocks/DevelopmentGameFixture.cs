@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.Items.Inventory;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.Util.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;

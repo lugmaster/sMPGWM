@@ -1,6 +1,7 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
+using sMPGWM.Scripts.Items;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GameConfigSystem;
@@ -53,7 +54,7 @@ public static class GameConfig
         if (!string.IsNullOrEmpty(GameDataChecksum)) return;
         if (string.IsNullOrEmpty(ConfigDataChecksum))
             throw new InvalidOperationException("Configuration is not loaded.");
-        _ = ItemSystem.ItemRegistry.GetAll();
+        _ = ItemRegistry.GetAll();
         _ = ShipSystem.ShipRegistry.GetAll();
         var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoadingSystem.FileLoader.CapturedInputs);
         foreach (var name in new[] { "EffectDefinitions.yml", "EffectSchemas.yml", "PassiveDefinitions.yml", "PassiveSchemas.yml" })

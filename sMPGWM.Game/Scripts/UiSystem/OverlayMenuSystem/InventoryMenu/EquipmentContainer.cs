@@ -3,7 +3,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.Items.Equipment;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.Util.UiComponents;

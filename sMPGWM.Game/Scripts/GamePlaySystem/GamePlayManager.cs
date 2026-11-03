@@ -1,11 +1,7 @@
 using System;
-using sMPGWM.Scripts.EquipmentSystem;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
-using sMPGWM.Scripts.HotbarSystem;
-using sMPGWM.Scripts.InventorySystem;
-using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.Util;
@@ -19,11 +15,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     private SessionCoordinator? _coordinator;
     private MainGameState _gameState = MainGameState.Inactive;
     public PlayerController LocalPlayer => _session?.Player!;
-    public ItemRequestService ItemRequestService => _session?.Items!;
-    public ItemController ItemController => _session?.ItemController!;
-    public InventoryController InventoryController => _session?.Inventory!;
-    public EquipmentController EquipmentController => _session?.Equipment!;
-    public ItemHotbarController HotbarController => _session?.Hotbar!;
     public MessageController MessageController => _session?.Messages!;
     public MainGameState GameState => _gameState;
     public event Action<MainGameState>? OnGameStateChanged;

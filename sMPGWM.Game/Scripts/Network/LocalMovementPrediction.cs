@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
+using sMPGWM.Scripts.World;
 
 namespace sMPGWM.Scripts.Network;
 
@@ -19,7 +20,7 @@ public sealed class LocalMovementPrediction
         Reset(tick); _identity = state;
         MovementStateAdapter.Restore(ship, state); ship.Presentation.Snap();
     }
-    public void Step(int peer, MpController owner)
+    public void Step(int peer, PlayerSession owner)
     {
         var ship = owner.ControlledShip!;
         var command = new MovementCommand(++Tick, ship.InputState);
@@ -27,7 +28,7 @@ public sealed class LocalMovementPrediction
         _history[Tick] = (command, MovementStateAdapter.Capture(peer, owner, Tick));
     }
     public MovementCommand[] RecentCommands() => _history.Values.TakeLast(6).Select(h => h.Command).ToArray();
-    public bool Reconcile(int peer, MpController owner, long tick, MovementSample authoritative)
+    public bool Reconcile(int peer, PlayerSession owner, long tick, MovementSample authoritative)
     {
         if ((_identity is { } identity && (identity.Entity != authoritative.Entity ||
             identity.Generation != authoritative.Generation || identity.Revision != authoritative.Revision)) ||

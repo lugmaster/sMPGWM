@@ -1,6 +1,6 @@
 using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.FileLoadingSystem;
-using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.Items;
 
 namespace sMPGWM.Tests.ItemSystem;
 

@@ -17,12 +17,7 @@ public partial class PlayerHud : Control
     internal void SetUnreadMessages(int count) => _toolbar.PresentNotification(NotificationKind.UnreadMessages, count);
     private void RequestMenu(UiWindowId id) => MenuRequested?.Invoke(id);
 
-    private Control _statsAnchor = null!;
-    private Control _radarAnchor = null!;
-    private Control _hotbarAnchor = null!;
 
-    private PlayerStatsPanel _statsPanel = null!;
-    private RadarControl _radarControl = null!;
     private HotbarControl _hotbarControl = null!;
     private bool _isProcessingInput;
     internal HotbarControl Hotbar => _hotbarControl;
@@ -31,11 +26,6 @@ public partial class PlayerHud : Control
     {
         Logger.Trace($"{nameof(PlayerHud)}.{nameof(_EnterTree)} called.");
         _toolbar = GetNode<MenuToolbarControl>("%MenuToolbar");
-        _statsAnchor = GetNode<Control>("%StatsAnchor");
-        _radarAnchor = GetNode<Control>("%RadarAnchor");
-        _hotbarAnchor = GetNode<Control>("%HotbarAnchor");
-        _statsPanel = GetNode<PlayerStatsPanel>("%PlayerStatsPanel");
-        _radarControl = GetNode<RadarControl>("%RadarControl");
         _hotbarControl = GetNode<HotbarControl>("%HotbarControl");
     }
 
@@ -77,7 +67,6 @@ public partial class PlayerHud : Control
     //     , IReadOnlyCollection<StatType> visibleStats)
     // {
     //     Logger.Debug($"{nameof(PlayerHud)}.{nameof(Bind)} called.");
-    //     // _statsPanel.Bind(state, visibleStats);
     // }
 
     internal void SetHotbarIcons(IReadOnlyList<IconDefinition> iconDefinitions)

@@ -9,7 +9,6 @@ public partial class PlayerStatsPanel : PanelContainer
 
     private VBoxContainer _barContainer = null!;
     // private LivingEntityState _livingEntityState = null!;
-    private bool _isProcessingInput = true;
 
     public override void _EnterTree()
     {

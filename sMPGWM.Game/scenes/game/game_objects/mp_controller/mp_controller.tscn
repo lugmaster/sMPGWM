@@ -1,19 +1,18 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://ddxsiosm1vk51"]
 
 [ext_resource type="Script" path="res://Scripts/Network/MpController.cs" id="1"]
-[ext_resource type="Texture2D" path="res://assets/mocks/ship_fighter_reference.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://6wgwqyl11a1h" path="res://assets/mocks/ship_fighter_reference.png" id="2"]
 
 [sub_resource type="CircleShape2D" id="Shape"]
 radius = 18.0
 
-[node name="MpController" type="CharacterBody2D"]
+[node name="MpController" type="CharacterBody2D" unique_id=1985145627]
 position = Vector2(600, 300)
 collision_layer = 0
-collision_mask = 1
 script = ExtResource("1")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1376998926]
 texture = ExtResource("2")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1228691158]
 shape = SubResource("Shape")

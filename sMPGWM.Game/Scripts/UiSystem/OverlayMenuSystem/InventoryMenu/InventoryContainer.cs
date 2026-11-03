@@ -2,8 +2,8 @@
 
 using Godot;
 using System;
-using sMPGWM.Scripts.InventorySystem;
-using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.Items.Inventory;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.Util.UiComponents;
 

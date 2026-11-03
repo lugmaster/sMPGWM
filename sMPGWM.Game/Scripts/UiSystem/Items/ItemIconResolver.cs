@@ -1,5 +1,5 @@
 using Godot;
-using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.Items;
 
 namespace sMPGWM.Scripts.UiSystem.Items;
 

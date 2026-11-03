@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.Items;
 using sMPGWM.Scripts.Util;
 
 namespace sMPGWM.Tests.ItemSystem;
