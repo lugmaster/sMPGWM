@@ -49,6 +49,6 @@ Acceptance requires correct ownership and lifecycle, fixed simulation steps, 30 
 
 ## Relationship to original Story 11
 
-This story owns synchronization-specific initialization, cleanup, recovery, and adverse-network tests. Original Story 11 retains broader participant/camera/UI/input integration, inventory/hotbar/menu regressions, compatibility failures, and overall session cleanup verification. Reuse its harnesses rather than implement parallel lifecycle mechanisms.
+This story owns synchronization-specific initialization, cleanup, recovery, and adverse-network tests. Original Story 11 is out of current scope and retained as a future outline for broader integration/regression work. Reuse existing lifecycle mechanisms and harnesses; do not defer cleanup, failure handling, or tests required by the active stories.
 
-Dependencies: synchronization Stories 1–4 and original Story 6's join/cleanup protocol. Original Stories 9–10 supply camera/effects integration when available; they are not silently considered refined by this plan.
+Dependencies: synchronization Stories 1–4 and original Story 6's join/cleanup protocol. Local ships Story 8 supplies the agreed camera integration when available. Original Story 10 effects are deferred; no effects implementation is required by this story.

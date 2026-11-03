@@ -9,9 +9,9 @@ Status: refinement in progress; implementation pending.
 ## Implementation plan
 
 - Process local input each frame through `InputController` and `PlayerController`. Pass the current values directly to the bound participant's `ControlledShip`; no network round trip or host command queue is involved.
-- If a `ShipInputState` value is useful, keep it a local data snapshot containing movement direction, aim angle/availability, afterburner, braking, and automatic braking. Network sequences and payload contracts belong to deferred Story 8.
+- If a `ShipInputState` value is useful, keep it a local data snapshot containing movement direction, aim angle/availability, afterburner, braking, and automatic braking. Network sequences and payload contracts belong to the separate synchronization plan.
 - Specify movement coordinates explicitly: forward/backward and strafe relative to the ship.
-- Convert pointer position to world-space aiming through the gameplay camera/viewport. Persistent camera following in Story 9 is not required for this local-control milestone.
+- Convert pointer position to world-space aiming through the gameplay camera/viewport. Persistent camera following in Story 8 is not required for this local-control milestone.
 - Have the locally controlled `ShipController` apply the current input during `_PhysicsProcess()`, use `MovementPhysics` for rotation and velocity, and call `MoveAndSlide()` locally. Explicitly order input updates before their consumption.
 - Define mass/inertia and braking integration with the existing movement calculations during this story's refinement.
 - Clear active input and aiming when control becomes unavailable or the controlled ship changes. Preserve the automatic-braking preference.

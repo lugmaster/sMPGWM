@@ -62,6 +62,6 @@ Run existing input-policy/action tests and add focused lifecycle/binding coverag
 
 ## Scope boundary
 
-Participant lifecycle integration belongs to Story 4, local ship input and movement to Story 7, and camera following to Story 9. Multiplayer inventory ownership changes are outside this epic. `MovementPhysics` is unchanged by this extraction.
+Participant lifecycle integration belongs to Story 4, local ship input and movement to Story 7, and camera following to Story 8. Multiplayer inventory ownership changes are outside this epic. `MovementPhysics` is unchanged by this extraction.
 
 Dependencies: none. The participant-binding contract introduced here is completed by Story 4.

@@ -1,8 +1,8 @@
-# Multiplayer synchronization — Story 8 implementation plan
+# Multiplayer synchronization — Implementation plan
 
 Epic: [YAML-defined multiplayer ships with local player control](backlog/multiplayer-ships-w-local-player-control.md).
 
-Status: discussion decisions documented; implementation pending. The five stories below replace original epic Story 8. Their numbering is local to this synchronization plan; original epic Stories 9–11 retain their identities.
+Status: discussion decisions documented; implementation pending. The five stories below replace original epic Story 8. Their numbering is local to this synchronization plan; camera following is now local ships Story 8 (formerly epic Story 9); original epic Stories 10–11 are out of current scope and retained for later reconsideration.
 
 ## Stories
 
@@ -42,7 +42,7 @@ Implement Story 1 first, then Story 2. Stories 3 and 4 build on their tick/state
 
 All multiplayer validation uses at least host H and clients A/B. All three ships must move on all instances; each participant supplies only its own input. The host simulates all ships once per step, clients immediately predict local movement, and remote ships use buffered presentation. Snapshot publication and input batching must not discard intermediate simulation/input steps.
 
-Original Story 9 still owns persistent camera behavior; it must follow the locally presented ship. Original Story 10 owns effects and animation; this plan supplies replicated applied presentation state. Synchronization cleanup and adverse-network verification belong to synchronization Story 5; original Story 11 retains broader camera/UI/input integration and regression coverage.
+Local ships Story 8 (formerly Story 9) still owns persistent camera behavior; it must follow the locally presented ship. Original Story 10 is deferred effects and animation work; this plan supplies replicated applied presentation state. Synchronization cleanup and adverse-network verification belong to synchronization Story 5; original Story 11 is deferred broader camera/UI/input integration and regression work. Required lifecycle cleanup and verification in the active stories remain in scope.
 
 ## References used in refinement
 

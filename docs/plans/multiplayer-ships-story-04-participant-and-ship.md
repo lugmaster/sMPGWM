@@ -23,7 +23,7 @@ PlayerController                separate local input, local peer authority
 
 Every game instance has one `MpController` per participant, including peer 1, but only one local `PlayerController`. Place the participant/ship subtree in the scene and viewport that render the gameplay world.
 
-`ControllingPeerId` identifies the participant used to bind local control. The local player's recursive authority assignment remains confined to its separate subtree. Under the revised first milestone, `PlayerController` drives its own participant's ship locally; remote ships do not consume local input. The future network simulation authority model is deferred to Story 8.
+`ControllingPeerId` identifies the participant used to bind local control. The local player's recursive authority assignment remains confined to its separate subtree. Under the revised first milestone, `PlayerController` drives its own participant's ship locally; remote ships do not consume local input. The future network simulation authority model is covered by the separate synchronization plan.
 
 ## Implementation plan
 
@@ -37,7 +37,7 @@ Every game instance has one `MpController` per participant, including peer 1, bu
 
 ## Movement responsibility
 
-`ShipController` owns the `CharacterBody2D`. In Story 7, `PlayerController` passes local input to its controlled ship, which uses it during local `_PhysicsProcess()` updates with `MovementPhysics` before calling `MoveAndSlide()`. Input processing does not wait for a network round trip. `MpController` neither reads local input nor moves a body itself. Movement synchronization is separate follow-up work in Story 8.
+`ShipController` owns the `CharacterBody2D`. In Story 7, `PlayerController` passes local input to its controlled ship, which uses it during local `_PhysicsProcess()` updates with `MovementPhysics` before calling `MoveAndSlide()`. Input processing does not wait for a network round trip. `MpController` neither reads local input nor moves a body itself. Movement synchronization is separate follow-up work in the separate synchronization plan.
 
 This story does not change `MovementPhysics` or implement the movement protocol.
 

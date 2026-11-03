@@ -27,7 +27,7 @@ The current placeholder has a Fighter sprite and circular collider. The new ship
 3. Apply the configured texture and ordered collider points. Use a centered sprite with matching local coordinates so the image and collider align. Copy collider data into node-owned mutable storage without exposing the registry's configuration to mutation.
 4. Share immutable `ShipData` across instances and create a separate mutable `ShipState` per ship. Initialize position, rotation, and velocity from the supplied initial state. Expose movement stats and light/heavy weapon-slot capacities as configuration.
 5. Complete configuration before processing is enabled. Only publish/assign a successfully initialized ship. `MpManager` attaches it beneath the participant through Story 4's lifecycle operations, within the gameplay world's rendering viewport. Story 7 enables local movement only for the locally controlled ship.
-6. Define explicit world and ship collision layers. Configure ships to collide with world obstacles and other ships. Story 7 supplies local collision response; cross-peer collision consistency is deferred to synchronization work in Story 8.
+6. Define explicit world and ship collision layers. Configure ships to collide with world obstacles and other ships. Story 7 supplies local collision response; cross-peer collision consistency is deferred to the separate synchronization plan.
    For the one-host/two-client baseline, construct all three ships on every instance. Remote ships keep their render and collision representation at the approved spawn transform, with movement updates disabled. Local collision response must not move these remote representations. Story 7 activates movement only on the locally bound ship.
 7. On construction failure, clean up all unfinished nodes and abort gameplay via `GameFlowManager.Instance.QuitToStartMenuBlocking(reason)`. Provide an actionable reason identifying the ship type, entity ID where available, and failed construction step or resource. Route the error once through the construction caller or existing error boundary; do not continue gameplay or silently fall back to another ship.
 
@@ -51,6 +51,6 @@ Use a Godot scene integration test to construct three ships beneath three partic
 
 ## Scope boundary
 
-This story constructs and initializes the ship body. Story 6 supplies network-approved entity IDs and spawn state. Story 7 integrates `MovementPhysics` and local physics updates; Story 8 is deferred synchronization work. Story 10 adds local movement effects. Weapon behavior and a player-facing ship-switch feature remain outside this story.
+This story constructs and initializes the ship body. Story 6 supplies network-approved entity IDs and spawn state. Story 7 integrates `MovementPhysics` and local physics updates; Synchronization is covered by its separate five-story plan. Original Story 10 is deferred movement-effects work, outside current scope. Weapon behavior and a player-facing ship-switch feature remain outside this story.
 
 Dependencies: [Story 2](multiplayer-ships-story-02-ship-registry.md) and [Story 4](multiplayer-ships-story-04-participant-and-ship.md).

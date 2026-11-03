@@ -29,7 +29,7 @@ Use validated primitive payloads and retain disabled arbitrary-object decoding. 
 1. Update `PlayerStartupData` construction, serialization, parsing, and callers to use `ShipId`. Keep the default in its creation path; host and client both supply their startup data through the existing network startup configuration.
 2. On the host, derive the requesting participant from the actual sender, validate `ShipId` against `ShipRegistry`, allocate a unique entity ID, and choose the initial transform. The initial policy uses host-selected spaced positions and zero velocity; collision-aware placement can be refined later.
 3. Route the host's own startup data through the same approval/construction path using a local call. Clients cannot select authoritative entity IDs, ownership, stats, or spawn locations.
-4. For the first local-control milestone, build initial snapshots from the host-approved spawn records. Use the same record format for incremental spawn announcements. Current moving-state snapshots require synchronization and are deferred to Story 8; the host does not yet know the remote players' locally simulated transforms.
+4. For the first local-control milestone, build initial snapshots from the host-approved spawn records. Use the same record format for incremental spawn announcements. Current moving-state snapshots require synchronization and are covered by the separate synchronization plan; the host does not yet know the remote players' locally simulated transforms.
 5. Preserve the existing reliable sequence: spawn request, initial snapshot, readiness acknowledgement, then join completion. Keep later additions/removals ordered consistently with the snapshot and completion messages.
 6. Make duplicate delivery idempotent. Repeated records must not create new entities or reset existing ships to old spawn positions. Conflicting identity/type records fail explicitly; deliberate future ship replacement uses an explicit lifecycle operation rather than masquerading as a duplicate spawn.
 7. Apply the initial snapshot and complete local participant binding and authority setup before acknowledging readiness. Complete loading only after the local participant and ship exist and the existing join-completion conditions are met.
@@ -45,7 +45,7 @@ Use validated primitive payloads and retain disabled arbitrary-object decoding. 
 - Host-local and remote participant creation use the same approved construction path.
 - Clients cannot provide authoritative ownership, entity IDs, stats, or spawn transforms.
 - Initial and incremental records construct equivalent configured entities.
-- Late joiners receive the current participant/ship roster and approved spawn records. Current moving-state synchronization is explicitly deferred to Story 8.
+- Late joiners receive the current participant/ship roster and approved spawn records. Current moving-state synchronization is explicitly covered by the separate synchronization plan.
 - Duplicate delivery neither duplicates entities nor resets their current state.
 - Invalid requests and malformed host records produce controlled failures with reasons.
 - Construction failures invoke the blocking return-to-menu flow specified in Story 5.
@@ -66,6 +66,6 @@ Story 6 verifies spawning and binding. Once Story 7 is integrated, exercise inpu
 
 ## Scope boundary
 
-Ship-selection UI and additional player startup fields come later. Continuous movement replication and current moving-state late-join snapshots belong to deferred Story 8. Host approval of spawn data does not decide movement simulation authority. This story establishes the creation protocol for participant-controlled ships; future abandoned-ship synchronization and player-facing ship switching can extend it separately.
+Ship-selection UI and additional player startup fields come later. Continuous movement replication and current moving-state late-join snapshots belong to the separate synchronization plan. Host approval of spawn data does not decide movement simulation authority. This story establishes the creation protocol for participant-controlled ships; future abandoned-ship synchronization and player-facing ship switching can extend it separately.
 
 Dependencies: [Story 2](multiplayer-ships-story-02-ship-registry.md), [Story 4](multiplayer-ships-story-04-participant-and-ship.md), and [Story 5](multiplayer-ships-story-05-ship-construction.md).

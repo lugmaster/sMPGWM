@@ -26,7 +26,7 @@ Status: refinement documented; implementation pending. Replay integration and nu
 
 Simulation reconciliation and visual snapping use separate thresholds. Apply meaningful simulation correction through restore/replay immediately. Preserve a visual offset and smooth it toward the corrected simulation for small present-time corrections; snap for explicit teleports, replacement, or sufficiently large displacement.
 
-Choose position/velocity/angle tolerances using world scale, movement speeds, and serialization precision. Configure smoothing duration and snap distance separately. The persistent camera from original Story 9 must follow the locally presented position to avoid camera/ship jitter.
+Choose position/velocity/angle tolerances using world scale, movement speeds, and serialization precision. Configure smoothing duration and snap distance separately. The persistent camera from local ships Story 8 (formerly Story 9) must follow the locally presented position to avoid camera/ship jitter.
 
 ## Required implementation investigation
 
@@ -46,4 +46,4 @@ Static scenery and moving ships have different replay requirements. Interpolated
 
 Use focused movement/history checks plus H/A/B playtests under delay/loss. Observe normal flight, braking, afterburner transitions, wall contact, and ship contact. Record correction frequency/magnitude and remaining collision artifacts rather than treating thresholds as a way to suppress meaningful errors.
 
-Dependencies: synchronization Stories 1–2; original movement from Story 7. Persistent camera implementation remains original Story 9.
+Dependencies: synchronization Stories 1–2; original movement from Story 7. Persistent camera implementation remains local ships Story 8 (formerly Story 9).
