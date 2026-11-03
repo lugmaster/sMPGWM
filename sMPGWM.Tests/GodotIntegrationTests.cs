@@ -30,7 +30,14 @@ public class GodotIntegrationTests
                          "Scripts/UiSystem/OverlayMenuSystem/UiWindowManager.cs" })
                 Copy(Path.Combine(game, file), Path.Combine(staging, file));
             Copy(Path.Combine(game, "scenes/game/ship.tscn"), Path.Combine(staging, "scenes/game/ship.tscn"));
+            // Session construction tests exercise the real canvas and runtime node composition.
+            foreach (var directory in new[] { "Scripts/UiSystem", "Scripts/Util/UiComponents", "Scripts/Network", "Scripts/GameConfigSystem", "scenes/ui" })
+                CopyTree(Path.Combine(game, directory), Path.Combine(staging, directory));
+            Copy(Path.Combine(game, "config/config.cfg"), Path.Combine(staging, "config/config.cfg"));
+            Copy(Path.Combine(game, "scenes/game/ui_canvas.tscn"), Path.Combine(staging, "scenes/game/ui_canvas.tscn"));
             CopyTree(Path.Combine(game, "assets/mocks"), Path.Combine(staging, "assets/mocks"));
+            foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "radar_mock.png-*"))
+                Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
             foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "ship_fighter_reference.png-*"))
                 Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
             File.WriteAllText(Path.Combine(staging, "project.godot"), """
@@ -39,6 +46,7 @@ public class GodotIntegrationTests
                 config/name="sMPGWM integration tests"
                 run/main_scene="res://tests.tscn"
                 [autoload]
+                ConfigLoader="*res://Scripts/GameConfigSystem/ConfigLoader.cs"
                 IconDefinitions="*res://Scripts/Util/UiComponents/IconDefinitions.cs"
                 [dotnet]
                 project/assembly_name="sMPGWM"

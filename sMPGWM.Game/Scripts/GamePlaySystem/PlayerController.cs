@@ -141,11 +141,14 @@ public partial class PlayerController : Node
         UnbindParticipant();
         _shutdown = true;
         InputPolicy.CanControlPlayerChanged -= ApplyAvailability;
-        _canvas.BlockingChanged -= InputPolicy.SetHasBlockingWindow;
-        _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
-        _canvas.OnRequestHotbarAction -= _actions.RequestHotbarActivation;
-        _canvas.UnbindInventory();
-        _transfer.RevokeEditSession();
+        if (_canvas != null)
+        {
+            _canvas.BlockingChanged -= InputPolicy.SetHasBlockingWindow;
+            _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
+            if (_actions != null) _canvas.OnRequestHotbarAction -= _actions.RequestHotbarActivation;
+        }
+        _transfer?.RevokeEditSession();
+        if (Input.GetParent() == null) Input.Free();
         if (GodotObject.IsInstanceValid(_camera)) _camera.QueueFree();
     }
     public override void _ExitTree() => Shutdown();

@@ -1,136 +1,89 @@
 using System;
-using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
+using Godot;
+using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.HotbarSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.MessageSystem;
-using sMPGWM.scripts.Network;
-using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.Util;
 using sMPGWM.Scripts.Util.Mocks;
-using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
 public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
-    private UiCanvas _canvas = null!;
-    public PlayerController LocalPlayer { get; private set; } = null!;
+    private GameSession? _session;
+    private SessionCoordinator? _coordinator;
     private MainGameState _gameState = MainGameState.Inactive;
-    private double _mockMessageGameplaySeconds;
-    private double _nextMockMessageLogSeconds = 3.0;
-    private bool _mockAcknowledgementSent;
-
-    public event Action<MainGameState>? OnGameStateChanged;
-
+    public PlayerController LocalPlayer => _session?.Player!;
+    public ItemRequestService ItemRequestService => _session?.Items!;
+    public ItemController ItemController => _session?.ItemController!;
+    public InventoryController InventoryController => _session?.Inventory!;
+    public EquipmentController EquipmentController => _session?.Equipment!;
+    public ItemHotbarController HotbarController => _session?.Hotbar!;
+    public MessageController MessageController => _session?.Messages!;
     public MainGameState GameState => _gameState;
-    public ItemRequestService ItemRequestService { get; private set; } = null!;
-    public ItemController ItemController { get; private set; } = null!;
-    public InventoryController InventoryController { get; private set; } = null!;
-    public EquipmentController EquipmentController { get; private set; } = null!;
-    private InventoryEquipmentTransferService IeTransferService { get; set; } = null!;
-    public ItemHotbarController HotbarController { get; private set; } = null!;
-
-    public MessageController MessageController { get; private set; } = null!;
-
+    public event Action<MainGameState>? OnGameStateChanged;
     [Export] public bool PopulateMockInventory { get; set; } = true;
 
     protected override void OnReady()
     {
-        var player = PlayerMock.Instance;
-        ItemRequestService = new ItemRequestService();
-        ItemController = new ItemController(ItemRequestService);
-        InventoryController = new InventoryController(ItemRequestService);
-        if (PopulateMockInventory) player.PopulateInventory(InventoryController);
-        EquipmentController = new EquipmentController(InventoryController.ItemRequestService);
-        IeTransferService = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
+        var flow = GameFlowManager.Instance;
+        _coordinator = flow.Session;
+        if (_coordinator == null)
+        {
+            flow.QuitToStartMenuBlocking("No session startup was supplied.");
+            return;
+        }
+        _coordinator.Start(scope =>
+        {
+            var startup = flow.ConsumeNetworkStartup()
+                ?? throw new InvalidOperationException("No network startup was supplied.");
+            var canvas = GetNode<UiCanvas>("UiCanvas");
+            var world = GetNode<Node>("WorldViewPortContainer/WorldViewport/WorldScene");
+            IGameFixture fixture = GameConfig.Development
+                ? new DevelopmentGameFixture(PlayerMock.Instance, PopulateMockInventory)
+                : new EmptyGameFixture();
+            // Clear published references after every other resource has been released.
+            scope.Defer(() => _session = null);
+            _session = GameSessionFactory.Create(scope, this, canvas, world, startup, _coordinator, fixture);
+            flow.StateChanged += NetworkStateChanged;
+            scope.Defer(() => flow.StateChanged -= NetworkStateChanged);
+            scope.Defer(StopSession);
+            NetworkStateChanged(flow.GameFlowState);
+            // Start on the next frame after the scene has completed readiness.
+            CallDeferred(nameof(StartNetwork));
+        });
+    }
 
-        _canvas = GetNode<UiCanvas>("UiCanvas");
-        LocalPlayer = new PlayerController { Name = "PlayerController" };
-        MessageController = new MessageController(_canvas, LocalPlayer.InputPolicy,
-            exception => Logger.Error($"Message observer failed: {exception}"));
-        MessageMock.PopulateWelcomeMessage(MessageController);
-        _canvas.BindInventory(InventoryController, EquipmentController, IeTransferService);
-        var actions = player.GetHotBarSkills();
-        HotbarController = new ItemHotbarController(InventoryController, EquipmentController, IeTransferService,
-            exception => Logger.Error($"Hotbar observer failed: {exception}"));
-        var world = GetNode<Node>("WorldViewPortContainer/WorldViewport/WorldScene");
-        LocalPlayer.Initialize(_canvas, IeTransferService, position => HotbarController.Activate(position,
-            key => player.OnHotbarSlotPressed(int.Parse(key)),
-            request => Logger.Info($"Item hotbar activation requested: {request}")), world);
-        AddChild(LocalPlayer);
-        _canvas.BindHotbar(HotbarController, actions);
-        LocalPlayer.SetSessionActive(GameState == MainGameState.Active);
-        GameFlowManager.Instance.StateChanged += NetworkStateChanged;
-        NetworkStateChanged(GameFlowManager.Instance.GameFlowState);
-
-        // Gameplay is ready before networking can spawn players or publish session events.
-        world.AddChild(new MpManager { Name = nameof(MpManager), LocalPlayer = LocalPlayer });
-        AddChild(new NetworkManager { Name = nameof(NetworkManager) });
+    private void StartNetwork()
+    {
+        if (_coordinator?.State == SessionState.Starting) _session?.Network.CreateNetwork();
     }
 
     public override void _Process(double delta)
     {
-        if (GameState != MainGameState.Active || _mockAcknowledgementSent) return;
-
-        _mockMessageGameplaySeconds += delta;
-        if (_mockMessageGameplaySeconds >= _nextMockMessageLogSeconds)
-        {
-            Logger.Info($"Mock message timer: {_mockMessageGameplaySeconds:F1}/30 seconds of active gameplay.");
-            _nextMockMessageLogSeconds += 3.0;
-        }
-        if (_mockMessageGameplaySeconds < 30.0) return;
-
-        _mockAcknowledgementSent = true;
-        Logger.Info("Mock message timer: sending acknowledgement message.");
-        MessageMock.SendAcknowledgementMessage(MessageController);
-        Logger.Info("Mock message timer: send completed.");
+        if (GameState == MainGameState.Active && _session != null)
+            _session.Fixture.Tick(delta, _session.Messages);
     }
 
-    protected override void OnExitTree()
-    {
-        LocalPlayer?.Shutdown();
-        GameFlowManager.Instance.StateChanged -= NetworkStateChanged;
-        if (_canvas != null)
-        {
-            MessageController?.Dispose();
-            _canvas.UnbindInventory();
-        }
-        IeTransferService?.Dispose();
-        HotbarController?.Dispose();
-        HotbarController = null!;
-        EquipmentController?.Dispose();
-        InventoryController?.Dispose();
-        IeTransferService = null!;
-        EquipmentController = null!;
-        InventoryController = null!;
-        ItemController = null!;
-        ItemRequestService = null!;
-    }
-
-    public void StopSession()
-    {
-        if (_canvas != null && LocalPlayer != null) SetGameState(MainGameState.Inactive);
-    }
-
-    private void NetworkStateChanged(GameFlowState state)
-    {
+    protected override void OnExitTree() => _coordinator?.Stop();
+    public void StopSession() => SetGameState(MainGameState.Inactive);
+    private void NetworkStateChanged(GameFlowState state) =>
         SetGameState(state == GameFlowState.InGame ? MainGameState.Active : MainGameState.Inactive);
-    }
 
     public void SetGameState(MainGameState newGameState)
     {
         if (!Enum.IsDefined(newGameState))
             throw new ArgumentOutOfRangeException(nameof(newGameState), newGameState, null);
         if (newGameState == _gameState) return;
-
         _gameState = newGameState;
-        LocalPlayer.SetSessionActive(newGameState == MainGameState.Active);
-        MessageController.SetActive(newGameState == MainGameState.Active);
+        if (_session != null && GodotObject.IsInstanceValid(_session.Player) && _session.Player.IsInsideTree())
+            _session.Player.SetSessionActive(newGameState == MainGameState.Active);
+        _session?.Messages.SetActive(newGameState == MainGameState.Active);
         OnGameStateChanged?.Invoke(newGameState);
     }
-
 }

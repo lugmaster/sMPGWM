@@ -7,6 +7,8 @@ namespace sMPGWM.Scripts.Network;
 
 public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
 {
+    public event Action<string>? Failed;
+    public event Action<int, string>? PeerTimedOut;
     [Export] public double RequestIntervalSeconds { get; set; } = 5;
     [Export] public double SilenceTimeoutSeconds { get; set; } = 20;
     private sealed class Peer
@@ -45,7 +47,7 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
             {
                 Stop();
                 Logger.Warning("HB host timeout");
-                MpManager.Instance.HostLost("Host stopped responding");
+                Failed?.Invoke("Host stopped responding");
             }
             return;
         }
@@ -56,7 +58,7 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
             {
                 _peers.Remove(id);
                 Logger.Warning($"HB timeout peer={id}");
-                MpManager.Instance.Depart(id, "Heartbeat timeout");
+                PeerTimedOut?.Invoke(id, "Heartbeat timeout");
                 continue;
             }
             foreach (var seq in new List<long>(peer.Pending.Keys))

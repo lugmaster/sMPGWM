@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Godot;
+using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.scripts.Network;
 using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Util;
@@ -14,6 +15,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     private GameFlowState _gameFlowState = GameFlowState.StartMenu;
     private NetworkStartupData? _pendingStartupData;
     private long _navigationGeneration;
+    internal SessionCoordinator? Session { get; private set; }
 
     public NetworkStartupData? ConsumeNetworkStartup()
     {
@@ -24,7 +26,9 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void StartNetworkGame(NetworkStartupData startupData)
     {
-        if (_gameFlowState != GameFlowState.StartMenu || NetworkManager.Instance != null) return;
+        if (_gameFlowState != GameFlowState.StartMenu) return;
+        Session = new SessionCoordinator(CompleteLoading, PresentSessionFailure,
+            error => Logger.Error($"Session cleanup failed: {error}"));
         _pendingStartupData = startupData;
         ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.Loading);
     }
@@ -46,12 +50,6 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         StateChanged?.Invoke(state);
     }
 
-    internal void BeginDisconnecting()
-    {
-        if (_gameFlowState is GameFlowState.Loading or GameFlowState.InGame)
-            SetState(GameFlowState.Disconnecting);
-    }
-
     public void CompleteLoading()
     {
         if (_gameFlowState == GameFlowState.Loading) SetState(GameFlowState.InGame);
@@ -66,6 +64,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     protected override void OnExitTree()
     {
+        Session?.Stop();
         ++_navigationGeneration;
         _pendingStartupData = null;
         GetTree().SceneChanged -= OnSceneChanged;
@@ -76,7 +75,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     {
         _pendingStartupData = null;
         SetState(GameFlowState.Disconnecting);
-        NetworkManager.Instance?.StopSession();
+        Session?.Stop();
         
         if (!string.IsNullOrEmpty(reason))
         {
@@ -91,7 +90,19 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     {
         _pendingStartupData = null;
         SetState(GameFlowState.Disconnecting);
-        NetworkManager.Instance?.StopSession();
+        Session?.Stop();
+        PresentSessionResult(reason, showAsError);
+    }
+
+    private void PresentSessionFailure(string reason)
+    {
+        _pendingStartupData = null;
+        SetState(GameFlowState.Disconnecting);
+        PresentSessionResult(reason, true);
+    }
+
+    private void PresentSessionResult(string reason, bool showAsError)
+    {
         Logger.Debug(
             $"{nameof(GameFlowManager)}.{nameof(QuitToStartMenuBlocking)} graceful quit triggered with {nameof(reason)}={reason}.");
 
@@ -120,7 +131,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     {
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitGame)} requested with {nameof(reason)}={reason}.");
         SetState(GameFlowState.Disconnecting);
-        NetworkManager.Instance?.StopSession();
+        Session?.Stop();
         if (Steam.SteamworksHelper.Instance != null) Steam.SteamworksHelper.ShutdownSteam();
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitGame)} completed Steam shutdown.");
         Instance.CallDeferred(nameof(QuitGameInternal));
@@ -177,7 +188,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
             Logger.Error(
                 $"{nameof(GameFlowManager)} scene change failed with {nameof(error)}={error}."
             );
-            if (targetState == GameFlowState.Loading) QuitToStartMenuBlocking($"Cannot load game: {error}");
+            if (targetState == GameFlowState.Loading) Session?.Fail($"Cannot load game: {error}");
             return;
         }
     }

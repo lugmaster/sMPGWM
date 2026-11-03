@@ -36,7 +36,12 @@ public sealed class MessageController : IDisposable
         _canvas = canvas;
         _inputPolicy = inputPolicy;
         canvas.MessageAcknowledged += AcknowledgeCurrent;
-        canvas.BindMessages(this);
+        try { canvas.BindMessages(this); }
+        catch
+        {
+            Dispose();
+            throw;
+        }
     }
 
     public void SetActive(bool active)
@@ -121,14 +126,20 @@ public sealed class MessageController : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        if (_canvas != null)
+        try
         {
-            _canvas.MessageAcknowledged -= AcknowledgeCurrent;
-            _canvas.EndMessageSession();
+            if (_canvas != null && Godot.GodotObject.IsInstanceValid(_canvas))
+            {
+                _canvas.MessageAcknowledged -= AcknowledgeCurrent;
+                _canvas.EndMessageSession();
+            }
         }
-        _inputPolicy?.SetHasPendingAcknowledgement(false);
-        _canvas = null;
-        _inputPolicy = null;
-        Changed = null;
+        finally
+        {
+            _inputPolicy?.SetHasPendingAcknowledgement(false);
+            _canvas = null;
+            _inputPolicy = null;
+            Changed = null;
+        }
     }
 }
