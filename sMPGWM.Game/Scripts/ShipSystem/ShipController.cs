@@ -15,7 +15,19 @@ public partial class ShipController : CharacterBody2D
 {
     internal PlayerSession? ControllingPlayer { get; set; }
     public string EntityId { get; internal set; } = "";
-    public ShipData Data { get; internal set; } = null!;
+    private ShipData _data = null!;
+    private float _rotationInertia;
+    private float _friction;
+    public ShipData Data
+    {
+        get => _data;
+        internal set
+        {
+            _data = value;
+            _rotationInertia = 1 + value.Stats.ShipMass * 1.05f;
+            _friction = 0.15f / (1 + value.Stats.ShipMass * 0.95f);
+        }
+    }
     public ShipState State { get; } = new();
     private ShipInputState _input;
     public byte AppliedMovementFlags { get; private set; }
@@ -52,11 +64,11 @@ public partial class ShipController : CharacterBody2D
 
         var previousRotation = GlobalRotation;
         var s = Data.Stats;
-        if (_input.HasAim) GlobalRotation = MovementPhysics.RotationStep(GlobalRotation, _input.AimAngle, s.RotationSpeed, s.ShipMass, (float)delta);
-        var acceleration = (_input.Afterburner ? s.AfterBurnerAcceleration : s.Acceleration) / s.ShipMass;
+        if (_input.HasAim) GlobalRotation = MovementPhysics.RotationStep(GlobalRotation, _input.AimAngle, s.RotationSpeed, _rotationInertia, (float)delta);
+        var acceleration = _input.Afterburner ? s.AfterBurnerAcceleration : s.Acceleration;
         Velocity = MovementPhysics.MovementStep(Velocity, _input.Brake ? Vector2.Zero : _input.Direction,
             GlobalTransform.X.Normalized(), GlobalTransform.Y.Normalized(), acceleration,
-            _input.Afterburner ? s.AfterBurnerSpeed : s.Speed, s.Acceleration / s.ShipMass,
+            _input.Afterburner ? s.AfterBurnerSpeed : s.Speed, _friction,
             (float)delta, _input.Brake || _input.AutomaticBraking);
         bool thrust = !_input.Brake && _input.Direction.LengthSquared() > .01f;
         AppliedMovementFlags = (byte)((thrust ? 1 : 0) |
