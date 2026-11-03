@@ -25,7 +25,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private string? _helloToken;
     private ulong _replyDeadline;
     private readonly HashSet<int> _answered = new();
-    // TODO #ShipStory How does one get rejected and what does it mean for further connects?
+    // Pending disconnect deadlines for rejected joins; entries are cleared on cleanup, not retained as bans.
     private readonly Dictionary<int, ulong> _rejected = new();
     private enum JoinState { Connected, Verified, Spawning, Ready }
     private readonly Dictionary<int, JoinState> _joins = new();

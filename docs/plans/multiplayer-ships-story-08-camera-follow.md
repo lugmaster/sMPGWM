@@ -3,7 +3,7 @@
 Epic: [YAML-defined multiplayer ships with local player control](backlog/multiplayer-ships-w-local-player-control.md).
 Plan: [Multiplayer ships — Stories 1–8](multiplayer-ships-story-summary.md).
 
-Status: implementation added; automated checks run; three-player user playtest pending.
+Status: implementation added; automated checks run; user playtest concluded successfully with one host and one client on 2026-11-03. See the summary for tested scope; three-player validation was not reported.
 
 *As a player, my top-down camera follows my currently controlled ship without changing its angle.*
 

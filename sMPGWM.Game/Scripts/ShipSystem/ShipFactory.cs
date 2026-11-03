@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Godot;
+using sMPGWM.Scripts.GamePlaySystem;
 namespace sMPGWM.Scripts.ShipSystem;
 public static class ShipFactory
 {
@@ -9,8 +10,7 @@ public static class ShipFactory
         ShipController? ship = null;
         try
         {
-            // TODO #ShipStory create a GamePlayProvider
-            ship = ResourceLoader.Load<PackedScene>("res://scenes/game/ship.tscn").Instantiate<ShipController>();
+            ship = GamePlayProvider.CreateShip();
             ship.EntityId = entityId; ship.Data = data;
             ship.Position = position; ship.Rotation = rotation; ship.Velocity = velocity;
             ship.GetNode<CollisionPolygon2D>("CollisionPolygon2D").Polygon = data.ColliderPoints.ToArray();

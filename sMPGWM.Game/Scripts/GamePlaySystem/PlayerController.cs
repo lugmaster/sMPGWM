@@ -21,7 +21,6 @@ public partial class PlayerController : Node
     private bool _shutdown;
     private ShipController? _ship;
     private Camera2D _camera = null!;
-    public float CameraSmoothingSpeed { get; set; } = 5f;
 
     public void Initialize(UiCanvas canvas, InventoryEquipmentTransferService transfer, Action<int> activate, Node world)
     {
@@ -36,7 +35,7 @@ public partial class PlayerController : Node
         InputPolicy.CanControlPlayerChanged += ApplyAvailability;
         // TODO #ShipStory use default values - i never initiated a camera with that much parameters. defend if you think any is really needed.
         _camera = new Camera2D { Name = "LocalCamera", PositionSmoothingEnabled = true,
-            PositionSmoothingSpeed = CameraSmoothingSpeed, IgnoreRotation = true,
+            PositionSmoothingSpeed = 5f, IgnoreRotation = true,
             ProcessPriority = 100, ProcessCallback = Camera2D.Camera2DProcessCallback.Idle };
         world.AddChild(_camera);
         // TODO #ShipStory what are these adjustions for?

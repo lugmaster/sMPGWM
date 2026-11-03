@@ -19,8 +19,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
     private UiCanvas _canvas = null!;
     public PlayerController LocalPlayer { get; private set; } = null!;
-    // TODO #ShipStory make a GameConfig Setting instead. 
-    [Export] public float CameraSmoothingSpeed { get; set; } = 5f;
     private MainGameState _gameState = MainGameState.Inactive;
     private double _mockMessageGameplaySeconds;
     private double _nextMockMessageLogSeconds = 3.0;
@@ -51,7 +49,7 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         IeTransferService = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
-        LocalPlayer = new PlayerController { Name = "PlayerController", CameraSmoothingSpeed = CameraSmoothingSpeed };
+        LocalPlayer = new PlayerController { Name = "PlayerController" };
         MessageController = new MessageController(_canvas, LocalPlayer.InputPolicy,
             exception => Logger.Error($"Message observer failed: {exception}"));
         MessageMock.PopulateWelcomeMessage(MessageController);
@@ -70,7 +68,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         NetworkStateChanged(GameFlowManager.Instance.GameFlowState);
 
         // Gameplay is ready before networking can spawn players or publish session events.
-        // TODO #ShipStory why add to world and to GameplayManager(-- AddChild(LocalPlayer); --)?
         world.AddChild(new MpManager { Name = nameof(MpManager), LocalPlayer = LocalPlayer });
         AddChild(new NetworkManager { Name = nameof(NetworkManager) });
     }

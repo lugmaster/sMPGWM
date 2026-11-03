@@ -9,6 +9,6 @@
 7. [Control the local ship through PlayerController](multiplayer-ships-story-07-local-ship-control.md)
 8. [Follow the local ship with a persistent camera](multiplayer-ships-story-08-camera-follow.md)
 
-Stories 1?8 are implemented for validation. The required user playtest follows Story 8, including persistent camera following. Three-player visual validation remains pending.
+Stories 1 through 8 are implemented. The user concluded the post-Story-8 playtest successfully on 2026-11-03 with one host and one client: both joined, each controlled their own ship, and only initial spawning was synchronized, as planned. The user reported that everything works. The three-player scenario described in the stories was not part of this reported playtest.
 
 Movement synchronization has its own [five-story plan](multiplayer-synchronization-story-summary.md). Movement effects and broader lifecycle/regression verification (original epic Stories 10–11) are out of current scope and retained in the [epic](backlog/multiplayer-ships-w-local-player-control.md) for later reconsideration.
