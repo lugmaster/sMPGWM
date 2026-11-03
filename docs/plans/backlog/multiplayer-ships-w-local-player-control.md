@@ -6,7 +6,7 @@ Stories 1–7 form the first deliverable epic scope. Completing their implementa
 
 **Stories 1–7 are covered by separate story files**, indexed in the [Stories 1–7 summary plan](multiplayer-ships-story-summary.md). Covered means documented, not implemented; Story 7 still has refinement items open.
 
-The first milestone processes input locally each frame and moves the locally controlled ship in local physics updates. Movement synchronization is separate follow-up work, reserved as Story 8; its authority model and protocol are not settled. Cross-peer movement/effect consistency, prediction/reconciliation, combat, a ship-selection screen, and multiplayer inventory synchronization are outside this milestone. Participant and ship spawning remain networked through Story 6.
+The first milestone processes input locally each frame and moves the locally controlled ship in local physics updates. Movement synchronization is separate follow-up work, documented as five stories under the [Story 8 synchronization plan](../multiplayer-synchronization-story-summary.md). That follow-up uses host-authoritative movement, local client prediction/reconciliation, and remote interpolation. Cross-peer movement/effect consistency, prediction/reconciliation, combat, a ship-selection screen, and multiplayer inventory synchronization are outside the first milestone. Participant and ship spawning remain networked through Story 6.
 
 **Architectural contract**
 
@@ -31,7 +31,7 @@ Ship identity uses the YAML `name` value verbatim, with case-sensitive compariso
 
 **Refinement progress**
 
-All multiplayer scenarios use at least three players: one host (H) and two clients (A and B). After all joins complete, every instance contains three participants and three ship entities, with one ship beneath each participant. All may use the same `fighter` type; each ship has its own entity ID and mutable state.
+All multiplayer scenarios use at least three players: one host (H) and two clients (A and B). After all joins complete, every instance contains three participants and three ship entities, with one ship beneath each participant. All may use the same `fighter` type; each ship has its own entity ID and mutable state. The following stationary-remote behavior describes only the Stories 1–7 milestone; Story 8 replaces it with synchronized movement.
 
 | Running instance | H's ship | A's ship | B's ship |
 |---|---|---|---|
@@ -43,10 +43,10 @@ Remote ships remain at their approved spawn transforms, including when their own
 
 - Stories 1–6: refinement complete; implementation pending. See the linked stories below.
 - Story 7: refinement in progress, revised to local input and movement.
-- Story 8: deferred synchronization work; requires separate refinement.
+- Story 8: refinement discussion finished and documented in five separate synchronization stories; implementation pending. Implementation checks, tuning values, and the measured playtest envelope are explicitly retained in those plans.
 - Stories 9–11: follow-up work awaiting refinement after the Stories 1–7 milestone and user playtest.
 
-The local-control scope correction also updates references in Stories 2–6; the former host-only movement assumption is superseded.
+The local-control scope correction also updates references in Stories 2–6; the former host-only movement assumption is superseded for the first milestone. Story 8 subsequently introduces host-authoritative simulation together with immediate client prediction, not host-only responsiveness.
 
 Refinement complete means the implementation plan is agreed, not that the story has been implemented.
 
@@ -108,13 +108,25 @@ Implementation plan: [Story 7 — Local ship control](multiplayer-ships-story-07
 
 ---
 
-**Story 8 — Synchronize ship movement (deferred)**
+**Story 8 — Synchronize ship movement (refined and split)**
 
 *As a participant, I see consistent ship movement across all game instances.*
 
-This is outside the first local-control milestone. Refine synchronization separately after local control works. Do not retain the previous host-only simulation model as an agreed design.
+Refinement discussion finished; plans documented, implementation pending. This remains outside the first local-control milestone and follows its required user playtest.
 
-Topics to decide include simulation authority, ownership validation, transport and update cadence, prediction/reconciliation if needed, remote interpolation, cross-peer collisions, current-state late joining, ship transfer, ordering/timeouts, and replicated presentation state. Define acceptance criteria and latency/packet-loss verification as part of that refinement.
+Whole plan: [Multiplayer synchronization summary](../multiplayer-synchronization-story-summary.md). The numbering below belongs to the synchronization plan and does not renumber original Stories 9–11.
+
+| Synchronization story | Refinement status |
+|---|---|
+| [1 — Network timing and snapshot scheduling](../multiplayer-synchronization-story-01-network-timing-and-snapshot-scheduling.md) | Finished and documented; implementation pending. |
+| [2 — Client input delivery and authoritative host movement](../multiplayer-synchronization-story-02-client-input-and-host-movement.md) | Finished and documented; implementation pending. |
+| [3 — Local prediction, reconciliation, and correction smoothing](../multiplayer-synchronization-story-03-prediction-and-reconciliation.md) | Finished and documented; implementation pending. |
+| [4 — Remote ship interpolation](../multiplayer-synchronization-story-04-remote-ship-interpolation.md) | Finished and documented; implementation pending. |
+| [5 — Synchronization lifecycle and network-condition verification](../multiplayer-synchronization-story-05-lifecycle-and-verification.md) | Finished and documented; implementation pending. |
+
+The host simulates all ships at 60 Hz and publishes full movement snapshots after every second completed physics step (30 Hz). Clients send tick-addressed input batches at 30 Hz, predict locally at 60 Hz, reconcile meaningful state differences, and interpolate remote ships. Joining is fresh, with current-state baselines for existing players; persistence is deferred. Keep existing colliders and movement; custom crash response and advanced collision prediction await playtest findings.
+
+The plans retain explicit implementation checks for Godot replay integration, movement-state completeness, bounded timing/history recovery, and playtest-tuned thresholds. Synchronization lifecycle coverage belongs to synchronization Story 5; original Story 11 retains broader integration and regression verification. Original Stories 9–11 are not marked refinement-complete by this split.
 
 Dependencies: Stories 6 and 7.
 
@@ -211,7 +223,7 @@ Dependencies: Stories 1–7, 9, and 10. This is follow-up lifecycle verification
 | Spawning and local control | 6–7 | Host and clients spawn ships and each locally controls its own ship. |
 | Major milestone and required user playtest | 1–7 complete | Three-player spawning and local control are ready for hands-on user evaluation. |
 | Presentation and lifecycle follow-up | 9–11 | Local camera, movement effects, and broader lifecycle verification. |
-| Separate synchronization follow-up | 8 | Refine and implement cross-peer movement and presentation synchronization. |
+| Separate synchronization follow-up | 8, split into synchronization Stories 1–5 | Implement the documented host-authoritative movement, prediction, interpolation, and synchronization lifecycle plan. |
 
 The first major milestone is reached when Stories 1–7 are implemented: a host and two clients can join using YAML-defined ships, every instance contains all three ships, and each player locally controls only their own ship while the other two remain stationary. This describes the delivery target, not the current implementation status.
 
