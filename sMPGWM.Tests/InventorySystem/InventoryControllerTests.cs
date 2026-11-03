@@ -123,13 +123,30 @@ public class InventoryControllerTests
     }
 
     [Test]
-    public void UnknownDefinitions_AreRejectedIncludingDefaultAndZeroQuantity()
+    public void NullDefinition_WithPositiveQuantity_ThrowsWithoutChangingInventory()
     {
         using var inventory = new InventoryController();
         var before = inventory.Snapshot;
+        var notifications = 0;
+        inventory.Changed += _ => notifications++;
+
         Assert.Throws<ArgumentNullException>(() => inventory.ItemRequestService.CreateItems(inventory.Container, null!, 1));
-        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, "missing", 0), Is.EqualTo(InventoryResult.UnknownDefinition));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
+        Assert.That(notifications, Is.Zero);
+    }
+
+    [TestCase(0, InventoryResult.NoChange)]
+    [TestCase(1, InventoryResult.UnknownDefinition)]
+    public void UnknownDefinition_OnlyRequiresLookupForPositiveQuantity(long quantity, InventoryResult expected)
+    {
+        using var inventory = new InventoryController();
+        var before = inventory.Snapshot;
+        var notifications = 0;
+        inventory.Changed += _ => notifications++;
+
+        Assert.That(inventory.ItemRequestService.CreateItems(inventory.Container, "missing", quantity), Is.EqualTo(expected));
+        Assert.That(inventory.Snapshot, Is.SameAs(before));
+        Assert.That(notifications, Is.Zero);
     }
 
     [Test]
