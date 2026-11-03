@@ -17,24 +17,10 @@ public partial class SynchronizationCoordinator : Node
     public Guid Session { get; private set; }
     public long CompletedTick { get; private set; }
     public long PredictionTick { get; private set; }
-    public long PublicationCount { get; private set; }
-    public double MaximumPublicationMilliseconds { get; private set; }
-    public long Corrections { get; private set; }
-    public long Recoveries { get; private set; }
-    public long Underruns { get; private set; }
-    public int MaximumHistory { get; private set; }
-    public int MaximumQueue { get; private set; }
-    public int MaximumReplaySteps { get; private set; }
-    public double MaximumReplayMilliseconds { get; private set; }
-    public float MaximumCorrectionDistance { get; private set; }
-    public long ArrivalAge { get; private set; }
-    public long FallbackCount => _queues.Values.Sum(q => q.FallbackCount);
     public double Rtt { get; private set; }
     public double Jitter { get; private set; }
     public int Lead => Math.Clamp((int)Math.Ceiling((Rtt / 2 + Jitter * 2) * 60) + 3, 3, 24);
     public double HostEstimate => _hostAtReceipt + (Time.GetTicksMsec() - _receivedAt) * .06;
-    public event Action<long>? StepCompleted;
-    public event Action<long>? SnapshotDue;
     private bool _active, _baseline, _recovering, _warming;
     private long _lastSnapshot = -1, _request;
     private ulong _snapshotAt, _receivedAt, _lastFrame, _recoveryAt, _lastProbe;
@@ -79,7 +65,6 @@ public partial class SynchronizationCoordinator : Node
             owner.ControlledShip?.EntityId != entity || owner.ControlGeneration != generation) return;
         var queue = Queue(peer, owner);
         foreach (var command in commands) queue.Accept(command, CompletedTick);
-        MaximumQueue = Math.Max(MaximumQueue, queue.Count);
     }
 
     private CommandQueue Queue(int peer, MpController owner)
@@ -130,12 +115,10 @@ public partial class SynchronizationCoordinator : Node
                 if (peer == 1) q.Accept(new(tick, ship.InputState), CompletedTick);
                 ship.SetInput(q.Consume(tick)); ship.Simulate(1.0 / 60);
             }
-            CompletedTick = tick; StepCompleted?.Invoke(tick);
+            CompletedTick = tick;
             if (tick % 2 == 0)
             {
-                ulong started = Time.GetTicksUsec();
-                PublicationCount++; Network.PublishMovement(Baseline()); SnapshotDue?.Invoke(tick);
-                MaximumPublicationMilliseconds = Math.Max(MaximumPublicationMilliseconds, (Time.GetTicksUsec() - started) / 1000.0);
+                Network.PublishMovement(Baseline());
             }
             return;
         }
@@ -166,7 +149,6 @@ public partial class SynchronizationCoordinator : Node
             var command = new MovementCommand(tick, local.InputState);
             local.Simulate(1.0 / 60);
             _history[tick] = (command, Capture(Multiplayer.GetUniqueId(), Player.Participant!));
-            MaximumHistory = Math.Max(MaximumHistory, _history.Count);
             if (tick % 2 == 0)
                 Network.SendMovementCommands(MovementWire.Commands(Session, local.EntityId,
                     Player.Participant!.ControlGeneration, _history.Values.TakeLast(6).Select(h => h.Command).ToArray()));
@@ -242,7 +224,6 @@ public partial class SynchronizationCoordinator : Node
         _localIdentity = authoritative;
         if (discontinuity || !_history.TryGetValue(tick, out var predicted) || PredictionTick - tick > 64)
         { Recover(); return; }
-        ArrivalAge = Math.Max(0, tick - authoritative.Arrival);
         var state = predicted.State;
         bool differs = state.Position.DistanceTo(authoritative.Position) > .1f ||
             state.Velocity.DistanceTo(authoritative.Velocity) > .1f ||
@@ -250,9 +231,6 @@ public partial class SynchronizationCoordinator : Node
             state.Input != authoritative.Input;
         if (differs)
         {
-            ulong replayStarted = Time.GetTicksUsec();
-            MaximumReplaySteps = Math.Max(MaximumReplaySteps, (int)(PredictionTick - tick));
-            MaximumCorrectionDistance = Math.Max(MaximumCorrectionDistance, state.Position.DistanceTo(authoritative.Position));
             var displayed = ship.DisplayedPosition;
             float angle = ship.GetNode<Node2D>("ShipVisuals").GlobalRotation;
             Restore(ship, authoritative);
@@ -265,8 +243,6 @@ public partial class SynchronizationCoordinator : Node
             _visualOffset = displayed - ship.GlobalPosition;
             _angleOffset = Mathf.AngleDifference(ship.GlobalRotation, angle);
             if (_visualOffset.Length() > 100) { _visualOffset = Vector2.Zero; _angleOffset = 0; }
-            MaximumReplayMilliseconds = Math.Max(MaximumReplayMilliseconds, (Time.GetTicksUsec() - replayStarted) / 1000.0);
-            Corrections++;
         }
         foreach (long key in _history.Keys.TakeWhile(t => t <= tick).ToArray()) _history.Remove(key);
     }
@@ -282,7 +258,6 @@ public partial class SynchronizationCoordinator : Node
             if (buffer.Count == 0 || !World.MpControllers.TryGetValue(peer, out var owner) || owner.ControlledShip == null) continue;
             while (buffer.Count > 2 && buffer[1].Tick <= _cursor) buffer.RemoveAt(0);
             var lower = buffer[0]; var upper = buffer.Count > 1 ? buffer[1] : lower;
-            if (_cursor >= upper.Tick) Underruns++;
             var presented = MovementPresentation.Sample(lower.Tick, lower.State, upper.Tick, upper.State, _cursor);
             owner.ControlledShip.PresentedMovementFlags = presented.AppliedFlags;
             owner.ControlledShip.Present(presented.Position, presented.Rotation);
@@ -299,8 +274,7 @@ public partial class SynchronizationCoordinator : Node
     private void Recover()
     {
         if (_recovering) return;
-        GD.Print($"SYNC recover tick={CompletedTick} prediction={PredictionTick} history={_history.Count} request={_request + 1}");
-        _recovering = true; Recoveries++; _request++; _recoveryAt = Time.GetTicksMsec(); _lastProbe = _recoveryAt;
+        _recovering = true; _request++; _recoveryAt = Time.GetTicksMsec(); _lastProbe = _recoveryAt;
         _history.Clear(); _remote.Clear(); _probes.Clear(); Player.Participant?.ControlledShip?.ClearInput();
         Network.RequestMovementBaseline(_request);
     }
@@ -323,7 +297,6 @@ public partial class SynchronizationCoordinator : Node
     {
         _active = false; ProcessMode = ProcessModeEnum.Disabled;
         _controlGenerations.Clear(); _queues.Clear(); _bindings.Clear(); _history.Clear(); _remote.Clear(); _traffic.Clear(); _probes.Clear();
-        StepCompleted = null; SnapshotDue = null;
     }
     public override void _ExitTree() => Stop();
 }

@@ -2,7 +2,7 @@
 
 Plan: [Multiplayer synchronization](multiplayer-synchronization-story-summary.md).
 
-Status: implementation integrated; automated ENet evidence recorded in the summary. Final acceptance remains open for the documented transport, collision-quality, and hands-on checks.
+Status: implemented. User playtest confirms synchronized movement with three ENet players and two Steam players. See the summary for evidence and remaining specialized checks.
 
 As a client player, my ship responds immediately and converges to host movement.
 

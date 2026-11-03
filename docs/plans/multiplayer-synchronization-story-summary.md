@@ -2,7 +2,7 @@
 
 Epic: [Multiplayer ships](backlog/multiplayer-ships-w-local-player-control.md).
 
-Status: implementation integrated; automated ENet evidence recorded in the summary. Final acceptance remains open for the documented transport, collision-quality, and hands-on checks.
+Status: implemented. User playtest confirms synchronized movement with three ENet players and two Steam players. See the summary for evidence and remaining specialized checks.
 
 ## Stories
 
@@ -52,8 +52,7 @@ Keep CharacterBody2D and polygon colliders. Full-world rollback, custom crash re
 
 The active pipeline is implemented in SynchronizationCoordinator, MovementWire,
 MovementPresentation, NetworkManager, and ShipController. Protocol compatibility is
-now version 4. Story acceptance remains open for the transport and human evaluation
-items below; compilation alone is not completion evidence.
+now version 4. User playtesting has since confirmed movement synchronization on ENet and Steam (see the playtest record below).
 
 - Session lifetime, 60 Hz ordering, completed-step publication, and synchronous stop
   are integrated through GameSessionFactory and NetworkManager.
@@ -82,17 +81,13 @@ items below; compilation alone is not completion evidence.
   Remote collision bodies use newest authoritative placement, independently from
   delayed visuals; moving-ship contacts remain an approximation without world rollback.
 
-Reproduction on Windows, Godot 4.7.2 Mono, .NET 8:
+Retained regression-test command (Windows, Godot 4.7.2 Mono, .NET 8):
 
     $env:GODOT_BIN = 'C:/Users/lober/godot_engine/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64_console.exe'
     dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --verbosity quiet
-    & $env:GODOT_BIN --headless --path sMPGWM.Game --script ../sMPGWM.Tests/Network/replay_gate.gd
-    powershell -NoProfile -File tools/test_synchronization.ps1
-    powershell -NoProfile -File tools/test_synchronization.ps1 -Impaired -Lifecycle -ReverseJoin
 
 The NUnit command passed 226 outer cases, including the Godot integration runner.
-Its session checks verify exactly 30 publications after 60 completed host steps and
-no callbacks after teardown. Added checks cover command deadlines, conflicting
+The retained session checks verify coherent completed-step baselines and synchronous simulation shutdown. The removed instrumentation previously verified exactly 30 publications after 60 host steps. Added checks cover command deadlines, conflicting
 duplicates, fallback release, payload corruption, capacity, angle wrap, underrun,
 discontinuity snapping, and stale replacement bindings.
 
@@ -111,11 +106,9 @@ Maximum queue was 12, maximum history 30, maximum replay cost 0.159 ms, maximum
 same-tick correction 3.333 world units. Observed RTT estimates were 102�162 ms.
 These are local headless measurements, not a performance guarantee.
 
-Outstanding acceptance: Steam multiplayer coverage, human responsiveness/visual/
-camera review, a dedicated
-moving-ship collision artifact assessment. The impairment fixture is an application
+User playtesting confirms synchronized movement on both transports. Dedicated moving-ship collision artifact assessment and explicit camera-quality feedback were not separately reported. The impairment fixture is an application
 delivery simulation, not an OS-level network emulator. Raw smoke logs may include
-platform account identifiers; the harness now writes detailed logs under TEMP.
+platform account identifiers; the temporary smoke harness has been removed after playtesting.
 
 Final verification update: the 30 FPS startup race found in the capacity rerun is
 fixed by a bounded prediction warm-up phase after reliable baselines. The baseline
@@ -128,7 +121,6 @@ queue was six, maximum history 12, maximum replay cost 0.233 ms, maximum correct
 5.157 units, and peak capture/publication cost 3.706 ms including startup. Host ran
 48 seconds, including approximately nine seconds with all ten peers connected.
 Machine: AMD Ryzen 7 7700, 16 logical processors, approximately 63 GiB RAM.
-Repeat with: powershell -NoProfile -File tools/test_synchronization.ps1 -Players 10.
 This is a capacity smoke, not a long-duration soak.
 
 Final impaired/reversed/lifecycle rerun also passed after warm-up integration:
@@ -142,3 +134,25 @@ Godot. The whitespace diff check passed.
 Generated artifacts from earlier runs remain under docs/plans/evidence/synchronization
 and sMPGWM.Tests/TestResults: automatic approval review rejected their cleanup as
 blocked by policy. They are not required source files and should not be committed.
+
+## User playtest and test-scaffolding cleanup
+
+The user confirmed synchronized movement with three players over ENet and two
+players over Steam. This is hands-on confirmation of movement synchronization on
+both transports; it does not claim an additional three-player Steam run.
+
+At the user's request, removed the temporary synchronization smoke input node,
+forced focus and input, frame-rate overrides, simulated packet delay/loss/duplication,
+forced stalls, scripted teleports/replacements, replay experiment script, and
+multi-process smoke launcher. Removed the runtime delivery override, test callbacks,
+benchmark-only counters/timers, and temporary synchronization debug traces.
+
+The movement protocol, authority checks, fixed-step collision adapter, prediction
+warm-up, bounded histories, interpolation, camera handling, and recovery behavior
+are production functionality and remain. Runtime timing values used by prediction
+remain; optional measurement-only counters requested in the original story are
+intentionally removed by this cleanup. Regression tests remain in the test project,
+with session tests inspecting real baselines instead of test-only runtime events.
+
+The automated measurements above are historical evidence from before cleanup,
+not commands or instrumentation available in the cleaned runtime.

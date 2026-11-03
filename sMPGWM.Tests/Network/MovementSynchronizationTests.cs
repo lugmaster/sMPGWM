@@ -35,7 +35,6 @@ public class MovementSynchronizationTests
         Assert.That(released.Direction, Is.EqualTo(Vector2.Zero));
         Assert.That(released.HasAim || released.Afterburner || released.Brake, Is.False);
         Assert.That(released.AutomaticBraking, Is.True);
-        Assert.That(q.Count, Is.Zero);
     }
     [Test]
     public void CommandsPreserveTransitionsAndRejectMalformedData()

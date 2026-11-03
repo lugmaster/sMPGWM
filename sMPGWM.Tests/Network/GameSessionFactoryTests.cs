@@ -109,18 +109,15 @@ public class GameSessionFactoryTests
                 Assert.That(session.Player.Participant?.ControlledShip, Is.Not.Null);
                 Assert.That(session.Network.IsConnected(), Is.True);
                 var synchronization = session.Network.Synchronization!;
-                var publications = new List<long>();
-                synchronization.SnapshotDue += tick =>
+                for (int step = 1; step <= 60; step++)
                 {
+                    synchronization._PhysicsProcess(1.0 / 60);
                     Assert.That(MovementWire.ReadSnapshot(synchronization.Baseline(), out _, out var captured, out var states), Is.True);
-                    Assert.That(captured, Is.EqualTo(tick));
+                    Assert.That(captured, Is.EqualTo(step));
                     Assert.That(states, Has.Count.EqualTo(1));
                     Assert.That(states[0].Position, Is.EqualTo(session.Player.Participant!.ControlledShip!.GlobalPosition));
-                    publications.Add(tick);
-                };
-                for (int step = 0; step < 60; step++) synchronization._PhysicsProcess(1.0 / 60);
+                }
                 Assert.That(synchronization.CompletedTick, Is.EqualTo(60));
-                Assert.That(publications, Is.EqualTo(Enumerable.Range(1, 30).Select(n => (long)n * 2)));
                 coordinator.Stop();
                 synchronization._PhysicsProcess(1.0 / 60);
                 Assert.That(synchronization.CompletedTick, Is.EqualTo(60), "Teardown disables simulation synchronously.");

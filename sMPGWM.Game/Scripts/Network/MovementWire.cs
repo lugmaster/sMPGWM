@@ -107,8 +107,7 @@ public sealed class CommandQueue
     private ShipInputState _last;
     private long _applied = -100;
     public long LatestArrival { get; private set; }
-    public long FallbackCount { get; private set; }
-    public int Count => _pending.Count;
+
     public bool Accept(MovementCommand c, long completed)
     {
         if (!MovementWire.Valid(c.Input) || c.Tick <= completed || c.Tick > completed + 32) return false;
@@ -122,7 +121,6 @@ public sealed class CommandQueue
         if (_pending.Remove(tick, out var input)) { _last = input; _applied = tick; }
         else
         {
-            FallbackCount++;
             if (tick - _applied > 6) _last = new(Vector2.Zero, 0, false, false, false, _last.AutomaticBraking);
         }
         return _last;

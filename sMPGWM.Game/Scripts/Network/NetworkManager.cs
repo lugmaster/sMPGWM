@@ -413,17 +413,21 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
 
     public bool MovementReady(int peer) => peer == 1 || _joins.Is(peer, PeerJoinPhase.Ready);
 
-    internal Action<Action>? MovementDeliveryOverride { get; set; }
-    private void DeliverMovement(Action send) { if (MovementDeliveryOverride is { } deliver) deliver(send); else send(); }
     public void PublishMovement(byte[] payload)
     {
         if (!IsHost()) return;
         foreach (var (peer, join) in _joins.Snapshot())
-            if (join.Phase == PeerJoinPhase.Ready) DeliverMovement(() => { if (!_stopped && MovementReady(peer)) RpcId(peer, nameof(ReceiveMovement), payload); });
+            if (join.Phase == PeerJoinPhase.Ready) RpcId(peer, nameof(ReceiveMovement), payload);
     }
-    public void SendMovementCommands(byte[] payload) => DeliverMovement(() => { if (!_stopped) RpcId(1, nameof(ReceiveCommands), payload); });
-    public void SendTimingProbe(long token) => DeliverMovement(() => { if (!_stopped) RpcId(1, nameof(TimingProbe), token); });
-    public void RequestMovementBaseline(long request) => Logger.Info($"SYNC request={request} result={RpcId(1, nameof(RequestBaseline), Synchronization!.Session.ToString("N"), request)}");
+    public void SendMovementCommands(byte[] payload)
+    {
+        if (!_stopped) RpcId(1, nameof(ReceiveCommands), payload);
+    }
+    public void SendTimingProbe(long token)
+    {
+        if (!_stopped) RpcId(1, nameof(TimingProbe), token);
+    }
+    public void RequestMovementBaseline(long request) => RpcId(1, nameof(RequestBaseline), Synchronization!.Session.ToString("N"), request);
     private readonly Dictionary<int, ulong> _baselineRequests = new();
     private readonly Dictionary<int, ulong> _timingRequests = new();
 
@@ -448,7 +452,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         int peer = Multiplayer.GetRemoteSenderId();
         if (IsHost() && MovementReady(peer) && AllowRequest(_timingRequests, peer, 500))
-            DeliverMovement(() => { if (!_stopped && MovementReady(peer)) RpcId(peer, nameof(TimingResponse), token, Synchronization!.CompletedTick); });
+            RpcId(peer, nameof(TimingResponse), token, Synchronization!.CompletedTick);
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
     private void TimingResponse(long token, long tick)
@@ -461,7 +465,6 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         int peer = Multiplayer.GetRemoteSenderId();
         if (IsHost() && session == Synchronization!.Session.ToString("N") && MovementReady(peer) && request > 0 && AllowRequest(_baselineRequests, peer, 500))
         {
-            Logger.Info($"SYNC baseline_send peer={peer} request={request}");
             Synchronization!.ResetCommands(peer);
             RpcId(peer, nameof(ReceiveBaseline), request, Synchronization.Baseline());
         }
@@ -470,7 +473,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private void ReceiveBaseline(long request, byte[] payload)
     {
         if (IsHostMessage() && _clientJoin.Phase == ClientJoinPhase.Ready)
-            Logger.Info($"SYNC baseline_receive request={request} accepted={Synchronization?.Receive(payload, true, request)}");
+            Synchronization?.Receive(payload, true, request);
     }
     public void FailSession(string reason)
     {
@@ -483,7 +486,6 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_stopped) return;
         _stopped = true;
         Synchronization?.Stop();
-        MovementDeliveryOverride = null;
         _baselineRequests.Clear(); _timingRequests.Clear();
         if (_heartbeat != null)
         {
