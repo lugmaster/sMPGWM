@@ -53,6 +53,15 @@ internal static class GameSessionFactory
         var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants };
         scope.Defer(() => ReleaseNode(network));
         scope.Defer(network.StopSession);
+        var synchronization = new SynchronizationCoordinator
+        {
+            Name = nameof(SynchronizationCoordinator), Player = player, World = participants, Network = network
+        };
+        scope.Defer(() => ReleaseNode(synchronization));
+        scope.Defer(synchronization.Stop);
+        network.Synchronization = synchronization;
+        network.SessionReady += synchronization.Activate;
+        parent.AddChild(synchronization);
         var notifications = new SessionNotifications(messages);
         network.Failed += coordinator.Fail;
         network.SessionReady += coordinator.CompleteLoading;

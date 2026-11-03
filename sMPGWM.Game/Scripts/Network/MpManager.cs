@@ -50,6 +50,7 @@ public partial class MpManager : AbstractSingleton<MpManager>
             participant = new MpController { Name = $"Player_{record.PeerId}", ControllingPeerId = record.PeerId };
             AddChild(participant);
             participant.AssignShip(ship);
+            ship.Restore(record.Position, record.Rotation, record.Velocity, default);
             _controllers.Add(record.PeerId, participant);
             _records.Add(record.PeerId, record);
             if (IsInsideTree() && record.PeerId == Multiplayer.GetUniqueId()) LocalPlayer?.BindParticipant(participant);
@@ -74,6 +75,51 @@ public partial class MpManager : AbstractSingleton<MpManager>
             controller.QueueFree();
         }
         _records.Remove(peerId);
+    }
+
+    internal ShipSpawnRecord CurrentRecord(int peer)
+    {
+        var ship = _controllers[peer].ControlledShip!;
+        var record = new ShipSpawnRecord(peer, ship.EntityId, ship.Data.Name,
+            ship.GlobalPosition, ship.GlobalRotation, ship.Velocity);
+        _records[peer] = record;
+        return record;
+    }
+
+    internal void RemoveConstructionRecord(int peer) => _records.Remove(peer);
+
+    internal void RefreshConstructionRecords()
+    {
+        foreach (var (peer, owner) in _controllers)
+        {
+            if (owner.ControlledShip == null) _records.Remove(peer);
+            else if (!_records.TryGetValue(peer, out var record) || record.EntityId != owner.ControlledShip.EntityId)
+                CurrentRecord(peer);
+        }
+    }
+
+    internal void ReleaseBinding(int peer, long generation)
+    {
+        if (!_controllers.TryGetValue(peer, out var owner) || generation <= owner.ControlGeneration) return;
+        owner.RemoveShip();
+        owner.ApplyGeneration(generation);
+        _records.Remove(peer);
+    }
+
+    internal void ApplyBinding(ShipSpawnRecord record, long generation)
+    {
+        if (!_controllers.TryGetValue(record.PeerId, out var owner) || generation <= owner.ControlGeneration) return;
+        ShipController? existing = null;
+        foreach (var participant in _controllers.Values)
+            if (participant.ControlledShip?.EntityId == record.EntityId) existing = participant.ControlledShip;
+        var previous = owner.ControlledShip;
+        var ship = existing ?? ShipFactory.Create(ShipRegistry.GetById(record.ShipId), record.EntityId,
+            record.Position, record.Rotation, record.Velocity);
+        owner.AssignShip(ship);
+        ship.Restore(record.Position, record.Rotation, record.Velocity, default);
+        owner.ApplyGeneration(generation);
+        _records[record.PeerId] = record;
+        if (previous != null && previous != ship) previous.QueueFree();
     }
 
     public void Clear()

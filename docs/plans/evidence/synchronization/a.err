@@ -1,0 +1,40 @@
+Setting breakpad minidump AppID = 480
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198011927782 [API loaded no]
+WARNING: res://scenes/ui/base/stat_bar.tscn:3 - ext_resource, invalid UID: uid://wd62u8hyne0q - using text path instead: res://Scripts/Util/UiComponents/StatBar.cs
+   at: load (scene/resources/resource_format_text.cpp:501)
+   GDScript backtrace (most recent call first):
+       [0] run (res://../sMPGWM.Tests/Network/synchronization_smoke.gd:9)
+   C# backtrace (most recent call first):
+       [0] Godot.GodotObject Godot.NativeCalls.godot_icall_3_1268(nint, nint, string, string, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:11611)
+       [1] Godot.Resource Godot.ResourceLoader.Load(string, string, Godot.ResourceLoader+CacheMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/ResourceLoader.cs:120)
+       [2] T Godot.ResourceLoader.Load<T>(string, string, Godot.ResourceLoader+CacheMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Extensions/ResourceLoaderExtensions.cs:27)
+       [3] T Godot.GD.Load<T>(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:129)
+       [4] Godot.PackedScene sMPGWM.Scripts.Util.SceneLoader.LoadScene(string) (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\Scripts\Util\SceneLoader.cs:21)
+       [5] sMPGWM.Scripts.GameFlowSystem.GameFlowSceneProvider..cctor() (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\Scripts\GameFlowSystem\GameFlowSceneProvider.cs:9)
+       [6] void System.Runtime.CompilerServices.InitHelpers.InitClassSlow(System.Runtime.CompilerServices.MethodTable*)
+       [7] System.Byte& System.Runtime.CompilerServices.StaticsHelpers.GetGCStaticBaseSlow(System.Runtime.CompilerServices.MethodTable*)
+       [8] void sMPGWM.Scripts.GameFlowSystem.GameFlowManager.StartNetworkGame(sMPGWM.Scripts.Network.NetworkStartupData) (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\Scripts\GameFlowSystem\GameFlowManager.cs:33)
+       [9] void sMPGWM.Scripts.GameFlowSystem.GameFlowManager.StartGame(sMPGWM.Scripts.Network.NetworkRole, sMPGWM.scripts.Network.NetworkType) (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\Scripts\GameFlowSystem\GameFlowManager.cs:154)
+       [10] bool sMPGWM.Scripts.GameFlowSystem.GameFlowManager.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\sMPGWM.Scripts.GameFlowSystem.GameFlowManager_ScriptMethods.generated.cs:166)
+       [11] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+WARNING: res://scenes/ui/base/notification_icon.tscn:3 - ext_resource, invalid UID: uid://cdqk61d82qqan - using text path instead: res://Scripts/Util/UiComponents/NotificationIcon.cs
+   at: load (scene/resources/resource_format_text.cpp:501)
+   GDScript backtrace (most recent call first):
+       [0] run (res://../sMPGWM.Tests/Network/synchronization_smoke.gd:9)
+   C# backtrace (most recent call first):
+       [0] Godot.GodotObject Godot.NativeCalls.godot_icall_3_1268(nint, nint, string, string, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:11611)
+       [1] Godot.Resource Godot.ResourceLoader.Load(string, string, Godot.ResourceLoader+CacheMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/ResourceLoader.cs:120)
+       [2] T Godot.ResourceLoader.Load<T>(string, string, Godot.ResourceLoader+CacheMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Extensions/ResourceLoaderExtensions.cs:27)
+       [3] T Godot.GD.Load<T>(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:129)
+       [4] Godot.PackedScene sMPGWM.Scripts.Util.SceneLoader.LoadScene(string) (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\Scripts\Util\SceneLoader.cs:21)
+       [5] sMPGWM.Scripts.GameFlowSystem.GameFlowSceneProvider..cctor() (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\Scripts\GameFlowSystem\GameFlowSceneProvider.cs:9)
+       [6] void System.Runtime.CompilerServices.InitHelpers.InitClassSlow(System.Runtime.CompilerServices.MethodTable*)
+       [7] System.Byte& System.Runtime.CompilerServices.StaticsHelpers.GetGCStaticBaseSlow(System.Runtime.CompilerServices.MethodTable*)
+       [8] void sMPGWM.Scripts.GameFlowSystem.GameFlowManager.StartNetworkGame(sMPGWM.Scripts.Network.NetworkStartupData) (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\Scripts\GameFlowSystem\GameFlowManager.cs:33)
+       [9] void sMPGWM.Scripts.GameFlowSystem.GameFlowManager.StartGame(sMPGWM.Scripts.Network.NetworkRole, sMPGWM.scripts.Network.NetworkType) (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\Scripts\GameFlowSystem\GameFlowManager.cs:154)
+       [10] bool sMPGWM.Scripts.GameFlowSystem.GameFlowManager.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\lober\Documents\Godot\sMPGWM\sMPGWM.Game\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\sMPGWM.Scripts.GameFlowSystem.GameFlowManager_ScriptMethods.generated.cs:166)
+       [11] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Not every ship moved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] run (res://../sMPGWM.Tests/Network/synchronization_smoke.gd:41)

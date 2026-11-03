@@ -98,7 +98,7 @@ public partial class PlayerController : Node
         _camera.ResetSmoothing();
         _camera.ForceUpdateScroll();
     }
-    public override void _PhysicsProcess(double delta)
+    public void SampleMovementInput()
     {
         if (_shutdown) return;
         Input.SampleInput();
@@ -114,8 +114,9 @@ public partial class PlayerController : Node
             // Release held actions while preserving the ship's braking/inertia behavior.
             _ship.ClearInput();
         }
-        _ship.Simulate(delta);
+
     }
+    public void UsePredictionCamera(bool enabled) => _camera.PositionSmoothingEnabled = !enabled;
     public void SetSessionActive(bool active)
     {
         _active = active;

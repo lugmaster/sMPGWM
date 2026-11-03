@@ -2,7 +2,7 @@
 
 Plan: [Multiplayer synchronization](multiplayer-synchronization-story-summary.md).
 
-Status: planned. Implementation and measured network quality remain to be verified.
+Status: implementation integrated; automated ENet evidence recorded in the summary. Final acceptance remains open for the documented transport, collision-quality, and hands-on checks.
 
 As a player, my requests control my assigned ship on the host.
 

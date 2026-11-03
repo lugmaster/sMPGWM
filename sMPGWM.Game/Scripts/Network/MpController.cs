@@ -5,6 +5,7 @@ namespace sMPGWM.Scripts.Network;
 public partial class MpController : Node
 {
     public int ControllingPeerId { get; init; }
+    public long ControlGeneration { get; private set; }
     public ShipController? ControlledShip { get; private set; }
     public event Action<ShipController?, ShipController?>? ControlledShipChanged;
     public void AssignShip(ShipController? ship)
@@ -22,9 +23,11 @@ public partial class MpController : Node
             if (ship.GetParent() == null) AddChild(ship);
             else ship.Reparent(this, true);
         }
+        checked { ControlGeneration++; }
         ControlledShip = ship;
         ControlledShipChanged?.Invoke(previous, ship);
     }
+    internal void ApplyGeneration(long generation) => ControlGeneration = generation;
     public void RemoveShip()
     {
         var ship = ControlledShip;

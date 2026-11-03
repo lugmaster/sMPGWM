@@ -25,6 +25,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private HostJoinProtocol _joins = null!;
     private ClientJoinProtocol _clientJoin = null!;
     private HeartbeatMonitor? _heartbeat;
+    public SynchronizationCoordinator? Synchronization { get; set; }
     public MpManager World { get; init; } = null!;
     public NetworkStartupData Startup { get; init; } = null!;
     public event Action<string>? Failed;
@@ -70,7 +71,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             _activeNetwork.TransportReady += OnNetworkConnected;
             _activeNetwork.Failed += FailSession;
             AddChild(_activeNetwork);
-            AddChild(new NetworkTicker());
+
             _heartbeat = new HeartbeatMonitor { Name = "HeartbeatMonitor" };
             _heartbeat.Failed += FailSession;
             _heartbeat.PeerTimedOut += DepartPeer;
@@ -182,10 +183,11 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         try
         {
             var record = World.ApproveSpawn(peer, data);
+            World.RefreshConstructionRecords();
             // All spawn messages share the reliable channel: snapshot, later additions, then completion.
             var snapshot = new Godot.Collections.Array();
             foreach (var entry in World.SpawnRecords.Values) snapshot.Add(entry.ToVariant());
-            if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot) != Error.Ok)
+            if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot, Synchronization!.Baseline()) != Error.Ok)
             {
                 RejectJoin(peer, "Initial spawn send failed.");
                 return;
@@ -207,7 +209,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         Multiplayer.GetRemoteSenderId() == 1;
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveInitialSpawns(Godot.Collections.Array snapshot)
+    private void ReceiveInitialSpawns(Godot.Collections.Array snapshot, byte[] movement)
     {
         if (!IsHostMessage() || _clientJoin.Phase != ClientJoinPhase.AwaitingSnapshot || _clientJoin.Expired(Time.GetTicksMsec())) return;
         try
@@ -227,6 +229,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             foreach (var record in records.Values) World.Spawn(record);
             if (World.LocalPlayer?.Participant?.ControlledShip == null)
                 throw new InvalidOperationException("Local controls were not bound.");
+            if (Synchronization == null || !Synchronization.Receive(movement, true))
+                throw new InvalidOperationException("Invalid initial movement baseline.");
             if (!_clientJoin.ApplySnapshot(Time.GetTicksMsec()))
                 throw new InvalidOperationException("Player spawning timed out.");
             if (RpcId(1, nameof(ConfirmSpawnReady)) != Error.Ok) FailSession("Spawn acknowledgement failed.");
@@ -333,6 +337,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _heartbeat?.Remove(peer);
         if (Array.IndexOf(Multiplayer.GetPeers(), peer) >= 0)
             ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
+        _baselineRequests.Remove(peer); _timingRequests.Remove(peer);
         World.Despawn(peer);
         foreach (var other in _joins.Snapshot())
             if (other.Value.ReceivesWorld)
@@ -362,6 +367,111 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (IsHostMessage() && _clientJoin.HasWorld) World.Despawn(peer);
     }
 
+    public void PublishControlBinding(ShipSpawnRecord record, long generation)
+    {
+        if (!IsHost()) return;
+        foreach (var (peer, join) in _joins.Snapshot())
+            if (join.ReceivesWorld)
+                RpcId(peer, nameof(ReceiveControlBinding), Synchronization!.Session.ToString("N"), generation, record.ToVariant());
+    }
+    public void PublishControlRelease(int owner, long generation)
+    {
+        if (!IsHost()) return;
+        foreach (var (peer, join) in _joins.Snapshot())
+            if (join.ReceivesWorld)
+                RpcId(peer, nameof(ReceiveControlRelease), Synchronization!.Session.ToString("N"), owner, generation);
+    }
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReceiveControlRelease(string session, int peer, long generation)
+    {
+        if (!IsHostMessage() || !_clientJoin.HasWorld || session != Synchronization!.Session.ToString("N") ||
+            generation < 1 || generation > MovementWire.MaxTick ||
+            !World.MpControllers.TryGetValue(peer, out var owner) || generation <= owner.ControlGeneration) return;
+        World.ReleaseBinding(peer, generation);
+        Synchronization.BindingChanged(peer);
+    }
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReceiveControlBinding(string session, long generation, Variant payload)
+    {
+        if (!IsHostMessage() || !_clientJoin.HasWorld || session != Synchronization!.Session.ToString("N") ||
+            generation < 1 || generation > MovementWire.MaxTick || !ShipSpawnRecord.TryFromVariant(payload, out var record) ||
+            !ShipRegistry.TryGetById(record.ShipId, out _)) return;
+        try
+        {
+            if (!World.MpControllers.TryGetValue(record.PeerId, out var owner))
+            {
+                if (World.MpControllers.Count >= MovementWire.MaxPlayers) return;
+                World.Spawn(record);
+                World.MpControllers[record.PeerId].ApplyGeneration(generation);
+            }
+            else if (generation <= owner.ControlGeneration) return;
+            World.ApplyBinding(record, generation);
+            Synchronization.BindingChanged(record.PeerId);
+        }
+        catch (Exception error) { FailSession($"Control binding failed: {error.Message}"); }
+    }
+
+    public bool MovementReady(int peer) => peer == 1 || _joins.Is(peer, PeerJoinPhase.Ready);
+
+    internal Action<Action>? MovementDeliveryOverride { get; set; }
+    private void DeliverMovement(Action send) { if (MovementDeliveryOverride is { } deliver) deliver(send); else send(); }
+    public void PublishMovement(byte[] payload)
+    {
+        if (!IsHost()) return;
+        foreach (var (peer, join) in _joins.Snapshot())
+            if (join.Phase == PeerJoinPhase.Ready) DeliverMovement(() => { if (!_stopped && MovementReady(peer)) RpcId(peer, nameof(ReceiveMovement), payload); });
+    }
+    public void SendMovementCommands(byte[] payload) => DeliverMovement(() => { if (!_stopped) RpcId(1, nameof(ReceiveCommands), payload); });
+    public void SendTimingProbe(long token) => DeliverMovement(() => { if (!_stopped) RpcId(1, nameof(TimingProbe), token); });
+    public void RequestMovementBaseline(long request) => Logger.Info($"SYNC request={request} result={RpcId(1, nameof(RequestBaseline), Synchronization!.Session.ToString("N"), request)}");
+    private readonly Dictionary<int, ulong> _baselineRequests = new();
+    private readonly Dictionary<int, ulong> _timingRequests = new();
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
+    private void ReceiveCommands(byte[] payload)
+    {
+        if (IsHost()) Synchronization?.AcceptCommands(Multiplayer.GetRemoteSenderId(), payload);
+    }
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
+    private void ReceiveMovement(byte[] payload)
+    {
+        if (IsHostMessage() && _clientJoin.Phase == ClientJoinPhase.Ready) Synchronization?.Receive(payload);
+    }
+    private bool AllowRequest(Dictionary<int, ulong> requests, int peer, ulong interval)
+    {
+        ulong now = Time.GetTicksMsec();
+        if (requests.TryGetValue(peer, out var last) && now - last < interval) return false;
+        requests[peer] = now; return true;
+    }
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
+    private void TimingProbe(long token)
+    {
+        int peer = Multiplayer.GetRemoteSenderId();
+        if (IsHost() && MovementReady(peer) && AllowRequest(_timingRequests, peer, 500))
+            DeliverMovement(() => { if (!_stopped && MovementReady(peer)) RpcId(peer, nameof(TimingResponse), token, Synchronization!.CompletedTick); });
+    }
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
+    private void TimingResponse(long token, long tick)
+    {
+        if (IsHostMessage()) Synchronization?.TimingReply(token, tick);
+    }
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void RequestBaseline(string session, long request)
+    {
+        int peer = Multiplayer.GetRemoteSenderId();
+        if (IsHost() && session == Synchronization!.Session.ToString("N") && MovementReady(peer) && request > 0 && AllowRequest(_baselineRequests, peer, 500))
+        {
+            Logger.Info($"SYNC baseline_send peer={peer} request={request}");
+            Synchronization!.ResetCommands(peer);
+            RpcId(peer, nameof(ReceiveBaseline), request, Synchronization.Baseline());
+        }
+    }
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReceiveBaseline(long request, byte[] payload)
+    {
+        if (IsHostMessage() && _clientJoin.Phase == ClientJoinPhase.Ready)
+            Logger.Info($"SYNC baseline_receive request={request} accepted={Synchronization?.Receive(payload, true, request)}");
+    }
     public void FailSession(string reason)
     {
         if (_stopped) return;
@@ -372,6 +482,9 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped) return;
         _stopped = true;
+        Synchronization?.Stop();
+        MovementDeliveryOverride = null;
+        _baselineRequests.Clear(); _timingRequests.Clear();
         if (_heartbeat != null)
         {
             _heartbeat.Stop();

@@ -64,7 +64,7 @@ public class PlayerSpawningTests
         finally { manager.Free(); }
     }
     [Test]
-    public void ShipSimulationIsExplicitAndRemoteShipsDoNotConsumeInput()
+    public void ShipSimulationIsExplicitAndIndependentOfLocalInputOwnership()
     {
         var world = new Node2D();
         var host = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests");
@@ -77,11 +77,11 @@ public class PlayerSpawningTests
             var input = new ShipInputState(Vector2.Right, Mathf.Pi / 2, true, false, false, true);
             ship.SetInput(input);
             ship.Simulate(0.1);
-            Assert.That(ship.Rotation, Is.Zero);
-            Assert.That(ship.Velocity, Is.EqualTo(Vector2.Zero));
+            Assert.That(ship.Rotation, Is.GreaterThan(0));
+            Assert.That(ship.Velocity.Length(), Is.GreaterThan(0));
 
             ship.SetLocalControl(true);
-            Assert.That(ship.IsPhysicsProcessing(), Is.False, "Only PlayerController should schedule simulation.");
+            Assert.That(ship.IsPhysicsProcessing(), Is.False, "Only SynchronizationCoordinator should schedule simulation.");
             ship.SetInput(input);
             ship.Simulate(0.1);
             Assert.That(ship.Rotation, Is.GreaterThan(0));
@@ -95,7 +95,7 @@ public class PlayerSpawningTests
             var position = ship.Position;
             ship.SetInput(input);
             ship.Simulate(0.1);
-            Assert.That(ship.Position, Is.EqualTo(position));
+            Assert.That(ship.Position, Is.Not.EqualTo(position));
         }
         finally { world.Free(); }
     }
@@ -120,6 +120,44 @@ public class PlayerSpawningTests
             Assert.That(ship.GetParent(), Is.SameAs(second));
             first.Free();
             Assert.That(GodotObject.IsInstanceValid(ship), Is.True);
+        }
+        finally { world.Free(); }
+    }
+
+    [Test]
+    public void ReliableReplacementAdvancesGenerationAndIgnoresStaleBinding()
+    {
+        var manager = new MpManager();
+        try
+        {
+            var first = new ShipSpawnRecord(1, Guid.NewGuid().ToString("N"), "fighter", Vector2.Zero, 0, Vector2.Zero);
+            manager.Spawn(first);
+            var replacement = first with { EntityId = Guid.NewGuid().ToString("N"), Position = Vector2.One };
+            manager.ApplyBinding(replacement, 2);
+            Assert.That(manager.MpControllers[1].ControlGeneration, Is.EqualTo(2));
+            Assert.That(manager.MpControllers[1].ControlledShip!.EntityId, Is.EqualTo(replacement.EntityId));
+            manager.ApplyBinding(first, 1);
+            Assert.That(manager.MpControllers[1].ControlledShip!.EntityId, Is.EqualTo(replacement.EntityId));
+        }
+        finally { manager.Free(); }
+    }
+
+    [Test]
+    public void SpawnCaptureAndRestoreUseGlobalCoordinatesUnderTransformedParents()
+    {
+        var world = new Node2D { Position = new Vector2(300, 400), Rotation = .7f };
+        ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world);
+        var manager = new MpManager();
+        world.AddChild(manager);
+        try
+        {
+            var record = new ShipSpawnRecord(1, Guid.NewGuid().ToString("N"), "fighter", new Vector2(50, 60), .2f, Vector2.One);
+            manager.Spawn(record);
+            var ship = manager.MpControllers[1].ControlledShip!;
+            Assert.That(ship.GlobalPosition.DistanceTo(record.Position), Is.LessThan(.001));
+            ship.Restore(new Vector2(90, 100), .3f, Vector2.Zero, default);
+            Assert.That(ship.State.Position.DistanceTo(ship.GlobalPosition), Is.LessThan(.001));
+            Assert.That(ship.State.Rotation, Is.EqualTo(ship.GlobalRotation).Within(.001));
         }
         finally { world.Free(); }
     }
