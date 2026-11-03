@@ -10,9 +10,9 @@ Status: implementation added; automated checks run; user playtest concluded succ
 ## Agreed behavior
 
 - Exactly one local gameplay `Camera2D` exists per running gameplay instance, owned by the local `PlayerController` setup and placed in the viewport rendering the gameplay world.
-- The camera remains separate from ship lifetime and rotation. Keep its top-down orientation fixed; never inherit ship rotation.
+- Parent the camera to the controlled ship at local position zero so transforms provide following. Preserve the camera across ship lifetimes by reparenting on replacement/removal. Keep the view angle fixed using Camera2D's default ignore-rotation behavior.
 - Follow the controlled ship's displayed world position, including presentation correction when synchronization is integrated.
-- Use Godot's built-in camera position smoothing with configurable smoothing speed. Do not implement a separate custom camera smoothing algorithm.
+- Use Godot's built-in camera position smoothing with a fixed smoothing speed of `5f`. Do not implement a separate custom camera smoothing algorithm.
 - Retarget the same camera through `ControlledShipChanged`. Remote participant creation and movement never retarget it.
 - Snap on initial assignment, ship replacement, and teleport, resetting camera smoothing so it does not travel across the world from the old target.
 - Clear the target before removal. Hold the last camera view while no ship is assigned.
@@ -22,8 +22,8 @@ Status: implementation added; automated checks run; user playtest concluded succ
 
 1. Add camera/follow setup under the local-player architecture from Story 3. `GamePlayManager` coordinates session assembly; the local player owns its camera target and subscriptions.
 2. Bind explicitly to the current ship and subscribe to control changes before spawns can be missed. Rebinding the same ship is harmless.
-3. Update the follow target after the ship's presentation position is available. Let `Camera2D` apply position smoothing; keep orientation fixed independently of the ship.
-4. Configure smoothing in the scene/exported settings for playtest tuning. No mouse look-ahead, camera-angle changes, or custom cinematic behavior is required.
+3. Follow through camera parenting, without a per-frame position update or process-priority overrides. Let `Camera2D` apply position smoothing.
+4. Set smoothing speed directly to `5f` in camera initialization; no configuration parameter. No mouse look-ahead, camera-angle changes, or custom cinematic behavior is required.
 5. Handle initial assignment, replacement, teleport, target loss, and teardown explicitly. Holding the view after removal must not leave an invalid target or continue drifting toward a deleted target.
 6. Verify pointer-to-world aiming uses the actual gameplay viewport/camera transform while smoothing is active.
 
@@ -31,13 +31,13 @@ Status: implementation added; automated checks run; user playtest concluded succ
 
 - H/A/B each have one active local gameplay camera following only their own ship.
 - Turning the ship never changes the camera angle.
-- Ordinary movement uses native position smoothing; follow speed is tunable.
+- Ordinary movement uses native position smoothing; follow speed is fixed at `5f`.
 - Remote joins and movement do not change the local target.
 - Initial assignment, replacement, and teleport snap without a long smoothing traversal.
 - Removal holds the view safely; restart leaves no stale targets or duplicate subscriptions.
 - Pointer aiming remains correct while the camera moves.
 - When synchronization is available, the camera follows the displayed ship rather than jumping immediately to a corrected physics position.
 
-Validate through three-player visual playtests covering movement, turning, aiming, replacement, teleport, removal, and restart. Camera smoothing quality is tuned by playtest; no numerical speed was agreed during refinement.
+Validate through three-player visual playtests covering movement, turning, aiming, replacement, teleport, removal, and restart. Review decision: use a fixed smoothing speed of `5f`.
 
 Dependencies: Stories 3–5 and 7. Synchronization is not required to implement local following; integrate with its presentation correction when available. Movement effects and broader lifecycle verification remain deferred, while cleanup required by this camera story remains in scope.

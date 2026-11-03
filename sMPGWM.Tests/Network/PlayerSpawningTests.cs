@@ -64,6 +64,43 @@ public class PlayerSpawningTests
         finally { manager.Free(); }
     }
     [Test]
+    public void ShipSimulationIsExplicitAndRemoteShipsDoNotConsumeInput()
+    {
+        var world = new Node2D();
+        var host = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests");
+        host.AddChild(world);
+        var ship = ShipFactory.Create(ShipRegistry.GetById("fighter"), Guid.NewGuid().ToString("N"),
+            Vector2.Zero, 0, Vector2.Zero);
+        world.AddChild(ship);
+        try
+        {
+            var input = new ShipInputState(Vector2.Right, Mathf.Pi / 2, true, false, false, true);
+            ship.SetInput(input);
+            ship.Simulate(0.1);
+            Assert.That(ship.Rotation, Is.Zero);
+            Assert.That(ship.Velocity, Is.EqualTo(Vector2.Zero));
+
+            ship.SetLocalControl(true);
+            Assert.That(ship.IsPhysicsProcessing(), Is.False, "Only PlayerController should schedule simulation.");
+            ship.SetInput(input);
+            ship.Simulate(0.1);
+            Assert.That(ship.Rotation, Is.GreaterThan(0));
+            Assert.That(ship.Velocity.Length(), Is.GreaterThan(0));
+
+            var rotation = ship.Rotation;
+            ship.ClearInput();
+            ship.Simulate(0.1);
+            Assert.That(ship.Rotation, Is.EqualTo(rotation), "Clearing input must release aiming.");
+            ship.SetLocalControl(false);
+            var position = ship.Position;
+            ship.SetInput(input);
+            ship.Simulate(0.1);
+            Assert.That(ship.Position, Is.EqualTo(position));
+        }
+        finally { world.Free(); }
+    }
+
+    [Test]
     public void ShipTransferClearsOldAssociationAndSurvivesOldOwnerRemoval()
     {
         var world = new Node2D();

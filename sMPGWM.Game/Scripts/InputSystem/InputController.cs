@@ -61,7 +61,8 @@ public partial class InputController : AbstractSingleton<InputController>
         }
     }
 
-    public override void _PhysicsProcess(double delta)
+    // Sample once per local physics tick, before the player supplies input to its ship.
+    public void SampleInput()
     {
         if (!IsGameplayInputAvailable)
         {

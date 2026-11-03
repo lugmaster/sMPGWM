@@ -25,6 +25,10 @@ public class GodotIntegrationTests
             foreach (var file in new[] { "Scripts/Util/AbstractSingleton.cs", "Scripts/Util/Mocks/HeadlessTestHost.cs", "Scripts/Util/UiComponents/IconDefinitions.cs", "Scripts/Network/MpManager.cs", "Scripts/Network/MpController.cs", "Scripts/InputSystem/InputController.cs" })
                 Copy(Path.Combine(game, file), Path.Combine(staging, file));
             CopyTree(Path.Combine(game, "Scripts/ShipSystem"), Path.Combine(staging, "Scripts/ShipSystem"));
+            foreach (var file in new[] { "Scripts/GamePlaySystem/PlayerController.cs", "Scripts/UiSystem/UiCanvas.cs",
+                         "Scripts/UiSystem/HudSystem/PlayerHud.cs", "Scripts/UiSystem/HudSystem/Hotbar/HotbarControl.cs",
+                         "Scripts/UiSystem/OverlayMenuSystem/UiWindowManager.cs" })
+                Copy(Path.Combine(game, file), Path.Combine(staging, file));
             Copy(Path.Combine(game, "scenes/game/ship.tscn"), Path.Combine(staging, "scenes/game/ship.tscn"));
             CopyTree(Path.Combine(game, "assets/mocks"), Path.Combine(staging, "assets/mocks"));
             foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "ship_fighter_reference.png-*"))

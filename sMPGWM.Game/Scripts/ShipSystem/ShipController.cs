@@ -22,7 +22,6 @@ public partial class ShipController : CharacterBody2D
     {
         LocallyControlled = enabled;
         ClearInput();
-        SetPhysicsProcess(enabled);
     }
     public void SetInput(ShipInputState input) => _input = input;
     public void ClearInput() => _input = new(Vector2.Zero, 0, false, false, false, _input.AutomaticBraking);
@@ -31,7 +30,8 @@ public partial class ShipController : CharacterBody2D
         GlobalPosition = position; GlobalRotation = rotation; Velocity = velocity;
         CaptureState(); Teleported?.Invoke();
     }
-    public override void _PhysicsProcess(double delta)
+    // The local player owns tick ordering; ships do not tick independently.
+    public void Simulate(double delta)
     {
         if (!LocallyControlled) return;
         var s = Data.Stats;

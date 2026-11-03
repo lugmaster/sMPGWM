@@ -12,7 +12,7 @@ Status: implementation added; automated checks run; user playtest concluded succ
 - If a `ShipInputState` value is useful, keep it a local data snapshot containing movement direction, aim angle/availability, afterburner, braking, and automatic braking. Network sequences and payload contracts belong to the separate synchronization plan.
 - Specify movement coordinates explicitly: forward/backward and strafe relative to the ship.
 - Convert pointer position to world-space aiming through the gameplay camera/viewport. Persistent camera following in Story 8 is not required for this local-control milestone.
-- Have the locally controlled `ShipController` apply the current input during `_PhysicsProcess()`, use `MovementPhysics` for rotation and velocity, and call `MoveAndSlide()` locally. Explicitly order input updates before their consumption.
+- Use one `PlayerController._PhysicsProcess()` callback to call `InputController.SampleInput()`, supply the local ship input, and call `ShipController.Simulate(delta)` in order. The ship retains `MovementPhysics` and `MoveAndSlide()` but does not tick independently. No process-priority overrides are required.
 - Define mass/inertia and braking integration with the existing movement calculations during this story's refinement.
 - Clear active input and aiming when control becomes unavailable or the controlled ship changes. Preserve the automatic-braking preference.
 - Keep menu actions local.

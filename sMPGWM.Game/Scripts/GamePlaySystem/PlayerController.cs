@@ -2,7 +2,6 @@ using System;
 using sMPGWM.Scripts.EquipmentSystem;
 using Godot;
 using sMPGWM.Scripts.InputSystem;
-using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.UiSystem;
@@ -21,11 +20,11 @@ public partial class PlayerController : Node
     private bool _shutdown;
     private ShipController? _ship;
     private Camera2D _camera = null!;
+    private Node _world = null!;
 
     public void Initialize(UiCanvas canvas, InventoryEquipmentTransferService transfer, Action<int> activate, Node world)
     {
-        _canvas = canvas; _transfer = transfer;
-        Input.ProcessPhysicsPriority = -200;
+        _canvas = canvas; _transfer = transfer; _world = world;
         AddChild(Input);
         Input.SetPointerInputFilter(canvas.IsPointerOverInteractiveUi);
         _actions = new(InputPolicy, activate, () => Input.IsGameplayInputAvailable);
@@ -33,15 +32,9 @@ public partial class PlayerController : Node
         canvas.BlockingChanged += InputPolicy.SetHasBlockingWindow;
         canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
         InputPolicy.CanControlPlayerChanged += ApplyAvailability;
-        // TODO #ShipStory use default values - i never initiated a camera with that much parameters. defend if you think any is really needed.
         _camera = new Camera2D { Name = "LocalCamera", PositionSmoothingEnabled = true,
-            PositionSmoothingSpeed = 5f, IgnoreRotation = true,
-            ProcessPriority = 100, ProcessCallback = Camera2D.Camera2DProcessCallback.Idle };
+            PositionSmoothingSpeed = 5f };
         world.AddChild(_camera);
-        // TODO #ShipStory what are these adjustions for?
-        ProcessPhysicsPriority = -100;
-        // TODO #ShipStory what are these adjustions for?
-        ProcessPriority = 50;
         InputPolicy.SetHasBlockingWindow(canvas.HasBlockingWindow);
         ApplyAvailability(false);
     }
@@ -77,15 +70,20 @@ public partial class PlayerController : Node
             _ship.TreeExiting -= TargetExiting;
             _ship.SetLocalControl(false);
         }
-        if (next == null && _camera != null && _camera.IsInsideTree())
+        if (next == null)
         {
-            _camera.GlobalPosition = _camera.GetScreenCenterPosition();
+            var lastView = _camera.GetScreenCenterPosition();
+            _camera.Reparent(_world);
+            _camera.GlobalPosition = lastView;
             _camera.ResetSmoothing();
         }
         _ship = next;
         Input.SetGameplayInputEnabled(false);
         if (next != null)
         {
+            _camera.Reparent(next);
+            _camera.Position = Vector2.Zero;
+            _camera.Rotation = 0;
             next.SetLocalControl(true);
             next.Teleported += SnapCamera;
             next.TreeExiting += TargetExiting;
@@ -97,21 +95,26 @@ public partial class PlayerController : Node
     private void SnapCamera()
     {
         if (_ship == null) return;
-        _camera.GlobalPosition = _ship.DisplayedPosition;
         _camera.ResetSmoothing();
         _camera.ForceUpdateScroll();
     }
-    public override void _Process(double delta)
-    {
-        if (_ship != null) _camera.GlobalPosition = _ship.DisplayedPosition;
-    }
     public override void _PhysicsProcess(double delta)
     {
-        if (_ship == null) return;
-        if (!Input.IsGameplayInputAvailable || !IsMultiplayerAuthority()) { _ship.ClearInput(); return; }
-        var aim = _ship.GetGlobalMousePosition() - _ship.GlobalPosition;
-        _ship.SetInput(new(Input.Direction, aim.Angle(), !_canvas.IsPointerOverInteractiveUi() && aim.LengthSquared() > 0,
-            Input.AfterBurnerPressed, Input.BreakPressed, Input.AutoBreakingEnabled));
+        if (_shutdown) return;
+        Input.SampleInput();
+        if (_ship == null || !_authorityReady || !IsMultiplayerAuthority()) return;
+        if (Input.IsGameplayInputAvailable)
+        {
+            var aim = _ship.GetGlobalMousePosition() - _ship.GlobalPosition;
+            _ship.SetInput(new(Input.Direction, aim.Angle(), !_canvas.IsPointerOverInteractiveUi() && aim.LengthSquared() > 0,
+                Input.AfterBurnerPressed, Input.BreakPressed, Input.AutoBreakingEnabled));
+        }
+        else
+        {
+            // Release held actions while preserving the ship's braking/inertia behavior.
+            _ship.ClearInput();
+        }
+        _ship.Simulate(delta);
     }
     public void SetSessionActive(bool active)
     {
