@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Godot;
+using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.scripts.Network;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.GamePlaySystem;
@@ -65,28 +67,70 @@ public partial class MpManager : AbstractSingleton<MpManager>
     }
 
     private readonly Dictionary<int, MpController> _controllers = new();
-    private readonly Dictionary<int, PlayerStartupData> _startupData = new();
+    private readonly Dictionary<int, ShipSpawnRecord> _records = new();
+    private int _spawnIndex;
+    public PlayerController? LocalPlayer { get; set; }
     public IReadOnlyDictionary<int, MpController> MpControllers => _controllers;
-    public IReadOnlyDictionary<int, PlayerStartupData> StartupData => _startupData;
+    public IReadOnlyDictionary<int, ShipSpawnRecord> SpawnRecords => _records;
 
-    public void Spawn(int peerId, PlayerStartupData data)
+    public ShipSpawnRecord ApproveSpawn(int peerId, PlayerStartupData data)
     {
-        if (_controllers.ContainsKey(peerId)) return;
-        var controller = new MpController { Name = $"Player_{peerId}" };
-        AddChild(controller);
-        _controllers.Add(peerId, controller);
-        _startupData.Add(peerId, data);
-        Logger.Info($"NET spawn peer={peerId} message='{data.Message}'");
+        if (!ShipRegistry.TryGetById(data.ShipId, out _)) throw new ArgumentException("Unknown ship: " + data.ShipId);
+        if (_records.TryGetValue(peerId, out var existing))
+        {
+            if (existing.ShipId != data.ShipId) throw new InvalidOperationException("Conflicting ship request.");
+            return existing;
+        }
+        var index = _spawnIndex++;
+        var record = new ShipSpawnRecord(peerId, Guid.NewGuid().ToString("N"), data.ShipId,
+            new Vector2(640 + index % 4 * 140, 360 + index / 4 * 140), 0, Vector2.Zero);
+        Spawn(record);
+        return record;
+    }
+
+    public void Spawn(ShipSpawnRecord record)
+    {
+        if (_records.TryGetValue(record.PeerId, out var existing))
+        {
+            if (existing != record) throw new InvalidOperationException("Conflicting spawn record.");
+            return;
+        }
+        foreach (var known in _records.Values)
+            if (known.EntityId == record.EntityId) throw new InvalidOperationException("Duplicate ship entity ID.");
+        MpController? participant = null;
+        ShipController? ship = null;
+        try
+        {
+            ship = ShipFactory.Create(ShipRegistry.GetById(record.ShipId), record.EntityId,
+                record.Position, record.Rotation, record.Velocity);
+            participant = new MpController { Name = $"Player_{record.PeerId}", ControllingPeerId = record.PeerId };
+            AddChild(participant);
+            participant.AssignShip(ship);
+            _controllers.Add(record.PeerId, participant);
+            _records.Add(record.PeerId, record);
+            if (IsInsideTree() && record.PeerId == Multiplayer.GetUniqueId()) LocalPlayer?.BindParticipant(participant);
+            Logger.Info($"NET spawn peer={record.PeerId} ship={record.ShipId} entity={record.EntityId}");
+        }
+        catch (Exception e)
+        {
+            _controllers.Remove(record.PeerId); _records.Remove(record.PeerId);
+            if (participant != null) participant.Free();
+            if (ship != null && GodotObject.IsInstanceValid(ship)) ship.Free();
+            GameFlowManager.Instance?.QuitToStartMenuBlocking($"Ship construction failed: {e.Message}");
+            throw;
+        }
     }
 
     public void Despawn(int peerId)
     {
         if (_controllers.Remove(peerId, out var controller))
         {
+            if (LocalPlayer?.Participant == controller) LocalPlayer.UnbindParticipant();
+            controller.RemoveShip();
             RemoveChild(controller);
             controller.QueueFree();
         }
-        _startupData.Remove(peerId);
+        _records.Remove(peerId);
     }
 
     public void Clear()

@@ -2,7 +2,7 @@
 
 Epic: [YAML-defined multiplayer ships with local player control](multiplayer-ships-w-local-player-control.md).
 
-Status: refinement in progress; implementation pending.
+Status: implementation added; automated checks run; three-player user playtest pending.
 
 *As a player, my input controls only my assigned ship.*
 
@@ -31,13 +31,12 @@ Status: refinement in progress; implementation pending.
 
 Use local input-to-movement tests and UI/focus smoke tests. All multiplayer scenarios use at least one host and two clients. Exercise control on all three instances independently and verify that only the locally assigned ship moves. Check that remote joins, disconnects, and local ship changes do not redirect held input or enable movement on remote ships.
 
-## Remaining refinement
+## Implemented movement policy
 
-- Settle mass/inertia and manual/automatic braking behavior using the existing movement calculations.
-- Settle pointer-driven aiming while hovering interactive UI; freezing aim while preserving keyboard movement was proposed but has not been agreed.
+Mass divides rotation rate and acceleration/braking coefficients. Manual braking suppresses thrust and applies friction; automatic braking applies friction when thrust is released. The existing movement formulas remain unchanged. Pointer aiming pauses over interactive UI while keyboard movement remains available. These defaults are ready for playtest tuning.
 
 ## Milestone
 
-Completing Stories 1–7 reaches the first major delivery milestone and requires the [user playtest described in the epic](multiplayer-ships-w-local-player-control.md) before proceeding to follow-up work. Movement synchronization, persistent camera following, and movement effects are separate follow-ups.
+Completing Stories 1 through 8, including the persistent camera, reaches the delivery milestone and required user playtest. Movement synchronization and movement effects remain separate follow-ups.
 
 Dependencies: [Story 3](multiplayer-ships-story-03-local-player-controller.md), [Story 4](multiplayer-ships-story-04-participant-and-ship.md), and [Story 6](multiplayer-ships-story-06-spawn-protocol.md).

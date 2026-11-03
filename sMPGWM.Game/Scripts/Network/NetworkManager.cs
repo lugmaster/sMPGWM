@@ -7,6 +7,7 @@ using sMPGWM.Scripts.Network;
 using sMPGWM.Scripts.Network.NetworkInternal;
 using sMPGWM.scripts.Network.NetworkInternal;
 using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.ShipSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.scripts.Network;
@@ -24,6 +25,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private string? _helloToken;
     private ulong _replyDeadline;
     private readonly HashSet<int> _answered = new();
+    // TODO #ShipStory How does one get rejected and what does it mean for further connects?
+    private readonly Dictionary<int, ulong> _rejected = new();
     private enum JoinState { Connected, Verified, Spawning, Ready }
     private readonly Dictionary<int, JoinState> _joins = new();
     private readonly Dictionary<int, ulong> _joinDeadlines = new();
@@ -119,7 +122,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_startup!.Role == NetworkRole.Host)
         {
             Logger.Info("Network Host: Listening");
-            MpManager.Instance.Spawn(1, _startup.Player);
+            MpManager.Instance.ApproveSpawn(1, _startup.Player);
             GameFlowManager.Instance.CompleteLoading();
             return;
         }
@@ -156,7 +159,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _replyDeadline = JoinDeadline();
         Logger.Info("Network Client: host round trip complete");
         _spawnRequested = true;
-        Logger.Info($"NET spawn_request message='{_startup!.Player.Message}'");
+        Logger.Info($"NET spawn_request message='{_startup!.Player.ShipId}'");
         if (RpcId(1, nameof(RequestSpawn), _startup.Player.ToVariant()) != Error.Ok)
             FailSession("Spawn request failed.");
     }
@@ -166,17 +169,17 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         var peer = Multiplayer.GetRemoteSenderId();
         if (!IsHost() || !_joins.TryGetValue(peer, out var state) || state != JoinState.Verified) return;
-        if (!PlayerStartupData.TryFromVariant(payload, out var data))
+        if (!PlayerStartupData.TryFromVariant(payload, out var data) || !ShipRegistry.TryGetById(data.ShipId, out _))
         {
             RejectJoin(peer, "Invalid player startup payload.");
             return;
         }
         try
         {
-            MpManager.Instance.Spawn(peer, data);
+            var record = MpManager.Instance.ApproveSpawn(peer, data);
             // All spawn messages share the reliable channel: snapshot, later additions, then completion.
-            var snapshot = new Godot.Collections.Dictionary<int, string>();
-            foreach (var entry in MpManager.Instance.StartupData) snapshot.Add(entry.Key, entry.Value.Message);
+            var snapshot = new Godot.Collections.Array();
+            foreach (var entry in MpManager.Instance.SpawnRecords.Values) snapshot.Add(entry.ToVariant());
             if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot) != Error.Ok)
             {
                 RejectJoin(peer, "Initial spawn send failed.");
@@ -186,34 +189,36 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             _joinDeadlines[peer] = JoinDeadline();
             foreach (var other in new List<int>(_joins.Keys))
                 if (other != peer && _joins[other] is JoinState.Spawning or JoinState.Ready)
-                    if (RpcId(other, nameof(ReceiveSpawn), peer, data.ToVariant()) != Error.Ok)
+                    if (RpcId(other, nameof(ReceiveSpawn), record.ToVariant()) != Error.Ok)
                         RejectJoin(other, "Spawn announcement failed.");
         }
-        catch (Exception e) { RejectJoin(peer, $"Spawning failed: {e.Message}"); }
+        catch (Exception e) { FailSession($"Spawning failed: {e.Message}"); }
     }
 
     private bool IsHostMessage() => !_stopped && _startup?.Role == NetworkRole.Client &&
         Multiplayer.GetRemoteSenderId() == 1;
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveInitialSpawns(Godot.Collections.Dictionary<int, string> snapshot)
+    private void ReceiveInitialSpawns(Godot.Collections.Array snapshot)
     {
         if (!IsHostMessage() || !_spawnRequested || _spawnApplied) return;
-        var localPeer = Multiplayer.GetUniqueId();
-        if (!snapshot.ContainsKey(1) || !snapshot.TryGetValue(localPeer, out var ownMessage) ||
-            ownMessage != _startup!.Player.Message || snapshot.Count > 10)
-        {
-            FailSession("Invalid initial spawn snapshot.");
-            return;
-        }
         try
         {
-            foreach (var entry in snapshot)
+            var records = new Dictionary<int, ShipSpawnRecord>();
+            var entities = new HashSet<string>(StringComparer.Ordinal);
+            if (snapshot.Count > 10) throw new InvalidOperationException("Oversized spawn snapshot.");
+            foreach (var payload in snapshot)
             {
-                if (entry.Key <= 0 || !PlayerStartupData.TryFromVariant(entry.Value, out var data))
+                if (!ShipSpawnRecord.TryFromVariant(payload, out var record) ||
+                    !records.TryAdd(record.PeerId, record) || !entities.Add(record.EntityId) ||
+                    !ShipRegistry.TryGetById(record.ShipId, out _))
                     throw new InvalidOperationException("Invalid spawn record.");
-                MpManager.Instance.Spawn(entry.Key, data);
             }
+            if (!records.ContainsKey(1) || !records.TryGetValue(Multiplayer.GetUniqueId(), out var own) ||
+                own.ShipId != _startup!.Player.ShipId) throw new InvalidOperationException("Missing local or host spawn.");
+            foreach (var record in records.Values) MpManager.Instance.Spawn(record);
+            if (MpManager.Instance.LocalPlayer?.Participant?.ControlledShip == null)
+                throw new InvalidOperationException("Local controls were not bound.");
             _spawnApplied = true;
             if (RpcId(1, nameof(ConfirmSpawnReady)) != Error.Ok) FailSession("Spawn acknowledgement failed.");
         }
@@ -221,14 +226,14 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveSpawn(int peer, Variant payload)
+    private void ReceiveSpawn(Variant payload)
     {
         if (!IsHostMessage() || !_spawnApplied) return;
         try
         {
-            if (peer <= 0 || !PlayerStartupData.TryFromVariant(payload, out var data))
+            if (!ShipSpawnRecord.TryFromVariant(payload, out var record))
                 throw new InvalidOperationException("Invalid spawn record.");
-            MpManager.Instance.Spawn(peer, data);
+            MpManager.Instance.Spawn(record);
         }
         catch (Exception e) { FailSession($"Applying spawn failed: {e.Message}"); }
     }
@@ -272,7 +277,18 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private void RejectJoin(int peer, string reason)
     {
         Logger.Warning($"NET join_rejected peer={peer}: {reason}");
-        MpManager.Instance.Depart(peer, reason);
+        if (_rejected.ContainsKey(peer)) return;
+        RpcId(peer, nameof(JoinRejected), reason);
+        _joins.Remove(peer);
+        _joinDeadlines.Remove(peer);
+        // Let the reliable rejection reach the client before transport teardown.
+        _rejected[peer] = Time.GetTicksMsec() + 500;
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void JoinRejected(string reason)
+    {
+        if (IsHostMessage()) FailSession(reason);
     }
 
     public override void _PhysicsProcess(double delta)
@@ -280,6 +296,12 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (!_stopped && _replyDeadline != 0 && Time.GetTicksMsec() >= _replyDeadline)
             FailSession(_spawnRequested ? "Player spawning timed out." : "Host reply timed out.");
         if (!IsHost()) return;
+        foreach (var peer in new List<int>(_rejected.Keys))
+            if (Time.GetTicksMsec() >= _rejected[peer])
+            {
+                _rejected.Remove(peer);
+                MpManager.Instance.Depart(peer, "Join rejected");
+            }
         foreach (var peer in new List<int>(_joinDeadlines.Keys))
             if (_joinDeadlines.TryGetValue(peer, out var deadline) && Time.GetTicksMsec() >= deadline)
                 RejectJoin(peer, "Player join timed out.");
@@ -294,6 +316,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
 
     public void RemovePeer(int peer)
     {
+        _rejected.Remove(peer);
         _answered.Remove(peer);
         _joins.Remove(peer);
         _joinDeadlines.Remove(peer);
@@ -341,6 +364,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         ProcessMode = ProcessModeEnum.Disabled;
         _helloToken = null;
         _replyDeadline = 0;
+        _rejected.Clear();
         _answered.Clear();
         _joins.Clear();
         _joinDeadlines.Clear();

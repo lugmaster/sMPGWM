@@ -2,7 +2,7 @@
 
 Epic: [YAML-defined multiplayer ships with local player control](multiplayer-ships-w-local-player-control.md).
 
-Status: refinement complete; implementation pending.
+Status: implementation added; automated checks run; three-player user playtest pending.
 
 *As a participant, I receive a ship whose appearance, collision geometry, and base stats come from its registered definition.*
 

@@ -2,7 +2,7 @@
 
 Epic: [YAML-defined multiplayer ships with local player control](multiplayer-ships-w-local-player-control.md).
 
-Status: refinement complete; implementation pending.
+Status: implementation added; automated checks run; three-player user playtest pending.
 
 *As a content author, I can define ship types in YAML and receive actionable errors before gameplay starts when definitions are invalid.*
 

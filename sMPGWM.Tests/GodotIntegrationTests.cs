@@ -24,6 +24,11 @@ public class GodotIntegrationTests
                 Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
             foreach (var file in new[] { "Scripts/Util/AbstractSingleton.cs", "Scripts/Util/Mocks/HeadlessTestHost.cs", "Scripts/Util/UiComponents/IconDefinitions.cs", "Scripts/Network/MpManager.cs", "Scripts/Network/MpController.cs", "Scripts/InputSystem/InputController.cs" })
                 Copy(Path.Combine(game, file), Path.Combine(staging, file));
+            CopyTree(Path.Combine(game, "Scripts/ShipSystem"), Path.Combine(staging, "Scripts/ShipSystem"));
+            Copy(Path.Combine(game, "scenes/game/ship.tscn"), Path.Combine(staging, "scenes/game/ship.tscn"));
+            CopyTree(Path.Combine(game, "assets/mocks"), Path.Combine(staging, "assets/mocks"));
+            foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "ship_fighter_reference.png-*"))
+                Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
             File.WriteAllText(Path.Combine(staging, "project.godot"), """
                 config_version=5
                 [application]

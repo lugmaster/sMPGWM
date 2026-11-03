@@ -3,7 +3,6 @@ using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.HotbarSystem;
-using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.MessageSystem;
@@ -19,9 +18,9 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
     private UiCanvas _canvas = null!;
-    private InputController _inputController = null!;
-    private PlayerActionController _playerActionController = null!;
-    private readonly PlayerInputPolicy _inputPolicy = new();
+    public PlayerController LocalPlayer { get; private set; } = null!;
+    // TODO #ShipStory make a GameConfig Setting instead. 
+    [Export] public float CameraSmoothingSpeed { get; set; } = 5f;
     private MainGameState _gameState = MainGameState.Inactive;
     private double _mockMessageGameplaySeconds;
     private double _nextMockMessageLogSeconds = 3.0;
@@ -52,37 +51,27 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         IeTransferService = new InventoryEquipmentTransferService(InventoryController, EquipmentController);
 
         _canvas = GetNode<UiCanvas>("UiCanvas");
-        MessageController = new MessageController(_canvas, _inputPolicy,
+        LocalPlayer = new PlayerController { Name = "PlayerController", CameraSmoothingSpeed = CameraSmoothingSpeed };
+        MessageController = new MessageController(_canvas, LocalPlayer.InputPolicy,
             exception => Logger.Error($"Message observer failed: {exception}"));
         MessageMock.PopulateWelcomeMessage(MessageController);
-        _canvas.InventoryEditAvailabilityChanged += SetInventoryEditing;
         _canvas.BindInventory(InventoryController, EquipmentController, IeTransferService);
-        _inputController = new InputController { Name = nameof(InputController) };
-        AddChild(_inputController);
-        _inputController.SetPointerInputFilter(_canvas.IsPointerOverInteractiveUi);
         var actions = player.GetHotBarSkills();
         HotbarController = new ItemHotbarController(InventoryController, EquipmentController, IeTransferService,
             exception => Logger.Error($"Hotbar observer failed: {exception}"));
-        _playerActionController = new PlayerActionController(
-            _inputPolicy, position => HotbarController.Activate(position,
-                key => player.OnHotbarSlotPressed(int.Parse(key)),
-                request => Logger.Info($"Item hotbar activation requested: {request}")),
-            () => _inputController.IsGameplayInputAvailable);
-
-        _canvas.OnRequestHotbarAction += _playerActionController.RequestHotbarActivation;
-        _canvas.BlockingChanged += _inputPolicy.SetHasBlockingWindow;
-        _inputPolicy.CanControlPlayerChanged += ApplyPlayerInputAvailability;
-
+        var world = GetNode<Node>("WorldViewPortContainer/WorldViewport/WorldScene");
+        LocalPlayer.Initialize(_canvas, IeTransferService, position => HotbarController.Activate(position,
+            key => player.OnHotbarSlotPressed(int.Parse(key)),
+            request => Logger.Info($"Item hotbar activation requested: {request}")), world);
+        AddChild(LocalPlayer);
         _canvas.BindHotbar(HotbarController, actions);
-        _inputPolicy.SetHasBlockingWindow(_canvas.HasBlockingWindow);
-        _inputPolicy.SetSessionActive(GameState == MainGameState.Active);
-        _canvas.SetNavigationEnabled(GameState == MainGameState.Active);
-        ApplyPlayerInputAvailability(_inputPolicy.CanControlPlayer);
+        LocalPlayer.SetSessionActive(GameState == MainGameState.Active);
         GameFlowManager.Instance.StateChanged += NetworkStateChanged;
         NetworkStateChanged(GameFlowManager.Instance.GameFlowState);
 
         // Gameplay is ready before networking can spawn players or publish session events.
-        AddChild(new MpManager { Name = nameof(MpManager) });
+        // TODO #ShipStory why add to world and to GameplayManager(-- AddChild(LocalPlayer); --)?
+        world.AddChild(new MpManager { Name = nameof(MpManager), LocalPlayer = LocalPlayer });
         AddChild(new NetworkManager { Name = nameof(NetworkManager) });
     }
 
@@ -106,12 +95,12 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 
     protected override void OnExitTree()
     {
+        LocalPlayer?.Shutdown();
         GameFlowManager.Instance.StateChanged -= NetworkStateChanged;
         if (_canvas != null)
         {
             MessageController?.Dispose();
             _canvas.UnbindInventory();
-            _canvas.InventoryEditAvailabilityChanged -= SetInventoryEditing;
         }
         IeTransferService?.Dispose();
         HotbarController?.Dispose();
@@ -123,30 +112,16 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         InventoryController = null!;
         ItemController = null!;
         ItemRequestService = null!;
-        if (_playerActionController is null)
-            return;
-
-        _inputPolicy.CanControlPlayerChanged -= ApplyPlayerInputAvailability;
-        _canvas.BlockingChanged -= _inputPolicy.SetHasBlockingWindow;
-        _canvas.OnRequestHotbarAction -= _playerActionController.RequestHotbarActivation;
     }
 
     public void StopSession()
     {
-        if (_canvas != null && _inputController != null) SetGameState(MainGameState.Inactive);
+        if (_canvas != null && LocalPlayer != null) SetGameState(MainGameState.Inactive);
     }
 
     private void NetworkStateChanged(GameFlowState state)
     {
         SetGameState(state == GameFlowState.InGame ? MainGameState.Active : MainGameState.Inactive);
-    }
-
-    private void SetInventoryEditing(bool available)
-    {
-        IeTransferService?.RevokeEditSession();
-        var session = available && GameState == MainGameState.Active && IeTransferService != null
-            ? IeTransferService.OpenEditSession() : 0UL;
-        _canvas.SetInventoryEditSession(session);
     }
 
     public void SetGameState(MainGameState newGameState)
@@ -156,16 +131,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (newGameState == _gameState) return;
 
         _gameState = newGameState;
-        if (newGameState != MainGameState.Active) SetInventoryEditing(false);
-        _inputPolicy.SetSessionActive(newGameState == MainGameState.Active);
-        _canvas.SetNavigationEnabled(newGameState == MainGameState.Active);
+        LocalPlayer.SetSessionActive(newGameState == MainGameState.Active);
         MessageController.SetActive(newGameState == MainGameState.Active);
         OnGameStateChanged?.Invoke(newGameState);
     }
 
-    private void ApplyPlayerInputAvailability(bool enabled)
-    {
-        _inputController.SetGameplayInputEnabled(enabled);
-        _canvas.SetGameplayInputEnabled(enabled);
-    }
 }

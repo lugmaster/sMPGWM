@@ -61,7 +61,7 @@ public partial class InputController : AbstractSingleton<InputController>
         }
     }
 
-    public override void _Process(double delta)
+    public override void _PhysicsProcess(double delta)
     {
         if (!IsGameplayInputAvailable)
         {

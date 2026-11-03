@@ -54,6 +54,7 @@ public static class GameConfig
         if (string.IsNullOrEmpty(ConfigDataChecksum))
             throw new InvalidOperationException("Configuration is not loaded.");
         _ = ItemSystem.ItemRegistry.GetAll();
+        _ = ShipSystem.ShipRegistry.GetAll();
         var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoadingSystem.FileLoader.CapturedInputs);
         foreach (var name in new[] { "EffectDefinitions.yml", "EffectSchemas.yml", "PassiveDefinitions.yml", "PassiveSchemas.yml" })
         {
@@ -62,7 +63,11 @@ public static class GameConfig
             inputs[name] = file.GetAsText();
             if (file.GetError() != Error.Ok) throw new InvalidOperationException("Cannot read game data: " + name);
         }
-        if (inputs.Count != 8) throw new InvalidOperationException("Incomplete game data inventory.");
+        var required = new[] { "ItemCategoryDefinitions.yml", "ItemCategorySchema.yml", "ItemDefinitions.yml",
+            "ItemSchema.yml", "Ships.yml", "ShipsSchema.yml", "EffectDefinitions.yml", "EffectSchemas.yml",
+            "PassiveDefinitions.yml", "PassiveSchemas.yml" };
+        if (inputs.Count != required.Length || Array.Exists(required, name => !inputs.ContainsKey(name)))
+            throw new InvalidOperationException("Incomplete game data inventory.");
         GameDataChecksum = ChecksumGenerator.Compute(inputs);
         foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
         Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={GameDataChecksum}");

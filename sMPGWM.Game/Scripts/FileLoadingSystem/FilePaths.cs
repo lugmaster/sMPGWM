@@ -23,6 +23,9 @@ public partial class FilePaths : AbstractSingleton<FilePaths>
     public const string EffectDataJsonSchema = "res://config/effects/effects.json";
 
     // Ships
+    public const string UserShipDataYaml = UserConfigDirectory + "ships/Ships.yml";
+    public const string ShipDataYaml = "res://assets/game_data/Ships.yml";
+    public const string ShipDataYamlSchema = "res://assets/game_data/ShipsSchema.yml";
     public const string UserShipDataJson = UserConfigDirectory + "ships/ships.json";
     public const string ShipDataJson = "res://config/ships/ships.json";
     public const string ShipDataJsonSchema = "res://config/ships/ships_schema.json";

@@ -3,7 +3,7 @@
 Epic: [YAML-defined multiplayer ships with local player control](backlog/multiplayer-ships-w-local-player-control.md).
 Plan: [Multiplayer ships — Stories 1–8](multiplayer-ships-story-summary.md).
 
-Status: refinement complete; implementation pending. This is the former epic Story 9, now Story 8 in the local ships plan. Former epic Story 8 is the separate multiplayer synchronization plan.
+Status: implementation added; automated checks run; three-player user playtest pending.
 
 *As a player, my top-down camera follows my currently controlled ship without changing its angle.*
 
