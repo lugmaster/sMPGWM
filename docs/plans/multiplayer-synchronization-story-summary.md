@@ -24,11 +24,11 @@ NetworkManager's reliable handshake uses RequestSpawn, ReceiveInitialSpawns, Con
 
 ## Target architecture
 
-A session-owned synchronization coordinator orders input acquisition, command selection, fixed movement, completed-world capture, and publication. The host simulates every ship exactly once; clients predict only their own ship. PlayerController retains input/UI policy, binding, and camera ownership. Separate local input authority from simulation eligibility.
+A session-owned synchronization coordinator orders input acquisition, command selection, fixed movement, capture of movement and inputs after the completed step, and publication. The host simulates every ship exactly once; clients predict only their own ship. PlayerController retains input/UI policy, binding, and camera ownership. Separate local input authority from simulation eligibility.
 
 Use the active Network and Movement code. NetworkManager remains the protocol/lifecycle boundary; timing, queues, histories, reconciliation, and presentation have separate responsibilities and session lifetime. Do not build on Network/legacy.
 
-Wire messages carry a host-issued shared session identity, entity ID, control generation, and host tick. Full snapshots use global transforms, velocity, audited movement state, applied presentation flags, and discontinuity identity. ShipRegistry retains immutable configuration.
+Wire messages carry a host-issued shared session identity, entity ID, control generation, and host tick. Snapshot scope is currently movement and inputs, not complete world state. Movement uses global transforms, velocity, audited movement state, movement-related presentation flags, and discontinuity identity. Keep the shared envelope and scheduling separate from system-specific payloads so other systems can extend snapshots later without redesigning timing or publication. ShipRegistry retains immutable configuration.
 
 | Setting | Initial target |
 |---|---|
