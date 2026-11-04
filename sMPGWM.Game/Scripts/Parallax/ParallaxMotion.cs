@@ -19,7 +19,7 @@ public partial class ParallaxMotion : ParallaxBackground
 
     public override void _Ready()
     {
-        NebulaBackground = GamePlayProvider.CreateSpaceBackgroundNebulah();
+        NebulaBackground = GamePlayProvider.CreateSpaceBackgroundNebula();
         StarBackground = GamePlayProvider.CreateSpaceBackgroundStars();
         _parallaxLayerNebula = GenerateSpriteGrid(_nebulaLayer, NebulaBackground);
         _parallaxLayerStars = GenerateSpriteGrid(_starsLayer, StarBackground);
