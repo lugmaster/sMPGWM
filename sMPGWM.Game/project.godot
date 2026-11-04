@@ -31,6 +31,8 @@ file_logging/log_path="user://game.log"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/size/window_width_override=1920
+window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
@@ -116,7 +118,6 @@ MapMenu={
 }
 
 [physics]
-common/physics_ticks_per_second=60
 
 3d/physics_engine="Jolt Physics"
 

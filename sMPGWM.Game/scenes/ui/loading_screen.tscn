@@ -1,23 +1,22 @@
 [gd_scene format=3 uid="uid://dyvsk7c3m2us6"]
 
-[ext_resource type="Texture2D" uid="uid://baork7hut774k" path="res://assets/ui/backgrounds/nasa_nebulah.png" id="1_rqdcv"]
-[ext_resource type="Script" path="res://Scripts/UiSystem/LoadingScreen.cs" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://baork7hut774k" path="res://assets/loadingscreen/nasa_nebulah.png" id="1_rqdcv"]
+[ext_resource type="Script" uid="uid://cwjcnxe2tj5p6" path="res://Scripts/UiSystem/LoadingScreen.cs" id="2_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rqdcv"]
 bg_color = Color(0.5347868, 0.6111821, 0.6801175, 1)
 corner_detail = 4
 
 [node name="LoadingScreen" type="TextureRect" unique_id=357583795]
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
-script = ExtResource("2_script")
 texture = ExtResource("1_rqdcv")
 expand_mode = 1
 stretch_mode = 6
+script = ExtResource("2_script")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1404952465]
 layout_mode = 1

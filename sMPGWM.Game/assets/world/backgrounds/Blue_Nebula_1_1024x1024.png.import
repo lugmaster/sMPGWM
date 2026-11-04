@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://baork7hut774k"
-path="res://.godot/imported/nasa_nebulah.png-26b356c1d7ffef8f624f3db6e6ec815a.ctex"
+uid="uid://bnhvavhce3v8l"
+path="res://.godot/imported/Blue_Nebula_1_1024x1024.png-3a2f188dd61600ecf7ecaae6350941cf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/backgrounds/nasa_nebulah.png"
-dest_files=["res://.godot/imported/nasa_nebulah.png-26b356c1d7ffef8f624f3db6e6ec815a.ctex"]
+source_file="res://assets/world/backgrounds/Blue_Nebula_1_1024x1024.png"
+dest_files=["res://.godot/imported/Blue_Nebula_1_1024x1024.png-3a2f188dd61600ecf7ecaae6350941cf.ctex"]
 
 [params]
 

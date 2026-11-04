@@ -14,6 +14,7 @@
         <PackageReference Include="YamlDotNet" Version="18.1.0" />
     </ItemGroup>
     <ItemGroup>
+        <Folder Include="assets\loadingscreen\" />
         <Folder Include="assets\ui\backgrounds\" />
         <Folder Include="assets\ui\fonts\" />
         <Folder Include="assets\ui\icons\" />
@@ -28,6 +29,8 @@
         <Content Include="assets\game_data\ShipsSchema.yml" />
         <Content Include="assets\ui\mocks\ship_fighter_reference.png" />
         <Content Include="assets\ui\mocks\ship_fighter_reference.png.import" />
+        <Content Include="assets\world\backgrounds\Blue_Nebula_1_1024x1024.png" />
+        <Content Include="assets\world\backgrounds\pixel_stars.png" />
         <Content Include="config\config.cfg" />
         <Content Include="credits" />
         <Content Include="README.md" />
