@@ -1,6 +1,6 @@
 using System;
 using Godot;
-using sMPGWM.Scripts.Movement;
+using sMPGWM.Scripts.MovementSystem;
 using sMPGWM.Scripts.World;
 
 namespace sMPGWM.Scripts.ShipSystem;

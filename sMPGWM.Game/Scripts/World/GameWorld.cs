@@ -4,7 +4,7 @@ using System.Linq;
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.Network;
+using sMPGWM.Scripts.NetworkSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.World;

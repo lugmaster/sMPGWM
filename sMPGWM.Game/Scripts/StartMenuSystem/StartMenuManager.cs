@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
-using sMPGWM.scripts.Network;
-using sMPGWM.Scripts.Network;
+using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.Steam;
 using sMPGWM.Scripts.Util;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;

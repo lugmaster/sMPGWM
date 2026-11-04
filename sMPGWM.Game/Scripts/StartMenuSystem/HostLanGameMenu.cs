@@ -1,6 +1,5 @@
-﻿using Godot;
-using sMPGWM.scripts.Network;
-using sMPGWM.Scripts.Network;
+using Godot;
+using sMPGWM.Scripts.NetworkSystem;
 
 namespace sMPGWM.Scripts.StartMenuSystem;
 

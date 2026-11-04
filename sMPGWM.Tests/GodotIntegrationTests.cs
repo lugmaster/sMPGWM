@@ -31,7 +31,7 @@ public class GodotIntegrationTests
                 Copy(Path.Combine(game, file), Path.Combine(staging, file));
             Copy(Path.Combine(game, "scenes/game/ship.tscn"), Path.Combine(staging, "scenes/game/ship.tscn"));
             // Session construction tests exercise the real canvas and runtime node composition.
-            foreach (var directory in new[] { "Scripts/UiSystem", "Scripts/Util/UiComponents", "Scripts/Network", "Scripts/GameConfigSystem", "scenes/ui" })
+            foreach (var directory in new[] { "Scripts/UiSystem", "Scripts/Util/UiComponents", "Scripts/NetworkSystem", "Scripts/MovementSystem", "Scripts/GameConfigSystem", "scenes/ui" })
                 CopyTree(Path.Combine(game, directory), Path.Combine(staging, directory));
             Copy(Path.Combine(game, "config/config.cfg"), Path.Combine(staging, "config/config.cfg"));
             Copy(Path.Combine(game, "scenes/game/ui_canvas.tscn"), Path.Combine(staging, "scenes/game/ui_canvas.tscn"));

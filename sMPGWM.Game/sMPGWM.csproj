@@ -8,7 +8,7 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Remove="Scripts\Network\legacy\**\*.cs" />
+        <Compile Remove="Scripts\NetworkSystem\legacy\**\*.cs" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
         <PackageReference Include="YamlDotNet" Version="18.1.0" />
@@ -32,6 +32,6 @@
         <Content Include="credits" />
         <Content Include="README.md" />
         <Content Include="Scripts\World\GameWorld.cs.uid" />
-        <Content Include="Scripts\Network\NetworkManager.cs.uid" />
+        <Content Include="Scripts\NetworkSystem\NetworkManager.cs.uid" />
     </ItemGroup>
 </Project>
