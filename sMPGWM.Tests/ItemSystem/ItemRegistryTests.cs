@@ -56,7 +56,7 @@ public class ItemRegistryTests
         foreach (var category in new[] { false, true })
         {
             var schema = category ? "ItemCategorySchema.yml" : "ItemSchema.yml";
-            var yaml = (category ? "Categories" : "Items") + ":\n  - Id: test\n    DisplayName: Test\n    Description: Test\n" +
+            var yaml = "Version: 1.0.0\n" + (category ? "Categories" : "Items") + ":\n  - Id: test\n    DisplayName: Test\n    Description: Test\n" +
                 (category ? "" : "    CategoryId: test\n") + "    " + setting;
             var result = YamlParser.ValidateAndReturn(yaml, File.ReadAllText(Path.Combine(directory, schema)), "test", schema);
             Assert.That(result.IsSuccess, Is.EqualTo(valid), yaml);

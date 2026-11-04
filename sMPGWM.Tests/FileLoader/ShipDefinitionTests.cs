@@ -25,6 +25,7 @@ public class ShipDefinitionTests
         var ship = result.Value!.Ships.Single();
         Assert.Multiple(() =>
         {
+            Assert.That(result.Value.Version, Is.EqualTo("1.0.0"));
             Assert.That(ship.Name, Is.EqualTo("fighter"));
             Assert.That(ship.TexturePath, Is.EqualTo("res://assets/mocks/ship_fighter_reference.png"));
             Assert.That(ship.ColliderPoints, Has.Count.EqualTo(20));

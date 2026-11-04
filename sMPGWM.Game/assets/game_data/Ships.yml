@@ -1,3 +1,4 @@
+Version: 1.0.0
 ships:
   - name: "fighter"
     texture_path: "res://assets/mocks/ship_fighter_reference.png"
