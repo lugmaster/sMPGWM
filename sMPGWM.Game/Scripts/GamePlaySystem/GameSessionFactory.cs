@@ -5,6 +5,7 @@ using sMPGWM.Scripts.Items.Hotbar;
 using sMPGWM.Scripts.Items.Inventory;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.NetworkSystem;
+using sMPGWM.Scripts.Parallax;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.World;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
@@ -48,6 +49,7 @@ internal static class GameSessionFactory
         var participants = new GameWorld { Name = nameof(GameWorld), LocalPlayer = player };
         scope.Defer(() => ReleaseNode(participants));
         scope.Defer(participants.Clear);
+        participants.AddChild(new ParallaxMotion { Name = nameof(ParallaxMotion) });
         world.AddChild(participants);
         var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants };
         scope.Defer(() => ReleaseNode(network));

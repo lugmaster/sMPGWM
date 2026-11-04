@@ -1,75 +1,49 @@
-﻿using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
 
 namespace sMPGWM.Scripts.Parallax;
 
-public partial class ParallaxMotion : ParallaxBackground
+public partial class ParallaxMotion : Node2D
 {
-    private ParallaxLayer _parallaxLayerNebula;
-    private ParallaxLayer _parallaxLayerStars;
-    private readonly List<Sprite2D> _starsLayer = new();
-    private readonly List<Sprite2D> _nebulaLayer = new();
-
-    public Texture2D NebulaBackground;
-    public Texture2D StarBackground;
+    public Texture2D NebulaBackground = null!;
+    public Texture2D StarBackground = null!;
     private const int SpriteSize = 1024;
     private const int GridSize = 3;
     private const int MirrorSize = SpriteSize * GridSize;
 
     public override void _Ready()
     {
+        ZIndex = -100;
         NebulaBackground = GamePlayProvider.CreateSpaceBackgroundNebula();
         StarBackground = GamePlayProvider.CreateSpaceBackgroundStars();
-        _parallaxLayerNebula = GenerateSpriteGrid(_nebulaLayer, NebulaBackground);
-        _parallaxLayerStars = GenerateSpriteGrid(_starsLayer, StarBackground);
-
-        _parallaxLayerNebula.MotionMirroring = new Vector2(MirrorSize, MirrorSize);
-        _parallaxLayerStars.MotionMirroring = new Vector2(MirrorSize, MirrorSize);
-
-        _parallaxLayerNebula.MotionScale = new Vector2(0.2f, 0.2f);
-        _parallaxLayerStars.MotionScale = new Vector2(1f, 1f);
+        AddChild(GenerateSpriteGrid("Nebula", NebulaBackground, 0.2f));
+        AddChild(GenerateSpriteGrid("Stars", StarBackground, 1f));
     }
 
-    private ParallaxLayer GenerateSpriteGrid(List<Sprite2D> spriteList, Texture2D texture)
+    private static Parallax2D GenerateSpriteGrid(string name, Texture2D texture, float scrollScale)
     {
-        var parallaxLayer = new ParallaxLayer();
-        AddChild(parallaxLayer);
-        const float halfGrid = (GridSize - 1) * 0.5f * SpriteSize;
+        var parallaxLayer = new Parallax2D
+        {
+            Name = name,
+            RepeatSize = new Vector2(MirrorSize, MirrorSize),
+            ScrollScale = new Vector2(scrollScale, scrollScale)
+        };
 
         for (var x = 0; x < GridSize; x++)
         {
             for (var y = 0; y < GridSize; y++)
             {
-                var sprite = new Sprite2D
+                // Fill the repeat rectangle starting at its top-left corner.
+                parallaxLayer.AddChild(new Sprite2D
                 {
                     Texture = texture,
-                    Position = new Vector2(x * SpriteSize - halfGrid, y * SpriteSize - halfGrid)
-                };
-
-                spriteList.Add(sprite);
-                parallaxLayer.AddChild(sprite);
+                    Centered = false,
+                    Position = new Vector2(x * SpriteSize, y * SpriteSize)
+                });
             }
         }
 
+        // Godot frees these children when the session's world is freed.
         return parallaxLayer;
-    }
-    
-    public override void _ExitTree()
-    {
-        foreach (var sprite in _starsLayer)
-        {
-            sprite.QueueFree();
-        }
-        foreach (var sprite in _nebulaLayer)
-        {
-            sprite.QueueFree();
-        }
-
-        _starsLayer.Clear();
-        _nebulaLayer.Clear();
-
-        _parallaxLayerStars?.QueueFree();
-        _parallaxLayerNebula?.QueueFree();
     }
 }

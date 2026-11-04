@@ -6,7 +6,11 @@
 
 [node name="MainGame" type="Control" unique_id=464829365]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_7qhhq")
 
@@ -14,8 +18,14 @@ script = ExtResource("1_7qhhq")
 unique_name_in_owner = true
 
 [node name="WorldViewPortContainer" type="SubViewportContainer" parent="." unique_id=622524254]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 0
+stretch = true
 
 [node name="WorldViewport" type="SubViewport" parent="WorldViewPortContainer" unique_id=938755890]
 transparent_bg = true
