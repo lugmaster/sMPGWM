@@ -1,4 +1,4 @@
-Version: 1.0.0
+Version: 1.1.0
 Conditions:
   - Id: disrupted
     DisplayName: Disrupted
@@ -26,4 +26,22 @@ Conditions:
     Description: The ship has been infected by viral or fungicidal source.
   - Id: malfunctioning
     DisplayName: Malfunctioning
-    Description: A Malfunction can Target different Attirbutes. 
+    Description: A Malfunction can Target different Attirbutes.
+  - Id: dead
+    DisplayName: Dead
+    Description: The ship is a wreck; death owns cleanup and respawn eligibility.
+  - Id: incurable
+    DisplayName: Incurable
+    Description: Ordinary healing cannot restore Health.
+  - Id: invulnerable
+    DisplayName: Invulnerable
+    Description: Combat damage is prevented.
+  - Id: disruptionImmune
+    DisplayName: Disruption Immune
+    Description: Disrupted behaviour cannot operate.
+  - Id: infectionImmune
+    DisplayName: Infection Immune
+    Description: Infection behaviour cannot operate.
+  - Id: malfunctionImmune
+    DisplayName: Malfunction Immune
+    Description: Energy Storage Malfunction cannot operate.

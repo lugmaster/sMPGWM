@@ -1,0 +1,80 @@
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+required:
+  - Version
+  - AbilityDefinitions
+properties:
+  Version:
+    type: string
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+  AbilityDefinitions:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - Id
+        - DisplayName
+        - Description
+        - TargetingId
+        - EffectId
+        - Activation
+        - CooldownMs
+        - Costs
+        - Availability
+        - BlockedByConditions
+      properties:
+        Id:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        DisplayName:
+          type: string
+          minLength: 1
+        Description:
+          type: string
+          minLength: 1
+        TargetingId:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        EffectId:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        Activation:
+          type: string
+          enum:
+            - Instant
+        CooldownMs:
+          type: number
+          minimum: 0
+        Costs:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - StatId
+              - Amount
+            properties:
+              StatId:
+                type: string
+                pattern: ^[a-z][A-Za-z0-9_]*$
+              Amount:
+                type: number
+                exclusiveMinimum: 0
+          minItems: 0
+        Availability:
+          type: string
+          enum:
+            - AllShips
+            - ExampleLoadout
+        BlockedByConditions:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][A-Za-z0-9_]*$
+          minItems: 0
+        Icon:
+          type: string
+          pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$
+    minItems: 1

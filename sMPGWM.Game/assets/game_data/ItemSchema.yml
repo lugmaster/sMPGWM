@@ -7,7 +7,7 @@ required:
 properties:
   Version:
     type: string
-    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
   Items:
     type: array
     items:
@@ -18,24 +18,57 @@ properties:
         - DisplayName
         - CategoryId
       not:
-        required: [CanStack, StackLimit]
+        required:
+          - CanStack
+          - StackLimit
       properties:
         Id:
           type: string
-          pattern: '\S'
+          pattern: \S
         DisplayName:
           type: string
-          pattern: '\S'
+          pattern: \S
         CategoryId:
           type: string
-          pattern: '\S'
+          pattern: \S
         Description:
           type: string
         CanStack:
           type: boolean
         Icon:
-          type: [string, 'null']
+          type:
+            - string
+            - 'null'
         StackLimit:
           type: integer
           minimum: 2
           maximum: 2147483646
+        AbilityIds:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][A-Za-z0-9_]*$
+          minItems: 1
+        BehaviourGrants:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - BehaviourId
+              - While
+              - Lifetime
+            properties:
+              BehaviourId:
+                type: string
+                pattern: ^[a-z][A-Za-z0-9_]*$
+              While:
+                type: string
+                enum:
+                  - Carried
+                  - Equipped
+              Lifetime:
+                type: string
+                enum:
+                  - WhileSourceActive
+          minItems: 1

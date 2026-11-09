@@ -1,4 +1,4 @@
-Version: 1.0.0
+Version: 1.1.0
 Stats:
   - Id: health
     DisplayName: Health
@@ -42,3 +42,12 @@ Stats:
   - Id: afterburner_acceleration
     DisplayName: Afterburner Acceleration
     Description: "The afterburner acceleration a ship has currently"
+  - Id: energy_storage
+    DisplayName: Energy Storage
+    Description: Stored energy available to ship systems.
+  - Id: energy_production
+    DisplayName: Energy Production
+    Description: Rate at which reactors produce energy.
+  - Id: attack_speed
+    DisplayName: Attack Speed
+    Description: Weapon attack rate; increasing this value makes attacks faster.

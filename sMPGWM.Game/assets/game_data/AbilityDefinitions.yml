@@ -1,0 +1,227 @@
+Version: 1.0.0
+AbilityDefinitions:
+  - Id: revive
+    DisplayName: Revive
+    Description: Activate Revive.
+    TargetingId: revivableAlly
+    EffectId: revive
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: AllShips
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Misc.MedkitMedicineHealthPickup
+  - Id: disruptiveExplosion
+    DisplayName: Disruptive Explosion
+    Description: Activate Disruptive Explosion.
+    TargetingId: hostileMechanical
+    EffectId: disruptiveExplosion
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Alchemy.PotionVialBottleLightningBoltZapSpeedEmpty
+  - Id: removeDisrupted
+    DisplayName: Remove Disrupted
+    Description: Activate Remove Disrupted.
+    TargetingId: support
+    EffectId: removeDisrupted
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Software.WiFiWirelessSignal2
+  - Id: infection
+    DisplayName: Infection
+    Description: Activate Infection.
+    TargetingId: hostile
+    EffectId: infection
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Hats.GasMaskCommando
+  - Id: infectionProjectile
+    DisplayName: Infection Projectile
+    Description: Activate Infection Projectile.
+    TargetingId: hostile
+    EffectId: infectionProjectile
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Hats.GasMaskCommando
+  - Id: removeInfection
+    DisplayName: Remove Infection
+    Description: Activate Remove Infection.
+    TargetingId: support
+    EffectId: removeInfection
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Misc.HeartbeatLine1
+  - Id: shieldRecharge
+    DisplayName: Shield Recharge
+    Description: Activate Shield Recharge.
+    TargetingId: self
+    EffectId: shieldRecharge
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Arrows.RoundaboutRotationCircleReloadRefreshLoop
+  - Id: onDeathFailSafe
+    DisplayName: Death Fail Safe
+    Description: Activate Death Fail Safe.
+    TargetingId: support
+    EffectId: onDeathFailSafe
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Misc.SyringeDrugsMedicine2
+  - Id: delayedExplosion
+    DisplayName: Delayed Explosion
+    Description: Activate Delayed Explosion.
+    TargetingId: hostile
+    EffectId: delayedExplosion
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Warfare.ExplosionBomb
+  - Id: energyProductionSurge
+    DisplayName: Energy Production Surge
+    Description: Activate Energy Production Surge.
+    TargetingId: support
+    EffectId: energyProductionSurge
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Software.PowerPluggedCordElectricity
+  - Id: energyStorageMalfunction
+    DisplayName: Energy Storage Malfunction
+    Description: Activate Energy Storage Malfunction.
+    TargetingId: hostile
+    EffectId: energyStorageMalfunction
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Software.MobileCarrierSignalNoneDisabled
+  - Id: maxHealthRot
+    DisplayName: Max Health Rot
+    Description: Activate Max Health Rot.
+    TargetingId: hostile
+    EffectId: maxHealthRot
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+  - Id: raiseHealth
+    DisplayName: Raise Health
+    Description: Activate Raise Health.
+    TargetingId: support
+    EffectId: raiseHealth
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+  - Id: overheating
+    DisplayName: Overheating
+    Description: Activate Overheating.
+    TargetingId: support
+    EffectId: overheating
+    Activation: Instant
+    CooldownMs: 15000
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+      - energyDepleted
+      - overheated
+    Icon: Weather.ThermometherTemperatureCelsiusFahrenheitKelvin1
+  - Id: shieldCapacityBoost
+    DisplayName: Shield Capacity Boost
+    Description: Activate Shield Capacity Boost.
+    TargetingId: support
+    EffectId: shieldCapacityBoost
+    Activation: Instant
+    CooldownMs: 0
+    Costs: []
+    Availability: ExampleLoadout
+    BlockedByConditions:
+      - dead
+      - disabled
+      - disrupted
+      - silenced
+    Icon: Weather.SunnyWarmHotSummerSeason

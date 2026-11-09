@@ -1,0 +1,48 @@
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+required:
+  - Version
+  - ProjectileDefinitions
+properties:
+  Version:
+    type: string
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+  ProjectileDefinitions:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - Id
+        - DisplayName
+        - Description
+        - Speed
+        - MaxLifetimeMs
+        - Collision
+        - ExpireWithoutImpact
+      properties:
+        Id:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        DisplayName:
+          type: string
+          minLength: 1
+        Description:
+          type: string
+          minLength: 1
+        Speed:
+          type: number
+          exclusiveMinimum: 0
+        MaxLifetimeMs:
+          type: number
+          exclusiveMinimum: 0
+        Collision:
+          type: string
+          enum:
+            - FirstHostileShipOrWorld
+        ExpireWithoutImpact:
+          type: string
+          enum:
+            - Discard
+    minItems: 1

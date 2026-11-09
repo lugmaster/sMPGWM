@@ -1,0 +1,232 @@
+Version: 1.0.0
+BehaviourDefinitions:
+  - Id: disrupted
+    DisplayName: Disrupted
+    Description: Disables movement, weapons, shields and ability activation; interrupts casts and channels.
+    Disposition: Debuff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 1500
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: RefreshDuration
+    OrdinaryRemoval: true
+    ClassificationIds:
+      - disruption
+    GrantedConditions:
+      - disrupted
+    BlockedByConditions:
+      - disruptionImmune
+    BlockedPolicy: Remove
+    Interrupts:
+      - Cast
+      - Channel
+    DisabledCapabilities:
+      - Movement
+      - Weapons
+      - Shields
+      - Abilities
+    Icon: Alchemy.PotionVialBottleLightningBoltZapSpeedEmpty
+  - Id: infection
+    DisplayName: Infection
+    Description: Each independent stack contributes three additive baseline penalties.
+    Disposition: Debuff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 1500
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: Independent
+      Overflow: ReplaceOldest
+      MaxStacks: 5
+    OrdinaryRemoval: true
+    ClassificationIds:
+      - infection
+    Modifiers:
+      - StatId: speed
+        ValueKind: Value
+        Operation: AddBaselineFraction
+        Value: -0.05
+      - StatId: afterburner_speed
+        ValueKind: Value
+        Operation: AddBaselineFraction
+        Value: -0.05
+      - StatId: energy_production
+        ValueKind: Value
+        Operation: AddBaselineFraction
+        Value: -0.05
+    GrantedConditions:
+      - infected
+    BlockedByConditions:
+      - infectionImmune
+    BlockedPolicy: Suppress
+    Icon: Hats.GasMaskCommando
+  - Id: onDeathFailSafe
+    DisplayName: Death Fail Safe
+    Description: Once, prevent a lethal damage result and set Health to 10% maximum before death commits.
+    Disposition: Buff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 20000
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: RefreshDuration
+    OrdinaryRemoval: true
+    LethalProtection:
+      HealthFraction: 0.1
+      ConsumeOnSuccess: true
+    ClassificationIds:
+      - healthFailSafe
+    Icon: Misc.SyringeDrugsMedicine2
+  - Id: delayedExplosion
+    DisplayName: Delayed Explosion
+    Description: Each charge detonates only on natural expiration. Death and disarming prevent detonation.
+    Disposition: Debuff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 2000
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: Independent
+    OrdinaryRemoval: true
+    ClassificationIds:
+      - attachedExplosive
+    OnExpireEffectId: detonate
+    Icon: Warfare.ExplosionBomb
+  - Id: energyProductionSurge
+    DisplayName: Energy Production Surge
+    Description: Increase production without changing stored energy.
+    Disposition: Buff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 2500
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: RefreshDuration
+    OrdinaryRemoval: true
+    Modifiers:
+      - StatId: energy_production
+        ValueKind: Value
+        Operation: AddBaselineFraction
+        Value: 0.25
+    Icon: Software.PowerPluggedCordElectricity
+  - Id: energyStorageMalfunction
+    DisplayName: Energy Storage Malfunction
+    Description: Halve capacity; strip production buffs once on accepted application. New buffs do not remove this
+      behaviour.
+    Disposition: Debuff
+    Lifetime:
+      Kind: UntilRemoved
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: Discard
+    OrdinaryRemoval: true
+    ClassificationIds:
+      - energyStorageMalfunction
+    Modifiers:
+      - StatId: energy_storage
+        ValueKind: Maximum
+        Operation: AddBaselineFraction
+        Value: -0.5
+    GrantedConditions:
+      - malfunctioning
+    BlockedByConditions:
+      - malfunctionImmune
+    BlockedPolicy: Remove
+    OnApplyEffectId: removeProductionBuffs
+    Icon: Software.MobileCarrierSignalNoneDisabled
+  - Id: maxHealthRot
+    DisplayName: Max Health Rot
+    Description: Each successful periodic tick accumulates a temporary capacity penalty; removing it never heals.
+    Disposition: Debuff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 5000
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: Independent
+      Overflow: ReplaceOldest
+      MaxStacks: 5
+    OrdinaryRemoval: true
+    ClassificationIds:
+      - infection
+    PeriodicAccumulator:
+      IntervalMs: 1000
+      FirstTick: AfterInterval
+      TickAtExpiration: false
+      Modifier:
+        StatId: health
+        ValueKind: Maximum
+        Operation: AddBaselineFraction
+        Value: -0.05
+      BlockedByConditions:
+        - invulnerable
+      BlockedTickPolicy: Skip
+    GrantedConditionsAfterFirstTick:
+      - infected
+  - Id: overheating
+    DisplayName: Overheating
+    Description: Increase attack rate, then apply the penalty on expiration or early removal except death.
+    Disposition: Buff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 5000
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: Discard
+    OrdinaryRemoval: true
+    ClassificationIds:
+      - overheating
+    Modifiers:
+      - StatId: attack_speed
+        ValueKind: Value
+        Operation: AddBaselineFraction
+        Value: 0.5
+    BlockedByConditions:
+      - energyDepleted
+      - overheated
+    BlockedPolicy: Remove
+    OnExpireEffectId: overheatingCooldown
+    OnRemove:
+      ExceptReasons:
+        - Death
+      EffectId: overheatingCooldown
+    Icon: Weather.ThermometherTemperatureCelsiusFahrenheitKelvin1
+  - Id: overheatingCooldown
+    DisplayName: Overheated
+    Description: Reduce attack rate and prevent heat-sensitive activations; ordinary cleansing is forbidden.
+    Disposition: Debuff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 2500
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: Discard
+    OrdinaryRemoval: false
+    ClassificationIds:
+      - overheatedPenalty
+    Modifiers:
+      - StatId: attack_speed
+        ValueKind: Value
+        Operation: AddBaselineFraction
+        Value: -0.75
+    GrantedConditions:
+      - overheated
+    Icon: Weather.ThermometherTemperatureCelsiusFahrenheitKelvin2
+  - Id: shieldCapacityBoost
+    DisplayName: Shield Capacity Boost
+    Description: Add capacity only; normal recharge fills it. Removal clamps current Shield if needed.
+    Disposition: Buff
+    Lifetime:
+      Kind: Timed
+      DurationMs: 30000
+    Stacking:
+      Scope: PerTargetDefinition
+      Policy: RefreshDuration
+    OrdinaryRemoval: true
+    Modifiers:
+      - StatId: shield
+        ValueKind: Maximum
+        Operation: AddFlat
+        Value: 50
+    Icon: Weather.SunnyWarmHotSummerSeason

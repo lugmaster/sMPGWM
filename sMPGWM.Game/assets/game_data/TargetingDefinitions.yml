@@ -1,0 +1,50 @@
+Version: 1.0.0
+TargetingDefinitions:
+  - Id: self
+    DisplayName: Self
+    Description: Only the living caster.
+    Relation: Self
+    LifeState: Alive
+    MechanicalOnly: false
+  - Id: support
+    DisplayName: Support
+    Description: The caster or a living allied ship.
+    Relation: SelfOrAlly
+    LifeState: Alive
+    MechanicalOnly: false
+    MaxRange: 600
+  - Id: revivableAlly
+    DisplayName: Revivable Ally
+    Description: Another allied wreck that has not chosen respawn.
+    Relation: AllyOther
+    LifeState: RevivableWreck
+    MechanicalOnly: false
+    MaxRange: 600
+  - Id: hostile
+    DisplayName: Hostile
+    Description: A selected living hostile ship.
+    Relation: Hostile
+    LifeState: Alive
+    MechanicalOnly: false
+    MaxRange: 600
+  - Id: hostileMechanical
+    DisplayName: Hostile Mechanical
+    Description: A selected living hostile mechanical ship.
+    Relation: Hostile
+    LifeState: Alive
+    MechanicalOnly: true
+    MaxRange: 600
+  - Id: hostileArea
+    DisplayName: Hostile Area
+    Description: Living hostile ships around the context position; includes the carrier if eligible.
+    Relation: Hostile
+    LifeState: Alive
+    MechanicalOnly: false
+    Radius: 200
+  - Id: hostileMechanicalArea
+    DisplayName: Hostile Mechanical Area
+    Description: Living hostile mechanical ships around the impact.
+    Relation: Hostile
+    LifeState: Alive
+    MechanicalOnly: true
+    Radius: 200

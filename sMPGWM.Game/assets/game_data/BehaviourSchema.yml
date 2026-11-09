@@ -1,0 +1,298 @@
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+required:
+  - Version
+  - BehaviourDefinitions
+properties:
+  Version:
+    type: string
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+  BehaviourDefinitions:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - Id
+        - DisplayName
+        - Description
+        - Disposition
+        - Lifetime
+        - Stacking
+        - OrdinaryRemoval
+      properties:
+        Id:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        DisplayName:
+          type: string
+          minLength: 1
+        Description:
+          type: string
+          minLength: 1
+        Disposition:
+          type: string
+          enum:
+            - Buff
+            - Debuff
+        Lifetime:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required:
+                - Kind
+                - DurationMs
+              properties:
+                Kind:
+                  type: string
+                  enum:
+                    - Timed
+                DurationMs:
+                  type: number
+                  exclusiveMinimum: 0
+            - type: object
+              additionalProperties: false
+              required:
+                - Kind
+              properties:
+                Kind:
+                  type: string
+                  enum:
+                    - UntilRemoved
+        Stacking:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required:
+                - Scope
+                - Policy
+              properties:
+                Scope:
+                  type: string
+                  enum:
+                    - PerTargetDefinition
+                Policy:
+                  type: string
+                  enum:
+                    - RefreshDuration
+                    - Discard
+            - type: object
+              additionalProperties: false
+              required:
+                - Scope
+                - Policy
+              properties:
+                Scope:
+                  type: string
+                  enum:
+                    - PerTargetDefinition
+                Policy:
+                  type: string
+                  enum:
+                    - Independent
+            - type: object
+              additionalProperties: false
+              required:
+                - Scope
+                - Policy
+                - MaxStacks
+                - Overflow
+              properties:
+                Scope:
+                  type: string
+                  enum:
+                    - PerTargetDefinition
+                Policy:
+                  type: string
+                  enum:
+                    - Independent
+                MaxStacks:
+                  type: integer
+                  minimum: 1
+                Overflow:
+                  type: string
+                  enum:
+                    - ReplaceOldest
+                    - RejectNewest
+        OrdinaryRemoval:
+          type: boolean
+        ClassificationIds:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][A-Za-z0-9_]*$
+          minItems: 1
+        Modifiers:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - StatId
+              - ValueKind
+              - Operation
+              - Value
+            properties:
+              StatId:
+                type: string
+                pattern: ^[a-z][A-Za-z0-9_]*$
+              ValueKind:
+                type: string
+                enum:
+                  - Value
+                  - Maximum
+              Operation:
+                type: string
+                enum:
+                  - AddFlat
+                  - AddBaselineFraction
+              Value:
+                type: number
+          minItems: 1
+        GrantedConditions:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][A-Za-z0-9_]*$
+          minItems: 1
+        GrantedConditionsAfterFirstTick:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][A-Za-z0-9_]*$
+          minItems: 1
+        BlockedByConditions:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][A-Za-z0-9_]*$
+          minItems: 1
+        BlockedPolicy:
+          type: string
+          enum:
+            - Remove
+            - Suppress
+        Interrupts:
+          type: array
+          items:
+            type: string
+            enum:
+              - Cast
+              - Channel
+          minItems: 1
+        DisabledCapabilities:
+          type: array
+          items:
+            type: string
+            enum:
+              - Movement
+              - Weapons
+              - Shields
+              - Abilities
+          minItems: 1
+        OnApplyEffectId:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        OnExpireEffectId:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        OnRemove:
+          type: object
+          additionalProperties: false
+          required:
+            - ExceptReasons
+            - EffectId
+          properties:
+            ExceptReasons:
+              type: array
+              items:
+                type: string
+                enum:
+                  - Death
+                  - Dispel
+                  - SourceLost
+                  - Consumed
+                  - Replaced
+              minItems: 0
+            EffectId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+        LethalProtection:
+          type: object
+          additionalProperties: false
+          required:
+            - HealthFraction
+            - ConsumeOnSuccess
+          properties:
+            HealthFraction:
+              type: number
+              exclusiveMinimum: 0
+              maximum: 1
+            ConsumeOnSuccess:
+              const: true
+        PeriodicAccumulator:
+          type: object
+          additionalProperties: false
+          required:
+            - IntervalMs
+            - FirstTick
+            - TickAtExpiration
+            - Modifier
+            - BlockedByConditions
+            - BlockedTickPolicy
+          properties:
+            IntervalMs:
+              type: number
+              exclusiveMinimum: 0
+            FirstTick:
+              type: string
+              enum:
+                - AfterInterval
+            TickAtExpiration:
+              const: false
+            Modifier:
+              type: object
+              additionalProperties: false
+              required:
+                - StatId
+                - ValueKind
+                - Operation
+                - Value
+              properties:
+                StatId:
+                  type: string
+                  pattern: ^[a-z][A-Za-z0-9_]*$
+                ValueKind:
+                  type: string
+                  enum:
+                    - Value
+                    - Maximum
+                Operation:
+                  type: string
+                  enum:
+                    - AddFlat
+                    - AddBaselineFraction
+                Value:
+                  type: number
+            BlockedByConditions:
+              type: array
+              items:
+                type: string
+                pattern: ^[a-z][A-Za-z0-9_]*$
+              minItems: 0
+            BlockedTickPolicy:
+              type: string
+              enum:
+                - Skip
+        Icon:
+          type: string
+          pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$
+      dependencies:
+        BlockedByConditions:
+          - BlockedPolicy
+        BlockedPolicy:
+          - BlockedByConditions
+        GrantedConditionsAfterFirstTick:
+          - PeriodicAccumulator
+    minItems: 1

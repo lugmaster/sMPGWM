@@ -1,0 +1,53 @@
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+required:
+  - Version
+  - TargetingDefinitions
+properties:
+  Version:
+    type: string
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+  TargetingDefinitions:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - Id
+        - DisplayName
+        - Description
+        - Relation
+        - LifeState
+        - MechanicalOnly
+      properties:
+        Id:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        DisplayName:
+          type: string
+          minLength: 1
+        Description:
+          type: string
+          minLength: 1
+        Relation:
+          type: string
+          enum:
+            - Self
+            - SelfOrAlly
+            - AllyOther
+            - Hostile
+        LifeState:
+          type: string
+          enum:
+            - Alive
+            - RevivableWreck
+        MechanicalOnly:
+          type: boolean
+        MaxRange:
+          type: number
+          exclusiveMinimum: 0
+        Radius:
+          type: number
+          exclusiveMinimum: 0
+    minItems: 1

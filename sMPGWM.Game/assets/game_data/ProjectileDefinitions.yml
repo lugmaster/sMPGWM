@@ -1,0 +1,16 @@
+Version: 1.0.0
+ProjectileDefinitions:
+  - Id: empBall
+    DisplayName: EMP Ball
+    Description: Projectile delivering disruption at impact.
+    Speed: 800
+    MaxLifetimeMs: 5000
+    Collision: FirstHostileShipOrWorld
+    ExpireWithoutImpact: Discard
+  - Id: infectionBolt
+    DisplayName: Infection Bolt
+    Description: Projectile delivering Infection to its hit ship.
+    Speed: 900
+    MaxLifetimeMs: 5000
+    Collision: FirstHostileShipOrWorld
+    ExpireWithoutImpact: Discard

@@ -10,3 +10,16 @@ apply: always
 - Favor fast, clear implementations without unnecessary overhead.
 - Use one file per class/enum/record except for internal classes that are embedded in another class. Exception: Icons.*
 - Each file should reflect its namespace, so that it can be properly imported!
+
+## Traceability of test-support code
+
+Every line of executable code or declaration introduced solely to enable, drive, inspect, or verify tests must be marked with a unique traceability ID, followed by the fully qualified test method name(s) that use it. This includes test-only hooks, accessors, instrumentation, injected controls, and development helpers added to application code for automated or manual verification. Ordinary production code does not require a marker merely because tests exercise it.
+
+Use this comment format on each affected line, or immediately above it when an inline comment is impractical:
+
+```csharp
+internal void SetShieldForTest(float value) // TEST-SUPPORT: <unique-id> | Tests: Namespace.Class.Method
+{
+    _shield = value; // TEST-SUPPORT: <different-unique-id> | Tests: Namespace.Class.Method
+}
+```

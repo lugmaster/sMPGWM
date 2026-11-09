@@ -1,0 +1,30 @@
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+required:
+  - Version
+  - Stats
+properties:
+  Version:
+    type: string
+    minLength: 1
+  Stats:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - Id
+        - DisplayName
+        - Description
+      properties:
+        Id:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        DisplayName:
+          type: string
+          minLength: 1
+        Description:
+          type: string
+          minLength: 1
+    minItems: 1

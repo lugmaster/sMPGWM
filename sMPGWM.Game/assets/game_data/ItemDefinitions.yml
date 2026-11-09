@@ -1,4 +1,4 @@
-Version: 1.0.0
+Version: 1.1.0
 Items:
   - Id: mock_standard_engine
     DisplayName: Standard Engine
@@ -68,3 +68,12 @@ Items:
     CategoryId: resource
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
     StackLimit: 1000
+  - Id: infectedCargo
+    DisplayName: Infected Cargo
+    Description: While carried, grants one source-bound Infection contribution. Remove the item to remove it.
+    CategoryId: resource
+    CanStack: false
+    BehaviourGrants:
+      - BehaviourId: infection
+        While: Carried
+        Lifetime: WhileSourceActive

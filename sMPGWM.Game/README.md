@@ -4,13 +4,13 @@
 
 **sMPGWM** stands for **some Multiplayer Game With Modding** and is the project's working title.
 
-sMPGWM is a **2D top-down coop multiplayer space shooter** developed in **Godot 4.6 with C#**. The engine is self-compiled with **GodotSteam**, and networking uses **GodotSteam MultiplayerPeer**.
+sMPGWM is a **2D top-down coop multiplayer space shooter** developed in **Godot with C#**. The engine uses **GodotSteam**, and networking uses **GodotSteam MultiplayerPeer**.
 
 ## Development Stack
 
 | Component | Technology |
 | --- | --- |
-| Game engine | Godot 4.6 (self-compiled) |
+| Game engine | Godot 4.7.2 |
 | Programming language | C# |
 | Steam integration | GodotSteam |
 | Multiplayer transport | GodotSteam MultiplayerPeer |
@@ -54,6 +54,8 @@ The main-game scene starts networking deferred, after the world and gameplay chi
 `NetworkManager` owns authentication and the two readiness RPCs. ENet and Steam share startup deadlines, connection events and cleanup in `BaseNetwork`. Connection-loss detection uses the native transport, without a second heartbeat/RTT protocol. `Compatibility` checks game/mod/build data for both transports. Steam lobby operations stay in `SteamworksHelper`, which drains canceled callbacks before allowing another request.
 
 ## Tests
+
+The next gameplay authoring increment is specified in [Gameplay composition MVP](../docs/documentation/GameplayComposition.md), with Ability, Effect, Behaviour, Targeting, and Projectile definitions and matching schemas under `assets/game_data`. These are authored contracts; runtime execution and network integration are not implemented by those files. The document records the agreed examples, shared lifecycle rules, provisional tuning, and the content-validation command.
 
 Run `dotnet test sMPGWM.Tests` from the repository root. The NUnit project targets .NET 8 to match the game assembly. Set `GODOT_BIN` to a Godot 4.6 .NET console executable if it is not available as `godot` on PATH (the local `godot_engine/Godot_v4.6.2_mono_steam` installation is also detected).
 

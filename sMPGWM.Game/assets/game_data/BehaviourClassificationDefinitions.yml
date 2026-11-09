@@ -1,0 +1,23 @@
+Version: 1.0.0
+BehaviourClassifications:
+  - Id: disruption
+    DisplayName: Disruption
+    Description: Disruption removal selector.
+  - Id: infection
+    DisplayName: Infection
+    Description: Infection removal selector, including Health Rot.
+  - Id: healthFailSafe
+    DisplayName: Health Fail Safe
+    Description: Lethal-damage protection.
+  - Id: attachedExplosive
+    DisplayName: Attached Explosive
+    Description: Disarmable explosive charge.
+  - Id: energyStorageMalfunction
+    DisplayName: Energy Storage Malfunction
+    Description: Persistent storage malfunction.
+  - Id: overheating
+    DisplayName: Overheating
+    Description: Attack-speed boost with a follow-up penalty.
+  - Id: overheatedPenalty
+    DisplayName: Overheated Penalty
+    Description: Non-cleansable overheat penalty.

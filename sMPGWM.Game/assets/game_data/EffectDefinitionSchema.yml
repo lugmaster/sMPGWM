@@ -1,2 +1,297 @@
 $schema: http://json-schema.org/draft-07/schema#
 type: object
+additionalProperties: false
+required:
+  - Version
+  - EffectDefinitions
+properties:
+  Version:
+    type: string
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+  EffectDefinitions:
+    type: array
+    items:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - Id
+            - DisplayName
+            - Description
+            - Kind
+            - Health
+          properties:
+            Id:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            DisplayName:
+              type: string
+              minLength: 1
+            Description:
+              type: string
+              minLength: 1
+            Kind:
+              type: string
+              enum:
+                - Revive
+            Health:
+              type: number
+              exclusiveMinimum: 0
+        - type: object
+          additionalProperties: false
+          required:
+            - Id
+            - DisplayName
+            - Description
+            - Kind
+            - StatId
+            - Amount
+          properties:
+            Id:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            DisplayName:
+              type: string
+              minLength: 1
+            Description:
+              type: string
+              minLength: 1
+            Kind:
+              type: string
+              enum:
+                - RestoreResource
+            StatId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            Amount:
+              oneOf:
+                - type: object
+                  additionalProperties: false
+                  required:
+                    - Kind
+                    - Value
+                  properties:
+                    Kind:
+                      type: string
+                      enum:
+                        - Flat
+                    Value:
+                      type: number
+                      minimum: 0
+                - type: object
+                  additionalProperties: false
+                  required:
+                    - Kind
+                    - Value
+                  properties:
+                    Kind:
+                      type: string
+                      enum:
+                        - FractionOfMaximum
+                    Value:
+                      type: number
+                      minimum: 0
+                      maximum: 1
+            BlockedByConditions:
+              type: array
+              items:
+                type: string
+                pattern: ^[a-z][A-Za-z0-9_]*$
+              minItems: 0
+        - type: object
+          additionalProperties: false
+          required:
+            - Id
+            - DisplayName
+            - Description
+            - Kind
+            - Selector
+            - Order
+          properties:
+            Id:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            DisplayName:
+              type: string
+              minLength: 1
+            Description:
+              type: string
+              minLength: 1
+            Kind:
+              type: string
+              enum:
+                - RemoveBehaviours
+            Selector:
+              type: object
+              additionalProperties: false
+              required: []
+              properties:
+                ClassificationIds:
+                  type: array
+                  items:
+                    type: string
+                    pattern: ^[a-z][A-Za-z0-9_]*$
+                  minItems: 1
+                Disposition:
+                  type: string
+                  enum:
+                    - Buff
+                    - Debuff
+                ModifiedStatIds:
+                  type: array
+                  items:
+                    type: string
+                    pattern: ^[a-z][A-Za-z0-9_]*$
+                  minItems: 1
+              minProperties: 1
+            MaxCount:
+              type: integer
+              minimum: 1
+            Order:
+              type: string
+              enum:
+                - OldestFirst
+        - type: object
+          additionalProperties: false
+          required:
+            - Id
+            - DisplayName
+            - Description
+            - Kind
+            - EffectIds
+            - ContinueOnFailure
+          properties:
+            Id:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            DisplayName:
+              type: string
+              minLength: 1
+            Description:
+              type: string
+              minLength: 1
+            Kind:
+              type: string
+              enum:
+                - Sequence
+            EffectIds:
+              type: array
+              items:
+                type: string
+                pattern: ^[a-z][A-Za-z0-9_]*$
+              minItems: 1
+            ContinueOnFailure:
+              type: boolean
+        - type: object
+          additionalProperties: false
+          required:
+            - Id
+            - DisplayName
+            - Description
+            - Kind
+            - DamageSourceId
+            - Amount
+          properties:
+            Id:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            DisplayName:
+              type: string
+              minLength: 1
+            Description:
+              type: string
+              minLength: 1
+            Kind:
+              type: string
+              enum:
+                - DealDamage
+            DamageSourceId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            Amount:
+              type: number
+              exclusiveMinimum: 0
+        - type: object
+          additionalProperties: false
+          required:
+            - Id
+            - DisplayName
+            - Description
+            - Kind
+            - TargetingId
+            - EffectId
+          properties:
+            Id:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            DisplayName:
+              type: string
+              minLength: 1
+            Description:
+              type: string
+              minLength: 1
+            Kind:
+              type: string
+              enum:
+                - SearchArea
+            TargetingId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            EffectId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+        - type: object
+          additionalProperties: false
+          required:
+            - Id
+            - DisplayName
+            - Description
+            - Kind
+            - BehaviourId
+          properties:
+            Id:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            DisplayName:
+              type: string
+              minLength: 1
+            Description:
+              type: string
+              minLength: 1
+            Kind:
+              type: string
+              enum:
+                - ApplyBehaviour
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+        - type: object
+          additionalProperties: false
+          required:
+            - Id
+            - DisplayName
+            - Description
+            - Kind
+            - ProjectileId
+            - ImpactEffectId
+          properties:
+            Id:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            DisplayName:
+              type: string
+              minLength: 1
+            Description:
+              type: string
+              minLength: 1
+            Kind:
+              type: string
+              enum:
+                - LaunchProjectile
+            ProjectileId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            ImpactEffectId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+    minItems: 1
