@@ -1,0 +1,29 @@
+Version: 1.0.0
+Conditions:
+  - Id: disrupted
+    DisplayName: Disrupted
+    Description: The energy systems of the ship are disrupted. The ship can neither move, shoot, nor keep its shields up.
+  - Id: disabled
+    DisplayName: Disabled
+    Description: The ship's critical systems are completely disabled. The ship cannot move, fire weapons, activate abilities, or operate its defensive systems.
+  - Id: jammed
+    DisplayName: Jammed
+    Description: The ship's targeting and communication systems are experiencing interference. The ship cannot acquire target locks, use guided weapons, or activate systems requiring reliable targeting.
+  - Id: silenced
+    DisplayName: Silenced
+    Description: The ship's ability activation systems are suppressed. The ship cannot activate skills or special abilities, but basic movement and standard weapons remain operational.
+  - Id: overheated
+    DisplayName: Overheated
+    Description: The ship's systems have exceeded their safe operating temperature. Heat-sensitive weapons and abilities cannot be activated until the ship has cooled down.
+  - Id: immobilized
+    DisplayName: Immobilized
+    Description: The ship is unable to move under its own control. Its engines and propulsion systems cannot generate movement, but weapons, shields, and other systems remain operational.
+  - Id: energyDepleted
+    DisplayName: Energy Depleted
+    Description: The ship has insufficient energy to operate energy-dependent systems. Energy-consuming weapons, abilities, propulsion systems, and defensive systems cannot function until sufficient energy becomes available.
+  - Id: infected
+    DisplayName: Infected
+    Description: The ship has been infected by viral or fungicidal source.
+  - Id: malfunctioning
+    DisplayName: Malfunctioning
+    Description: A Malfunction can Target different Attirbutes. 

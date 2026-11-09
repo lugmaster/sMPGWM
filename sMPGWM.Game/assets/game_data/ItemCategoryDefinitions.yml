@@ -3,25 +3,49 @@ Categories:
   - Id: engine
     DisplayName: Engines
     Icon: Travel.CarVeichleEngine
+    Values: EnergyConsumption, Speed, AfterBurnerSpeed, RotationSpeed, Acceleration, AfterBurnerAcceleration, Mass
+    Description: "Engines let ships moves. The better the Engine, the faster the ship"
   - Id: hull
     DisplayName: Hulls
     Icon: Travel.SpaceshipJetShooter
+    Values: Armor, Mass
+    Description: "Provide protection against attacks. The better the hull, the better the protection"
   - Id: shield_generator
     DisplayName: Shield Generators
     Icon: RPG.ItemStatShieldDefenseArmor
+    Values: Shield, RechargeTime, DownTime, EnergyConsumption, Mass
+    Description: "Provide protection against attacks. Shields consume Energy"
   - Id: reactor
     DisplayName: Reactors
     Icon: Weather.AtomicEnergyNuclearPowerPlant
+    Values: Energy, EnergyProduction
+    Description: "Delivers the ships energy. Without energy no weapons, no shield, no moving"
+  - Id: battery
+    DisplayName: Battery
+    Icon: Software.BatteryPowerLevelCharging
+    Values: EnergyStorage, EnergyConsumption, Mass
+    Description: "A Battery can store overgenerated energy from a ships reactors"
+  - Id: weapon_fixture
+    DisplayName: Weapon Fixture
+    Icon: Software.HardwareCPUProcessorComputing
+    Values: WeaponSlots
+    Description: "Determines how many light and heavy weapon slots can be used."
   - Id: light_weapon
     DisplayName: Light Weapons
-    Icon: Warfare.WeaponPistolGunSidearm
+    Icon: Warfare.WeaponSniperRifleGun
+    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, MagazinSize, ReloadDuration
+    Description: "A Weapon that needs a weapon slot to hold"
   - Id: heavy_weapon
     DisplayName: Heavy Weapons
-    Icon: Warfare.WeaponRocketLauncherRPG
+    Icon: Warfare.AmmoRocketMissileRPG
+    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, ReloadDuration
+    Description: "A Weapon that needs 2 or more slots to hold."
   - Id: consumable
     CanStack: true
     DisplayName: Consumables
     Icon: Alchemy.PotionVialBottleHeartHealthLifeFull
+    Description: "An item that can be consumed to trigger an effect"
+    Values: EffectType, TargetType
   - Id: resource
     CanStack: true
     DisplayName: Resources

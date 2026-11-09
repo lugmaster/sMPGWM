@@ -1,0 +1,44 @@
+Version: 1.0.0
+Stats:
+  - Id: health
+    DisplayName: Health
+    Description: "Health determines how damaged a ship is. Upon zero Health a ship is destroyed."
+  - Id: armor
+    DisplayName: Armor
+    Description: "Armor reduces the incoming damage by a percentage."
+  - Id: shield
+    DisplayName: Shield
+    Description: "Shields absorb incoming damage."
+  - Id: energy
+    DisplayName: Energy
+    Description: "Energy supplies the ship systems with energy"
+  - Id: battery
+    DisplayName: Battery
+    Description: "The additional amount of energy that can be saved when over producing"
+  - Id: oxygen
+    DisplayName: Oxygen
+    Description: "Oxygen is consumed by the crew. It must always be present or the ships crew dies."
+  - Id: food
+    DisplayName: Food
+    Description: "Food is consumed by the crew. It must always be present or the ships crew dies."
+  - Id: water
+    DisplayName: Water
+    Description: "Water is consumed by the crew. It must always be present or the ships crew dies."
+  - Id: weapon_slots
+    DisplayName: Weapon Slots
+    Description: "Indicates how many weapons can be equipped"
+  - Id: mass
+    DisplayName: Mass
+    Description: "The higher the mass, the more the values of the engine are reduced"
+  - Id: speed
+    DisplayName: Speed
+    Description: "The maximum speed a ship can reach"
+  - Id: afterburner_speed
+    DisplayName: Afterburner Speed
+    Description: "The maximum afterburner speed a ship can reach"
+  - Id: acceleration
+    DisplayName: Acceleration
+    Description: "The acceleration a ship has currently"
+  - Id: afterburner_acceleration
+    DisplayName: Afterburner Acceleration
+    Description: "The afterburner acceleration a ship has currently"

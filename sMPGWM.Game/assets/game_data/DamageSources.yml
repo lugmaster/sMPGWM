@@ -1,0 +1,11 @@
+Version: 1.0.0
+DamageSources:
+  - Id: laser
+    DisplayName: Laser Damage
+    Description: "Does even damage to shield and hull"
+  - Id: physical
+    DisplayName: Physical Damage
+    Description: "Does less damage to shields and more to hull"
+  - Id: plasma
+    DisplayName: Plasma Damage
+    Description: "Does more damage to shields and less to hull"

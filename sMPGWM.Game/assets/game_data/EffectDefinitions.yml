@@ -1,596 +1,441 @@
-Version: 6.3.0
-BasicRevive:
-  Definition:
-    EffectDefinitionId: effect.revive.basic
-    Name: Basic Revive
-    Description: Container effect that restores Health and removes Dead during revive.
-  IsEffectContainer: true
-  CanTriggerWhileDead: true
-  Visibility: Internal
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Discard
-  ChildEffectDefinitions:
-    - ChildEffectDefinitionId: effect.revive.restore_health
-      ChildEffectTrigger: BoundToParent
-    - ChildEffectDefinitionId: effect.revive.remove_dead
-      ChildEffectTrigger: BoundToParent
-CleansePoison:
-  Definition:
-    EffectDefinitionId: effect.cleanse.poison
-    Name: Cleanse Poison
-    Description: Removes poison-classified active effects from the target.
-  EffectProcessing: Fast
-  Trigger:
-    TriggerType: Immediate
-  Duration:
-    DurationType: Once
-  EffectRemovalRequest:
-    Classifications:
-      - Effect.Damage.Poison
-      - Effect.Corroding
-    EffectRemovalBehaviour:
-      MaxRemoveCount: 3
-      RemoveOldestFirst: true
-  EffectRemovalPolicy: ByAnySource
-  CanTriggerWhileDead: false
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Discard
-  Visibility: Hud
-  
-CorrodingPoison:
-  Definition:
-    EffectDefinitionId: effect.while_active.corroding_poison
-    Name: Corroding Poison
-    Description: Applies up to 5 stacks. Each stack temporarily reduces effective Armor by 5% while active, then Armor snaps back when the effect expires or is removed.
-  Trigger:
-    TriggerType: WhileActive
-  Duration:
-    DurationType: Temporary
-    DurationMS: 1500.0
-  EffectClassifications:
-    - Effect.Corroding
-    - Effect.Debuff
-  Target:
-    TargetStat: Armor
-    TargetValueKind: CurrentValue
-    Manipulation: Reduce
-    Calculation: Percentage
-    Value: 0.05
-    ApplicationMode: WhileActive
-  ConditionRequests:
-    - Timing: OnFirstApplication
-      ConditionsAddRequest:
-        - Condition.Poisoned
-    - Timing: OnExpireOrRemove
-      RemoveMode: RemoveOwnContribution
-      ConditionsRemoveRequest:
-        - Condition.Poisoned
-  Blocking:
-    BlockPolicy: Retry
-    BlockedByClassification:
-      - Effect.Immunity.Poison
-      - Effect.Immunity.Corrosion
-  EffectRemovalPolicy: ByAnySource
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Stack
-    StackBehavior: AddStackRefreshDuration
-    MaxStacks: 5
-    MaxStackOverflowPolicy: ReplaceOldest
-  Visibility: Hud
+Version: 6.3.1
+EffectDefinitions:
+  - Id: revive
+    DisplayName: Revive
+    Description: Restores Health and removes status dead.
+    Hint: Should simply revive another ship, that is dead, but has not choose to respawn.
+    CanTriggerWhileDead: true
+    Target:
+      TargetStat: Health
+      TargetValueKind: CurrentValue
+      Manipulation: Raise
+      Calculation: Flat
+      Value: 50.0
+    Trigger:
+      TriggerType: OnApplication
+    Duration:
+      DurationType: Once
+    Visibility: Internal
+    Icon: Misc.MedkitMedicineHealthPickup
 
-DelayedExplosion:
-  Definition:
-    EffectDefinitionId: effect.delayed.explosion
-    Name: Delayed Explosion
+  - Id: disruptiveExplosion
+    DisplayName: Disruptive Explosion
+    Description: Shoots a ball of concentrated electromagnetic pulses (EMP) that burst on impact and disrupts the target.
+    Hint: Can be used on any mechanical entity. It simply turns their systems down for a given time like you know an emp from other games.
+    Trigger:
+      TriggerType: WhileActive
+    Duration:
+      DurationType: Temporary
+      Duration: 1500.0
+    EffectClassifications:
+      - Effect.Disrupted
+    ConditionRequests:
+      - Timing: OnFirstApplication
+        ConditionsAddRequest:
+          - Condition.Disrupted
+      - Timing: OnExpireOrRemove
+        ConditionsRemoveRequest:
+          - Condition.Disrupted
+    Blocking:
+      BlockPolicy: RemoveOnFail
+      BlockedByClassification:
+        - Immunity.Disrupted
+    EffectRemovalPolicy: ByAnySource
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Replace
+      StackBehavior: RefreshDuration
+      MaxStacks: 1
+    Visibility: Hud
+    Icon: Alchemy.PotionVialBottleLightningBoltZapSpeedEmpty
+
+  - Id: removeDisrupted
+    DisplayName: Remove Disrupted
+    Description: Remove disrupted classified active effects from the target.
+    Target:
+      TargetStat: Energy
+      TargetValueKind: CurrentValue
+      Manipulation: Raise
+      Calculation: Percentage
+      Value: 10.0
+    Trigger:
+      TriggerType: OnApplication
+    Duration:
+      DurationType: Once
+    EffectRemovalRequest:
+      Classifications:
+        - Effect.Disrupted
+    ConditionRequests:
+      - ConditionsRemoveRequest:
+          - Condition.Disrupted
+    EffectRemovalPolicy: ByAnySource
+    Visibility: Hud
+    Icon: Software.WiFiWirelessSignal2
+
+  - Id: infection
+    DisplayName: Infection
+    Description: Applies up to 5 stacks. Each stack temporarily reduces effective Speed, AfterburnerSpeed and Energy Production by 5% while active.
+    Trigger:
+      TriggerType: WhileActive
+    Duration:
+      DurationType: Temporary
+      Duration: 1500.0
+    EffectClassifications:
+      - Effect.Infection
+    Target:
+      - TargetStat: Speed
+        TargetValueKind: CurrentValue
+        Manipulation: Reduce
+        Calculation: Percentage
+        Value: 0.05
+        ApplicationMode: WhileActive
+      - TargetStat: AfterburnerSpeed
+        TargetValueKind: CurrentValue
+        Manipulation: Reduce
+        Calculation: Percentage
+        Value: 0.05
+        ApplicationMode: WhileActive
+      - TargetStat: EnergyProduction
+        TargetValueKind: CurrentValue
+        Manipulation: Reduce
+        Calculation: Percentage
+        Value: 0.05
+        ApplicationMode: WhileActive
+    ConditionRequests:
+      - Timing: OnFirstApplication
+        ConditionsAddRequest:
+          - Condition.Infected
+      - Timing: OnExpireOrRemove
+        ConditionsRemoveRequest:
+          - Condition.Infected
+    Blocking:
+      BlockPolicy: Retry
+      BlockedByClassification:
+        - Immunity.Infection
+    EffectRemovalPolicy: ByAnySource
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Stack
+      MaxStacks: 5
+      MaxStackOverflowPolicy: ReplaceOldest
+    Visibility: Hud
+    Icon: Hats.GasMaskCommando
+    
+  - Id: removeInfection
+    DisplayName: Remove Infection
+    Description: Removes 3 infection-classified active effects from the target.
+    Trigger:
+      TriggerType: OnApplication
+    Duration:
+      DurationType: Once
+    EffectRemovalRequest:
+      Classifications:
+        - Effect.Infection
+      EffectRemovalBehaviour:
+        MaxRemoveCount: 3
+        RemoveOldestFirst: true
+    EffectRemovalPolicy: ByAnySource
+    CanTriggerWhileDead: false
+    Visibility: Hud
+    Icon: Misc.HeartbeatLine1
+
+  - Id: shieldRecharge
+    DisplayName: Shield Recharge
+    Description: Instantly restores 50% of the ships shield.
+    Trigger:
+      TriggerType: OnApplication
+    Target:
+      - TargetStat: Shield
+        TargetValueKind: CurrentValue
+        Manipulation: Raise
+        Calculation: Percentage
+        Value: 50.0
+    Blocking:
+      BlockPolicy: RemoveOnFail
+      BlockedByCondition:
+        - Condition.Disabled
+        - Condition.Disrupted
+    Visibility: Hud
+    Icon: Arrows.RoundaboutRotationCircleReloadRefreshLoop
+
+  - Id: onDeathFailSafe
+    DisplayName: Health Recharge
+    Description: Restores 25% of the ships health and shield.
+    Trigger:
+      TriggerType: OnExpire
+      TriggerCondition: BelowValue
+      TriggerStat: Health
+      TriggerValue: 10.0
+      TriggerCalculation: Percent
+    Duration:
+      DurationType: Temporary
+      Duration: 20000.0
+    EffectClassifications:
+      - Effect.HealthFailSafe
+    Target:
+      - TargetStat: Health
+        TargetValueKind: CurrentValue
+        Manipulation: Raise
+        Calculation: Percentage
+        Value: 25.0
+        ApplicationMode: OnTrigger
+      - TargetStat: Shield
+        TargetValueKind: CurrentValue
+        Manipulation: Raise
+        Calculation: Percentage
+        Value: 15.0
+        ApplicationMode: OnTrigger
+    Blocking:
+      BlockPolicy: RemoveOnFail
+      BlockedByCondition:
+        - Condition.Invulnerable
+    Visibility: Hud
+    Icons: Misc.SyringeDrugsMedicine2
+
+  - Id: delayedExplosion
+    DisplayName: Delayed Explosion
     Description: Deals Health damage when the effect expires naturally.
-  Trigger:
-    TriggerType: OnExpire
-  Duration:
-    DurationType: Temporary
-    DurationMS: 2000.0
-  EffectClassifications:
-    - Effect.Fire
-    - Effect.Debuff
-  Target:
-    TargetStat: Health
-    TargetValueKind: CurrentValue
-    Manipulation: Reduce
-    Calculation: Flat
-    Value: 100.0
-    ApplicationMode: Instant
-  Blocking:
-    BlockPolicy: RemoveOnFail
-    BlockedByCondition:
-      - Condition.Invulnerable
-  Visibility: Hud
+    Trigger:
+      TriggerType: OnExpire
+    Duration:
+      DurationType: Temporary
+      Duration: 2000.0
+    EffectClassifications:
+      - Effect.Physical
+    Target:
+      - TargetStat: Health
+        TargetValueKind: CurrentValue
+        Manipulation: Reduce
+        Calculation: Flat
+        Value: 100.0
+        ApplicationMode: Instant
+    Blocking:
+      BlockPolicy: RemoveOnFail
+      BlockedByCondition:
+        - Condition.Invulnerable
+    Visibility: Hud
+    Icon: Warfare.ExplosionBomb
 
-EMP_Lockout:
-  Definition:
-    EffectDefinitionId: effect.emp.energy_lockout
-    Name: EMP Lockout
-    Description: Temporarily applies EnergyDepleted to the target.
-  EffectProcessing: Fast
-  Trigger:
-    TriggerType: Immediate
-  Duration:
-    DurationType: Temporary
-    DurationMS: 3000.0
-  EffectClassifications:
-    - Effect.Debuff
-    - Effect.Emp
-  ConditionRequests:
-    - Timing: OnFirstApplication
-      ConditionsAddRequest:
-        - Condition.EnergyDepleted
-    - Timing: OnExpireOrRemove
-      RemoveMode: RemoveOwnContribution
-      ConditionsRemoveRequest:
-        - Condition.EnergyDepleted
-  Blocking:
-    BlockPolicy: RemoveOnFail
-  EffectRemovalPolicy: ByAnySource
-  CanTriggerWhileDead: false
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Replace
-    StackBehavior: RefreshDuration
-    MaxStacks: 1
-    MaxStackOverflowPolicy: ReplaceOldest
-  Visibility: Hud
+  - Id: energyProductionSurge
+    DisplayName: Energy Production Surge
+    Description: Raises effective EnergyProduction rate while active.
+    Trigger:
+      TriggerType: WhileActive
+    Duration:
+      DurationType: Temporary
+      Duration: 2500.0
+    EffectClassifications:
+      - Effect.Buff.EnergyProduction
+    Target:
+      - TargetStat: EnergyProduction
+        TargetValueKind: CurrentValue
+        Manipulation: Raise
+        Calculation: Percentage
+        Value: 25.0
+        ApplicationMode: WhileActive
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Replace
+      StackBehavior: RefreshDuration
+      MaxStacks: 1
+    Visibility: Hud
+    Icon: Software.PowerPluggedCordElectricity
 
-EnergyProductionSurge:
-  Definition:
-    EffectDefinitionId: effect.buff.energy_production_surge
-    Name: Energy Production Surge
-    Description: Raises effective EnergyProduction rate while active. The Value is authored in EnergyProduction's per-ms unit.
-  Trigger:
-    TriggerType: WhileActive
-  Duration:
-    DurationType: Temporary
-    DurationMS: 2500.0
-  EffectClassifications:
-    - Effect.Buff.EnergyProduction
-  Target:
-    TargetStat: EnergyProduction
-    TargetValueKind: CurrentValue
-    Manipulation: Raise
-    Calculation: Percentage
-    Value: 0.25
-    ApplicationMode: WhileActive
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Replace
-    StackBehavior: RefreshDuration
-    MaxStacks: 1
-  Visibility: Hud
-
-EnergyStorageCurse:
-  Definition:
-    EffectDefinitionId: effect.curse.energy_storage_capacity
-    Name: Energy Storage Curse
+  - Id: energyStorageMalfunction
+    DisplayName: Energy Storage Malfunction
     Description: Reduces EnergyStorage capacity by 50% while active and requests removal of active effects targeting EnergyProduction.
-  Trigger:
-    TriggerType: WhileActive
-  Duration:
-    DurationType: UntilRemoved
-  EffectClassifications:
-    - Effect.CannotBeRegenerated
-    - Effect.Debuff
-  Target:
-    TargetStat: EnergyStorage
-    TargetValueKind: CurrentMaxValue
-    Manipulation: Reduce
-    Calculation: Percentage
-    Value: 0.5
-    ApplicationMode: WhileActive
-  ConditionRequests:
-    - Timing: OnFirstApplication
-      ConditionsAddRequest:
-        - Condition.Cursed
-    - Timing: OnExpireOrRemove
-      RemoveMode: RemoveOwnContribution
-      ConditionsRemoveRequest:
-        - Condition.Cursed
-  Blocking:
-    BlockPolicy: RemoveOnFail
-    BlockedByClassification:
-      - Effect.Immunity.Curse
-    BlockedByCondition:
-      - Condition.Invulnerable
-  EffectRemovalRequest:
-    EffectsTargetingStats:
-      - EnergyProduction
-  EffectRemovalPolicy: ByAnySource
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Discard
-  Visibility: Hud
+    Trigger:
+      TriggerType: WhileActive
+    Duration:
+      DurationType: UntilRemoved
+    EffectClassifications:
+      - Effect.Malfunction.EnergyStorage
+      - Effect.Debuff.Malfunction
+    Target:
+      - TargetStat: EnergyStorage
+        TargetValueKind: CurrentMaxValue
+        Manipulation: Reduce
+        Calculation: Percentage
+        Value: 50.0
+        ApplicationMode: WhileActive
+    ConditionRequests:
+      - Timing: OnFirstApplication
+        ConditionsAddRequest:
+          - Condition.Malfunction
+      - Timing: OnExpireOrRemove
+        ConditionsRemoveRequest:
+          - Condition.Malfunction
+    Blocking:
+      BlockPolicy: RemoveOnFail
+      BlockedByClassification:
+        - Effect.Immunity.Malfunction
+    EffectRemovalRequest:
+      EffectsTargetingStats:
+        - Effect.Malfunction.EnergyStorage
+    EffectRemovalPolicy: ByAnySource
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Discard
+    Visibility: Hud
+    Icon: Software.MobileCarrierSignalNoneDisabled
 
-Heal:
-  Definition:
-    EffectDefinitionId: effect.raise.heal
-    Name: Heal
-    Description: Raises the target entity current Health by a flat amount.
-  Trigger:
-    TriggerType: Immediate
-  Duration:
-    DurationType: Once
-  Target:
-    TargetStat: Health
-    TargetValueKind: CurrentValue
-    Manipulation: Raise
-    Calculation: Flat
-    Value: 50.0
-    ApplicationMode: Instant
-  Blocking:
-    BlockPolicy: RemoveOnFail
-    BlockedByCondition:
-      - Condition.Incurable
-    BlockedByClassification:
-      - Effect.CannotBeHealed
-  Visibility: Internal
-
-MaxHealthRot:
-  Definition:
-    EffectDefinitionId: effect.rot.max_health
-    Name: Max Health Rot
+  - Id: maxHealthRot
+    DisplayName: Max Health Rot
     Description: Every due tick accumulates a temporary Health capacity reduction. The accumulated reduction disappears when the effect expires or is removed.
-  Trigger:
-    TriggerType: OverTime
-    TickIntervalMs: 1000.0
-  Duration:
-    DurationType: Temporary
-    DurationMS: 5000.0
-  EffectClassifications:
-    - Effect.Infection
-    - Effect.Debuff
-  Target:
-    TargetStat: Health
-    TargetValueKind: CurrentMaxValue
-    Manipulation: Reduce
-    Calculation: Percentage
-    Value: 0.05
-    ApplicationMode: AccumulateWhileActive
-  ConditionRequests:
-    - Timing: OnFirstExecution
-      ConditionsAddRequest:
-        - Condition.Infected
-    - Timing: OnExpireOrRemove
-      RemoveMode: RemoveOwnContribution
-      ConditionsRemoveRequest:
-        - Condition.Infected
-  Blocking:
-    BlockPolicy: Retry
-    BlockedByCondition:
-      - Condition.Invulnerable
-  EffectRemovalPolicy: ByAnySource
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Stack
-    StackBehavior: IndependentStacks
-    MaxStacks: 5
-    MaxStackOverflowPolicy: ReplaceOldest
-  Visibility: Hud
+    Trigger:
+      TriggerType: OverTime
+      TickIntervalMs: 1000.0
+    Duration:
+      DurationType: Temporary
+      Duration: 5000.0
+    EffectClassifications:
+      - Effect.Infection
+      - Effect.Debuff
+    Target:
+      TargetStat: Health
+      TargetValueKind: CurrentMaxValue
+      Manipulation: Reduce
+      Calculation: Percentage
+      Value: 0.05
+      ApplicationMode: AccumulateWhileActive
+    ConditionRequests:
+      - Timing: OnFirstExecution
+        ConditionsAddRequest:
+          - Condition.Infected
+      - Timing: OnExpireOrRemove
+        RemoveMode: RemoveOwnContribution
+        ConditionsRemoveRequest:
+          - Condition.Infected
+    Blocking:
+      BlockPolicy: Retry
+      BlockedByCondition:
+        - Condition.Invulnerable
+    EffectRemovalPolicy: ByAnySource
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Stack
+      StackBehavior: IndependentStacks
+      MaxStacks: 5
+      MaxStackOverflowPolicy: ReplaceOldest
+    Visibility: Hud
 
-NormalHeal:
-  Definition:
-    EffectDefinitionId: effect.health.heal.normal
-    Name: Normal Heal
+  - Id: raiseHealth
+    DisplayName: Raise Health
     Description: Restores Health once.
-  EffectProcessing: Fast
-  Trigger:
-    TriggerType: Immediate
-  Duration:
-    DurationType: Once
-  Target:
-    TargetStat: Health
-    TargetValueKind: CurrentValue
-    Manipulation: Raise
-    Calculation: Flat
-    Value: 35.0
-    ApplicationMode: Instant
-  Blocking:
-    BlockPolicy: RemoveOnFail
-    BlockedByCondition:
-      - Condition.Dead
-      - Condition.Incurable
-  EffectRemovalPolicy: ByAnySource
-  CanTriggerWhileDead: false
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Discard
-  Visibility: Hud
+    EffectProcessing: Fast
+    Trigger:
+      TriggerType: OnApplication
+    Duration:
+      DurationType: Once
+    Target:
+      - TargetStat: Health
+        TargetValueKind: CurrentValue
+        Manipulation: Raise
+        Calculation: Flat
+        Value: 35.0
+        ApplicationMode: Instant
+    Blocking:
+      BlockPolicy: RemoveOnFail
+      BlockedByCondition:
+        - Condition.Dead
+        - Condition.Incurable
+    EffectRemovalPolicy: ByAnySource
+    CanTriggerWhileDead: false
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Discard
+    Visibility: Hud
 
-Overheating:
-  Definition:
-    EffectDefinitionId: effect.buff.weapon.overheating
-    Name: Overheating
+  - Id: overheating
+    DisplayName: Overheating
     Description: Temporarily raises effective AttackSpeed by 50%. When the buff expires naturally, it applies the Overheating Cooldown child effect.
-  Trigger:
-    TriggerType: WhileActive
-  Duration:
-    DurationType: Temporary
-    DurationMS: 5000.0
-  EffectClassifications:
-    - Effect.Overheating
-    - Effect.Buff.AttackSpeed
-  Target:
-    TargetStat: AttackSpeed
-    TargetValueKind: CurrentValue
-    Manipulation: Raise
-    Calculation: Percentage
-    Value: 0.5
-    ApplicationMode: WhileActive
-  Blocking:
-    BlockPolicy: RemoveOnFail
-    BlockedByCondition:
-      - Condition.EnergyDrained
-      - Condition.Overheated
-  Stacking:
-    StackGroupId: 123
-    StackScope: ByStackGroupId
-    StackPolicy: Discard
-  Visibility: Hud
-  ChildEffectDefinitions:
-    - ChildEffectDefinitionId: effect.buff.weapon.overheating.cooldown
-      ChildEffectTrigger: OnParentExpired
-
-OverheatingCooldown:
-  Definition:
-    EffectDefinitionId: effect.buff.weapon.overheating.cooldown
-    Name: Overheating Cooldown
-    Description: Applies the Overheated condition while active. Attack effects should block against condition Overheated.
-  Trigger:
-    TriggerType: WhileActive
-  Duration:
-    DurationType: Temporary
-    DurationMS: 5000.0
-  EffectClassifications:
-    - Effect.OverheatingCooldown
-    - Effect.Debuff
-  ConditionRequests:
-    - Timing: OnFirstApplication
-      ConditionsAddRequest:
+    Trigger:
+      TriggerType: WhileActive
+    Duration:
+      DurationType: Temporary
+      Duration: 5000.0
+    EffectClassifications:
+      - Effect.Overheating
+      - Effect.Buff.AttackSpeed
+    Target:
+      - TargetStat: AttackSpeed
+        TargetValueKind: CurrentValue
+        Manipulation: Raise
+        Calculation: Percentage
+        Value: 50.0
+        ApplicationMode: WhileActive
+    Blocking:
+      BlockPolicy: RemoveOnFail
+      BlockedByCondition:
+        - Condition.EnergyDrained
         - Condition.Overheated
-    - Timing: OnExpireOrRemove
-      RemoveMode: RemoveOwnContribution
-      ConditionsRemoveRequest:
-        - Condition.Overheated
-  Stacking:
-    StackGroupId: 123
-    StackScope: ByStackGroupId
-    StackPolicy: Discard
-  Visibility: Hud
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Discard
+    Visibility: Hud
+    Cooldown: 15000.0
+    ChildEffectDefinitions:
+      - ChildEffectDefinitionId: effect.overheatingCooldown
+        ChildEffectTrigger: OnParentExpired
+    Icon: Weather.ThermometherTemperatureCelsiusFahrenheitKelvin1
 
-PoisonDamageOverTime:
-  Definition:
-    EffectDefinitionId: effect.debuff.poison.damage_over_time
-    Name: Poison Damage Over Time
-    Description: Applies poison exposure and deals periodic Health damage.
-  EffectProcessing: Fast
-  EffectClassifications:
-    - Effect.Damage.Poison.Dot
-    - Effect.Debuff
-  Trigger:
-    TriggerType: OverTime
-    TickIntervalMs: 1000.0
-  Duration:
-    DurationType: Temporary
-    DurationMS: 5000.0
-  Blocking:
-    BlockPolicy: Retry
-    BlockedByCondition:
-      - Condition.Invulnerable
-  Target:
-    TargetStat: Health
-    TargetValueKind: CurrentValue
-    Manipulation: Reduce
-    Calculation: Flat
-    Value: 5.0
-    ApplicationMode: Instant
-  ConditionRequests:
-    - Timing: OnFirstApplication
-      ConditionsAddRequest:
-        - Condition.PoisonExposure
-    - Timing: OnFirstExecution
-      ConditionsAddRequest:
-        - Condition.Poisoned
-    - Timing: OnExpireOrRemove
-      RemoveMode: RemoveOwnContribution
-      ConditionsRemoveRequest:
-        - Condition.PoisonExposure
-        - Condition.Poisoned
-  EffectRemovalPolicy: ByAnySource
-  Stacking:
-    StackGroupId: 1001
-    StackScope: ByStackGroupId
-    StackPolicy: Stack
-    StackBehavior: IndependentStacks
-    MaxStacks: 5
-    MaxStackOverflowPolicy: ReplaceOldest
-  Visibility: Hud
+  - Id: overheatingCooldown
+    DisplayName: Overheating Cooldown
+    Description: Applies the Overheated condition while active. Reduces the attack Speed by 75%.
+    Trigger:
+      TriggerType: WhileActive
+    Target:
+      - TargetStat: AttackSpeed
+        TargetValueKind: CurrentValue
+        Manipulation: Reduce
+        Calculation: Percentage
+        Value: 75.0
+        ApplicationMode: WhileActive
+    Duration:
+      DurationType: Temporary
+      Duration: 2500.0
+    EffectClassifications:
+      - Effect.OverheatingCooldown
+      - Effect.Debuff
+    ConditionRequests:
+      - Timing: OnFirstApplication
+        ConditionsAddRequest:
+          - Condition.Overheated
+      - Timing: OnExpireOrRemove
+        RemoveMode: RemoveOwnContribution
+        ConditionsRemoveRequest:
+          - Condition.Overheated
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Discard
+    Visibility: Hud
+    Icon: Weather.ThermometherTemperatureCelsiusFahrenheitKelvin2
 
-Revive:
-  Definition:
-    EffectDefinitionId: effect.health.revive
-    Name: Revive
-    Description: Removes Dead and restores a flat amount of current Health.
-  Trigger:
-    TriggerType: Immediate
-    TriggerConditions:
-      - Type: OnConditionsPresent
-        Conditions:
-          - Condition.Dead
-        Operator: All
-  Duration:
-    DurationType: Once
-  Target:
-    TargetStat: Health
-    TargetValueKind: CurrentValue
-    Manipulation: Raise
-    Calculation: Flat
-    Value: 50.0
-    ApplicationMode: Instant
-  ConditionRequests:
-    - Timing: OnFirstExecution
-      RemoveMode: RemoveAllContributions
-      ConditionsRemoveRequest:
-        - Condition.Dead
-  Blocking:
-    BlockPolicy: RemoveOnFail
-    BlockedByCondition:
-      - Condition.Incurable
-    BlockedByClassification:
-      - Effect.CannotBeHealed
-  CanTriggerWhileDead: true
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Discard
-  Visibility: Internal
+  - Id: shieldCapacityBoost
+    DisplayName: Shield Capacity Boost
+    Description: Raises Shield capacity by a flat amount while active. 
+    Trigger:
+      TriggerType: WhileActive
+    Duration:
+      DurationType: Temporary
+      Duration: 30000.0
+    EffectClassifications:
+      - Effect.Buff.ShieldCapacity
+    Target:
+      - TargetStat: Shield
+        TargetValueKind: CurrentMaxValue
+        Manipulation: Raise
+        Calculation: Flat
+        Value: 50.0
+        ApplicationMode: WhileActive
+    Blocking:
+      BlockPolicy: RemoveOnFail
+    Stacking:
+      StackScope: ByEffectDefinitionId
+      StackPolicy: Replace
+      StackBehavior: RefreshDuration
+      MaxStacks: 1
+      MaxStackOverflowPolicy: ReplaceOldest
+    Visibility: Hud
+    Icon: Weather.SunnyWarmHotSummerSeason
 
-ReviveRemoveDead:
-  Definition:
-    EffectDefinitionId: effect.revive.remove_dead
-    Name: Revive Remove Dead
-    Description: Removes Dead during revive.
-  EffectProcessing: Fast
-  Trigger:
-    TriggerType: Immediate
-  Duration:
-    DurationType: Once
-  ConditionRequests:
-    - Timing: OnFirstExecution
-      RemoveMode: RemoveAllContributions
-      ConditionsRemoveRequest:
-        - Condition.Dead
-  Blocking:
-    BlockPolicy: RemoveOnFail
-  EffectRemovalPolicy: ByAnySource
-  CanTriggerWhileDead: true
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Discard
-  Visibility: Internal
-
-ReviveRestoreHealth:
-  Definition:
-    EffectDefinitionId: effect.revive.restore_health
-    Name: Revive Restore Health
-    Description: Restores Health during revive.
-  EffectProcessing: Fast
-  Trigger:
-    TriggerType: Immediate
-  Duration:
-    DurationType: Once
-  Target:
-    TargetStat: Health
-    TargetValueKind: CurrentValue
-    Manipulation: Raise
-    Calculation: Flat
-    Value: 25.0
-    ApplicationMode: Instant
-  Blocking:
-    BlockPolicy: RemoveOnFail
-  EffectRemovalPolicy: ByAnySource
-  CanTriggerWhileDead: true
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Discard
-  Visibility: Internal
-
-ShieldCapacityBoost:
-  Definition:
-    EffectDefinitionId: effect.buff.shield_capacity
-    Name: Shield Capacity Boost
-    Description: Raises Shield capacity by a flat amount while active. Positive capacity compensation may raise current Shield only for the capacity delta gained above EffectiveMaxValue.
-  Trigger:
-    TriggerType: WhileActive
-  Duration:
-    DurationType: Temporary
-    DurationMS: 3000.0
-  EffectClassifications:
-    - Effect.Buff.ShieldCapacity
-  Target:
-    TargetStat: Shield
-    TargetValueKind: CurrentMaxValue
-    Manipulation: Raise
-    Calculation: Flat
-    Value: 50.0
-    ApplicationMode: WhileActive
-  Blocking:
-    BlockPolicy: RemoveOnFail
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Replace
-    StackBehavior: RefreshDuration
-    MaxStacks: 1
-    MaxStackOverflowPolicy: ReplaceOldest
-  Visibility: Hud
-
-ShieldCapacityBooster:
-  Definition:
-    EffectDefinitionId: effect.shield.capacity_boost
-    Name: Shield Capacity Booster
-    Description: Temporarily raises Shield capacity.
-  EffectProcessing: Fast
-  Trigger:
-    TriggerType: WhileActive
-  Duration:
-    DurationType: Temporary
-    DurationMS: 5000.0
-  EffectClassifications:
-    - Effect.Buff.ShieldCapacity
-  Target:
-    TargetStat: Shield
-    TargetValueKind: CurrentMaxValue
-    Manipulation: Raise
-    Calculation: Flat
-    Value: 50.0
-    ApplicationMode: WhileActive
-  Blocking:
-    BlockPolicy: RemoveOnFail
-  EffectRemovalPolicy: ByAnySource
-  CanTriggerWhileDead: false
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Replace
-    StackBehavior: RefreshDuration
-    MaxStacks: 1
-    MaxStackOverflowPolicy: ReplaceOldest
-  Visibility: Hud
-
-SuperEvilDot:
-  Definition:
-    EffectDefinitionId: effect.dot.super_evil_dot
-    Name: Super Evil Dot
-    Description: Applies up to 5 stacks. Each stack reduces current Health by 75 every 300ms while active.
-  Trigger:
-    TriggerType: OverTime
-    TickIntervalMs: 300.0
-  Duration:
-    DurationType: Temporary
-    DurationMS: 2100.0
-  EffectClassifications:
-    - Effect.Debuff
-  Target:
-    TargetStat: Health
-    TargetValueKind: CurrentValue
-    Manipulation: Reduce
-    Calculation: Flat
-    Value: 75.0
-    ApplicationMode: Instant
-  Blocking:
-    BlockPolicy: Retry
-    BlockedByCondition:
-      - Condition.Invulnerable
-  EffectRemovalPolicy: ByAnySource
-  Stacking:
-    StackScope: ByEffectDefinitionId
-    StackPolicy: Stack
-    StackBehavior: AddStackRefreshDuration
-    MaxStacks: 5
-    MaxStackOverflowPolicy: ReplaceOldest
-  Visibility: Hud
