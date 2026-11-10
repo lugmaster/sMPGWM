@@ -16,6 +16,7 @@ public partial class GameWorld : Node
     private int _spawnIndex;
     private readonly Dictionary<string, ShipController> _entities = new();
     public IReadOnlyDictionary<string, ShipController> Entities => _entities;
+    public event Action<ShipController>? EntitySpawned;
 
     private void TrackBinding(ShipController? previous, ShipController? next)
     {
@@ -131,9 +132,10 @@ public partial class GameWorld : Node
             AddChild(ship);
             ship.Restore(record.Position, record.Rotation, record.Velocity, default);
             _entities.Add(record.EntityId, ship);
+            EntitySpawned?.Invoke(ship);
             return ship;
         }
-        catch { ship.Free(); throw; }
+        catch { _entities.Remove(record.EntityId); ship.Free(); throw; }
     }
 
     public void DestroyEntity(string entity)

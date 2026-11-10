@@ -55,6 +55,8 @@ The main-game scene starts networking deferred, after the world and gameplay chi
 
 ## Tests
 
+The [ability architecture increment](../docs/plans/gameplay-increment-02-ability-architecture.md) provides typed gameplay registries and a session-owned ability runtime. AbilityLoadoutDefinitions.yml controls development grants and hotbar order. Multiple supported timed Shield Behaviours can coexist and replicate; other authored mechanics remain explicitly unsupported.
+
 The next gameplay authoring increment is specified in [Gameplay composition MVP](../docs/documentation/GameplayComposition.md), with Ability, Effect, Behaviour, Targeting, and Projectile definitions and matching schemas under `assets/game_data`. Shield Capacity Boost now has a development hotbar loadout, host-authoritative execution, timed capacity modifiers, replication and HUD targeting. See [implementation evidence](../docs/plans/evidence/gameplay-increment-01-shield-capacity.md). Other catalogue entries remain authored contracts, not executable gameplay. The document records the agreed examples, shared lifecycle rules, provisional tuning, and the content-validation command.
 
 Run `dotnet test sMPGWM.Tests` from the repository root. The NUnit project targets .NET 8 to match the game assembly. Set `GODOT_BIN` to a Godot 4.7.2 .NET console executable if it is not available as `godot` on PATH (the local `godot_engine/Godot_v4.7.2-stable_mono_win64` installation is also detected).

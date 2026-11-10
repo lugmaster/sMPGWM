@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.GameConfigSystem;
+using sMPGWM.Scripts.AbilitySystem;
 
 namespace sMPGWM.Scripts.NetworkSystem;
 
@@ -13,7 +13,7 @@ public partial class NetworkManager
     private string _pendingCaster = "";
     private long _pendingGeneration;
     private long _nextRequest;
-    private long _nextBehaviour;
+    public AbilityRuntime Abilities { get; init; } = null!;
     private bool _gameplayDirty = true;
     public string SelectedTarget { get; set; } = "";
     public event Action<string>? AbilityFeedback;
@@ -55,20 +55,19 @@ public partial class NetworkManager
         foreach (var ship in World.Entities.Values) _gameplayDirty |= ship.Gameplay.Expire(tick);
         while (_abilityQueue.TryDequeue(out var request))
         {
-            var definition = GameplayDefinitions.Boost;
             var result = "Accepted";
             if (!MovementReady(request.Peer) || !World.Players.TryGetValue(request.Peer, out var player) ||
                 player.ControlledShip?.EntityId != request.Caster || player.ControlGeneration != request.Generation)
                 result = "Rejected: caster changed";
-            else if (!GameConfig.Development || request.Ability != definition.AbilityId) result = "Rejected: ability not granted";
             else if (!World.Entities.TryGetValue(request.Target, out var target) || target.ControllingPlayer == null)
                 result = "Rejected: target is not a living ally";
-            else if (player.ControlledShip.GlobalPosition.DistanceSquaredTo(target.GlobalPosition) > definition.Range * definition.Range)
-                result = "Rejected: out of range";
             else
             {
-                target.Gameplay.Apply(definition, tick, ++_nextBehaviour);
-                _gameplayDirty = true;
+                // No current producer can add conditions; future condition state supplies this context.
+                var context = new AbilityActivationContext(player.ControlledShip.Gameplay, target.Gameplay, true,
+                    player.ControlledShip.GlobalPosition.DistanceSquaredTo(target.GlobalPosition), Array.Empty<string>());
+                result = Abilities.Activate(request.Ability, context, tick);
+                _gameplayDirty |= result == "Accepted";
             }
             if (_abilityResults.TryGetValue(request.Peer, out var history)) history.Complete(request.Request, result);
             ReplyAbility(request.Peer, request.Request, result);
@@ -87,39 +86,16 @@ public partial class NetworkManager
     {
         var rows = new Godot.Collections.Array();
         foreach (var ship in World.Entities.Values)
-        {
-            var state = ship.Gameplay;
-            rows.Add(new Godot.Collections.Array { ship.EntityId, state.Revision, state.Shield.Capacity,
-                state.Shield.Current, state.BehaviourInstance, state.Deadline,
-                state.BehaviourInstance == 0 ? "" : GameplayDefinitions.Boost.BehaviourId });
-        }
+            rows.Add(GameplaySnapshotCodec.Encode(ship.EntityId, ship.Gameplay));
         return rows;
     }
 
     private bool ApplyGameplay(Godot.Collections.Array rows)
     {
-        if (rows.Count > 64) return false;
-        var seen = new HashSet<string>();
-        foreach (var entry in rows)
-        {
-            if (entry.VariantType != Variant.Type.Array) return false;
-            var row = entry.AsGodotArray();
-            if (row.Count != 7 || row[0].VariantType != Variant.Type.String || row[1].VariantType != Variant.Type.Int ||
-                row[2].VariantType != Variant.Type.Float || row[3].VariantType != Variant.Type.Float ||
-                row[4].VariantType != Variant.Type.Int || row[5].VariantType != Variant.Type.Int || row[6].VariantType != Variant.Type.String) return false;
-            var entity = row[0].AsString();
-            var capacity = row[2].AsDouble(); var current = row[3].AsDouble();
-            if (!seen.Add(entity) || !double.IsFinite(capacity) || !double.IsFinite(current) || current < 0 || capacity < current ||
-                row[1].AsInt64() < 0 || row[4].AsInt64() < 0 || row[5].AsInt64() < 0 ||
-                (row[4].AsInt64() == 0) != (row[5].AsInt64() == 0) ||
-                row[6].AsString() != (row[4].AsInt64() == 0 ? "" : GameplayDefinitions.Boost.BehaviourId)) return false;
-        }
-        foreach (var entry in rows)
-        {
-            var row = entry.AsGodotArray();
-            if (World.Entities.TryGetValue(row[0].AsString(), out var ship))
-                ship.Gameplay.Confirm(row[1].AsInt64(), row[2].AsDouble(), row[3].AsDouble(), row[4].AsInt64(), row[5].AsInt64());
-        }
+        if (!GameplaySnapshotCodec.TryDecode(rows, Abilities.Definitions, out var entries)) return false;
+        foreach (var entry in entries)
+            if (World.Entities.TryGetValue(entry.Entity, out var ship))
+                ship.Gameplay.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours);
         return true;
     }
 
@@ -145,5 +121,6 @@ public partial class NetworkManager
     private void ClearGameplay()
     {
         _abilityQueue.Clear(); _abilityResults.Clear(); AbilityFeedback = null; SelectedTarget = "";
+        Abilities?.Dispose();
     }
 }

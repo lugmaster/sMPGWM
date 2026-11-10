@@ -7,6 +7,7 @@ public sealed class ItemDefinition(string id, string displayName, string categor
 {
     public System.Collections.Generic.IReadOnlyDictionary<string, object> Values { get; init; } = new System.Collections.ObjectModel.ReadOnlyDictionary<string, object>(new System.Collections.Generic.Dictionary<string, object>());
     public System.Collections.Generic.IReadOnlyList<string> AbilityIds { get; init; } = System.Array.Empty<string>();
+    public System.Collections.Generic.IReadOnlyList<ItemBehaviourGrant> BehaviourGrants { get; init; } = System.Array.Empty<ItemBehaviourGrant>();
     public string Id { get; } = id;
     public string DisplayName { get; } = displayName;
     public string CategoryName { get; } = categoryName;

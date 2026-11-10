@@ -22,6 +22,8 @@ CATALOGUES = {
     'conditions': ('Conditions.yml', 'ConditionSchema.yml', 'Conditions'),
     'categories': ('ItemCategoryDefinitions.yml', 'ItemCategorySchema.yml', 'Categories'),
     'items': ('ItemDefinitions.yml', 'ItemSchema.yml', 'Items'),
+    'damage': ('DamageSources.yml', 'DamageSourceSchema.yml', 'DamageSources'),
+    'loadouts': ('AbilityLoadoutDefinitions.yml', 'AbilityLoadoutSchema.yml', 'AbilityLoadoutDefinitions'),
 }
 
 
@@ -62,8 +64,8 @@ def validate(documents, schemas):
     if errors:
         return errors
 
-    damage_ids = {entry['Id'] for entry in read('DamageSources.yml')['DamageSources']}
-    category_ids = {entry['Id'] for entry in read('ItemCategoryDefinitions.yml')['Categories']}
+    damage_ids = set(indices['damage'])
+    category_ids = set(indices['categories'])
     graph = {}
 
     def ref(kind, id, owner):
@@ -84,6 +86,9 @@ def validate(documents, schemas):
         ref(kind, id, owner)
         graph.setdefault(owner, []).append(f'{kind}:{id}')
 
+    for id, loadout in indices['loadouts'].items():
+        refs('abilities', loadout['AbilityIds'], f'loadouts:{id}')
+
     for id, ability in indices['abilities'].items():
         owner = f'abilities:{id}'
         ref('targeting', ability['TargetingId'], owner)
@@ -93,6 +98,8 @@ def validate(documents, schemas):
             errors.append(f'{owner}: selected-target abilities cannot use an area profile')
         for cost in ability['Costs']:
             ref('stats', cost['StatId'], owner)
+            if cost['StatId'] not in {'health', 'shield', 'energy_storage', 'oxygen', 'food', 'water'}:
+                errors.append(f'{owner}: ability cost requires a resource pool')
 
     for id, effect in indices['effects'].items():
         owner = f'effects:{id}'

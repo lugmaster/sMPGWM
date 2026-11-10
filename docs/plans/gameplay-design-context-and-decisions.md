@@ -2,6 +2,8 @@
 
 Status: context handoff for implementation; not evidence of implemented gameplay.
 
+Implementation update: [increment 2](gameplay-increment-02-ability-architecture.md) adds typed registries, a session-owned ability runtime, explicit development loadouts, and multiple timed Shield Behaviour instances. Historical next-step descriptions below preserve the original discussion; consult the increment documents for current implementation status.
+
 Date: 2026-11-10.
 
 Implementation plan: [Runtime stats and multiplayer Shield Capacity Boost](gameplay-increment-01-shield-capacity-vertical-slice.md).

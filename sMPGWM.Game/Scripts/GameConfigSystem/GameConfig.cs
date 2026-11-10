@@ -56,8 +56,9 @@ public static class GameConfig
             throw new InvalidOperationException("Configuration is not loaded.");
         _ = ItemRegistry.GetAll();
         _ = ShipSystem.ShipRegistry.GetAll();
-        _ = sMPGWM.Scripts.GamePlaySystem.GameplayDefinitions.Boost;
+        _ = sMPGWM.Scripts.GamePlaySystem.GameplayDefinitions.Current;
         var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoadingSystem.FileLoader.CapturedInputs);
+        inputs.Add("GameplayProtocol", "2:multiple-behaviour-instances");
         GameDataChecksum = ChecksumGenerator.Compute(inputs);
         foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
         Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={GameDataChecksum}");

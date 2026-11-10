@@ -81,8 +81,14 @@ public static class ItemRegistry
             var (canStack, limit) = ResolveStacking(row, category.CanStack, category.StackLimit);
             var values = new Dictionary<string, object>(StringComparer.Ordinal);
             var abilities = new List<string>();
+            var grants = new List<ItemBehaviourGrant>();
             if (row["AbilityIds"] is JArray ids)
                 foreach (var id in ids) abilities.Add((string)id!);
+            if (row["BehaviourGrants"] is JArray suppliedGrants)
+                foreach (var grant in suppliedGrants)
+                    grants.Add(new((string)grant["BehaviourId"]!,
+                        Enum.Parse<BehaviourGrantWhile>((string)grant["While"]!),
+                        Enum.Parse<BehaviourGrantLifetime>((string)grant["Lifetime"]!)));
             foreach (var required in category.Values)
             {
                 if (required == "AbilityIds")
@@ -109,7 +115,8 @@ public static class ItemRegistry
                 row["Icon"]?.Type == JTokenType.String ? resolveIcon((string)row["Icon"]!) : category.Icon)
             {
                 Values = new System.Collections.ObjectModel.ReadOnlyDictionary<string, object>(values),
-                AbilityIds = abilities.AsReadOnly()
+                AbilityIds = abilities.AsReadOnly(),
+                BehaviourGrants = grants.AsReadOnly()
             };
             ValidateStacking(definition.CanStack, definition.StackLimit);
             return definition;

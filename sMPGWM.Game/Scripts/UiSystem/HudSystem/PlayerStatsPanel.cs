@@ -15,6 +15,7 @@ public partial class PlayerStatsPanel : PanelContainer
     private double _elapsed;
     private Button _self = null!;
     private Button _ally = null!;
+    private readonly System.Text.StringBuilder _targetText = new();
     public override void _Ready()
     {
         var container = GetNode<VBoxContainer>("%BarContainer");
@@ -70,9 +71,15 @@ public partial class PlayerStatsPanel : PanelContainer
         { SelectSelf(); target = local; }
         var state = target.Gameplay;
         var tick = _network.IsHost() ? _network.Synchronization!.CompletedTick : _network.Synchronization!.HostEstimate;
-        var remaining = System.Math.Max(0, (state.Deadline - tick) / 60d);
-        var targetText = $"Target: {(target == local ? "Self" : target.EntityId[..6])}  Shield {state.Shield.Current:0.#} / {state.Shield.Capacity:0.#}" +
-            (state.BehaviourInstance != 0 ? $"\nShield Capacity Boost: {remaining:0.0}s" : "");
+        _targetText.Clear();
+        _targetText.Append($"Target: {(target == local ? "Self" : target.EntityId[..6])}  Shield {state.Shield.Current:0.#} / {state.Shield.Capacity:0.#}");
+        foreach (var active in state.ActiveBehaviours)
+        {
+            var definition = _network.Abilities.Definitions.Behaviours.GetById(active.DefinitionId);
+            var remaining = System.Math.Max(0, (active.Deadline - tick) / 60d);
+            _targetText.Append($"\n{definition.DisplayName}: {remaining:0.0}s");
+        }
+        var targetText = _targetText.ToString();
         if (targetText != _lastTarget) _target.Text = _lastTarget = targetText;
     }
     public override void _ExitTree() => Bind(null);

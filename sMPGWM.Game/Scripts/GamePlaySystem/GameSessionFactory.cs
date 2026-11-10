@@ -1,4 +1,7 @@
 using Godot;
+using System;
+using sMPGWM.Scripts.AbilitySystem;
+using sMPGWM.Scripts.Util.Mocks;
 using sMPGWM.Scripts.Items;
 using sMPGWM.Scripts.Items.Equipment;
 using sMPGWM.Scripts.Items.Hotbar;
@@ -23,6 +26,8 @@ internal static class GameSessionFactory
     public static GameSession Create(SessionScope scope, Node parent, UiCanvas canvas, Node world,
         NetworkStartupData startup, SessionCoordinator coordinator, IGameFixture fixture)
     {
+        var abilities = scope.Own(new AbilityRuntime(GameplayDefinitions.Current));
+        var loadout = GameConfigSystem.GameConfig.Development ? new DevelopmentAbilityLoadout(abilities) : null; // TEST-SUPPORT: ABILITY-COMPOSE-001 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         var items = new ItemStore();
         var inventory = scope.Own(new InventoryController(items));
         var equipment = scope.Own(new EquipmentController(items));
@@ -43,26 +48,26 @@ internal static class GameSessionFactory
         NetworkManager? abilityNetwork = null;
         player.Initialize(canvas, transfers, position => hotbar.Activate(position, key =>
         {
-            if (key == "0" && GameConfigSystem.GameConfig.Development) abilityNetwork?.ActivateAbility(GameplayDefinitions.Boost.AbilityId); // TEST-SUPPORT: SHIELD-LOADOUT-005 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
+            if (key.StartsWith("ability:", StringComparison.Ordinal)) abilityNetwork?.ActivateAbility(key["ability:".Length..]);
             else fixture.ActivateAction(key);
         },
             request => Logger.Info($"Item hotbar activation requested: {request}")), world);
         parent.AddChild(player);
-        if (GameConfigSystem.GameConfig.Development) // TEST-SUPPORT: SHIELD-LOADOUT-001 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
-        {
-            hotbar.SetActionTitle("0", GameplayDefinitions.Boost.DisplayName); // TEST-SUPPORT: SHIELD-LOADOUT-002 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
-            hotbar.BindAction(0, "0"); // TEST-SUPPORT: SHIELD-LOADOUT-003 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
-            canvas.BindHotbar(hotbar, new[] { Util.UiComponents.Icons.Get(GameplayDefinitions.Boost.Icon) }); // TEST-SUPPORT: SHIELD-LOADOUT-004 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
-        }
+        if (loadout != null) loadout.Bind(hotbar, canvas); // TEST-SUPPORT: ABILITY-COMPOSE-002 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         else canvas.BindHotbar(hotbar, fixture.Actions);
         player.SetSessionActive(false);
 
         var participants = new GameWorld { Name = nameof(GameWorld), LocalPlayer = player };
+        if (loadout != null && startup.Role == NetworkRole.Host) // TEST-SUPPORT: ABILITY-COMPOSE-003 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        {
+            participants.EntitySpawned += loadout.Grant; // TEST-SUPPORT: ABILITY-COMPOSE-004 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            scope.Defer(() => participants.EntitySpawned -= loadout.Grant); // TEST-SUPPORT: ABILITY-COMPOSE-005 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        }
         scope.Defer(() => ReleaseNode(participants));
         scope.Defer(participants.Clear);
         participants.AddChild(new ParallaxMotion { Name = nameof(ParallaxMotion) });
         world.AddChild(participants);
-        var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants };
+        var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities };
         scope.Defer(() => ReleaseNode(network));
         scope.Defer(network.StopSession);
         var synchronization = new SynchronizationCoordinator

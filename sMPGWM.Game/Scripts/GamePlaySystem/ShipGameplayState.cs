@@ -1,40 +1,74 @@
 using System;
+using System.Collections.Generic;
+using sMPGWM.Scripts.AbilitySystem;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
 public sealed class ShipGameplayState
 {
+    public const int MaxBehaviours = 64;
+    private readonly List<BehaviourInstance> _behaviours = new();
+    public IReadOnlyList<BehaviourInstance> ActiveBehaviours { get; }
+    public AbilityGrants Grants { get; } = new();
     public ResourcePool Shield { get; }
     public long Revision { get; private set; } = 1;
-    public long BehaviourInstance { get; private set; }
-    public long Deadline { get; private set; }
     public event Action? Changed;
-    public ShipGameplayState(double capacity, double current) => Shield = new(capacity, current);
-    public void Apply(ShieldBoostDefinition definition, long tick, long instance)
+
+    public ShipGameplayState(double capacity, double current)
     {
-        if (BehaviourInstance == 0)
-        {
-            Shield.SetContribution(instance, definition.Flat, definition.Fraction);
-            BehaviourInstance = instance;
-        }
-        Deadline = checked(tick + definition.DurationTicks);
-        Revision++;
-        Changed?.Invoke();
+        Shield = new(capacity, current);
+        ActiveBehaviours = _behaviours.AsReadOnly();
     }
-    public bool Expire(long tick)
+
+    internal bool ApplyBehaviour(SupportedBehaviour definition, long tick, long instance, out bool created)
     {
-        if (BehaviourInstance == 0 || tick < Deadline) return false;
-        Shield.RemoveOwner(BehaviourInstance);
-        BehaviourInstance = Deadline = 0;
-        Revision++;
+        if (tick < 0 || instance <= 0) throw new ArgumentOutOfRangeException(nameof(tick));
+        var deadline = checked(tick + definition.DurationTicks);
+        var nextRevision = checked(Revision + 1);
+        created = false;
+        for (var i = 0; i < _behaviours.Count; i++)
+        {
+            var active = _behaviours[i];
+            if (active.DefinitionId != definition.Definition.Id) continue;
+            _behaviours[i] = active with { Deadline = deadline };
+            Revision = nextRevision;
+            Changed?.Invoke();
+            return true;
+        }
+        if (_behaviours.Count >= MaxBehaviours) return false;
+        Shield.SetContribution(instance, definition.Flat, definition.Fraction);
+        _behaviours.Add(new(definition.Definition.Id, instance, deadline));
+        created = true;
+        Revision = nextRevision;
         Changed?.Invoke();
         return true;
     }
-    public bool Confirm(long revision, double capacity, double current, long instance, long deadline)
+
+    public bool Expire(long tick)
+    {
+        var changed = false;
+        for (var i = _behaviours.Count - 1; i >= 0; i--)
+        {
+            var active = _behaviours[i];
+            if (tick < active.Deadline) continue;
+            Shield.RemoveOwner(active.RuntimeId);
+            _behaviours.RemoveAt(i);
+            changed = true;
+        }
+        if (!changed) return false;
+        Revision = checked(Revision + 1);
+        Changed?.Invoke();
+        return true;
+    }
+
+    public bool Confirm(long revision, double capacity, double current, IReadOnlyList<BehaviourInstance> behaviours)
     {
         if (revision <= Revision) return false;
+        if (behaviours.Count > MaxBehaviours) throw new ArgumentException("Behaviour count exceeds protocol limit.");
         Shield.Confirm(capacity, current);
-        Revision = revision; BehaviourInstance = instance; Deadline = deadline;
+        _behaviours.Clear();
+        for (var i = 0; i < behaviours.Count; i++) _behaviours.Add(behaviours[i]);
+        Revision = revision;
         Changed?.Invoke();
         return true;
     }
