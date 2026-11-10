@@ -162,6 +162,12 @@ public partial class UiCanvas : CanvasLayer
         _playerHud.Hotbar.Bind(controller, actions);
     }
 
+    internal void BindHotbar(ItemHotbarController controller, IReadOnlyDictionary<string, IconDefinition> actions)
+    {
+        _hotbar = controller;
+        _playerHud.Hotbar.Bind(controller, actions);
+    }
+
 
     private void OnWindowOpening(UiWindowId id, GameOverlayMenu window)
     {

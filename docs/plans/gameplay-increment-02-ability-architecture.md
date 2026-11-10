@@ -61,6 +61,14 @@ Late join uses the existing reliable baseline and preserves original deadlines. 
 
 Compatibility includes every loaded catalogue/schema, actual user file content, and a GameplayProtocol marker for the changed wire shape. The HUD displays names and remaining time for every confirmed active Behaviour, retaining its 5 Hz presentation refresh and target-selection controls.
 
+### Hotbar icon follow-up
+
+The user's graphical LAN run reached InGame and completed client authentication/join, but exposed a missing ability icon. The definition and texture loaded correctly: the new action key was `ability:shieldCapacityBoost`, while HotbarControl.Refresh still recognized action visuals only for integer keys. It fell through to item rendering, which cleared the texture because an action has no item definition ID.
+
+The fix supplies icons in a dictionary keyed by stable action identity. DevelopmentAbilityLoadout passes that mapping through the new UiCanvas.BindHotbar and HotbarControl.Bind dictionary overloads. HotbarControl resolves every ActionHotbarBinding through the mapping during refresh. Its existing list overload converts legacy numeric action keys into the same mapping; item and weapon rendering retain their existing paths. Moving or rebinding slots preserves the correct image. DefinitionRegistry needed no change.
+
+Regression coverage: `sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind` runs for named ability keys and legacy numeric keys. It checks the actual Godot button texture after initial binding, refresh, movement, rebinding, and clearing.
+
 ## Authoring another supported ability
 
 1. Add a Behaviour with a distinct ID, Shield-maximum modifier, Timed lifetime, and RefreshDuration stacking.
@@ -73,7 +81,8 @@ The loadout controls explicit host grants and hotbar order; it is not inferred f
 ## Verification
 
 - Content validation: 129 definitions across twelve catalogues; nine malformed-content checks rejected.
-- Automated run: 245 outer NUnit tests passed; the Godot orchestration additionally reports 159 engine tests passed, zero skipped. The two explicit stress/process scenarios remain opt-in.
+- Architecture full-suite run: 245 outer NUnit tests passed; the Godot orchestration additionally reported 159 engine tests passed, zero skipped. The two explicit stress/process scenarios remain opt-in.
+- Latest hotbar-fix verification: the targeted Godot orchestration passed with 161 engine tests and zero skipped, including both new icon regression cases. The entire outer suite and multiplayer process scenarios were not rerun for this presentation-only fix.
 - Automated coverage: typed variants and collection immutability, item grants, contextual reference diagnostics, duplicate IDs, cycles, wrong stat kinds, schema errors, unsupported mechanics, grant ownership, independent deadlines, shared-Behaviour refresh, teardown, and malformed/stale multi-Behaviour snapshots.
 - Original normal-session integration coverage: host admission, deduplication, ally targeting, range rejection, expiration, and the ten-ship snapshot bound.
 - The two-Behaviour snapshot test verifies exact late-join state and stale-revision rejection, and measures ten ships against a 4 KiB serialized payload bound.
@@ -85,6 +94,7 @@ Commands from the repository root:
 ```text
 python tools/validate_gameplay_data.py
 dotnet test sMPGWM.Tests --logger "console;verbosity=normal"
+dotnet test sMPGWM.Tests --no-restore --filter FullyQualifiedName~GodotIntegrationTests --logger "console;verbosity=normal"
 python tools/run_shield_slice.py
 python tools/run_shield_slice.py --players 10 --impaired --variants
 ```
@@ -95,6 +105,23 @@ The default three-player run passed with all processes returning zero: 619 obser
 
 The final ten-player two-Behaviour run passed with 20–60 ms one-way delay, 1% loss, and delay-induced reordering (seed 1042). All ten processes returned zero, observed combined capacity 175, and later returned to 100 without healing. Cross-process comparison found no conflicts across 6,644 observations and 107 entity revisions. Trace: [two-Behaviour impaired ENet](evidence/ability-architecture-enet-10-impaired.txt).
 
-The build retains the existing UiIcon.Size member-hiding warning.
+The latest build reports the existing UiIcon.Size member-hiding warning and NUnit2009 on the repeated GetAll() identity assertion in AbilityArchitectureTests. Neither prevented the build or test run.
 
 Steam multiplayer across separate authenticated accounts and graphical pointer testing remain outside this automated ENet verification.
+
+## Handover entry points
+
+Paths below are relative to the repository root.
+
+| Area | Starting file |
+| --- | --- |
+| Published catalogue set | `sMPGWM.Game/Scripts/GamePlaySystem/GameplayDefinitions.cs` |
+| Typed loading and validation | `sMPGWM.Game/Scripts/GameplayDataSystem/GameplayCatalogueLoader.cs`, `GameplayCatalogueValidator.cs` |
+| Execution support, admission, and application | `sMPGWM.Game/Scripts/AbilitySystem/AbilityRuntime.cs` |
+| Per-ship instances and expiration | `sMPGWM.Game/Scripts/GamePlaySystem/ShipGameplayState.cs` |
+| Session composition and ownership | `sMPGWM.Game/Scripts/GamePlaySystem/GameSessionFactory.cs` |
+| Request routing and state replication | `sMPGWM.Game/Scripts/NetworkSystem/NetworkManager.Gameplay.cs`, `GameplaySnapshotCodec.cs` |
+| Development grants and action icons | `sMPGWM.Game/Scripts/Util/Mocks/DevelopmentAbilityLoadout.cs` |
+| Hotbar presentation | `sMPGWM.Game/Scripts/UiSystem/HudSystem/Hotbar/HotbarControl.cs` |
+
+The next gameplay story has not been selected. Continue discussing the user's next theme before expanding execution capabilities. Preserve the supported/deferred distinction above and the agreed gameplay in [design context and decisions](gameplay-design-context-and-decisions.md).

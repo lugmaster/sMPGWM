@@ -17,7 +17,7 @@ public partial class HotbarControl : PanelContainer
     private bool _canEdit;
     private ItemHotbarController? _controller;
     private ItemVisuals? _visuals;
-    private IReadOnlyList<IconDefinition> _actions = Array.Empty<IconDefinition>();
+    private readonly Dictionary<string, IconDefinition> _actions = new(StringComparer.Ordinal);
     private ClickableIcon[] _icons = Array.Empty<ClickableIcon>();
     internal ClickableIcon[] Icons => _icons;
     internal event Action<int>? SlotPressed;
@@ -92,11 +92,19 @@ public partial class HotbarControl : PanelContainer
 
     internal void Bind(ItemHotbarController controller, IReadOnlyList<IconDefinition> actions)
     {
+        var keyedActions = new Dictionary<string, IconDefinition>(StringComparer.Ordinal);
+        for (var i = 0; i < actions.Count; i++)
+            keyedActions.Add(i.ToString(System.Globalization.CultureInfo.InvariantCulture), actions[i]);
+        Bind(controller, keyedActions);
+    }
+
+    internal void Bind(ItemHotbarController controller, IReadOnlyDictionary<string, IconDefinition> actions)
+    {
         Unbind();
         _controller = controller;
         _visuals = new ItemVisuals();
-        _actions = actions;
-        SetIcons(actions);
+        foreach (var action in actions) _actions.Add(action.Key, action.Value);
+        SetIcons(Array.Empty<IconDefinition>());
         controller.Changed += Refresh;
         Refresh();
     }
@@ -106,7 +114,7 @@ public partial class HotbarControl : PanelContainer
         if (_controller != null) _controller.Changed -= Refresh;
         _controller = null;
         _visuals = null;
-        _actions = Array.Empty<IconDefinition>();
+        _actions.Clear();
         SetEditing(false);
     }
 
@@ -119,10 +127,12 @@ public partial class HotbarControl : PanelContainer
             var icon = icons[position];
             icon.Binding = ItemCellBinding.Hotbar(position, _controller.Revision);
             var availability = _controller.Resolve(position);
-            if (_controller.Entries[position] is ActionHotbarBinding action && int.TryParse(action.ActionKey, out var originalIndex))
+            if (_controller.Entries[position] is ActionHotbarBinding action)
             {
-                var texture = originalIndex >= 0 && originalIndex < _actions.Count ? _actions[originalIndex].IconTexture : null;
-                icon.SetDisplay(texture, new IconDisplayData(availability.Label == action.ActionKey ? $"Skill {originalIndex + 1}" : availability.Label));
+                _actions.TryGetValue(action.ActionKey, out var definition);
+                var label = availability.Label == action.ActionKey && int.TryParse(action.ActionKey, out var originalIndex)
+                    ? $"Skill {originalIndex + 1}" : availability.Label;
+                icon.SetDisplay(definition?.IconTexture, new IconDisplayData(label));
                 icon.DisplayModulate = Colors.White;
                 icon.Modulate = Colors.White;
             }
