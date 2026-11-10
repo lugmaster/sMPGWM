@@ -23,7 +23,10 @@ ships:
       - [16, 9]
       - [22, 7]
       - [27, 1]
+    # Development tuning for shield capacity verification: capacity changes must not heal.
     ship_stats:
+      ShieldCapacity: 100
+      ShieldCurrent: 40
       Speed: 350.0
       AfterBurnerSpeed: 450.0
       RotationSpeed: 5.0

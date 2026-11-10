@@ -4,6 +4,7 @@ namespace sMPGWM.Scripts.Items;
 
 public sealed class ItemCategoryDefinition(string id, string displayName, IconDefinition icon)
 {
+    public System.Collections.Generic.IReadOnlyList<string> Values { get; init; } = System.Array.Empty<string>();
     public string Description { get; init; } = "";
     public bool CanStack { get; init; }
     public int StackLimit { get; init; } = 1;

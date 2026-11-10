@@ -40,6 +40,8 @@ properties:
           type: object
           additionalProperties: false
           required:
+            - ShieldCapacity
+            - ShieldCurrent
             - Speed
             - AfterBurnerSpeed
             - RotationSpeed
@@ -47,6 +49,12 @@ properties:
             - AfterBurnerAcceleration
             - ShipMass
           properties:
+            ShieldCapacity:
+              type: number
+              minimum: 0
+            ShieldCurrent:
+              type: number
+              minimum: 0
             Speed:
               type: number
               minimum: 0

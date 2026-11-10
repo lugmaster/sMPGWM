@@ -149,6 +149,13 @@ public partial class UiCanvas : CanvasLayer
         _inventoryMenu?.BindHotbar(_hotbar, _playerHud.Hotbar);
     }
 
+    internal void BindGameplay(NetworkSystem.NetworkManager? network)
+    {
+        var panels = FindChildren("*", "", true, false);
+        foreach (var panel in panels)
+            if (panel is HudSystem.PlayerStatsPanel stats) stats.Bind(network);
+    }
+
     internal void BindHotbar(ItemHotbarController controller, IReadOnlyList<IconDefinition> actions)
     {
         _hotbar = controller;

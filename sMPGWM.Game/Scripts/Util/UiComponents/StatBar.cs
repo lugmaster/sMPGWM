@@ -37,12 +37,14 @@ public partial class StatBar : Control
         private set => _nameLabel.Text = value ?? throw new ArgumentNullException(nameof(value));
     }
 
+    public void SetTitle(string title) => Title = title;
+
     public void Setup(double current, double maximum)
     {
-        if (maximum <= 0)
+        if (!double.IsFinite(maximum) || !double.IsFinite(current) || maximum < 0 || current < 0 || current > maximum)
         {
             Logger.Error($"{nameof(StatBar)}.{nameof(Setup)} received invalid {nameof(maximum)}={maximum}.");
-            throw new ArgumentOutOfRangeException(nameof(maximum), "Maximum must be greater than zero.");
+            throw new ArgumentOutOfRangeException(nameof(maximum), "Resource values must be finite and within capacity.");
         }
 
         _progressBar.MinValue = 0;

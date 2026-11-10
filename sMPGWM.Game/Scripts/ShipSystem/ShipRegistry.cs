@@ -11,6 +11,8 @@ public sealed record ShipStats(float Speed, float AfterBurnerSpeed, float Rotati
 
 public sealed class ShipData
 {
+    public double ShieldCapacity { get; }
+    public double ShieldCurrent { get; }
     public string Name { get; }
     public string TexturePath { get; }
     public IReadOnlyList<Vector2> ColliderPoints { get; }
@@ -20,6 +22,8 @@ public sealed class ShipData
 
     internal ShipData(ShipDefinition definition, Vector2[] points, ShipStats stats)
     {
+        ShieldCapacity = definition.Stats.ShieldCapacity;
+        ShieldCurrent = definition.Stats.ShieldCurrent;
         Name = definition.Name;
         TexturePath = definition.TexturePath;
         ColliderPoints = Array.AsReadOnly((Vector2[])points.Clone());
@@ -78,6 +82,7 @@ public static class ShipRegistry
             }).ToArray();
             Require(IsUsablePolygon(points), "collider_points (duplicate, degenerate or intersecting polygon)");
             var s = definition.Stats;
+            Require(double.IsFinite(s.ShieldCapacity) && double.IsFinite(s.ShieldCurrent) && s.ShieldCurrent >= 0 && s.ShieldCapacity >= s.ShieldCurrent, "Shield pool");
             var stats = new ShipStats(Number(s.Speed, "Speed"), Number(s.AfterBurnerSpeed, "AfterBurnerSpeed"),
                 Number(s.RotationSpeed, "RotationSpeed"), Number(s.Acceleration, "Acceleration"),
                 Number(s.AfterBurnerAcceleration, "AfterBurnerAcceleration"), Number(s.ShipMass, "ShipMass", true));

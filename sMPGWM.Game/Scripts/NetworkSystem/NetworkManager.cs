@@ -184,7 +184,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         {
             World.ApproveSpawn(peer, data);
             var snapshot = World.CaptureTopology().ToVariant();
-            if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot, Synchronization!.Baseline()) != Error.Ok)
+            if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot, Synchronization!.Baseline(), GameplaySnapshot()) != Error.Ok)
             {
                 RejectJoin(peer, "Initial spawn send failed.");
                 return;
@@ -206,7 +206,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         Multiplayer.GetRemoteSenderId() == 1;
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveInitialSpawns(Godot.Collections.Array snapshot, byte[] movement)
+    private void ReceiveInitialSpawns(Godot.Collections.Array snapshot, byte[] movement, Godot.Collections.Array gameplay)
     {
         if (!IsHostMessage() || _clientJoin.Phase != ClientJoinPhase.AwaitingSnapshot || _clientJoin.Expired(Time.GetTicksMsec())) return;
         try
@@ -221,6 +221,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
                 throw new InvalidOperationException("Local controls were not bound.");
             if (Synchronization == null || !Synchronization.Receive(movement, true))
                 throw new InvalidOperationException("Invalid initial movement baseline.");
+            if (!ApplyGameplay(gameplay)) throw new InvalidOperationException("Invalid gameplay baseline.");
             if (!_clientJoin.ApplySnapshot(Time.GetTicksMsec()))
                 throw new InvalidOperationException("Player spawning timed out.");
             if (RpcId(1, nameof(ConfirmSpawnReady)) != Error.Ok) FailSession("Spawn acknowledgement failed.");
@@ -314,6 +315,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _heartbeat?.Remove(peer);
         if (Array.IndexOf(Multiplayer.GetPeers(), peer) >= 0)
             ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
+        _abilityResults.Remove(peer);
         _baselineRequests.Remove(peer); _timingRequests.Remove(peer);
         World.Despawn(peer);
         PublishWorldTopology();
@@ -343,6 +345,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         var topology = World.CaptureTopology();
         if (topology.Identity == _publishedTopology) return;
         _publishedTopology = topology.Identity;
+        _gameplayDirty = true;
         var payload = topology.ToVariant();
         foreach (var (peer, join) in _joins.Snapshot())
             if (join.ReceivesWorld)
@@ -435,6 +438,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped) return;
         _stopped = true;
+        ClearGameplay();
         Synchronization?.Stop();
         _baselineRequests.Clear(); _timingRequests.Clear();
         if (_heartbeat != null)

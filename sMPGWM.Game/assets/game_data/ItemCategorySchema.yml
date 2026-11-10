@@ -13,14 +13,16 @@ properties:
     minItems: 1
     items:
       type: object
-      # reenable once ItemCategoryDefinitions.values are added
-      additionalProperties: true
+      additionalProperties: false
       required:
         - Id
         - DisplayName
       not:
         required: [CanStack, StackLimit]
       properties:
+        Values:
+          type: string
+          pattern: '\S'
         Id:
           type: string
           pattern: '\S'

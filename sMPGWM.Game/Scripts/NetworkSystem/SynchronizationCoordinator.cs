@@ -86,6 +86,7 @@ public partial class SynchronizationCoordinator : Node
                 if (peer == 1) q.Accept(new(tick, ship.InputState), CompletedTick);
                 ship.SetInput(q.Consume(tick)); ship.Simulate(1.0 / 60);
             }
+            Network.StepGameplay(tick);
             CompletedTick = tick;
             if (tick % 2 == 0) Network.PublishMovement(Baseline());
             return;

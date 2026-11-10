@@ -56,19 +56,8 @@ public static class GameConfig
             throw new InvalidOperationException("Configuration is not loaded.");
         _ = ItemRegistry.GetAll();
         _ = ShipSystem.ShipRegistry.GetAll();
+        _ = sMPGWM.Scripts.GamePlaySystem.GameplayDefinitions.Boost;
         var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoadingSystem.FileLoader.CapturedInputs);
-        foreach (var name in new[] { "EffectDefinitions.yml", "EffectSchemas.yml", "PassiveDefinitions.yml", "PassiveSchemas.yml" })
-        {
-            using var file = FileAccess.Open("res://assets/game_data/" + name, FileAccess.ModeFlags.Read)
-                ?? throw new InvalidOperationException("Missing game data: " + name);
-            inputs[name] = file.GetAsText();
-            if (file.GetError() != Error.Ok) throw new InvalidOperationException("Cannot read game data: " + name);
-        }
-        var required = new[] { "ItemCategoryDefinitions.yml", "ItemCategorySchema.yml", "ItemDefinitions.yml",
-            "ItemSchema.yml", "Ships.yml", "ShipsSchema.yml", "EffectDefinitions.yml", "EffectSchemas.yml",
-            "PassiveDefinitions.yml", "PassiveSchemas.yml" };
-        if (inputs.Count != required.Length || Array.Exists(required, name => !inputs.ContainsKey(name)))
-            throw new InvalidOperationException("Incomplete game data inventory.");
         GameDataChecksum = ChecksumGenerator.Compute(inputs);
         foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
         Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={GameDataChecksum}");

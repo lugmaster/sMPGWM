@@ -40,6 +40,21 @@ public sealed class ItemHotbarController : IDisposable
         _state.Dispose();
     }
 
+    private readonly Dictionary<string, string> _actionTitles = new();
+    public void SetActionTitle(string key, string title)
+    {
+        _actionTitles[key] = title;
+        _availability.Clear();
+        _cachedHotbarRevision = -1;
+        NotifyChanged();
+    }
+    public void BindAction(int position, string key)
+    {
+        _state.SetEditSession(ulong.MaxValue);
+        _state.Assign(ulong.MaxValue, _state.Revision, position, new ActionHotbarBinding(key));
+        _state.SetEditSession(0);
+    }
+
     public IReadOnlyList<HotbarBinding?> Entries => _state.Entries;
     public long Revision => _state.Revision;
     private Action? _changed;
@@ -185,7 +200,7 @@ public sealed class ItemHotbarController : IDisposable
                 var equipped = equipmentSnapshot.Slots[index];
                 return new(equipped?.DefinitionId, null, _equipment.Definitions[index].DisplayName, equipped != null);
             case ActionHotbarBinding action:
-                return new(null, null, action.ActionKey, true);
+                return new(null, null, _actionTitles.TryGetValue(action.ActionKey, out var title) ? title : action.ActionKey, true);
             default:
                 return EmptyPosition;
         }

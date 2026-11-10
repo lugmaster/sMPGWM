@@ -12,12 +12,25 @@ public class ItemRegistryTests
     {
         var categories = ItemRegistry.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!);
         var items = ItemRegistry.LoadItemDefinitions(Read("ItemDefinitions.yml", "ItemSchema.yml"), categories, _ => null!);
-        Assert.That(items.Count, Is.EqualTo(16));
+        Assert.That(items.Count, Is.EqualTo(19));
         Assert.That(items["mock_standard_engine"].CanStack, Is.False);
         Assert.That(items["mock_standard_engine"].StackLimit, Is.EqualTo(1));
         Assert.That(items["mock_standard_consumable"].CanStack, Is.True);
         Assert.That(items["mock_standard_consumable"].StackLimit, Is.EqualTo(10));
         Assert.That(items["mock_standard_consumable"].CategoryName, Is.EqualTo(categories["consumable"].DisplayName));
+    }
+
+    [Test]
+    public void MissingCategoryValuesAndMissingConsumableAbilitiesAreRejected()
+    {
+        var categories = ItemRegistry.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!);
+        var items = Read("ItemDefinitions.yml", "ItemSchema.yml");
+        ((JObject)items["Items"]![0]!["Values"]!).Remove("Speed");
+        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, categories, _ => null!));
+        items = Read("ItemDefinitions.yml", "ItemSchema.yml");
+        foreach (var item in items["Items"]!)
+            if ((string?)item["CategoryId"] == "consumable") ((JObject)item).Remove("AbilityIds");
+        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, categories, _ => null!));
     }
 
     [Test]

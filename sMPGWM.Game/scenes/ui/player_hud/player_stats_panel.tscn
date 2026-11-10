@@ -27,9 +27,3 @@ theme_override_constants/separation = 12
 
 [node name="StatBar" parent="MarginContainer/BarContainer" unique_id=1063959680 instance=ExtResource("2_lh4dq")]
 layout_mode = 2
-
-[node name="StatBar2" parent="MarginContainer/BarContainer" unique_id=814163164 instance=ExtResource("2_lh4dq")]
-layout_mode = 2
-
-[node name="StatBar3" parent="MarginContainer/BarContainer" unique_id=1974554943 instance=ExtResource("2_lh4dq")]
-layout_mode = 2

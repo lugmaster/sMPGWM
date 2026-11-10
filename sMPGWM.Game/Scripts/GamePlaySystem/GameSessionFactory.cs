@@ -40,10 +40,21 @@ internal static class GameSessionFactory
             if (GodotObject.IsInstanceValid(canvas)) canvas.UnbindInventory();
         });
         canvas.BindInventory(inventory, equipment, transfers);
-        player.Initialize(canvas, transfers, position => hotbar.Activate(position, fixture.ActivateAction,
+        NetworkManager? abilityNetwork = null;
+        player.Initialize(canvas, transfers, position => hotbar.Activate(position, key =>
+        {
+            if (key == "0" && GameConfigSystem.GameConfig.Development) abilityNetwork?.ActivateAbility(GameplayDefinitions.Boost.AbilityId); // TEST-SUPPORT: SHIELD-LOADOUT-005 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
+            else fixture.ActivateAction(key);
+        },
             request => Logger.Info($"Item hotbar activation requested: {request}")), world);
         parent.AddChild(player);
-        canvas.BindHotbar(hotbar, fixture.Actions);
+        if (GameConfigSystem.GameConfig.Development) // TEST-SUPPORT: SHIELD-LOADOUT-001 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
+        {
+            hotbar.SetActionTitle("0", GameplayDefinitions.Boost.DisplayName); // TEST-SUPPORT: SHIELD-LOADOUT-002 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
+            hotbar.BindAction(0, "0"); // TEST-SUPPORT: SHIELD-LOADOUT-003 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
+            canvas.BindHotbar(hotbar, new[] { Util.UiComponents.Icons.Get(GameplayDefinitions.Boost.Icon) }); // TEST-SUPPORT: SHIELD-LOADOUT-004 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
+        }
+        else canvas.BindHotbar(hotbar, fixture.Actions);
         player.SetSessionActive(false);
 
         var participants = new GameWorld { Name = nameof(GameWorld), LocalPlayer = player };
@@ -60,6 +71,9 @@ internal static class GameSessionFactory
         };
         scope.Defer(() => ReleaseNode(synchronization));
         scope.Defer(synchronization.Stop);
+        abilityNetwork = network;
+        canvas.BindGameplay(network);
+        scope.Defer(() => canvas.BindGameplay(null));
         network.Synchronization = synchronization;
         network.SessionReady += synchronization.Activate;
         parent.AddChild(synchronization);

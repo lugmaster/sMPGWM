@@ -29,12 +29,14 @@ public class GodotIntegrationTests
                          "Scripts/UiSystem/HudSystem/PlayerHud.cs", "Scripts/UiSystem/HudSystem/Hotbar/HotbarControl.cs",
                          "Scripts/UiSystem/OverlayMenuSystem/UiWindowManager.cs" })
                 Copy(Path.Combine(game, file), Path.Combine(staging, file));
-            Copy(Path.Combine(game, "scenes/game/ship.tscn"), Path.Combine(staging, "scenes/game/ship.tscn"));
+            Copy(Path.Combine(game, "scenes/game/game_objects/ship.tscn"), Path.Combine(staging, "scenes/game/game_objects/ship.tscn"));
             // Session construction tests exercise the real canvas and runtime node composition.
-            foreach (var directory in new[] { "Scripts/UiSystem", "Scripts/Util/UiComponents", "Scripts/NetworkSystem", "Scripts/MovementSystem", "Scripts/GameConfigSystem", "scenes/ui" })
+            foreach (var directory in new[] { "Scripts/UiSystem", "Scripts/Util/UiComponents", "Scripts/NetworkSystem", "Scripts/MovementSystem", "Scripts/GamePlaySystem", "Scripts/GameConfigSystem", "scenes/ui" })
                 CopyTree(Path.Combine(game, directory), Path.Combine(staging, directory));
             Copy(Path.Combine(game, "config/config.cfg"), Path.Combine(staging, "config/config.cfg"));
             Copy(Path.Combine(game, "scenes/game/ui_canvas.tscn"), Path.Combine(staging, "scenes/game/ui_canvas.tscn"));
+            CopyTree(Path.Combine(game, "assets/world"), Path.Combine(staging, "assets/world"));
+            CopyTree(Path.Combine(game, ".godot/imported"), Path.Combine(staging, ".godot/imported"));
             CopyTree(Path.Combine(game, "assets/mocks"), Path.Combine(staging, "assets/mocks"));
             foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "radar_mock.png-*"))
                 Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
@@ -105,7 +107,7 @@ public class GodotIntegrationTests
         var configured = Environment.GetEnvironmentVariable("GODOT_BIN");
         if (!string.IsNullOrWhiteSpace(configured)) return configured;
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var local = Path.Combine(home, "godot_engine/Godot_v4.6.2_mono_steam/editor/godot.windows.editor.x86_64.mono.console.exe");
+        var local = Path.Combine(home, "godot_engine/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64_console.exe");
         return File.Exists(local) ? local : "godot";
     }
 

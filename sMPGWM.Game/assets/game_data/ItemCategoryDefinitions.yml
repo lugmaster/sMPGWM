@@ -45,7 +45,7 @@ Categories:
     DisplayName: Consumables
     Icon: Alchemy.PotionVialBottleHeartHealthLifeFull
     Description: "An item that can be consumed to trigger an effect"
-    Values: EffectType, TargetType
+    Values: AbilityIds
   - Id: resource
     CanStack: true
     DisplayName: Resources

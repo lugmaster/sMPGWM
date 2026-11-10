@@ -20,6 +20,7 @@ CATALOGUES = {
     'classifications': ('BehaviourClassificationDefinitions.yml', 'BehaviourClassificationSchema.yml', 'BehaviourClassifications'),
     'stats': ('Attributes.yml', 'AttributeSchema.yml', 'Stats'),
     'conditions': ('Conditions.yml', 'ConditionSchema.yml', 'Conditions'),
+    'categories': ('ItemCategoryDefinitions.yml', 'ItemCategorySchema.yml', 'Categories'),
     'items': ('ItemDefinitions.yml', 'ItemSchema.yml', 'Items'),
 }
 
@@ -145,6 +146,19 @@ def validate(documents, schemas):
         owner = f'items:{id}'
         if item['CategoryId'] not in category_ids:
             errors.append(f'{owner}: unknown item category')
+        category = indices['categories'].get(item['CategoryId'], {})
+        required = {v.strip() for v in category.get('Values', '').split(',') if v.strip()}
+        values = item.get('Values', {})
+        for key in required:
+            if key == 'AbilityIds':
+                if not item.get('AbilityIds'): errors.append(f'{owner}: missing AbilityIds')
+            elif key not in values: errors.append(f'{owner}: missing category value {key}')
+        for key, value in values.items():
+            if key == 'DamageSource':
+                if value not in damage_ids: errors.append(f'{owner}: unknown damage source')
+            elif isinstance(value, bool) or not isinstance(value, (int, float)):
+                errors.append(f'{owner}: {key} must be numeric')
+        if set(values) - (required - {'AbilityIds'}): errors.append(f'{owner}: unexpected category values')
         refs('abilities', item.get('AbilityIds', []), owner)
         for grant in item.get('BehaviourGrants', []):
             ref('behaviours', grant['BehaviourId'], owner)
@@ -170,6 +184,7 @@ def validate(documents, schemas):
 
 def negative_checks(documents, schemas):
     cases = [
+        ('missing item value', lambda d: d['items']['Items'][0]['Values'].pop('Speed')),
         ('unknown field', lambda d: d['abilities']['AbilityDefinitions'][0].update(Typo=True)),
         ('dangling reference', lambda d: d['abilities']['AbilityDefinitions'][0].update(EffectId='missing')),
         ('duplicate ID', lambda d: d['effects']['EffectDefinitions'].append(copy.deepcopy(d['effects']['EffectDefinitions'][0]))),

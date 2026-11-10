@@ -15,6 +15,7 @@ public partial class ShipController : CharacterBody2D
 {
     internal PlayerSession? ControllingPlayer { get; set; }
     public string EntityId { get; internal set; } = "";
+    public sMPGWM.Scripts.GamePlaySystem.ShipGameplayState Gameplay { get; private set; } = null!;
     private ShipData _data = null!;
     private float _rotationInertia;
     private float _friction;
@@ -24,6 +25,7 @@ public partial class ShipController : CharacterBody2D
         internal set
         {
             _data = value;
+            Gameplay = new(value.ShieldCapacity, value.ShieldCurrent);
             _rotationInertia = 1 + value.Stats.ShipMass * 1.05f;
             _friction = 0.15f / (1 + value.Stats.ShipMass * 0.95f);
         }

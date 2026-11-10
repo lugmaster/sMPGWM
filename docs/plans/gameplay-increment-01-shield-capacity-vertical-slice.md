@@ -1,6 +1,8 @@
 # Gameplay increment 1 — Runtime stats and multiplayer Shield Capacity Boost
 
-Status: planned; implementation has not started.
+Status: implemented; build, normal startup and ENet gameplay verified (including ten players with impaired transport). Steam multiplayer verification remains open.
+
+Evidence: [Implementation and verification](evidence/gameplay-increment-01-shield-capacity.md).
 
 Date: 2026-11-10.
 

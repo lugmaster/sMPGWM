@@ -29,6 +29,8 @@ public sealed class ShipDefinition
 [JsonObject(ItemRequired = Required.Always)]
 public sealed class ShipStatsDefinition
 {
+    public double ShieldCapacity { get; set; }
+    public double ShieldCurrent { get; set; }
     public double Speed { get; set; }
     public double AfterBurnerSpeed { get; set; }
     public double RotationSpeed { get; set; }

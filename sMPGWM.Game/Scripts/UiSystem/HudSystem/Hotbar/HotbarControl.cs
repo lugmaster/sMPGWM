@@ -122,7 +122,7 @@ public partial class HotbarControl : PanelContainer
             if (_controller.Entries[position] is ActionHotbarBinding action && int.TryParse(action.ActionKey, out var originalIndex))
             {
                 var texture = originalIndex >= 0 && originalIndex < _actions.Count ? _actions[originalIndex].IconTexture : null;
-                icon.SetDisplay(texture, new IconDisplayData($"Skill {originalIndex + 1}"));
+                icon.SetDisplay(texture, new IconDisplayData(availability.Label == action.ActionKey ? $"Skill {originalIndex + 1}" : availability.Label));
                 icon.DisplayModulate = Colors.White;
                 icon.Modulate = Colors.White;
             }
