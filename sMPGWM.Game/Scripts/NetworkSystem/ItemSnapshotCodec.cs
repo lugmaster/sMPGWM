@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
 using sMPGWM.Scripts.Items.Inventory;
 using Array = Godot.Collections.Array;
 
@@ -10,7 +8,7 @@ namespace sMPGWM.Scripts.NetworkSystem;
 
 internal static class ItemSnapshotCodec
 {
-    internal const int MaxInventorySlots = 4096;
+    internal const int MaxInventorySlots = ItemContainer.MaxCapacity;
 
     internal static Array Encode(PlayerItemState items) => new()
     {

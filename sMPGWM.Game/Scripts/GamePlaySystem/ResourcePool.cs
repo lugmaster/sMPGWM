@@ -49,6 +49,13 @@ public sealed class ResourcePool
         Capacity = capacity; Current = current;
     }
 
+    public void SetCurrent(double current)
+    {
+        if (!double.IsFinite(current) || current < 0 || current > Capacity)
+            throw new ArgumentOutOfRangeException(nameof(current));
+        Current = current;
+    }
+
     private void Recompute()
     {
         var flat = 0d;

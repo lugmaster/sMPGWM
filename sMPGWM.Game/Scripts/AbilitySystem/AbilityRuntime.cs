@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.GameplayDataSystem;
+using sMPGWM.Scripts.Items;
 
 namespace sMPGWM.Scripts.AbilitySystem;
 
@@ -30,6 +31,20 @@ public sealed class AbilityRuntime : IDisposable
         return false;
     }
 
+    public IReadOnlyList<string> GetSupportDiagnostics(IEnumerable<ItemDefinition> items)
+    {
+        var diagnostics = new List<string>();
+        foreach (var reason in _unsupported.Values) diagnostics.Add(reason);
+        foreach (var item in items)
+        {
+            foreach (var ability in item.AbilityIds)
+                if (!IsSupported(ability, out var reason)) diagnostics.Add($"Item '{item.Id}': {reason}");
+            foreach (var grant in item.BehaviourGrants)
+                diagnostics.Add($"Item '{item.Id}' -> behaviour '{grant.BehaviourId}': passive item behaviour grants ({grant.While}, {grant.Lifetime}) are not implemented.");
+        }
+        return diagnostics.AsReadOnly();
+    }
+
     public string Activate(string abilityId, in AbilityActivationContext context, long tick)
     {
         if (_disposed) return "Rejected: session ended";
@@ -37,25 +52,19 @@ public sealed class AbilityRuntime : IDisposable
             return _unsupported.ContainsKey(abilityId) ? "Rejected: unsupported ability" : "Rejected: ability not granted";
         if (!context.Caster.Grants.Contains(abilityId) && plan.Definition.Availability != AbilityAvailability.AllShips)
             return "Rejected: ability not granted";
-        foreach (var condition in context.CasterConditions)
-            foreach (var blocked in plan.Definition.BlockedByConditions)
-                if (condition == blocked) return "Rejected: blocked by condition";
-        if (!context.TargetIsLivingAlly ||
-            plan.Targeting.Relation == TargetRelation.Self && context.Target != context.Caster)
-            return "Rejected: target is not a living ally";
-        if (!double.IsFinite(context.DistanceSquared) || context.DistanceSquared < 0 ||
-            plan.Targeting.MaxRange is { } range && context.DistanceSquared > range * range)
-            return "Rejected: out of range";
+        if (AbilityEligibility.Rejection(plan.Definition, plan.Targeting, context) is { } rejection) return rejection;
         try
         {
             // Reserve identity before publishing state changes; observers may activate another ability.
             var instance = checked(++_nextInstance);
             if (!context.Target.ApplyBehaviour(plan.Behaviour, tick, instance, out _))
                 return "Rejected: behaviour limit";
-            return "Accepted";
         }
         catch (Exception error) when (error is OverflowException or InvalidOperationException or ArgumentOutOfRangeException)
         { return "Rejected: invalid gameplay values"; }
+        // Observer failures must escape after commit, never masquerade as a rejected activation.
+        context.Target.PublishChanges();
+        return "Accepted";
     }
 
     private string? Compile(AbilityDefinition ability, out AbilityExecutionPlan? plan)

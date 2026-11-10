@@ -10,6 +10,7 @@ public readonly record struct ItemContainerId(ulong Value);
 /// <summary>Storage shared by inventories, equipment and chests. Only ItemSystem may change it.</summary>
 public sealed class ItemContainer
 {
+    public const int MaxCapacity = 4096;
     public ItemContainerId Id { get; } = new(RuntimeIds.Next());
     public int Capacity => Slots.Count;
     public long Revision { get; internal set; }

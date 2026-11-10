@@ -12,7 +12,7 @@ internal static class ShipTargetPicker
         var distance = float.PositiveInfinity;
         foreach (var ship in world.Entities.Values)
         {
-            if (ship.ControllingPlayer == null || ship.GetNodeOrNull<CollisionPolygon2D>("CollisionPolygon2D") is not { Disabled: false } collision)
+            if (!ship.Gameplay.IsAlive || ship.GetNodeOrNull<CollisionPolygon2D>("CollisionPolygon2D") is not { Disabled: false } collision)
                 continue;
             var visuals = ship.GetNode<Node2D>("ShipVisuals");
             var transform = visuals.GlobalTransform * ship.GlobalTransform.AffineInverse() * collision.GlobalTransform;

@@ -14,6 +14,7 @@ public partial class NetworkManager
     private readonly Dictionary<int, PlayerItemState> _playerItems = new();
     private readonly Dictionary<int, long> _itemRequests = new();
     private readonly Dictionary<int, ulong> _itemRequestTimes = new();
+    private readonly Dictionary<int, (long Inventory, long Equipment)> _publishedItemRevisions = new();
     private long _nextItemRequest;
     private long _pendingItemRequest;
     private bool _hasItemBaseline;
@@ -59,7 +60,7 @@ public partial class NetworkManager
             request <= 0 || !_playerItems.TryGetValue(peer, out var items)) return;
         if (!AllowRequest(_itemRequestTimes, peer, 30))
         {
-            SendItems(peer, request, TransferResult.PublicationInProgress);
+            ReplyItemTransfer(peer, request, TransferResult.PublicationInProgress);
             return;
         }
         var result = TransferResult.StaleRevision;
@@ -72,7 +73,7 @@ public partial class NetworkManager
                 result = items.Transfer(new(0, Cell(sourceIndex, sourceSlot), ItemEntityId.FromNetwork(sourceId),
                     Cell(targetIndex, targetSlot), targetId == 0 ? null : ItemEntityId.FromNetwork(targetId), inventoryRevision, equipmentRevision));
         }
-        SendItems(peer, request, result);
+        ReplyItemTransfer(peer, request, result);
     }
 
     private static bool ValidCell(int index, string slot) =>
@@ -80,20 +81,54 @@ public partial class NetworkManager
         index == -1 && slot.Length is > 0 and <= 64;
     private static ItemCellAddress Cell(int index, string slot) => index >= 0 ? ItemCellAddress.Inventory(index) : ItemCellAddress.Equipment(slot);
 
-    private void SendItems(int peer, long request = 0, TransferResult result = TransferResult.Success) =>
-        RpcId(peer, nameof(ReceiveItems), Synchronization!.Session.ToString("N"), request, (int)result, ItemSnapshotCodec.Encode(_playerItems[peer]));
+    private bool SendItems(int peer)
+    {
+        var items = _playerItems[peer];
+        if (RpcId(peer, nameof(ReceiveItems), Synchronization!.Session.ToString("N"), ItemSnapshotCodec.Encode(items)) != Error.Ok)
+        {
+            FailSession("Inventory snapshot send failed.");
+            return false;
+        }
+        _publishedItemRevisions[peer] = (items.Inventory.Revision, items.Equipment.Revision);
+        return true;
+    }
+
+    private void PublishItemChanges()
+    {
+        foreach (var (peer, items) in _playerItems)
+        {
+            if (peer == 1 || !_joins.Is(peer, PeerJoinPhase.Ready)) continue;
+            if (!_publishedItemRevisions.TryGetValue(peer, out var published) ||
+                published != (items.Inventory.Revision, items.Equipment.Revision))
+                if (!SendItems(peer)) return;
+        }
+    }
+
+    private void ReplyItemTransfer(int peer, long request, TransferResult result)
+    {
+        // The reliable owner snapshot precedes the acknowledgement, including stale-request recovery.
+        if (SendItems(peer) && RpcId(peer, nameof(ItemTransferResult), Synchronization!.Session.ToString("N"),
+                request, (int)result) != Error.Ok) FailSession("Item transfer acknowledgement failed.");
+    }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ReceiveItems(string session, long request, int result, Godot.Collections.Array rows)
+    private void ReceiveItems(string session, Godot.Collections.Array rows)
     {
         if (!IsHostMessage() || Synchronization == null || session != Synchronization.Session.ToString("N") || !_clientJoin.HasWorld) return;
-        if (!Enum.IsDefined((TransferResult)result) || !ItemSnapshotCodec.Apply(rows, LocalItems))
+        if (!ItemSnapshotCodec.Apply(rows, LocalItems))
         {
             FailSession("Invalid inventory snapshot.");
             return;
         }
         if (World.LocalPlayer?.Participant is { } owner) LocalItems.Bind(owner);
         _hasItemBaseline = true;
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ItemTransferResult(string session, long request, int result)
+    {
+        if (!IsHostMessage() || Synchronization == null || session != Synchronization.Session.ToString("N") ||
+            !_hasItemBaseline || !Enum.IsDefined((TransferResult)result)) return;
         if (request != _pendingItemRequest || request == 0) return;
         _pendingItemRequest = 0;
         if ((TransferResult)result is not (TransferResult.Success or TransferResult.NoChange))
@@ -105,6 +140,7 @@ public partial class NetworkManager
         if (_playerItems.Remove(peer, out var items) && items != LocalItems) items.Dispose();
         _itemRequests.Remove(peer);
         _itemRequestTimes.Remove(peer);
+        _publishedItemRevisions.Remove(peer);
     }
 
     private void ClearItems()
@@ -114,6 +150,7 @@ public partial class NetworkManager
         _playerItems.Clear();
         _itemRequests.Clear();
         _itemRequestTimes.Clear();
+        _publishedItemRevisions.Clear();
         _pendingItemRequest = 0;
         _hasItemBaseline = false;
         ItemFeedback = null;

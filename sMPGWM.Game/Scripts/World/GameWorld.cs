@@ -65,6 +65,7 @@ public partial class GameWorld : Node
         try
         {
             ship = SpawnEntity(EntitySpawnRecord.From(record));
+            ship.Gameplay.SetFaction(1);
             participant = new PlayerSession { ControllingPeerId = record.PeerId };
             participant.ControlledShipChanged += TrackBinding;
             participant.AssignShip(ship);

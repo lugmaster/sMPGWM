@@ -191,7 +191,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
                 RejectJoin(peer, "Initial spawn send failed.");
                 return;
             }
-            SendItems(peer);
+            if (!SendItems(peer)) return;
             if (!_joins.Advance(peer, PeerJoinPhase.Verified, PeerJoinPhase.Spawning, Time.GetTicksMsec()))
             {
                 RejectJoin(peer, "Player join timed out.");

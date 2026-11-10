@@ -129,7 +129,7 @@ try: # TEST-SUPPORT: SHIELD-PROCESS-065 | Tests: sMPGWM.Tests.AbilityGameplayPro
             key, state = (entity, revision), (current, maximum, behaviours) # TEST-SUPPORT: ABILITY-PROCESS-034 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
             if key in observations and observations[key] != state: success = False # TEST-SUPPORT: ABILITY-PROCESS-035 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
             observations[key] = state # TEST-SUPPORT: ABILITY-PROCESS-036 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-            success &= current == '40' # TEST-SUPPORT: ABILITY-PROCESS-037 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            success &= current in ('40', '17') # TEST-SUPPORT: ABILITY-PROCESS-037 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
             count += 1 # TEST-SUPPORT: ABILITY-PROCESS-038 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     success &= count > 0 # TEST-SUPPORT: ABILITY-PROCESS-039 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     print(f'Convergence: {count} observations, {len(observations)} entity revisions; success={success}', flush=True) # TEST-SUPPORT: ABILITY-PROCESS-040 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge

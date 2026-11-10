@@ -95,10 +95,10 @@ public partial class AbilityTargetingController : Node
         if (target == null) { _canvas.ShowGameplayFeedback("Select a living allied ship."); return; }
         var ability = _network.Abilities.Definitions.Abilities.GetById(_binding!.AbilityId);
         var targeting = _network.Abilities.Definitions.Targeting.GetById(ability.TargetingId);
-        if (targeting.Relation == TargetRelation.Self && target != caster)
-        { _canvas.ShowGameplayFeedback("This ability targets your own ship."); return; }
-        if (targeting.MaxRange is { } range && caster.GlobalPosition.DistanceSquaredTo(target.GlobalPosition) > range * range)
-        { _canvas.ShowGameplayFeedback("Target is out of range."); return; }
+        var context = new AbilityActivationContext(caster.Gameplay, target.Gameplay,
+            caster.GlobalPosition.DistanceSquaredTo(target.GlobalPosition));
+        if (AbilityEligibility.Rejection(ability, targeting, context) is { } rejection)
+        { _canvas.ShowGameplayFeedback(rejection); return; }
         var binding = _binding;
         var source = _source;
         Cancel();

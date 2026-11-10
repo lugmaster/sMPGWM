@@ -14,10 +14,10 @@ public sealed class ShieldBoostTests // TEST-SUPPORT: ABILITY-REGRESSION-002 | T
         {
             states[i] = new(100, 40); // TEST-SUPPORT: ABILITY-REGRESSION-008 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
             states[i].Grants.SetSource("fixture", new[] { "shieldCapacityBoost", "shieldVariant" }); // TEST-SUPPORT: ABILITY-REGRESSION-009 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
-            runtime.Activate("shieldCapacityBoost", new(states[i], states[i], true, 0, Array.Empty<string>()), 0); // TEST-SUPPORT: ABILITY-REGRESSION-010 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
-            runtime.Activate("shieldVariant", new(states[i], states[i], true, 0, Array.Empty<string>()), 0); // TEST-SUPPORT: ABILITY-REGRESSION-EXTRA-001 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
+            runtime.Activate("shieldCapacityBoost", new(states[i], states[i], 0), 0); // TEST-SUPPORT: ABILITY-REGRESSION-010 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
+            runtime.Activate("shieldVariant", new(states[i], states[i], 0), 0); // TEST-SUPPORT: ABILITY-REGRESSION-EXTRA-001 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
         }
-        states[0].Shield.Confirm(175, 140); // TEST-SUPPORT: ABILITY-REGRESSION-011 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
+        states[0].SetShieldCurrent(140); // TEST-SUPPORT: ABILITY-REGRESSION-011 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
         var before = GC.GetAllocatedBytesForCurrentThread(); // TEST-SUPPORT: ABILITY-REGRESSION-012 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
         var clock = System.Diagnostics.Stopwatch.StartNew(); // TEST-SUPPORT: ABILITY-REGRESSION-013 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
         for (var tick = 1; tick <= 3600; tick++) // TEST-SUPPORT: ABILITY-REGRESSION-014 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
@@ -49,12 +49,11 @@ public sealed class ShieldBoostTests // TEST-SUPPORT: ABILITY-REGRESSION-002 | T
     public void RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline() // TEST-SUPPORT: ABILITY-REGRESSION-033 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
     {
         using var runtime = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: ABILITY-REGRESSION-034 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
-        var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: ABILITY-REGRESSION-035 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
-        state.Shield.SetContribution(10, 20, 0); // TEST-SUPPORT: ABILITY-REGRESSION-036 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
+        var state = new ShipGameplayState(120, 40); // TEST-SUPPORT: ABILITY-REGRESSION-035 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
         state.Grants.SetSource("fixture", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: ABILITY-REGRESSION-037 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
-        runtime.Activate("shieldCapacityBoost", new(state, state, true, 0, Array.Empty<string>()), 100); // TEST-SUPPORT: ABILITY-REGRESSION-038 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
+        runtime.Activate("shieldCapacityBoost", new(state, state, 0), 100); // TEST-SUPPORT: ABILITY-REGRESSION-038 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
         Assert.That(state.Shield.Capacity, Is.EqualTo(170)); // TEST-SUPPORT: ABILITY-REGRESSION-039 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
-        runtime.Activate("shieldCapacityBoost", new(state, state, true, 0, Array.Empty<string>()), 200); // TEST-SUPPORT: ABILITY-REGRESSION-040 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
+        runtime.Activate("shieldCapacityBoost", new(state, state, 0), 200); // TEST-SUPPORT: ABILITY-REGRESSION-040 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
         Assert.That(state.ActiveBehaviours[0].RuntimeId, Is.EqualTo(1)); // TEST-SUPPORT: ABILITY-REGRESSION-041 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
         Assert.That(state.Expire(1900), Is.False); // TEST-SUPPORT: ABILITY-REGRESSION-042 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
         Assert.That(state.Expire(2000), Is.True); // TEST-SUPPORT: ABILITY-REGRESSION-043 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline

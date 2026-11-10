@@ -21,7 +21,8 @@ public sealed class ItemStore
         Func<int, ItemDefinition, int, bool>? accepts = null)
     {
         if (Publishing) throw new InvalidOperationException("Cannot create storage during publication.");
-        if (capacity < 0 || growthChunk < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+        if (capacity < 0 || capacity > ItemContainer.MaxCapacity || growthChunk < 0 || growthChunk > ItemContainer.MaxCapacity)
+            throw new ArgumentOutOfRangeException(nameof(capacity));
         var container = new ItemContainer(capacity, growthChunk, accepts);
         _containers.Add(container.Id, container);
         return container;
@@ -44,7 +45,7 @@ public sealed class ItemStore
         var extra = Math.Max(0, stacks - destination.Entities.Count(item => item is null));
         if (extra > 0 && destination.GrowthChunk == 0) return InventoryResult.CapacityExceeded;
         var chunks = extra == 0 ? 0 : (extra - 1) / destination.GrowthChunk + 1;
-        if (chunks > (Array.MaxLength - destination.Capacity) / Math.Max(1, destination.GrowthChunk))
+        if (chunks > (ItemContainer.MaxCapacity - destination.Capacity) / Math.Max(1, destination.GrowthChunk))
             return InventoryResult.CapacityExceeded;
         Dictionary<ItemContainer, ItemEntity?[]> changes;
         try
@@ -152,8 +153,14 @@ public sealed class ItemStore
         Publish(changes.Keys);
         return true;
     }
-    private static bool Valid(ItemContainer container, ItemEntity?[] slots) => slots.Select((item, index) =>
-        item is null || item.Id != default && item.Count > 0 && item.Count <= item.Definition.StackLimit && container.Accepts(index, item.Definition, item.Count)).All(valid => valid);
+    private static bool Valid(ItemContainer container, ItemEntity?[] slots)
+    {
+        if (slots.Length > ItemContainer.MaxCapacity) return false;
+        for (var index = 0; index < slots.Length; index++)
+            if (slots[index] is { } item && (item.Id == default || item.Count <= 0 ||
+                item.Count > item.Definition.StackLimit || !container.Accepts(index, item.Definition, item.Count))) return false;
+        return true;
+    }
 
     private void Commit(Dictionary<ItemContainer, ItemEntity?[]> changes)
     {

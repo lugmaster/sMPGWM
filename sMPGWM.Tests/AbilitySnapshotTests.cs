@@ -15,7 +15,7 @@ public sealed class AbilitySnapshotTests // TEST-SUPPORT: ABILITY-SNAPSHOT-003 |
         using var runtime = new AbilityRuntime(data); // TEST-SUPPORT: ABILITY-SNAPSHOT-007 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
         var host = new ShipGameplayState(100, 40); // TEST-SUPPORT: ABILITY-SNAPSHOT-008 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
         host.Grants.SetSource("fixture", new[] { "shieldCapacityBoost", "shieldVariant" }); // TEST-SUPPORT: ABILITY-SNAPSHOT-009 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
-        var context = new AbilityActivationContext(host, host, true, 0, Array.Empty<string>()); // TEST-SUPPORT: ABILITY-SNAPSHOT-010 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
+        var context = new AbilityActivationContext(host, host, 0); // TEST-SUPPORT: ABILITY-SNAPSHOT-010 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
         runtime.Activate("shieldCapacityBoost", context, 0); // TEST-SUPPORT: ABILITY-SNAPSHOT-011 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
         runtime.Activate("shieldVariant", context, 0); // TEST-SUPPORT: ABILITY-SNAPSHOT-012 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
         var entity = Guid.NewGuid().ToString("N"); // TEST-SUPPORT: ABILITY-SNAPSHOT-013 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
@@ -57,8 +57,8 @@ public sealed class AbilitySnapshotTests // TEST-SUPPORT: ABILITY-SNAPSHOT-003 |
         {
             var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: ABILITY-SNAPSHOT-046 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
             state.Grants.SetSource("fixture", new[] { "shieldCapacityBoost", "shieldVariant" }); // TEST-SUPPORT: ABILITY-SNAPSHOT-047 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
-            runtime.Activate("shieldCapacityBoost", new(state, state, true, 0, Array.Empty<string>()), 0); // TEST-SUPPORT: ABILITY-SNAPSHOT-048 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
-            runtime.Activate("shieldVariant", new(state, state, true, 0, Array.Empty<string>()), 0); // TEST-SUPPORT: ABILITY-SNAPSHOT-049 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
+            runtime.Activate("shieldCapacityBoost", new(state, state, 0), 0); // TEST-SUPPORT: ABILITY-SNAPSHOT-048 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
+            runtime.Activate("shieldVariant", new(state, state, 0), 0); // TEST-SUPPORT: ABILITY-SNAPSHOT-049 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
             tenShips.Add(GameplaySnapshotCodec.Encode(Guid.NewGuid().ToString("N"), state)); // TEST-SUPPORT: ABILITY-SNAPSHOT-050 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
         }
         Assert.That(GameplaySnapshotCodec.TryDecode(tenShips, data, out entries), Is.True); // TEST-SUPPORT: ABILITY-SNAPSHOT-051 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
