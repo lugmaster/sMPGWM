@@ -128,6 +128,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             try
             {
                 World.ApproveSpawn(1, _startup.Player);
+                EnsurePlayerItems(1);
                 SessionReady?.Invoke();
             }
             catch (Exception error) { FailSession($"Host spawning failed: {error.Message}"); }
@@ -183,12 +184,14 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         try
         {
             World.ApproveSpawn(peer, data);
+            EnsurePlayerItems(peer);
             var snapshot = World.CaptureTopology().ToVariant();
             if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot, Synchronization!.Baseline(), GameplaySnapshot()) != Error.Ok)
             {
                 RejectJoin(peer, "Initial spawn send failed.");
                 return;
             }
+            SendItems(peer);
             if (!_joins.Advance(peer, PeerJoinPhase.Verified, PeerJoinPhase.Spawning, Time.GetTicksMsec()))
             {
                 RejectJoin(peer, "Player join timed out.");
@@ -259,6 +262,11 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void JoinComplete(string gameName)
     {
+        if (IsHostMessage() && !_hasItemBaseline)
+        {
+            FailSession("Missing authoritative inventory baseline.");
+            return;
+        }
         if (!IsHostMessage() || !_clientJoin.Complete(Time.GetTicksMsec())) return;
         _heartbeat!.ActivateClient();
         Logger.Info("NET local spawn complete; entering game");
@@ -317,6 +325,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
         _abilityResults.Remove(peer);
         _baselineRequests.Remove(peer); _timingRequests.Remove(peer);
+        RemovePlayerItems(peer);
         World.Despawn(peer);
         PublishWorldTopology();
         if (!wasReady) return;
@@ -439,6 +448,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_stopped) return;
         _stopped = true;
         ClearGameplay();
+        ClearItems();
         Synchronization?.Stop();
         _baselineRequests.Clear(); _timingRequests.Clear();
         if (_heartbeat != null)

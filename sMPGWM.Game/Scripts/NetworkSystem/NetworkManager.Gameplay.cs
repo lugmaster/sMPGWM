@@ -9,35 +9,34 @@ namespace sMPGWM.Scripts.NetworkSystem;
 public partial class NetworkManager
 {
     private readonly Dictionary<int, ActivationHistory> _abilityResults = new();
-    private readonly Queue<(int Peer, long Request, string Caster, long Generation, string Target, string Ability)> _abilityQueue = new();
+    private readonly Queue<(int Peer, long Request, string Caster, long Generation, string Target, string Ability, string Slot, long Source)> _abilityQueue = new();
     private string _pendingCaster = "";
     private long _pendingGeneration;
     private long _nextRequest;
     public AbilityRuntime Abilities { get; init; } = null!;
     private bool _gameplayDirty = true;
-    public string SelectedTarget { get; set; } = "";
     public event Action<string>? AbilityFeedback;
 
-    public void ActivateAbility(string ability)
+    public void ActivateAbility(string ability, string targetEntity, string slot, long source)
     {
         if (_stopped || Synchronization == null || World.LocalPlayer?.Participant?.ControlledShip is not { } ship) return;
         var owner = World.LocalPlayer.Participant;
         _pendingCaster = ship.EntityId; _pendingGeneration = owner.ControlGeneration;
         var request = ++_nextRequest;
-        var target = SelectedTarget.Length == 0 ? ship.EntityId : SelectedTarget;
+        var target = targetEntity;
         AbilityFeedback?.Invoke("Pending");
-        if (IsHost()) QueueAbility(1, Synchronization.Session.ToString("N"), request, ship.EntityId, owner.ControlGeneration, target, ability);
-        else RpcId(1, nameof(RequestAbility), Synchronization.Session.ToString("N"), request, ship.EntityId, owner.ControlGeneration, target, ability);
+        if (IsHost()) QueueAbility(1, Synchronization.Session.ToString("N"), request, ship.EntityId, owner.ControlGeneration, target, ability, slot, source);
+        else RpcId(1, nameof(RequestAbility), Synchronization.Session.ToString("N"), request, ship.EntityId, owner.ControlGeneration, target, ability, slot, source);
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void RequestAbility(string session, long request, string caster, long generation, string target, string ability)
-        => QueueAbility(Multiplayer.GetRemoteSenderId(), session, request, caster, generation, target, ability);
+    private void RequestAbility(string session, long request, string caster, long generation, string target, string ability, string slot, long source)
+        => QueueAbility(Multiplayer.GetRemoteSenderId(), session, request, caster, generation, target, ability, slot, source);
 
-    private void QueueAbility(int peer, string session, long request, string caster, long generation, string target, string ability)
+    private void QueueAbility(int peer, string session, long request, string caster, long generation, string target, string ability, string slot, long source)
     {
         if (!IsHost() || !MovementReady(peer) || Synchronization == null || session != Synchronization.Session.ToString("N") ||
-            request <= 0 || caster.Length != 32 || target.Length != 32 || ability.Length > 64) return;
+            request <= 0 || caster.Length != 32 || target.Length != 32 || ability.Length > 64 || slot.Length > 64 || source <= 0) return;
         if (!_abilityResults.TryGetValue(peer, out var history)) _abilityResults.Add(peer, history = new());
         if (!history.Admit(request, Synchronization.CompletedTick, out var result))
         { ReplyAbility(peer, request, result); return; }
@@ -46,7 +45,7 @@ public partial class NetworkManager
             history.Complete(request, "Rejected: busy");
             ReplyAbility(peer, request, "Rejected: busy"); return;
         }
-        _abilityQueue.Enqueue((peer, request, caster, generation, target, ability));
+        _abilityQueue.Enqueue((peer, request, caster, generation, target, ability, slot, source));
     }
 
     public void StepGameplay(long tick)
@@ -59,6 +58,8 @@ public partial class NetworkManager
             if (!MovementReady(request.Peer) || !World.Players.TryGetValue(request.Peer, out var player) ||
                 player.ControlledShip?.EntityId != request.Caster || player.ControlGeneration != request.Generation)
                 result = "Rejected: caster changed";
+            else if (!_playerItems.TryGetValue(request.Peer, out var items) || !items.Provides(request.Slot, request.Source, request.Ability))
+                result = "Rejected: equipped ability source changed";
             else if (!World.Entities.TryGetValue(request.Target, out var target) || target.ControllingPlayer == null)
                 result = "Rejected: target is not a living ally";
             else
@@ -107,7 +108,11 @@ public partial class NetworkManager
     }
     private void ReplyAbility(int peer, long request, string result)
     {
-        if (peer == 1) AbilityFeedback?.Invoke(result);
+        if (peer == 1)
+        {
+            if (request == _nextRequest && World.LocalPlayer?.Participant?.ControlledShip?.EntityId == _pendingCaster &&
+                World.LocalPlayer.Participant.ControlGeneration == _pendingGeneration) AbilityFeedback?.Invoke(result);
+        }
         else RpcId(peer, nameof(AbilityResult), Synchronization!.Session.ToString("N"), request, result);
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -120,7 +125,7 @@ public partial class NetworkManager
     }
     private void ClearGameplay()
     {
-        _abilityQueue.Clear(); _abilityResults.Clear(); AbilityFeedback = null; SelectedTarget = "";
+        _abilityQueue.Clear(); _abilityResults.Clear(); AbilityFeedback = null;
         Abilities?.Dispose();
     }
 }

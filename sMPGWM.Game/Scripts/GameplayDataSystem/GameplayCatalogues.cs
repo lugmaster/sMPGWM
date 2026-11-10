@@ -17,16 +17,14 @@ public sealed class GameplayCatalogues
     public ConditionRegistry Conditions { get; }
     public ProjectileRegistry Projectiles { get; }
     public DamageSourceRegistry DamageSources { get; }
-    public AbilityLoadoutRegistry Loadouts { get; }
 
     internal GameplayCatalogues(AbilityRegistry abilities, EffectRegistry effects, BehaviourRegistry behaviours,
         TargetingRegistry targeting, BehaviourClassificationRegistry classifications, StatRegistry stats,
-        ConditionRegistry conditions, ProjectileRegistry projectiles, DamageSourceRegistry damageSources, AbilityLoadoutRegistry loadouts)
+        ConditionRegistry conditions, ProjectileRegistry projectiles, DamageSourceRegistry damageSources)
     {
         Abilities = abilities; Effects = effects; Behaviours = behaviours; Targeting = targeting;
         Classifications = classifications; Stats = stats; Conditions = conditions;
         Projectiles = projectiles; DamageSources = damageSources;
-        Loadouts = loadouts;
         GameplayCatalogueValidator.Validate(this);
     }
 }

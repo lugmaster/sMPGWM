@@ -58,7 +58,7 @@ public static class GameConfig
         _ = ShipSystem.ShipRegistry.GetAll();
         _ = sMPGWM.Scripts.GamePlaySystem.GameplayDefinitions.Current;
         var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoadingSystem.FileLoader.CapturedInputs);
-        inputs.Add("GameplayProtocol", "2:multiple-behaviour-instances");
+        inputs.Add("GameplayProtocol", "3:equipment-owned-abilities");
         GameDataChecksum = ChecksumGenerator.Compute(inputs);
         foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
         Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={GameDataChecksum}");

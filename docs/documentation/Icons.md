@@ -43,3 +43,12 @@ Do not edit the generated C# files. Regeneration sorts filenames and checks for
 identifier collisions and oversized sprites before writing output. Original
 sprites and category sheets are retained for editing and are not loaded by the
 runtime provider.
+
+## Target cursors
+
+`Cursors.RedTargetCursor`, `Cursors.GreenTargetCursor`, and `Cursors.BlueTargetCursor`
+return cached `Texture2D` resources. `IconDefinitions` initializes `CursorTextureProvider`
+at startup from `assets/ui/cursors/crosshair.png`. The provider multiplies RGB channels
+once for each variant and preserves alpha; switching cursors does not load or tint images.
+Use the texture center as the hotspot and `Input.SetCustomMouseCursor(null)` to restore
+the default arrow. The provider owns the variants until application shutdown.

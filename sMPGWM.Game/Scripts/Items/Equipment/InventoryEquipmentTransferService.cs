@@ -11,6 +11,9 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
     private readonly EquipmentController _equipmentImpl;
     private ulong _session;
     private bool _disposed;
+    private Func<TransferRequest, TransferResult>? _authority;
+
+    public void SetAuthority(Func<TransferRequest, TransferResult> authority) => _authority = authority;
 
     public InventoryEquipmentTransferService(InventoryController inventoryImpl, EquipmentController equipmentImpl)
     {
@@ -31,7 +34,12 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
 
     public void RevokeEditSession() => _session = 0UL;
     public TransferResult Validate(TransferRequest request) => Execute(request, false);
-    public TransferResult Transfer(TransferRequest request) => Execute(request, true);
+    public TransferResult Transfer(TransferRequest request)
+    {
+        var validation = Execute(request, false);
+        if (validation != TransferResult.Success) return validation;
+        return _authority != null ? _authority(request) : Execute(request, true);
+    }
 
     private TransferResult Execute(TransferRequest request, bool commit)
     {

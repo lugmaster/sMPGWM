@@ -4,6 +4,10 @@ Status: implemented; verification results are recorded below.
 
 Date: 2026-11-10.
 
+Follow-up implemented: equipment-backed targeting replaces this increment's development
+loadout and selected-target controls. The implementation history below describes increment 2;
+see the current integration notes at the end for the replacement flow.
+
 Predecessor: [Shield Capacity Boost vertical slice](gameplay-increment-01-shield-capacity-vertical-slice.md).
 
 ## Outcome
@@ -124,4 +128,49 @@ Paths below are relative to the repository root.
 | Development grants and action icons | `sMPGWM.Game/Scripts/Util/Mocks/DevelopmentAbilityLoadout.cs` |
 | Hotbar presentation | `sMPGWM.Game/Scripts/UiSystem/HudSystem/Hotbar/HotbarControl.cs` |
 
-The next gameplay story has not been selected. Continue discussing the user's next theme before expanding execution capabilities. Preserve the supported/deferred distinction above and the agreed gameplay in [design context and decisions](gameplay-design-context-and-decisions.md).
+## Equipment-backed targeting follow-up (2026-11-10)
+
+Both startup development shield generators provide `shieldCapacityBoost` through their
+`AbilityIds`. Equip a generator, assign its equipment slot to the hotbar, activate it,
+and click your own ship or an allied ship within the authored range. The hotbar displays
+the ability icon. Invalid clicks retain targeting; Escape/right-click cancels. A valid
+submission restores the default cursor, with authoritative rejection shown as HUD feedback.
+Modal UI, lost focus/control, equipment replacement, and session teardown cancel targeting.
+Ship picking uses authored collision polygons at their presented transforms.
+
+The host owns each participant's inventory and equipment. Transfers validate item identity,
+locations, revisions, slot compatibility, and authenticated ownership before publishing an
+owner-only snapshot. Each equipped item contributes a separate ability-grant source. Ability
+requests identify the exact source item and slot, checked again at execution. Unequipping
+revokes availability without removing an already-applied timed boost. Hotbar links follow the
+slot and ability; empty or incompatible slots are unavailable. The current drag assignment
+supports equipment providing one ability; multi-ability selection remains future work.
+
+`PlayerStatsPanel` only presents the local ship's confirmed Shield. The development ability
+loadout, its catalogue/schema/registry, selected-target API, and production shield-verification
+node have been removed. Development consumables now reference the existing self-only
+`shieldRecharge` definition instead of the generator boost; consumption execution remains
+deferred. Existing weapon and consumable hotbar routing is preserved.
+
+Entry points: `Items/PlayerItemState.cs`, `NetworkSystem/NetworkManager.Items.cs`,
+`NetworkSystem/ItemSnapshotCodec.cs`, `AbilitySystem/AbilityTargetingController.cs`,
+`AbilitySystem/ShipTargetPicker.cs`, and `Items/Hotbar/EquipmentAbilityHotbarBinding.cs`.
+Paths are relative to `sMPGWM.Game/Scripts`.
+
+Verification: game build passed; full suite passed (245 outer tests, including an engine
+orchestration run with 163 passed and zero skipped). The graphical game launched with
+OpenGL and Steam initialization and exited cleanly. The ten-player impaired ENet run
+passed with all ten processes exiting zero, including late join, equipment swaps,
+independent boosts, unequip, and expiry; 6,640 observations across 99 entity revisions
+had no state conflicts. See [equipment multiplayer evidence](evidence/equipment-ability-variants-enet-10-impaired.txt).
+The three-player viewport-input run also passed: 618 observations across 18 entity revisions;
+see [click-routing evidence](evidence/equipment-ability-enet-3.txt). Content validation passed
+for 128 definitions across 11 catalogues and rejected all nine invalid-content fixtures.
+Steam multiplayer across separate authenticated accounts is still unverified.
+
+`python tools/run_shield_slice.py` now stages a temporary game containing the test-owned
+`tools/fixtures/EquipmentAbilityVerification.cs.txt`; it adds no testing entry point to the
+production game. `--players 10 --impaired --variants` gives the advanced generator a second
+authored ability only in that temporary project. Verification uses the normal hotbar and
+viewport click path. Allocation/GC figures in the trace include startup, UI and test logging;
+they are not isolated ability-runtime measurements. No forced GC is used.

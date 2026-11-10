@@ -30,6 +30,7 @@
         <Content Include="assets\game_data\ShipsSchema.yml" />
         <Content Include="assets\game_data\States.yml" />
         <Content Include="assets\game_data\Attributes.yml" />
+        <Content Include="assets\ui\cursors\crosshair.png" />
         <Content Include="assets\ui\mocks\ship_fighter_reference.png" />
         <Content Include="assets\ui\mocks\ship_fighter_reference.png.import" />
         <Content Include="assets\world\backgrounds\Blue_Nebula_1_1024x1024.png" />

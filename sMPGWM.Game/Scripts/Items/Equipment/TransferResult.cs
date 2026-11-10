@@ -11,5 +11,6 @@ public enum TransferResult
     IncompatiblePlacement,
     CapacityExceeded,
     PublicationInProgress,
-    Disposed
+    Disposed,
+    Pending
 }

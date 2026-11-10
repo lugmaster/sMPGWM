@@ -26,9 +26,6 @@ public static class GameplayCatalogueValidator
     internal static void Validate(GameplayCatalogues data)
     {
         var graph = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        foreach (var loadout in data.Loadouts.GetAll())
-            foreach (var ability in loadout.AbilityIds)
-                Reference(data.Abilities, ability, $"AbilityLoadoutDefinitions.yml: loadout '{loadout.Id}'", "AbilityIds");
         void Edge(string source, string destination)
         {
             if (!graph.TryGetValue(source, out var edges)) graph.Add(source, edges = new());

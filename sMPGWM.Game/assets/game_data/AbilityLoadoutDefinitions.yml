@@ -1,6 +1,0 @@
-Version: 1.0.0
-AbilityLoadoutDefinitions:
-  - Id: development
-    DisplayName: Development Abilities
-    Description: Explicit development grants and hotbar order; only active in development sessions.
-    AbilityIds: [shieldCapacityBoost]

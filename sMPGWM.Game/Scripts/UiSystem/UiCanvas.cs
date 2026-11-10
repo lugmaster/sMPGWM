@@ -16,6 +16,34 @@ namespace sMPGWM.Scripts.UiSystem;
 
 public partial class UiCanvas : CanvasLayer
 {
+    internal Func<bool>? CancelGameplayAction { get => _windowManager.CancelGameplayAction; set => _windowManager.CancelGameplayAction = value; }
+    private Label? _gameplayFeedback;
+    private double _feedbackSeconds;
+
+    internal void ShowGameplayFeedback(string text)
+    {
+        if (_gameplayFeedback == null)
+        {
+            _gameplayFeedback = new Label { MouseFilter = Control.MouseFilterEnum.Ignore,
+                HorizontalAlignment = HorizontalAlignment.Center };
+            GetNode<Control>("Root").AddChild(_gameplayFeedback);
+            _gameplayFeedback.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom);
+            _gameplayFeedback.OffsetLeft = -350;
+            _gameplayFeedback.OffsetRight = 350;
+            _gameplayFeedback.OffsetTop = -160;
+            _gameplayFeedback.OffsetBottom = -120;
+            _gameplayFeedback.Size = new Vector2(700, 40);
+        }
+        _gameplayFeedback.Text = text;
+        _feedbackSeconds = 4;
+    }
+
+    public override void _Process(double delta)
+    {
+        if (_feedbackSeconds <= 0) return;
+        _feedbackSeconds -= delta;
+        if (_feedbackSeconds <= 0 && _gameplayFeedback != null) _gameplayFeedback.Text = "";
+    }
     private MessageController? _messages;
     private MessageMenu? _messageMenu;
     private MessageViewState _messageViewState = new();
@@ -151,6 +179,7 @@ public partial class UiCanvas : CanvasLayer
 
     internal void BindGameplay(NetworkSystem.NetworkManager? network)
     {
+        if (network == null && _gameplayFeedback != null) _gameplayFeedback.Text = "";
         var panels = FindChildren("*", "", true, false);
         foreach (var panel in panels)
             if (panel is HudSystem.PlayerStatsPanel stats) stats.Bind(network);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.Items.Equipment;
 using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.GamePlaySystem;
 
 namespace sMPGWM.Scripts.Items.Hotbar;
 public sealed class ItemHotbarController : IDisposable
@@ -12,6 +13,7 @@ public sealed class ItemHotbarController : IDisposable
     private readonly IItemTransfers _transfers;
     private readonly Action<Exception>? _reportError;
     private bool _disposed;
+    public Predicate<string>? SupportsAbility { private get; init; }
 
     public ItemHotbarController(IInventoryView inventory, IEquipmentView equipment, IItemTransfers transfers,
         Action<Exception>? reportError = null)
@@ -152,6 +154,13 @@ public sealed class ItemHotbarController : IDisposable
             return commit ? _state.Assign(session, hotbarRevision, position, new WeaponHotbarBinding(slotKey)) :
                 HotbarResult.Success;
         }
+        if (source.EquipmentSlotKey is { } abilitySlot && definition.AbilityIds.Count == 1)
+        {
+            if (SupportsAbility?.Invoke(definition.AbilityIds[0]) == false) return HotbarResult.IneligibleSource;
+            var binding = new EquipmentAbilityHotbarBinding(abilitySlot, definition.AbilityIds[0]);
+            if (current == binding) return HotbarResult.NoChange;
+            return commit ? _state.Assign(session, hotbarRevision, position, binding) : HotbarResult.Success;
+        }
         return HotbarResult.IneligibleSource;
     }
 
@@ -189,6 +198,15 @@ public sealed class ItemHotbarController : IDisposable
     {
         switch (binding)
         {
+            case EquipmentAbilityHotbarBinding ability:
+                var slot = FindEquipmentSlot(ability.SlotKey);
+                var source = slot < 0 ? null : equipmentSnapshot.Slots[slot];
+                var available = false;
+                if (source != null)
+                    foreach (var id in source.Definition.AbilityIds)
+                        if (id == ability.AbilityId) { available = true; break; }
+                var definition = GameplayDefinitions.Current.Abilities.GetById(ability.AbilityId);
+                return new(source?.DefinitionId, null, definition.DisplayName, available && SupportsAbility?.Invoke(ability.AbilityId) != false);
             case ConsumableHotbarBinding consumable:
                 long quantity = 0;
                 foreach (var entity in inventorySnapshot.Slots)

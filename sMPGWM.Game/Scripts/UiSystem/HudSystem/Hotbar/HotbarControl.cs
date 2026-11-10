@@ -136,6 +136,14 @@ public partial class HotbarControl : PanelContainer
                 icon.DisplayModulate = Colors.White;
                 icon.Modulate = Colors.White;
             }
+            else if (_controller.Entries[position] is EquipmentAbilityHotbarBinding ability)
+            {
+                var definition = GamePlaySystem.GameplayDefinitions.Current.Abilities.GetById(ability.AbilityId);
+                var texture = Util.UiComponents.Icons.Get(definition.Icon ?? "Software.WarningSignCircleQuestionMarkHelp").IconTexture;
+                icon.SetDisplay(texture, new IconDisplayData(availability.Label));
+                icon.DisplayModulate = Colors.White;
+                icon.Modulate = availability.Available ? Colors.White : new Color(1, 1, 1, .35f);
+            }
             else _visuals!.ApplyDefinition(icon, availability.DefinitionId, availability.Quantity, availability.Label,
                 availability.Available, _controller.Entries[position] is WeaponHotbarBinding);
         }

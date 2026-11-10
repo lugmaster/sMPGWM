@@ -1,0 +1,139 @@
+using System; // TEST-SUPPORT: EQUIP-PROCESS-001 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using System.Reflection; // TEST-SUPPORT: EQUIP-PROCESS-002 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using Godot; // TEST-SUPPORT: EQUIP-PROCESS-003 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: EQUIP-PROCESS-004 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.GameFlowSystem; // TEST-SUPPORT: EQUIP-PROCESS-005 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: EQUIP-PROCESS-006 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.InputSystem; // TEST-SUPPORT: EQUIP-PROCESS-007 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: EQUIP-PROCESS-008 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.Items.Hotbar; // TEST-SUPPORT: EQUIP-PROCESS-009 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: EQUIP-PROCESS-010 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.UiSystem; // TEST-SUPPORT: EQUIP-PROCESS-011 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.UiSystem.HudSystem; // TEST-SUPPORT: EQUIP-PROCESS-012 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+
+namespace sMPGWM.Scripts.Verification; // TEST-SUPPORT: EQUIP-PROCESS-014 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+
+public partial class EquipmentAbilityVerification : Node // TEST-SUPPORT: EQUIP-PROCESS-016 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+{
+    private double _elapsed; // TEST-SUPPORT: EQUIP-PROCESS-018 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private double _active; // TEST-SUPPORT: EQUIP-PROCESS-019 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private double _nextAttempt; // TEST-SUPPORT: EQUIP-PROCESS-020 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private int _step; // TEST-SUPPORT: EQUIP-PROCESS-021 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private int _logged; // TEST-SUPPORT: EQUIP-PROCESS-022 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private bool _started; // TEST-SUPPORT: EQUIP-PROCESS-023 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private bool _host; // TEST-SUPPORT: EQUIP-PROCESS-024 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private bool _variants; // TEST-SUPPORT: EQUIP-PROCESS-025 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private bool _boostSeen; // TEST-SUPPORT: EQUIP-PROCESS-026 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private bool _expiredSeen; // TEST-SUPPORT: EQUIP-PROCESS-027 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private bool _unequipped; // TEST-SUPPORT: EQUIP-PROCESS-028 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private long _allocated; // TEST-SUPPORT: EQUIP-PROCESS-029 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private long _startTicks; // TEST-SUPPORT: EQUIP-PROCESS-030 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+
+    public override void _Process(double delta) // TEST-SUPPORT: EQUIP-PROCESS-032 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    {
+        _elapsed += delta; // TEST-SUPPORT: EQUIP-PROCESS-034 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        if (!_started && _elapsed > 1) // TEST-SUPPORT: EQUIP-PROCESS-035 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        {
+            _started = true; // TEST-SUPPORT: EQUIP-PROCESS-037 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            _host = Array.IndexOf(OS.GetCmdlineUserArgs(), "--shield-check-host") >= 0; // TEST-SUPPORT: EQUIP-PROCESS-038 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            _variants = Array.IndexOf(OS.GetCmdlineUserArgs(), "--ability-variants") >= 0; // TEST-SUPPORT: EQUIP-PROCESS-039 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            _allocated = GC.GetTotalAllocatedBytes(false); // TEST-SUPPORT: EQUIP-PROCESS-040 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            _startTicks = System.Diagnostics.Stopwatch.GetTimestamp(); // TEST-SUPPORT: EQUIP-PROCESS-041 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            GameFlowManager.Instance.StartNetworkGame(new(_host ? NetworkRole.Host : NetworkRole.Client, // TEST-SUPPORT: EQUIP-PROCESS-042 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                NetworkType.Lan, 10, 15000, "127.0.0.1", Array.IndexOf(OS.GetCmdlineUserArgs(), "--shield-check-proxy") >= 0 ? 55672 : 55671)); // TEST-SUPPORT: EQUIP-PROCESS-043 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        }
+        if (GameFlowManager.Instance.GameFlowState == GameFlowState.InGame) // TEST-SUPPORT: EQUIP-PROCESS-045 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        {
+            _active += delta; // TEST-SUPPORT: EQUIP-PROCESS-047 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            var network = NetworkManager.Instance; // TEST-SUPPORT: EQUIP-PROCESS-048 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            var player = network.World.LocalPlayer!; // TEST-SUPPORT: EQUIP-PROCESS-049 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            var ship = player.Participant!.ControlledShip!; // TEST-SUPPORT: EQUIP-PROCESS-050 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            typeof(InputController).GetProperty(nameof(InputController.IsWindowFocused))!.SetValue(null, true); // TEST-SUPPORT: EQUIP-PROCESS-051 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            if (_step < (_variants ? 8 : 4) && _active > 2 + _step * 2 && _active >= _nextAttempt) // TEST-SUPPORT: EQUIP-PROCESS-052 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            {
+                _nextAttempt = _active + .2; // TEST-SUPPORT: EQUIP-PROCESS-054 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                var definition = _variants && _step % 2 == 1 ? "mock_advanced_shield_generator" : "mock_standard_shield_generator"; // TEST-SUPPORT: EQUIP-PROCESS-055 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                var equipment = network.LocalItems.Equipment; // TEST-SUPPORT: EQUIP-PROCESS-056 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                var inventory = network.LocalItems.Inventory; // TEST-SUPPORT: EQUIP-PROCESS-057 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                var slotIndex = equipment.FindSlot("shield_generator"); // TEST-SUPPORT: EQUIP-PROCESS-058 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                var equipped = equipment.Snapshot.Slots[slotIndex]; // TEST-SUPPORT: EQUIP-PROCESS-059 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                if (equipped?.DefinitionId != definition) // TEST-SUPPORT: EQUIP-PROCESS-060 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                {
+                    for (var i = 0; i < inventory.Capacity; i++) // TEST-SUPPORT: EQUIP-PROCESS-062 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    {
+                        if (inventory.Snapshot.Slots[i] is not { } item || item.DefinitionId != definition) continue; // TEST-SUPPORT: EQUIP-PROCESS-064 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        var result = network.RequestItemTransfer(new(0, ItemCellAddress.Inventory(i), item.Id, // TEST-SUPPORT: EQUIP-PROCESS-065 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                            ItemCellAddress.Equipment("shield_generator"), equipped?.Id, inventory.Revision, equipment.Revision)); // TEST-SUPPORT: EQUIP-PROCESS-066 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        GD.Print($"SHIELD_CHECK equip result={result}"); // TEST-SUPPORT: EQUIP-PROCESS-067 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        break; // TEST-SUPPORT: EQUIP-PROCESS-068 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    }
+                }
+                else // TEST-SUPPORT: EQUIP-PROCESS-071 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                {
+                    var game = GamePlayManager.Instance; // TEST-SUPPORT: EQUIP-PROCESS-073 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    var canvas = game.GetNode<UiCanvas>("UiCanvas"); // TEST-SUPPORT: EQUIP-PROCESS-074 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    var hotbar = (ItemHotbarController)typeof(UiCanvas).GetField("_hotbar", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(canvas)!; // TEST-SUPPORT: EQUIP-PROCESS-075 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    var transfers = (InventoryEquipmentTransferService)typeof(PlayerController).GetField("_transfer", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(player)!; // TEST-SUPPORT: EQUIP-PROCESS-076 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    var edit = transfers.OpenEditSession(); // TEST-SUPPORT: EQUIP-PROCESS-077 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    hotbar.SetEditSession(edit); // TEST-SUPPORT: EQUIP-PROCESS-078 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    var assignment = hotbar.Assign(new(edit, hotbar.Revision, 0, ItemCellAddress.Equipment("shield_generator"), // TEST-SUPPORT: EQUIP-PROCESS-079 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        equipped.Id, inventory.Revision, equipment.Revision)); // TEST-SUPPORT: EQUIP-PROCESS-080 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    hotbar.SetEditSession(0); // TEST-SUPPORT: EQUIP-PROCESS-081 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    transfers.RevokeEditSession(); // TEST-SUPPORT: EQUIP-PROCESS-082 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    if (assignment is not (HotbarResult.Success or HotbarResult.NoChange)) throw new InvalidOperationException(assignment.ToString()); // TEST-SUPPORT: EQUIP-PROCESS-083 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    var target = ship; // TEST-SUPPORT: EQUIP-PROCESS-084 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    if ((_variants ? _step / 2 : _step) is 1 or 3) // TEST-SUPPORT: EQUIP-PROCESS-085 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        foreach (var candidate in network.World.Entities.Values) // TEST-SUPPORT: EQUIP-PROCESS-086 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                            if (candidate != ship && candidate.ControllingPlayer != null && ship.GlobalPosition.DistanceSquaredTo(candidate.GlobalPosition) <= 600 * 600) // TEST-SUPPORT: EQUIP-PROCESS-087 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                            { target = candidate; break; } // TEST-SUPPORT: EQUIP-PROCESS-088 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    canvas.GetNode<PlayerHud>("%PlayerHud").Hotbar.Icons[0].EmitSignal(Button.SignalName.Pressed); // TEST-SUPPORT: EQUIP-PROCESS-089 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    var targeting = game.GetNode<AbilityTargetingController>("WorldViewPortContainer/WorldViewport/WorldScene/AbilityTargeting"); // TEST-SUPPORT: EQUIP-PROCESS-090 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    if (!targeting.IsTargeting) throw new InvalidOperationException("Hotbar did not enter targeting."); // TEST-SUPPORT: EQUIP-PROCESS-091 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    using var click = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, // TEST-SUPPORT: EQUIP-PROCESS-092 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        Position = ship.GetCanvasTransform() * target.DisplayedPosition }; // TEST-SUPPORT: EQUIP-PROCESS-093 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    targeting.GetViewport().PushInput(click, true); // TEST-SUPPORT: EQUIP-PROCESS-094 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    if (targeting.IsTargeting) throw new InvalidOperationException("Valid click did not complete targeting."); // TEST-SUPPORT: EQUIP-PROCESS-095 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    GD.Print($"SHIELD_CHECK activate step={_step} tick={network.Synchronization!.CompletedTick} target={target.EntityId}"); // TEST-SUPPORT: EQUIP-PROCESS-096 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    _step++; // TEST-SUPPORT: EQUIP-PROCESS-097 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                }
+            }
+            if (!_unequipped && _active > 23) // TEST-SUPPORT: EQUIP-PROCESS-100 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            {
+                var items = network.LocalItems; // TEST-SUPPORT: EQUIP-PROCESS-102 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                var generator = items.Equipment.Snapshot.Slots[items.Equipment.FindSlot("shield_generator")]; // TEST-SUPPORT: EQUIP-PROCESS-103 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                if (generator == null) _unequipped = true; // TEST-SUPPORT: EQUIP-PROCESS-104 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                else if (_active >= _nextAttempt) // TEST-SUPPORT: EQUIP-PROCESS-105 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                {
+                    _nextAttempt = _active + .2; // TEST-SUPPORT: EQUIP-PROCESS-107 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    for (var i = 0; i < items.Inventory.Capacity; i++) // TEST-SUPPORT: EQUIP-PROCESS-108 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        if (items.Inventory.Snapshot.Slots[i] == null) // TEST-SUPPORT: EQUIP-PROCESS-109 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        {
+                            network.RequestItemTransfer(new(0, ItemCellAddress.Equipment("shield_generator"), generator.Id, // TEST-SUPPORT: EQUIP-PROCESS-111 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                                ItemCellAddress.Inventory(i), null, items.Inventory.Revision, items.Equipment.Revision)); // TEST-SUPPORT: EQUIP-PROCESS-112 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                            break; // TEST-SUPPORT: EQUIP-PROCESS-113 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                        }
+                }
+            }
+            if ((int)_active > _logged) // TEST-SUPPORT: EQUIP-PROCESS-117 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            {
+                _logged = (int)_active; // TEST-SUPPORT: EQUIP-PROCESS-119 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                foreach (var entity in network.World.Entities.Values) // TEST-SUPPORT: EQUIP-PROCESS-120 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                {
+                    var state = entity.Gameplay; // TEST-SUPPORT: EQUIP-PROCESS-122 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    var instances = new System.Text.StringBuilder(); // TEST-SUPPORT: EQUIP-PROCESS-123 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    foreach (var active in state.ActiveBehaviours) instances.Append($"{active.DefinitionId}:{active.RuntimeId}:{active.Deadline},"); // TEST-SUPPORT: EQUIP-PROCESS-124 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                    GD.Print($"SHIELD_CHECK state time={_active:F1} entity={entity.EntityId} current={state.Shield.Current} max={state.Shield.Capacity} behaviours={instances} revision={state.Revision}"); // TEST-SUPPORT: EQUIP-PROCESS-125 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                }
+                _boostSeen |= ship.Gameplay.Shield.Capacity == (_variants ? 175 : 150); // TEST-SUPPORT: EQUIP-PROCESS-127 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                _expiredSeen |= _boostSeen && _active > 55 && ship.Gameplay.Shield.Capacity == 100; // TEST-SUPPORT: EQUIP-PROCESS-128 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            }
+        }
+        if (_elapsed > (_host ? 90 : 70)) // TEST-SUPPORT: EQUIP-PROCESS-131 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        {
+            var success = _boostSeen && _expiredSeen && _unequipped && _step == (_variants ? 8 : 4); // TEST-SUPPORT: EQUIP-PROCESS-133 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            GD.Print($"SHIELD_CHECK complete success={success} active={_active:F1} allocated={GC.GetTotalAllocatedBytes(false) - _allocated} elapsedTicks={System.Diagnostics.Stopwatch.GetTimestamp() - _startTicks} gc0={GC.CollectionCount(0)}"); // TEST-SUPPORT: EQUIP-PROCESS-134 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            GameFlowManager.Instance.QuitToStartMenu(); // TEST-SUPPORT: EQUIP-PROCESS-135 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+            GetTree().Quit(success ? 0 : 2); // TEST-SUPPORT: EQUIP-PROCESS-136 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        }
+    }
+}

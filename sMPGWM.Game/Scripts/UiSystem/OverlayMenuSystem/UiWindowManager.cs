@@ -162,6 +162,8 @@ public partial class UiWindowManager : Control
         _scrollContainer.Hide();
     }
 
+    internal Func<bool>? CancelGameplayAction { get; set; }
+
     public override void _Input(InputEvent @event)
     {
         foreach (var (action, actionName) in MenuActions)
@@ -172,6 +174,11 @@ public partial class UiWindowManager : Control
             foreach (var (action, actionName) in MenuActions)
                 if (action == UiWindowId.MainMenu && @event.IsActionPressed(actionName, true))
                 {
+                    if (!@event.IsEcho() && CancelGameplayAction?.Invoke() == true)
+                    {
+                        GetViewport().SetInputAsHandled();
+                        return;
+                    }
                     _UnhandledInput(@event);
                     return;
                 }

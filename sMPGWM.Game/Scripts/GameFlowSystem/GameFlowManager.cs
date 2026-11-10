@@ -59,8 +59,6 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     protected override void OnEnterTree()
     {
         GetTree().SceneChanged += OnSceneChanged;
-        if (Array.Exists(OS.GetCmdlineUserArgs(), value => value is "--shield-check-host" or "--shield-check-client")) // TEST-SUPPORT: SHIELD-RUN-ENTRY-001 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
-            AddChild(new Util.Mocks.ShieldSliceVerification()); // TEST-SUPPORT: SHIELD-RUN-ENTRY-002 | Tests: docs/plans/evidence/gameplay-increment-01-shield-capacity.md#enet-normal-startup
     }
 
     protected override void OnExitTree()

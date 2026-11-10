@@ -154,7 +154,7 @@ public class GameSessionFactoryTests
         public InventoryController? Inventory { get; private set; }
         public IReadOnlyList<IconDefinition> Actions => failure == "actions"
             ? throw new InvalidOperationException("Action initialization failed") : Array.Empty<IconDefinition>();
-        public void Populate(InventoryController inventory, MessageController messages)
+        public void Populate(InventoryController inventory, MessageController messages, bool includeItems) // TEST-SUPPORT: EQUIP-FIXTURE-001 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.FailedStartupReleasesBindingsAndAllowsFreshConstruction, sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
         {
             Inventory = inventory;
             if (failure == "populate") throw new InvalidOperationException("Fixture initialization failed");

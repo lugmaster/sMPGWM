@@ -10,5 +10,8 @@ public readonly record struct ItemEntityId
 
     public static ItemEntityId Create() => new(RuntimeIds.Next());
 
+    public static ItemEntityId FromNetwork(long value) => value > 0
+        ? new((ulong)value) : throw new System.ArgumentOutOfRangeException(nameof(value));
+
     public override string ToString() => Value.ToString();
 }

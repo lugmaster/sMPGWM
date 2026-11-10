@@ -41,6 +41,7 @@ Items:
   - Id: mock_standard_shield_generator
     DisplayName: Standard Shield Generator
     CategoryId: shield_generator
+    AbilityIds: [shieldCapacityBoost]
     Values:
       Shield: 1
       RechargeTime: 1
@@ -51,6 +52,7 @@ Items:
   - Id: mock_advanced_shield_generator
     DisplayName: Advanced Shield Generator
     CategoryId: shield_generator
+    AbilityIds: [shieldCapacityBoost]
     Values:
       Shield: 1
       RechargeTime: 1
@@ -121,13 +123,13 @@ Items:
   - Id: mock_standard_consumable
     DisplayName: Standard Consumable
     CategoryId: consumable
-    AbilityIds: [shieldCapacityBoost]
+    AbilityIds: [shieldRecharge]
     Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
     StackLimit: 10
   - Id: mock_advanced_consumable
     DisplayName: Advanced Consumable
     CategoryId: consumable
-    AbilityIds: [shieldCapacityBoost]
+    AbilityIds: [shieldRecharge]
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
     StackLimit: 1000
   - Id: mock_standard_resource

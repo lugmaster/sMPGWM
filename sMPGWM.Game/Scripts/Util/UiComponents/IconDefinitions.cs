@@ -10,11 +10,13 @@ internal sealed partial class IconDefinitions : AbstractSingleton<IconDefinition
     protected override void OnEnterTree()
     {
         _icons = Icons.LoadDefinitions(out _atlasProvider);
+        Cursors.Initialize();
     }
 
     protected override void OnExitTree()
     {
         _icons = [];
+        Cursors.Release();
         _atlasProvider = null!;
     }
 

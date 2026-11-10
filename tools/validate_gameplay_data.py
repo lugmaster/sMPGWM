@@ -23,7 +23,6 @@ CATALOGUES = {
     'categories': ('ItemCategoryDefinitions.yml', 'ItemCategorySchema.yml', 'Categories'),
     'items': ('ItemDefinitions.yml', 'ItemSchema.yml', 'Items'),
     'damage': ('DamageSources.yml', 'DamageSourceSchema.yml', 'DamageSources'),
-    'loadouts': ('AbilityLoadoutDefinitions.yml', 'AbilityLoadoutSchema.yml', 'AbilityLoadoutDefinitions'),
 }
 
 
@@ -86,8 +85,6 @@ def validate(documents, schemas):
         ref(kind, id, owner)
         graph.setdefault(owner, []).append(f'{kind}:{id}')
 
-    for id, loadout in indices['loadouts'].items():
-        refs('abilities', loadout['AbilityIds'], f'loadouts:{id}')
 
     for id, ability in indices['abilities'].items():
         owner = f'abilities:{id}'

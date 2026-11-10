@@ -27,47 +27,41 @@ internal static class GameSessionFactory
         NetworkStartupData startup, SessionCoordinator coordinator, IGameFixture fixture)
     {
         var abilities = scope.Own(new AbilityRuntime(GameplayDefinitions.Current));
-        var loadout = GameConfigSystem.GameConfig.Development ? new DevelopmentAbilityLoadout(abilities) : null; // TEST-SUPPORT: ABILITY-COMPOSE-001 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-        var items = new ItemStore();
-        var inventory = scope.Own(new InventoryController(items));
-        var equipment = scope.Own(new EquipmentController(items));
+        var items = scope.Own(new PlayerItemState());
+        var inventory = items.Inventory;
+        var equipment = items.Equipment;
         var transfers = scope.Own(new InventoryEquipmentTransferService(inventory, equipment));
         var hotbar = scope.Own(new ItemHotbarController(inventory, equipment, transfers,
-            error => Logger.Error($"Hotbar observer failed: {error}")));
+            error => Logger.Error($"Hotbar observer failed: {error}")) { SupportsAbility = id => abilities.IsSupported(id, out _) });
         var player = new PlayerController { Name = "PlayerController" };
         scope.Defer(() => ReleaseNode(player));
         scope.Defer(player.Shutdown);
         var messages = scope.Own(new MessageController(canvas, player.InputPolicy,
             error => Logger.Error($"Message observer failed: {error}")));
-        fixture.Populate(inventory, messages);
+        fixture.Populate(inventory, messages, startup.Role == NetworkRole.Host);
+        var initialItems = inventory.Snapshot;
         scope.Defer(() =>
         {
             if (GodotObject.IsInstanceValid(canvas)) canvas.UnbindInventory();
         });
         canvas.BindInventory(inventory, equipment, transfers);
-        NetworkManager? abilityNetwork = null;
-        player.Initialize(canvas, transfers, position => hotbar.Activate(position, key =>
-        {
-            if (key.StartsWith("ability:", StringComparison.Ordinal)) abilityNetwork?.ActivateAbility(key["ability:".Length..]);
-            else fixture.ActivateAction(key);
-        },
-            request => Logger.Info($"Item hotbar activation requested: {request}")), world);
+        AbilityTargetingController? targeting = null;
+        player.Initialize(canvas, transfers, position => hotbar.Activate(position, fixture.ActivateAction,
+            request =>
+            {
+                if (request.Binding is EquipmentAbilityHotbarBinding binding) targeting?.Begin(binding);
+                else Logger.Info($"Item hotbar activation requested: {request}");
+            }), world);
         parent.AddChild(player);
-        if (loadout != null) loadout.Bind(hotbar, canvas); // TEST-SUPPORT: ABILITY-COMPOSE-002 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-        else canvas.BindHotbar(hotbar, fixture.Actions);
+        canvas.BindHotbar(hotbar, fixture.Actions);
         player.SetSessionActive(false);
 
         var participants = new GameWorld { Name = nameof(GameWorld), LocalPlayer = player };
-        if (loadout != null && startup.Role == NetworkRole.Host) // TEST-SUPPORT: ABILITY-COMPOSE-003 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-        {
-            participants.EntitySpawned += loadout.Grant; // TEST-SUPPORT: ABILITY-COMPOSE-004 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-            scope.Defer(() => participants.EntitySpawned -= loadout.Grant); // TEST-SUPPORT: ABILITY-COMPOSE-005 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession, sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-        }
         scope.Defer(() => ReleaseNode(participants));
         scope.Defer(participants.Clear);
         participants.AddChild(new ParallaxMotion { Name = nameof(ParallaxMotion) });
         world.AddChild(participants);
-        var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities };
+        var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities, LocalItems = items, InitialItems = initialItems };
         scope.Defer(() => ReleaseNode(network));
         scope.Defer(network.StopSession);
         var synchronization = new SynchronizationCoordinator
@@ -76,7 +70,21 @@ internal static class GameSessionFactory
         };
         scope.Defer(() => ReleaseNode(synchronization));
         scope.Defer(synchronization.Stop);
-        abilityNetwork = network;
+        transfers.SetAuthority(network.RequestItemTransfer);
+        targeting = new AbilityTargetingController(network, player, canvas) { Name = "AbilityTargeting" };
+        world.AddChild(targeting);
+        canvas.CancelGameplayAction = () =>
+        {
+            if (!targeting.IsTargeting) return false;
+            targeting.Cancel();
+            return true;
+        };
+        scope.Defer(() => canvas.CancelGameplayAction = null);
+        scope.Defer(() => ReleaseNode(targeting));
+        scope.Defer(targeting.Cancel);
+        player.Input.SetPointerInputFilter(() => canvas.IsPointerOverInteractiveUi() || targeting.BlocksPointerActions);
+        network.AbilityFeedback += canvas.ShowGameplayFeedback;
+        network.ItemFeedback += canvas.ShowGameplayFeedback;
         canvas.BindGameplay(network);
         scope.Defer(() => canvas.BindGameplay(null));
         network.Synchronization = synchronization;

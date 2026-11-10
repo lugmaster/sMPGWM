@@ -9,7 +9,7 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 internal interface IGameFixture
 {
     IReadOnlyList<IconDefinition> Actions { get; }
-    void Populate(InventoryController inventory, MessageController messages);
+    void Populate(InventoryController inventory, MessageController messages, bool includeItems);
     void ActivateAction(string key);
     void Tick(double delta, MessageController messages);
 }
@@ -17,7 +17,7 @@ internal interface IGameFixture
 internal sealed class EmptyGameFixture : IGameFixture
 {
     public IReadOnlyList<IconDefinition> Actions => Array.Empty<IconDefinition>();
-    public void Populate(InventoryController inventory, MessageController messages) { }
+    public void Populate(InventoryController inventory, MessageController messages, bool includeItems) { }
     public void ActivateAction(string key) { }
     public void Tick(double delta, MessageController messages) { }
 }

@@ -14,9 +14,9 @@ internal sealed class DevelopmentGameFixture(PlayerMock player, bool populateInv
     private bool _sent;
     public IReadOnlyList<IconDefinition> Actions => player.GetHotBarSkills();
 
-    public void Populate(InventoryController inventory, MessageController messages)
+    public void Populate(InventoryController inventory, MessageController messages, bool includeItems)
     {
-        if (populateInventory) player.PopulateInventory(inventory);
+        if (includeItems && populateInventory) player.PopulateInventory(inventory);
         MessageMock.PopulateWelcomeMessage(messages);
     }
 

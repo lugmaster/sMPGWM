@@ -22,12 +22,17 @@ parser.add_argument("--impaired", action="store_true") # TEST-SUPPORT: SHIELD-PR
 parser.add_argument("--variants", action="store_true") # TEST-SUPPORT: ABILITY-PROCESS-003 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 options = parser.parse_args() # TEST-SUPPORT: SHIELD-PROCESS-019 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 players = options.players # TEST-SUPPORT: SHIELD-PROCESS-020 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-project = root / 'sMPGWM.Game' # TEST-SUPPORT: ABILITY-PROCESS-004 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+project = logs / 'project' # TEST-SUPPORT: EQUIP-STAGE-001 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+shutil.copytree(root / 'sMPGWM.Game', project, ignore=shutil.ignore_patterns('shader_cache', 'editor', 'obj')) # TEST-SUPPORT: EQUIP-STAGE-002 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+fixture = project / 'Scripts/Verification/EquipmentAbilityVerification.cs' # TEST-SUPPORT: EQUIP-STAGE-003 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+fixture.parent.mkdir(parents=True, exist_ok=True) # TEST-SUPPORT: EQUIP-STAGE-004 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+shutil.copyfile(root / 'tools/fixtures/EquipmentAbilityVerification.cs.txt', fixture) # TEST-SUPPORT: EQUIP-STAGE-005 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+settings = project / 'project.godot' # TEST-SUPPORT: EQUIP-STAGE-006 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+settings.write_text(settings.read_text(encoding='utf-8').replace('[autoload]', '[autoload]\nEquipmentAbilityVerification="*res://Scripts/Verification/EquipmentAbilityVerification.cs"'), encoding='utf-8') # TEST-SUPPORT: EQUIP-STAGE-007 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+subprocess.run(['dotnet', 'build', str(project / 'sMPGWM.csproj')], check=True, stdout=subprocess.DEVNULL) # TEST-SUPPORT: EQUIP-STAGE-008 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 if options.variants: # TEST-SUPPORT: ABILITY-PROCESS-005 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     import yaml # TEST-SUPPORT: ABILITY-PROCESS-006 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     import copy # TEST-SUPPORT: ABILITY-PROCESS-007 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-    project = logs / 'project' # TEST-SUPPORT: ABILITY-PROCESS-008 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-    shutil.copytree(root / 'sMPGWM.Game', project, ignore=shutil.ignore_patterns('shader_cache', 'editor', 'obj')) # TEST-SUPPORT: ABILITY-PROCESS-009 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     for name in ('Ability', 'Effect', 'Behaviour'): # TEST-SUPPORT: ABILITY-PROCESS-010 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         file = project / 'assets/game_data' / (name + 'Definitions.yml') # TEST-SUPPORT: ABILITY-PROCESS-011 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         document = yaml.safe_load(file.read_text(encoding='utf-8-sig')) # TEST-SUPPORT: ABILITY-PROCESS-012 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
@@ -42,8 +47,11 @@ if options.variants: # TEST-SUPPORT: ABILITY-PROCESS-005 | Tests: sMPGWM.Tests.A
             variant['Modifiers'][0]['Value'] = 25 # TEST-SUPPORT: ABILITY-PROCESS-021 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         rows.append(variant) # TEST-SUPPORT: ABILITY-PROCESS-022 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         file.write_text(yaml.safe_dump(document, sort_keys=False), encoding='utf-8') # TEST-SUPPORT: ABILITY-PROCESS-023 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-    loadout = project / 'assets/game_data/AbilityLoadoutDefinitions.yml' # TEST-SUPPORT: ABILITY-PROCESS-024 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-    loadout.write_text(loadout.read_text(encoding='utf-8').replace('[shieldCapacityBoost]', '[shieldCapacityBoost, shieldVariant]'), encoding='utf-8') # TEST-SUPPORT: ABILITY-PROCESS-025 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    item_file = project / 'assets/game_data/ItemDefinitions.yml' # TEST-SUPPORT: EQUIP-STAGE-009 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    item_data = yaml.safe_load(item_file.read_text()) # TEST-SUPPORT: EQUIP-STAGE-010 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    for item in item_data['Items']: # TEST-SUPPORT: EQUIP-STAGE-011 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+        if item['Id'] == 'mock_advanced_shield_generator': item['AbilityIds'] = ['shieldVariant'] # TEST-SUPPORT: EQUIP-STAGE-012 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    item_file.write_text(yaml.safe_dump(item_data, sort_keys=False), encoding='utf-8') # TEST-SUPPORT: EQUIP-STAGE-013 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 processes = [] # TEST-SUPPORT: SHIELD-PROCESS-021 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 stop_proxy = threading.Event() # TEST-SUPPORT: SHIELD-PROCESS-022 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 def proxy(): # TEST-SUPPORT: SHIELD-PROCESS-023 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
@@ -104,7 +112,7 @@ try: # TEST-SUPPORT: SHIELD-PROCESS-065 | Tests: sMPGWM.Tests.AbilityGameplayPro
         print(f'{name}: exit={code}', flush=True) # TEST-SUPPORT: SHIELD-PROCESS-078 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         content = (logs / (name + ".log")).read_text(encoding="utf-8") # TEST-SUPPORT: SHIELD-PROCESS-079 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         success &= code == 0 and "ERROR:" not in content # TEST-SUPPORT: SHIELD-PROCESS-080 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-    evidence = root / ('docs/plans/evidence/' + ('ability-architecture' if options.variants else 'shield-architecture-regression') + '-enet-' + str(players) + ('-impaired' if options.impaired else '') + '.txt') # TEST-SUPPORT: ABILITY-PROCESS-027 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    evidence = root / ('docs/plans/evidence/' + ('equipment-ability-variants' if options.variants else 'equipment-ability') + '-enet-' + str(players) + ('-impaired' if options.impaired else '') + '.txt') # TEST-SUPPORT: ABILITY-PROCESS-027 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     evidence.parent.mkdir(parents=True, exist_ok=True) # TEST-SUPPORT: SHIELD-PROCESS-082 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     with evidence.open('w', encoding='utf-8') as report: # TEST-SUPPORT: SHIELD-PROCESS-083 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         for name, _, _ in processes: # TEST-SUPPORT: SHIELD-PROCESS-084 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge

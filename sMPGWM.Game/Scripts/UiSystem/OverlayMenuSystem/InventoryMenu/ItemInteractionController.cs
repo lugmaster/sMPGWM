@@ -94,7 +94,7 @@ internal sealed class ItemInteractionController(IItemTransfers transfers)
         }
         if (SameCell(Source, target)) { Cancel(); return; }
         var result = Evaluate(target, true);
-        if (result == TransferResult.Success || IsStale(result)) Cancel();
+        if (result is TransferResult.Success or TransferResult.Pending || IsStale(result)) Cancel();
         else Feedback = result;
     }
 

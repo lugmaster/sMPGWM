@@ -22,7 +22,6 @@ public static class GameplayCatalogueLoader
         new CatalogueSource("Conditions.yml", "ConditionSchema.yml", "Conditions"),
         new CatalogueSource("ProjectileDefinitions.yml", "ProjectileSchema.yml", "ProjectileDefinitions"),
         new CatalogueSource("DamageSources.yml", "DamageSourceSchema.yml", "DamageSources"),
-        new CatalogueSource("AbilityLoadoutDefinitions.yml", "AbilityLoadoutSchema.yml", "AbilityLoadoutDefinitions")
     });
 
     // The reader validates each document against its schema before returning it.
@@ -49,9 +48,7 @@ public static class GameplayCatalogueLoader
                 Number(r, "Speed"), Number(r, "MaxLifetimeMs"),
                 EnumValue<ProjectileCollision>(r, "Collision"), EnumValue<ProjectileExpiration>(r, "ExpireWithoutImpact")))),
             new DamageSourceRegistry(Parse(documents[8], Sources[8], r => new DamageSourceDefinition(
-                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description")))),
-            new AbilityLoadoutRegistry(Parse(documents[9], Sources[9], r => new AbilityLoadoutDefinition(
-                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"), Strings(r, "AbilityIds")))));
+                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description")))));
     }
 
     private static T[] Parse<T>(JObject document, CatalogueSource source, Func<JToken, T> parse)

@@ -6,7 +6,7 @@ using sMPGWM.Scripts.Items.Inventory;
 
 namespace sMPGWM.Scripts.Items;
 
-/// <summary>Single-player authority for item identity, storage and movement. Commands run on the game thread.</summary>
+/// <summary>Item identity, storage and movement. Commands run on the game thread.</summary>
 public sealed class ItemStore
 {
     private Dictionary<ItemEntityId, ItemEntity> _items = new();
@@ -133,6 +133,25 @@ public sealed class ItemStore
     }
 
     private bool Owns(ItemContainer container) => _containers.TryGetValue(container.Id, out var registered) && ReferenceEquals(container, registered);
+
+    internal bool Confirm(ItemContainer inventory, ItemEntity?[] inventorySlots, long inventoryRevision,
+        ItemContainer equipment, ItemEntity?[] equipmentSlots, long equipmentRevision)
+    {
+        if (Publishing || !Owns(inventory) || !Owns(equipment) || inventory.Disposed || equipment.Disposed ||
+            inventoryRevision < inventory.Revision || equipmentRevision < equipment.Revision ||
+            !Valid(inventory, inventorySlots) || !Valid(equipment, equipmentSlots)) return false;
+        var identities = new HashSet<ItemEntityId>();
+        foreach (var item in inventorySlots)
+            if (item != null && !identities.Add(item.Id)) return false;
+        foreach (var item in equipmentSlots)
+            if (item != null && !identities.Add(item.Id)) return false;
+        var changes = new Dictionary<ItemContainer, ItemEntity?[]> { [inventory] = inventorySlots, [equipment] = equipmentSlots };
+        Commit(changes);
+        inventory.Revision = inventoryRevision;
+        equipment.Revision = equipmentRevision;
+        Publish(changes.Keys);
+        return true;
+    }
     private static bool Valid(ItemContainer container, ItemEntity?[] slots) => slots.Select((item, index) =>
         item is null || item.Id != default && item.Count > 0 && item.Count <= item.Definition.StackLimit && container.Accepts(index, item.Definition, item.Count)).All(valid => valid);
 
