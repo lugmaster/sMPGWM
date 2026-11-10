@@ -13,7 +13,8 @@ properties:
     minItems: 1
     items:
       type: object
-      additionalProperties: false
+      # reenable once ItemCategoryDefinitions.values are added
+      additionalProperties: true
       required:
         - Id
         - DisplayName
