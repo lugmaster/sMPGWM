@@ -110,13 +110,13 @@ public sealed class GameplayBoundaryTests // TEST-SUPPORT: GAMEPLAY-BOUNDARY-006
     [Test] // TEST-SUPPORT: GAMEPLAY-BOUNDARY-093 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
     public void UnsupportedContentHasExplicitDiagnostics() // TEST-SUPPORT: GAMEPLAY-BOUNDARY-094 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
     {
-        using var runtime = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-095 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
+        var catalogue = GameplayTestData.Load(); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-095 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
         var item = new ItemDefinition("passive", "Passive", "Resource", "", false, 1, null!) // TEST-SUPPORT: GAMEPLAY-BOUNDARY-096 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
         {
             AbilityIds = new[] { "delayedExplosion" }, // TEST-SUPPORT: GAMEPLAY-BOUNDARY-097 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
             BehaviourGrants = new[] { new ItemBehaviourGrant("infection", BehaviourGrantWhile.Carried, BehaviourGrantLifetime.WhileSourceActive) } // TEST-SUPPORT: GAMEPLAY-BOUNDARY-098 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
         }; // TEST-SUPPORT: GAMEPLAY-BOUNDARY-099 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
-        var diagnostics = runtime.GetSupportDiagnostics(new[] { item }); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-100 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
+        var diagnostics = catalogue.Abilities.GetSupportDiagnostics(new[] { item }); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-100 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
         var passiveFound = false; // TEST-SUPPORT: GAMEPLAY-BOUNDARY-101 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
         var abilityFound = false; // TEST-SUPPORT: GAMEPLAY-BOUNDARY-102 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
         foreach (var diagnostic in diagnostics) // TEST-SUPPORT: GAMEPLAY-BOUNDARY-103 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
@@ -126,6 +126,6 @@ public sealed class GameplayBoundaryTests // TEST-SUPPORT: GAMEPLAY-BOUNDARY-006
         }
         Assert.That(passiveFound, Is.True); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-106 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
         Assert.That(abilityFound, Is.True); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-107 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
-        Assert.That(runtime.IsSupported("shieldCapacityBoost", out _), Is.True); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-108 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
+        Assert.That(catalogue.Abilities.IsSupported("shieldCapacityBoost", out _), Is.True); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-108 | Tests: sMPGWM.Tests.GameplayBoundaryTests.UnsupportedContentHasExplicitDiagnostics
     }
 }

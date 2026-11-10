@@ -42,7 +42,7 @@ public partial class AbilityTargetingController : Node
         var slot = equipment.FindSlot(binding.SlotKey);
         if (slot < 0 || equipment.Snapshot.Slots[slot] is not { } item ||
             !_network.LocalItems.Provides(binding.SlotKey, checked((long)item.Id.Value), binding.AbilityId) ||
-            !_network.Abilities.IsSupported(binding.AbilityId, out _)) return;
+            !_network.Abilities.Definitions.Abilities.IsSupported(binding.AbilityId, out _)) return;
         _binding = binding;
         _source = checked((long)item.Id.Value);
         _caster = ship.EntityId;

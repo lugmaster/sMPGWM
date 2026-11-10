@@ -26,5 +26,6 @@ public sealed class GameplayCatalogues
         Classifications = classifications; Stats = stats; Conditions = conditions;
         Projectiles = projectiles; DamageSources = damageSources;
         GameplayCatalogueValidator.Validate(this);
+        Abilities.Prepare(this);
     }
 }

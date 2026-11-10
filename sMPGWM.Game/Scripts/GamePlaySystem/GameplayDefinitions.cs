@@ -2,7 +2,6 @@ using System;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.AbilitySystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
@@ -20,8 +19,7 @@ public static class GameplayDefinitions
                 "user://config/gameplay/" + source.FileName, "res://assets/game_data/" + source.FileName,
                 "res://assets/game_data/" + source.SchemaName));
             GameplayCatalogueValidator.ValidateItems(catalogues, ItemRegistry.GetAll());
-            using var runtime = new AbilityRuntime(catalogues);
-            foreach (var diagnostic in runtime.GetSupportDiagnostics(ItemRegistry.GetAll())) Logger.Warning(diagnostic);
+            foreach (var diagnostic in catalogues.Abilities.GetSupportDiagnostics(ItemRegistry.GetAll())) Logger.Warning(diagnostic);
             return catalogues;
         }
         catch (ArgumentException error)
