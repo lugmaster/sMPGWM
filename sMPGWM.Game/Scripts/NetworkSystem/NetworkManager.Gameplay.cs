@@ -9,14 +9,16 @@ namespace sMPGWM.Scripts.NetworkSystem;
 public partial class NetworkManager
 {
     private readonly Dictionary<int, ActivationHistory> _abilityResults = new();
-    private readonly Queue<(int Peer, long Request, string Caster, long Generation, string Target, string Ability, AbilitySource Source)> _abilityQueue = new();
+    private readonly AbilityCommandProcessor _abilityQueue = new();
+    private Func<int, bool>? _abilityPeerReady;
+    private Action<int, long, AbilityActivationResult>? _abilityCompleted;
     private readonly Dictionary<string, long> _publishedGameplayRevisions = new(StringComparer.Ordinal);
     private string _pendingCaster = "";
     private long _pendingGeneration;
     private long _nextRequest;
     public AbilityRuntime Abilities { get; init; } = null!;
     private bool _gameplayDirty = true;
-    public event Action<string>? AbilityFeedback;
+    public event Action<AbilityActivationResult>? AbilityFeedback;
 
     public void ActivateAbility(string ability, string targetEntity, string slot, long source)
         => ActivateAbility(ability, targetEntity, AbilitySource.Equipment(slot, source));
@@ -30,12 +32,12 @@ public partial class NetworkManager
         _pendingCaster = ship.EntityId; _pendingGeneration = owner.ControlGeneration;
         var request = ++_nextRequest;
         var target = targetEntity;
-        AbilityFeedback?.Invoke("Pending");
+        AbilityFeedback?.Invoke(AbilityActivationResult.Pending);
         if (IsHost()) QueueAbility(1, Synchronization.Session.ToString("N"), request, ship.EntityId, owner.ControlGeneration,
             target, ability, source.Key, source.Entity, (int)source.Kind);
         else if (RpcId(1, nameof(RequestAbility), Synchronization.Session.ToString("N"), request, ship.EntityId,
                      owner.ControlGeneration, target, ability, source.Key, source.Entity, (int)source.Kind) != Error.Ok)
-            AbilityFeedback?.Invoke("Rejected: ability request send failed");
+            AbilityFeedback?.Invoke(AbilityActivationResult.SendFailed);
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -54,8 +56,8 @@ public partial class NetworkManager
         { ReplyAbility(peer, request, result); return; }
         if (_abilityQueue.Count >= 32)
         {
-            history.Complete(request, "Rejected: busy");
-            ReplyAbility(peer, request, "Rejected: busy"); return;
+            history.Complete(request, AbilityActivationResult.Busy);
+            ReplyAbility(peer, request, AbilityActivationResult.Busy); return;
         }
         _abilityQueue.Enqueue((peer, request, caster, generation, target, ability, origin));
     }
@@ -64,28 +66,9 @@ public partial class NetworkManager
     {
         if (!IsHost()) return;
         foreach (var ship in World.Entities.Values) ship.Gameplay.Expire(tick);
-        while (_abilityQueue.TryDequeue(out var request))
-        {
-            var result = "Accepted";
-            if (!MovementReady(request.Peer) || !World.Players.TryGetValue(request.Peer, out var player) ||
-                player.ControlledShip?.EntityId != request.Caster || player.ControlGeneration != request.Generation)
-                result = "Rejected: caster changed";
-            else if (!Abilities.Definitions.Abilities.TryGetById(request.Ability, out var definition))
-                result = "Rejected: unknown ability";
-            else if (!request.Source.IsAvailable(definition, player.ControlledShip.Gameplay,
-                         _playerItems.TryGetValue(request.Peer, out var items) ? items : null))
-                result = "Rejected: ability source changed";
-            else if (!World.Entities.TryGetValue(request.Target, out var target))
-                result = "Rejected: target is not a living ally";
-            else
-            {
-                var context = new AbilityActivationContext(player.ControlledShip.Gameplay, target.Gameplay,
-                    player.ControlledShip.GlobalPosition.DistanceSquaredTo(target.GlobalPosition));
-                result = Abilities.Activate(request.Ability, context, tick);
-            }
-            if (_abilityResults.TryGetValue(request.Peer, out var history)) history.Complete(request.Request, result);
-            ReplyAbility(request.Peer, request.Request, result);
-        }
+        if (_abilityQueue.Count != 0)
+            _abilityQueue.Step(tick, World, Abilities, _playerItems,
+                _abilityPeerReady ??= MovementReady, _abilityCompleted ??= CompleteAbility);
         if (tick % 2 != 0) return;
         PublishItemChanges();
         foreach (var ship in World.Entities.Values)
@@ -105,6 +88,12 @@ public partial class NetworkManager
             foreach (var ship in World.Entities.Values) _publishedGameplayRevisions.Add(ship.EntityId, ship.Gameplay.Revision);
             _gameplayDirty = false;
         }
+    }
+
+    private void CompleteAbility(int peer, long request, AbilityActivationResult result)
+    {
+        if (_abilityResults.TryGetValue(peer, out var history)) history.Complete(request, result);
+        ReplyAbility(peer, request, result);
     }
 
     private Godot.Collections.Array GameplaySnapshot()
@@ -130,22 +119,23 @@ public partial class NetworkManager
         if (IsHostMessage() && _clientJoin.HasWorld && session == Synchronization!.Session.ToString("N") && !ApplyGameplay(rows))
             FailSession("Invalid gameplay snapshot.");
     }
-    private void ReplyAbility(int peer, long request, string result)
+    private void ReplyAbility(int peer, long request, AbilityActivationResult result)
     {
         if (peer == 1)
         {
             if (request == _nextRequest && World.LocalPlayer?.Participant?.ControlledShip?.EntityId == _pendingCaster &&
                 World.LocalPlayer.Participant.ControlGeneration == _pendingGeneration) AbilityFeedback?.Invoke(result);
         }
-        else RpcId(peer, nameof(AbilityResult), Synchronization!.Session.ToString("N"), request, result);
+        else RpcId(peer, nameof(AbilityResult), Synchronization!.Session.ToString("N"), request, (int)result);
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void AbilityResult(string session, long request, string result)
+    private void AbilityResult(string session, long request, int result)
     {
-        if (IsHostMessage() && session == Synchronization!.Session.ToString("N") && request == _nextRequest && result.Length < 128 &&
+        if (IsHostMessage() && session == Synchronization!.Session.ToString("N") && request == _nextRequest &&
+            Enum.IsDefined((AbilityActivationResult)result) &&
             World.LocalPlayer?.Participant?.ControlledShip?.EntityId == _pendingCaster &&
             World.LocalPlayer.Participant.ControlGeneration == _pendingGeneration)
-            AbilityFeedback?.Invoke(result);
+            AbilityFeedback?.Invoke((AbilityActivationResult)result);
     }
     private void ClearGameplay()
     {

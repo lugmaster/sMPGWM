@@ -94,3 +94,58 @@ Runtime integration must register every new catalogue and schema in content load
 Install `tools/gameplay-validation-requirements.txt` into a virtual environment and run `python tools/validate_gameplay_data.py`. It validates all new schemas and catalogues, existing items with their new grants, stat/condition IDs, damage/category references, effect/Behaviour graph cycles, and selected semantic constraints. Negative checks reject invalid percentages, unknown fields, dangling IDs, duplicate IDs, wrong operation payloads, invalid stat kinds, cycles, and wrong targeting profiles.
 
 Runtime tests remain for the implementation increment: host request deduplication; competing revivals; lethal-hit interception; independent stack expiry; source-owned conditions; death suspension/resumption; self-only Shield Recharge; projectile attribution; removal reasons; and capacity changes without healing. Content validation does not demonstrate those runtime behaviours.
+
+
+## Ability command ownership and presentation
+
+`NetworkManager` authenticates sender/session identity, deduplicates and rate-limits requests,
+delivers responses, and publishes revision changes every second physics step. Its bounded
+`AbilityCommandProcessor` queue executes commands against current control generation, equipment
+or named grant source, target, and gameplay eligibility. Revoking a source after enqueueing
+invalidates that request even when another source still grants the same ability.
+
+`AbilityActivationResult` is retained in request history and sent as an explicitly numbered
+integer in reliable replies. Unknown values are ignored on receipt. Protocol compatibility
+is version 6. Only the UI formats outcomes as player-facing text.
+
+Item transfer adapters share cell resolution while retaining their own session/authority checks.
+Equipment grants retain unchanged item sources, remove changed sources before slot swaps are
+installed, and clean up on ship replacement, unequip, and disposal. Full inventory snapshots
+and transaction copies remain in place.
+
+The shield HUD compares current value and capacity each rendered frame, updates immediately
+when bound, and clears on unbind or loss of ship control. It has no gameplay event subscriptions.
+Additional resource bars are not part of this increment; a reusable binding can be introduced
+when there is a second bar to share it.
+
+## Movement-affecting abilities: replay contract
+
+Speed modifiers and movement-disabling conditions remain unsupported. Before enabling them,
+movement snapshots must include the effective physics tick and a versioned movement-rule state
+(speed and disabled capabilities). The host applies transitions before simulation at that tick.
+Prediction must retain those transitions alongside its bounded command history, restore the
+rule state at the authoritative baseline, and apply transitions before each replayed command.
+Never replay historical commands against the ship's current gameplay conditions. Late transitions
+require replay from their effective tick; transitions older than retained history require a fresh
+baseline. Control-generation changes clear both histories. The 30 Hz publication cadence does
+not change the 60 Hz effective-tick semantics. Test delayed expiry, late application, reordering,
+and control replacement before enabling these effects.
+
+## Architecture validation (findings 8–10)
+
+The 2026-11-10 run passed 252 .NET tests, including the wrapper for 179 Godot checks. Added
+coverage exercises typed pending/completed/rate-limited outcomes, queued source revocation and
+generation changes, equipment grant retention and swaps, transfer boundaries, movement history,
+and HUD binding before/after readiness, replication, replacement, unbinding, and disposal.
+Unchanged HUD and equipment updates each allocated zero managed bytes across 120 warmed updates.
+The ten-ship/two-behaviour expiry check took 0.441 ms for 3,600 steps and allocated 2,280 bytes
+in that run; this is a focused workload, not a full-frame benchmark.
+
+The [ten-player impaired ENet run](../plans/evidence/equipment-ability-variants-enet-10-impaired.txt)
+converged across 6,632 observations and 117 entity revisions. Every peer received eight accepted
+typed replies and no rejections. It used seed 1042, 20–60 ms delay each way, 1% packet loss,
+delay-induced reordering, and a late join. Whole-process allocations, including verification
+and logging, were about 106.9 MB for the host and 66.0–70.9 MB per client; automatic collections
+occurred normally. These measurements do not isolate snapshot/transaction cost. Steam transport
+was not exercised by this ENet check, and movement-affecting abilities still require the replay
+contract above before implementation.

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using sMPGWM.Scripts.Items.Equipment;
 using sMPGWM.Scripts.Items.Inventory;
 
@@ -42,7 +41,10 @@ public sealed class ItemStore
         foreach (var item in destination.Entities)
             if (item?.DefinitionId == definitionId) remaining -= Math.Min(remaining, definition.StackLimit - item.Count);
         var stacks = remaining / definition.StackLimit + (remaining % definition.StackLimit == 0 ? 0 : 1);
-        var extra = Math.Max(0, stacks - destination.Entities.Count(item => item is null));
+        var emptySlots = 0;
+        foreach (var item in destination.Entities)
+            if (item == null) emptySlots++;
+        var extra = Math.Max(0, stacks - emptySlots);
         if (extra > 0 && destination.GrowthChunk == 0) return InventoryResult.CapacityExceeded;
         var chunks = extra == 0 ? 0 : (extra - 1) / destination.GrowthChunk + 1;
         if (chunks > (ItemContainer.MaxCapacity - destination.Capacity) / Math.Max(1, destination.GrowthChunk))

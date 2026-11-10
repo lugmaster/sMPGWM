@@ -98,7 +98,7 @@ public partial class AbilityTargetingController : Node
         var context = new AbilityActivationContext(caster.Gameplay, target.Gameplay,
             caster.GlobalPosition.DistanceSquaredTo(target.GlobalPosition));
         if (AbilityEligibility.Rejection(ability, targeting, context) is { } rejection)
-        { _canvas.ShowGameplayFeedback(rejection); return; }
+        { _canvas.ShowGameplayFeedback(AbilityActivationResultText.Format(rejection)); return; }
         var binding = _binding;
         var source = _source;
         Cancel();

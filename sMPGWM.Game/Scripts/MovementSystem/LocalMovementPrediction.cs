@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.World;
@@ -11,6 +10,7 @@ namespace sMPGWM.Scripts.MovementSystem;
 public sealed class LocalMovementPrediction
 {
     private readonly SortedDictionary<long, (MovementCommand Command, MovementSample State)> _history = new();
+    private readonly List<long> _acknowledged = new(128);
     private MovementSample? _identity;
     public long Tick { get; private set; }
     public bool AtCapacity => _history.Count >= 128;
@@ -27,7 +27,18 @@ public sealed class LocalMovementPrediction
         ship.Simulate(1.0 / 60);
         _history[Tick] = (command, MovementStateAdapter.Capture(peer, owner, Tick));
     }
-    public MovementCommand[] RecentCommands() => _history.Values.TakeLast(6).Select(h => h.Command).ToArray();
+    public MovementCommand[] RecentCommands()
+    {
+        var result = new MovementCommand[Math.Min(6, _history.Count)];
+        var skip = _history.Count - result.Length;
+        var index = 0;
+        foreach (var entry in _history.Values)
+        {
+            if (skip > 0) { skip--; continue; }
+            result[index++] = entry.Command;
+        }
+        return result;
+    }
     public bool Reconcile(int peer, PlayerSession owner, long tick, MovementSample authoritative)
     {
         if ((_identity is { } identity && (identity.Entity != authoritative.Entity ||
@@ -55,7 +66,14 @@ public sealed class LocalMovementPrediction
             }
             ship.Presentation.CorrectFrom(displayed, angle);
         }
-        foreach (long key in _history.Keys.TakeWhile(t => t <= tick).ToArray()) _history.Remove(key);
+        _acknowledged.Clear();
+        foreach (var key in _history.Keys)
+        {
+            if (key > tick) break;
+            _acknowledged.Add(key);
+        }
+        foreach (var key in _acknowledged) _history.Remove(key);
+        _acknowledged.Clear();
         return true;
     }
 }

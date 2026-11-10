@@ -49,21 +49,12 @@ public sealed class InventoryEquipmentTransferService : IDisposable, IItemTransf
         if (_inventoryImpl.Availability == InventoryResult.PublicationInProgress ||
             _equipmentImpl.Availability == TransferResult.PublicationInProgress) return TransferResult.PublicationInProgress;
         if (_session == 0UL || request.EditSession != _session) return TransferResult.InvalidSession;
-        if (!TryResolve(request.Source, out var source) || !TryResolve(request.Destination, out var destination))
+        if (!ItemCellResolver.TryResolve(request.Source, _inventoryImpl, _equipmentImpl, out var source) || !ItemCellResolver.TryResolve(request.Destination, _inventoryImpl, _equipmentImpl, out var destination))
             return TransferResult.InvalidLocation;
         var sourceRevision = request.Source.InventoryAddress.HasValue ? request.InventoryRevision : request.EquipmentRevision;
         var destinationRevision = request.Destination.InventoryAddress.HasValue ? request.InventoryRevision : request.EquipmentRevision;
         return _inventoryImpl.Items.TransferItem(request.SourceEntity, source, destination,
             sourceRevision, destinationRevision, request.DestinationEntity, commit);
-    }
-
-    private bool TryResolve(ItemCellAddress cell, out ItemLocation location)
-    {
-        var inventory = cell.InventoryAddress.HasValue;
-        var index = inventory ? cell.InventoryAddress!.Value : _equipmentImpl.FindSlot(cell.EquipmentSlotKey!);
-        var container = inventory ? _inventoryImpl.Container : _equipmentImpl.Container;
-        location = new ItemLocation(container.Id, index);
-        return index >= 0 && index < container.Capacity;
     }
 
     public void Dispose() { RevokeEditSession(); _disposed = true; }

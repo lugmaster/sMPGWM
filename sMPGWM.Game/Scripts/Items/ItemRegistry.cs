@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.Util.UiComponents;
@@ -13,10 +12,17 @@ public static class ItemRegistry
         Dictionary<string, ItemDefinition> Items,
         Dictionary<string, ItemCategoryDefinition> Categories)
     {
-        internal IReadOnlyList<ItemDefinition> AllItems { get; } = Array.AsReadOnly(Items.Values.ToArray());
+        internal IReadOnlyList<ItemDefinition> AllItems { get; } = Snapshot(Items);
 
         internal IReadOnlyList<ItemCategoryDefinition> AllCategories { get; } =
-            Array.AsReadOnly(Categories.Values.ToArray());
+            Snapshot(Categories);
+    }
+
+    private static IReadOnlyList<T> Snapshot<T>(Dictionary<string, T> definitions)
+    {
+        var entries = new T[definitions.Count];
+        definitions.Values.CopyTo(entries, 0);
+        return Array.AsReadOnly(entries);
     }
 
     private static readonly Lazy<RegistryData> Data = new(Load);
@@ -42,8 +48,10 @@ public static class ItemRegistry
     }
 
     internal static Dictionary<string, ItemCategoryDefinition> LoadItemCategoryDefinitions(
-        JObject yaml, Func<string, IconDefinition> resolveIcon) =>
-        yaml["Categories"]!.ToDictionary(row => (string)row["Id"]!, row =>
+        JObject yaml, Func<string, IconDefinition> resolveIcon)
+    {
+        var definitions = new Dictionary<string, ItemCategoryDefinition>(StringComparer.Ordinal);
+        foreach (var row in yaml["Categories"]!)
         {
             var (canStack, limit) = ResolveStacking(row, false, 1);
             var definition = new ItemCategoryDefinition((string)row["Id"]!, (string)row["DisplayName"]!,
@@ -55,8 +63,10 @@ public static class ItemRegistry
                 StackLimit = limit
             };
             ValidateStacking(definition.CanStack, definition.StackLimit);
-            return definition;
-        }, StringComparer.Ordinal);
+            definitions.Add(definition.Id, definition);
+        }
+        return definitions;
+    }
 
     private static (bool CanStack, int StackLimit) ResolveStacking(JToken row, bool defaultCanStack, int defaultLimit)
     {
@@ -74,8 +84,10 @@ public static class ItemRegistry
     }
 
     internal static Dictionary<string, ItemDefinition> LoadItemDefinitions(JObject yaml,
-        Dictionary<string, ItemCategoryDefinition> categories, Func<string, IconDefinition> resolveIcon) =>
-        yaml["Items"]!.ToDictionary(row => (string)row["Id"]!, row =>
+        Dictionary<string, ItemCategoryDefinition> categories, Func<string, IconDefinition> resolveIcon)
+    {
+        var definitions = new Dictionary<string, ItemDefinition>(StringComparer.Ordinal);
+        foreach (var row in yaml["Items"]!)
         {
             var category = categories[(string)row["CategoryId"]!];
             var (canStack, limit) = ResolveStacking(row, category.CanStack, category.StackLimit);
@@ -119,7 +131,9 @@ public static class ItemRegistry
                 BehaviourGrants = grants.AsReadOnly()
             };
             ValidateStacking(definition.CanStack, definition.StackLimit);
-            return definition;
-        }, StringComparer.Ordinal);
+            definitions.Add(definition.Id, definition);
+        }
+        return definitions;
+    }
 }
 

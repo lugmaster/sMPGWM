@@ -14,12 +14,14 @@ public sealed class PlayerItemState : IDisposable
     private PlayerSession? _owner;
     private ShipController? _ship;
     private readonly string?[] _sources;
+    private readonly ItemEntityId?[] _sourceItems;
 
     public PlayerItemState()
     {
         Inventory = new(Store);
         Equipment = new(Store);
         _sources = new string?[Equipment.Definitions.Count];
+        _sourceItems = new ItemEntityId?[Equipment.Definitions.Count];
         Equipment.Changed += EquipmentChanged;
     }
 
@@ -45,19 +47,26 @@ public sealed class PlayerItemState : IDisposable
         {
             if (_sources[i] is { } source) _ship?.Gameplay.Grants.RemoveSource(source);
             _sources[i] = null;
+            _sourceItems[i] = null;
         }
     }
 
     private void EquipmentChanged(EquipmentSnapshot snapshot)
     {
-        RemoveGrants();
         if (_ship == null) return;
+        // Remove changed sources before reinstalling them so slot swaps cannot revoke a new grant.
+        for (var i = 0; i < snapshot.Slots.Count; i++)
+            if (_sourceItems[i] != snapshot.Slots[i]?.Id && _sources[i] is { } previous)
+                _ship.Gameplay.Grants.RemoveSource(previous);
         for (var i = 0; i < snapshot.Slots.Count; i++)
         {
-            if (snapshot.Slots[i] is not { } item || item.Definition.AbilityIds.Count == 0) continue;
-            var source = "item:" + item.Id;
-            _ship.Gameplay.Grants.SetSource(source, item.Definition.AbilityIds);
+            var item = snapshot.Slots[i];
+            if (_sourceItems[i] == item?.Id) continue;
+            _sourceItems[i] = item?.Id;
+            var source = item != null && item.Definition.AbilityIds.Count != 0 ? "item:" + item.Id : null;
             _sources[i] = source;
+            if (source == null) continue;
+            _ship.Gameplay.Grants.SetSource(source, item!.Definition.AbilityIds);
         }
     }
 
@@ -73,13 +82,12 @@ public sealed class PlayerItemState : IDisposable
 
     public TransferResult Transfer(TransferRequest request)
     {
-        var sourceIndex = request.Source.InventoryAddress ?? Equipment.FindSlot(request.Source.EquipmentSlotKey!);
-        var targetIndex = request.Destination.InventoryAddress ?? Equipment.FindSlot(request.Destination.EquipmentSlotKey!);
-        var source = request.Source.InventoryAddress.HasValue ? Inventory.Container : Equipment.Container;
-        var target = request.Destination.InventoryAddress.HasValue ? Inventory.Container : Equipment.Container;
-        return Store.TransferItem(request.SourceEntity, new(source.Id, sourceIndex), new(target.Id, targetIndex),
-            source == Inventory.Container ? request.InventoryRevision : request.EquipmentRevision,
-            target == Inventory.Container ? request.InventoryRevision : request.EquipmentRevision, request.DestinationEntity);
+        if (!ItemCellResolver.TryResolve(request.Source, Inventory, Equipment, out var source) ||
+            !ItemCellResolver.TryResolve(request.Destination, Inventory, Equipment, out var target))
+            return TransferResult.InvalidLocation;
+        return Store.TransferItem(request.SourceEntity, source, target,
+            request.Source.InventoryAddress.HasValue ? request.InventoryRevision : request.EquipmentRevision,
+            request.Destination.InventoryAddress.HasValue ? request.InventoryRevision : request.EquipmentRevision, request.DestinationEntity);
     }
 
     public void Dispose()

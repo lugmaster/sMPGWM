@@ -83,7 +83,7 @@ internal static class GameSessionFactory
         scope.Defer(() => ReleaseNode(targeting));
         scope.Defer(targeting.Cancel);
         player.Input.SetPointerInputFilter(() => canvas.IsPointerOverInteractiveUi() || targeting.BlocksPointerActions);
-        network.AbilityFeedback += canvas.ShowGameplayFeedback;
+        network.AbilityFeedback += result => canvas.ShowGameplayFeedback(AbilityActivationResultText.Format(result));
         network.ItemFeedback += canvas.ShowGameplayFeedback;
         canvas.BindGameplay(network);
         scope.Defer(() => canvas.BindGameplay(null));

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using sMPGWM.Scripts.Util;
 
 namespace sMPGWM.Scripts.Items;
@@ -31,7 +30,9 @@ public sealed class ItemContainer
 
     internal Action Prepare(ItemEntity?[] entities)
     {
-        var slots = Array.AsReadOnly(entities.Select(item => item?.Id).ToArray());
+        var ids = new ItemEntityId?[entities.Length];
+        for (var i = 0; i < entities.Length; i++) ids[i] = entities[i]?.Id;
+        var slots = Array.AsReadOnly(ids);
         var revision = checked(Revision + 1);
         return () => { Entities = entities; Slots = slots; Revision = revision; };
     }

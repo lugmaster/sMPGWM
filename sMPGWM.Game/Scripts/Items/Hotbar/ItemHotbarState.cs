@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace sMPGWM.Scripts.Items.Hotbar;
 internal sealed class ItemHotbarState : IDisposable
@@ -18,11 +17,15 @@ internal sealed class ItemHotbarState : IDisposable
 
     internal ItemHotbarState(IEnumerable<HotbarBinding?> initialBindings, Action<Exception>? reportError = null)
     {
-        var initial = initialBindings.ToArray();
-        if (initial.Length > PositionCount)
-            throw new ArgumentException("Initial bindings must fit the hotbar.", nameof(initialBindings));
+        ArgumentNullException.ThrowIfNull(initialBindings);
         var entries = new HotbarBinding?[PositionCount];
-        Array.Copy(initial, entries, initial.Length);
+        var index = 0;
+        foreach (var binding in initialBindings)
+        {
+            if (index == PositionCount)
+                throw new ArgumentException("Initial bindings must fit the hotbar.", nameof(initialBindings));
+            entries[index++] = binding;
+        }
         Entries = Array.AsReadOnly(entries);
         _reportError = reportError;
     }
@@ -49,7 +52,7 @@ internal sealed class ItemHotbarState : IDisposable
     {
         var result = ValidateAssignment(session, revision, position, binding);
         if (result != HotbarResult.Success) return result;
-        var next = Entries.ToArray();
+        var next = CopyEntries();
         next[position] = binding;
         return Publish(next);
     }
@@ -68,7 +71,7 @@ internal sealed class ItemHotbarState : IDisposable
     {
         var result = ValidateMove(session, revision, source, destination);
         if (result != HotbarResult.Success) return result;
-        var next = Entries.ToArray();
+        var next = CopyEntries();
         (next[source], next[destination]) = (next[destination], next[source]);
         return Publish(next);
     }
@@ -78,9 +81,16 @@ internal sealed class ItemHotbarState : IDisposable
         var result = ValidateEdit(session, revision, position);
         if (result != HotbarResult.Success) return result;
         if (Entries[position] == null) return HotbarResult.NoChange;
-        var next = Entries.ToArray();
+        var next = CopyEntries();
         next[position] = null;
         return Publish(next);
+    }
+
+    private HotbarBinding?[] CopyEntries()
+    {
+        var copy = new HotbarBinding?[PositionCount];
+        for (var i = 0; i < copy.Length; i++) copy[i] = Entries[i];
+        return copy;
     }
 
     private HotbarResult Publish(HotbarBinding?[] next)

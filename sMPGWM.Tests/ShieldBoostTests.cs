@@ -33,16 +33,16 @@ public sealed class ShieldBoostTests // TEST-SUPPORT: ABILITY-REGRESSION-002 | T
     {
         var history = new ActivationHistory(); // TEST-SUPPORT: ABILITY-REGRESSION-022 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
         Assert.That(history.Admit(1, 0, out _), Is.True); // TEST-SUPPORT: ABILITY-REGRESSION-023 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
-        history.Complete(1, "Accepted"); // TEST-SUPPORT: ABILITY-REGRESSION-024 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
+        history.Complete(1, AbilityActivationResult.Accepted); // TEST-SUPPORT: ABILITY-REGRESSION-024 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
         Assert.That(history.Admit(1, 10, out var result), Is.False); // TEST-SUPPORT: ABILITY-REGRESSION-025 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
-        Assert.That(result, Is.EqualTo("Accepted")); // TEST-SUPPORT: ABILITY-REGRESSION-026 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
+        Assert.That(result, Is.EqualTo(AbilityActivationResult.Accepted)); // TEST-SUPPORT: ABILITY-REGRESSION-026 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
         for (var request = 2; request < 100; request++) // TEST-SUPPORT: ABILITY-REGRESSION-027 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
         {
             Assert.That(history.Admit(request, request * 6, out _), Is.True); // TEST-SUPPORT: ABILITY-REGRESSION-028 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
-            history.Complete(request, "Accepted"); // TEST-SUPPORT: ABILITY-REGRESSION-029 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
+            history.Complete(request, AbilityActivationResult.Accepted); // TEST-SUPPORT: ABILITY-REGRESSION-029 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
         }
         Assert.That(history.Admit(1, 1000, out result), Is.False); // TEST-SUPPORT: ABILITY-REGRESSION-030 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
-        Assert.That(result, Is.EqualTo("Rejected: old request")); // TEST-SUPPORT: ABILITY-REGRESSION-031 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
+        Assert.That(result, Is.EqualTo(AbilityActivationResult.OldRequest)); // TEST-SUPPORT: ABILITY-REGRESSION-031 | Tests: sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute
     }
 
     [Test] // TEST-SUPPORT: ABILITY-REGRESSION-032 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline

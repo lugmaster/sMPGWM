@@ -45,26 +45,26 @@ public sealed class AbilityRuntime : IDisposable
         return diagnostics.AsReadOnly();
     }
 
-    public string Activate(string abilityId, in AbilityActivationContext context, long tick)
+    public AbilityActivationResult Activate(string abilityId, in AbilityActivationContext context, long tick)
     {
-        if (_disposed) return "Rejected: session ended";
+        if (_disposed) return AbilityActivationResult.SessionEnded;
         if (!_plans.TryGetValue(abilityId, out var plan))
-            return _unsupported.ContainsKey(abilityId) ? "Rejected: unsupported ability" : "Rejected: ability not granted";
+            return _unsupported.ContainsKey(abilityId) ? AbilityActivationResult.UnsupportedAbility : AbilityActivationResult.AbilityNotGranted;
         if (!context.Caster.Grants.Contains(abilityId) && plan.Definition.Availability != AbilityAvailability.AllShips)
-            return "Rejected: ability not granted";
+            return AbilityActivationResult.AbilityNotGranted;
         if (AbilityEligibility.Rejection(plan.Definition, plan.Targeting, context) is { } rejection) return rejection;
         try
         {
             // Reserve identity before publishing state changes; observers may activate another ability.
             var instance = checked(++_nextInstance);
             if (!context.Target.ApplyBehaviour(plan.Behaviour, tick, instance, out _))
-                return "Rejected: behaviour limit";
+                return AbilityActivationResult.BehaviourLimit;
         }
         catch (Exception error) when (error is OverflowException or InvalidOperationException or ArgumentOutOfRangeException)
-        { return "Rejected: invalid gameplay values"; }
+        { return AbilityActivationResult.InvalidGameplayValues; }
         // Observer failures must escape after commit, never masquerade as a rejected activation.
         context.Target.PublishChanges();
-        return "Accepted";
+        return AbilityActivationResult.Accepted;
     }
 
     private string? Compile(AbilityDefinition ability, out AbilityExecutionPlan? plan)

@@ -11,13 +11,12 @@ public partial class PlayerStatsPanel : PanelContainer
     private string _entity = "";
     private double _current = double.NaN;
     private double _capacity = double.NaN;
-    private double _elapsed;
 
     public override void _Ready()
     {
         _shield = GetNode<StatBar>("%BarContainer/StatBar");
         _shield.SetTitle("Shield");
-        _shield.Setup(0, 0);
+        Refresh();
     }
 
     public void Bind(NetworkManager? network)
@@ -25,15 +24,14 @@ public partial class PlayerStatsPanel : PanelContainer
         _network = network;
         _entity = "";
         _current = _capacity = double.NaN;
-        _elapsed = .2;
-        if (_shield != null) _shield.Setup(0, 0);
+        Refresh();
     }
 
-    public override void _Process(double delta)
+    public override void _Process(double delta) => Refresh();
+
+    private void Refresh()
     {
-        _elapsed += delta;
-        if (_elapsed < .2) return;
-        _elapsed = 0;
+        if (_shield == null) return;
         var ship = _network?.World.LocalPlayer?.Participant?.ControlledShip;
         var entity = ship?.EntityId ?? "";
         var current = ship?.Gameplay.Shield.Current ?? 0;

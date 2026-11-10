@@ -43,21 +43,21 @@ public sealed class GameplayBoundaryTests // TEST-SUPPORT: GAMEPLAY-BOUNDARY-006
         var dead = runtime.Definitions.Conditions.GetById("dead"); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-035 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         var silenced = runtime.Definitions.Conditions.GetById("silenced"); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-036 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         caster.SetCondition(dead, true); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-037 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
-        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo("Rejected: caster is dead")); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-038 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
+        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo(AbilityActivationResult.CasterIsDead)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-038 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         caster.SetCondition(dead, false); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-039 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         caster.SetCondition(silenced, true); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-040 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
-        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo("Rejected: blocked by condition")); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-041 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
+        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo(AbilityActivationResult.BlockedByCondition)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-041 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         caster.SetCondition(silenced, false); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-042 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         target.SetCondition(dead, true); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-043 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
-        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo("Rejected: target is not a living ally")); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-044 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
+        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo(AbilityActivationResult.TargetIsNotALivingAlly)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-044 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         target.SetCondition(dead, false); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-045 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         target.SetFaction(2); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-046 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
-        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo("Rejected: target is not a living ally")); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-047 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
+        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo(AbilityActivationResult.TargetIsNotALivingAlly)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-047 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         target.SetFaction(0); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-048 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
-        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo("Rejected: target is not a living ally")); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-049 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
+        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo(AbilityActivationResult.TargetIsNotALivingAlly)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-049 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         Assert.That(target.ActiveBehaviours, Is.Empty); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-050 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         target.SetFaction(1); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-051 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
-        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo("Accepted")); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-052 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
+        Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo(AbilityActivationResult.Accepted)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-052 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         Assert.That(target.Shield.Capacity, Is.EqualTo(150)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-053 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
     }
 
@@ -92,7 +92,7 @@ public sealed class GameplayBoundaryTests // TEST-SUPPORT: GAMEPLAY-BOUNDARY-006
         var ability = data.Abilities.GetById("shieldCapacityBoost"); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-077 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-078 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         Assert.That(AbilitySource.AllShips.IsAvailable(ability, state, null), Is.True); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-079 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
-        Assert.That(runtime.Activate(ability.Id, new(state, state, 0), 0), Is.EqualTo("Accepted")); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-080 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
+        Assert.That(runtime.Activate(ability.Id, new(state, state, 0), 0), Is.EqualTo(AbilityActivationResult.Accepted)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-080 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         var restricted = ability with { Availability = AbilityAvailability.ExampleLoadout }; // TEST-SUPPORT: GAMEPLAY-BOUNDARY-081 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         Assert.That(AbilitySource.AllShips.IsAvailable(restricted, state, null), Is.False); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-082 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         var source = AbilitySource.Grant("skill:pilot"); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-083 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
