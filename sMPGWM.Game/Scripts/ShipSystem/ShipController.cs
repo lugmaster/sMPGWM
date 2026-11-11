@@ -25,12 +25,32 @@ public partial class ShipController : CharacterBody2D
         internal set
         {
             _data = value;
-            Gameplay = new(value.ShieldCapacity, value.ShieldCurrent);
-            _rotationInertia = 1 + value.Stats.ShipMass * 1.05f;
-            _friction = 0.15f / (1 + value.Stats.ShipMass * 0.95f);
+            Gameplay ??= new();
+            DefinitionChanged?.Invoke();
         }
     }
     public ShipState State { get; } = new();
+    public event Action? DefinitionChanged;
+    public MovementConfiguration MovementConfiguration { get; private set; }
+    public long MovementConfigurationRevision { get; private set; }
+
+    public void RefreshMovementConfiguration()
+    {
+        var stats = Gameplay.Stats;
+        var configuration = new MovementConfiguration(stats.Speed, stats.AfterBurnerSpeed, stats.RotationSpeed,
+            stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Gameplay.MovementAvailable);
+        InstallMovementConfiguration(Gameplay.ConfigurationRevision, configuration);
+    }
+
+    internal void InstallMovementConfiguration(long revision, MovementConfiguration configuration)
+    {
+        if (revision < MovementConfigurationRevision) return;
+        if (revision < 0 || !configuration.IsValid) throw new ArgumentException("Invalid movement configuration.");
+        MovementConfiguration = configuration;
+        MovementConfigurationRevision = revision;
+        _rotationInertia = (float)Math.Min(float.MaxValue, 1d + configuration.Mass * 1.05d);
+        _friction = (float)(0.15d / (1d + configuration.Mass * 0.95d));
+    }
     private ShipInputState _input;
     public byte AppliedMovementFlags { get; private set; }
     public byte PresentedMovementFlags { get => Presentation.MovementFlags; set => Presentation.MovementFlags = value; }
@@ -65,14 +85,14 @@ public partial class ShipController : CharacterBody2D
     {
 
         var previousRotation = GlobalRotation;
-        var s = Data.Stats;
-        if (_input.HasAim) GlobalRotation = MovementPhysics.RotationStep(GlobalRotation, _input.AimAngle, s.RotationSpeed, _rotationInertia, (float)delta);
+        var s = MovementConfiguration;
+        if (s.Enabled && _input.HasAim) GlobalRotation = MovementPhysics.RotationStep(GlobalRotation, _input.AimAngle, s.RotationSpeed, _rotationInertia, (float)delta);
         var acceleration = _input.Afterburner ? s.AfterBurnerAcceleration : s.Acceleration;
         Velocity = MovementPhysics.MovementStep(Velocity, _input.Brake ? Vector2.Zero : _input.Direction,
             GlobalTransform.X.Normalized(), GlobalTransform.Y.Normalized(), acceleration,
             _input.Afterburner ? s.AfterBurnerSpeed : s.Speed, _friction,
-            (float)delta, _input.Brake || _input.AutomaticBraking);
-        bool thrust = !_input.Brake && _input.Direction.LengthSquared() > .01f;
+            (float)delta, _input.Brake || _input.AutomaticBraking, s.Enabled);
+        bool thrust = s.Enabled && !_input.Brake && _input.Direction.LengthSquared() > .01f;
         AppliedMovementFlags = (byte)((thrust ? 1 : 0) |
             (GlobalRotation != previousRotation ? 2 : 0) | (thrust && _input.Afterburner ? 4 : 0));
         PresentedMovementFlags = AppliedMovementFlags;

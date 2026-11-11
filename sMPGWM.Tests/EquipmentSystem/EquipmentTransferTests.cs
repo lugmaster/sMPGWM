@@ -86,7 +86,7 @@ public class EquipmentTransferTests
         Assert.That(_equipmentImpl.Definitions.Select(slot => slot.Key), Is.EqualTo(new[]
         {
             "engine", "hull", "shield_generator", "reactor", "light_weapon_1", "light_weapon_2",
-            "heavy_weapon_1", "heavy_weapon_2"
+            "heavy_weapon_1", "heavy_weapon_2", "battery" // TEST-SUPPORT: EQUIPMENT-BATTERY-001 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.SlotDefinitionsAndSnapshots_AreOrderedAndReadOnly
         }));
         Assert.That(_equipmentImpl.Snapshot.Slots, Has.All.Null);
         Assert.Throws<NotSupportedException>(() => ((IList<EquipmentSlotDefinition>)_equipmentImpl.Definitions).Clear());

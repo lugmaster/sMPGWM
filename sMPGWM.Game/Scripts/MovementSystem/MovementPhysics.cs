@@ -39,10 +39,12 @@ public static class MovementPhysics
         float maxSpeed,
         float currentFriction,
         float delta,
-        bool enableFriction
+        bool enableFriction,
+        bool powered = true
     )
     {
         var velocity = currentVelocity;
+        if (!powered) return velocity;
         var accelerationDelta = currentAcceleration * delta;
         var maxSpeedSquared = maxSpeed * maxSpeed;
 

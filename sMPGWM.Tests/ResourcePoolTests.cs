@@ -25,7 +25,7 @@ public sealed class ResourcePoolTests
         first.SetContribution(2, 50, .2);
         second.SetContribution(2, 50, .2);
         second.SetContribution(1, 20, .1);
-        Assert.That(first.Capacity, Is.EqualTo(200));
+        Assert.That(first.Capacity, Is.EqualTo(221)); // TEST-SUPPORT: EQUIP-RESOURCE-UPDATE-1 | Tests: sMPGWM.Tests.ResourcePoolTests.ModifierInsertionOrderDoesNotChangeBaselineArithmetic
         Assert.That(second.Capacity, Is.EqualTo(first.Capacity));
     }
 
@@ -48,10 +48,10 @@ public sealed class ResourcePoolTests
     {
         var pool = new ResourcePool(100, 100);
         pool.SetContribution(1, 50, .2);
-        Assert.That(pool.Capacity, Is.EqualTo(170));
+        Assert.That(pool.Capacity, Is.EqualTo(180)); // TEST-SUPPORT: EQUIP-RESOURCE-UPDATE-2 | Tests: sMPGWM.Tests.ResourcePoolTests.FractionsUseBaseAndCapacityReductionClampsCurrent
         pool.SetContribution(2, -100, 0);
-        Assert.That(pool.Current, Is.EqualTo(70));
+        Assert.That(pool.Current, Is.EqualTo(60)); // TEST-SUPPORT: EQUIP-RESOURCE-UPDATE-3 | Tests: sMPGWM.Tests.ResourcePoolTests.FractionsUseBaseAndCapacityReductionClampsCurrent
         pool.RemoveOwner(2);
-        Assert.That(pool.Current, Is.EqualTo(70));
+        Assert.That(pool.Current, Is.EqualTo(60)); // TEST-SUPPORT: EQUIP-RESOURCE-UPDATE-4 | Tests: sMPGWM.Tests.ResourcePoolTests.FractionsUseBaseAndCapacityReductionClampsCurrent
     }
 }

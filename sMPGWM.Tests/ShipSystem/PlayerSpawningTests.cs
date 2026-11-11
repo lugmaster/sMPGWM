@@ -76,6 +76,7 @@ public class PlayerSpawningTests
         try
         {
             var input = new ShipInputState(Vector2.Right, Mathf.Pi / 2, true, false, false, true);
+            ship.InstallMovementConfiguration(1, new(350, 600, 12, 1.1f, 1.3f, 10, true)); // TEST-SUPPORT: SPAWN-EQUIPMENT-001 | Tests: sMPGWM.Tests.ShipSystem.PlayerSpawningTests.ShipSimulationIsExplicitAndIndependentOfLocalInputOwnership
             ship.SetInput(input);
             ship.Simulate(0.1);
             Assert.That(ship.Rotation, Is.GreaterThan(0));

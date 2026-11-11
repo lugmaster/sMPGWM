@@ -1,4 +1,7 @@
 version: 6.2.2
+
+Implementation note (2026-11-11): the equipment, movement, shield, and energy rules below are superseded by [gameplay increment 3](../plans/gameplay-increment-03-equipment-stats-and-resources.md). The current host runs resources at 60 Hz and publishes at 30 Hz. Installed equipment supplies baselines; ship and owned flat modifiers are added before summed percentage modifiers. Missing systems suppress their modifiers. Capacity increases preserve current amounts. Shield starts full after initial equipment composition and energy starts empty. The remaining sections retain the broader, deferred stat design.
+
 ## 9. Stats
 
 Stats describe numeric properties of a `LivingEntity`.

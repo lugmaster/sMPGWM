@@ -1,4 +1,4 @@
-Version: 1.0.0
+Version: 2.0.0
 ships:
   - name: "fighter"
     texture_path: "res://assets/mocks/ship_fighter_reference.png"
@@ -23,16 +23,13 @@ ships:
       - [16, 9]
       - [22, 7]
       - [27, 1]
-    # Development tuning for shield capacity verification: capacity changes must not heal.
-    ship_stats:
-      ShieldCapacity: 100
-      ShieldCurrent: 40
-      Speed: 350.0
-      AfterBurnerSpeed: 450.0
-      RotationSpeed: 5.0
-      Acceleration: 1.3
-      AfterBurnerAcceleration: 1.8
-      ShipMass: 1.0
+    mass: 1.0
+    stat_modifiers:
+      Speed: 50.0
+      AfterBurnerSpeed: 50.0
+      RotationSpeed: 2.0
+      Acceleration: 0.1
+      AfterBurnerAcceleration: 0.1
     weapon_slots:
       light: 2
       heavy: 2

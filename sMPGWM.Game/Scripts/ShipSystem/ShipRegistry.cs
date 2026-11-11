@@ -6,33 +6,6 @@ using sMPGWM.Scripts.FileLoadingSystem;
 
 namespace sMPGWM.Scripts.ShipSystem;
 
-public sealed record ShipStats(float Speed, float AfterBurnerSpeed, float RotationSpeed,
-    float Acceleration, float AfterBurnerAcceleration, float ShipMass);
-
-public sealed class ShipData
-{
-    public double ShieldCapacity { get; }
-    public double ShieldCurrent { get; }
-    public string Name { get; }
-    public string TexturePath { get; }
-    public IReadOnlyList<Vector2> ColliderPoints { get; }
-    public ShipStats Stats { get; }
-    public int LightWeaponSlots { get; }
-    public int HeavyWeaponSlots { get; }
-
-    internal ShipData(ShipDefinition definition, Vector2[] points, ShipStats stats)
-    {
-        ShieldCapacity = definition.Stats.ShieldCapacity;
-        ShieldCurrent = definition.Stats.ShieldCurrent;
-        Name = definition.Name;
-        TexturePath = definition.TexturePath;
-        ColliderPoints = Array.AsReadOnly((Vector2[])points.Clone());
-        Stats = stats;
-        LightWeaponSlots = definition.WeaponSlots.Light;
-        HeavyWeaponSlots = definition.WeaponSlots.Heavy;
-    }
-}
-
 public static class ShipRegistry
 {
     private static readonly Lazy<IReadOnlyDictionary<string, ShipData>> Data = new(Load);
@@ -70,7 +43,7 @@ public static class ShipRegistry
             float Number(double value, string field, bool positive = false)
             {
                 Require(double.IsFinite(value) && float.IsFinite((float)value) &&
-                    (positive ? (float)value > 0 : value >= 0), field);
+                    (!positive || (float)value > 0), field);
                 return (float)value;
             }
             Require(!string.IsNullOrWhiteSpace(name) && !result.ContainsKey(name), "name (blank or duplicate)");
@@ -82,10 +55,16 @@ public static class ShipRegistry
             }).ToArray();
             Require(IsUsablePolygon(points), "collider_points (duplicate, degenerate or intersecting polygon)");
             var s = definition.Stats;
-            Require(double.IsFinite(s.ShieldCapacity) && double.IsFinite(s.ShieldCurrent) && s.ShieldCurrent >= 0 && s.ShieldCapacity >= s.ShieldCurrent, "Shield pool");
+            Number(s.ShieldCapacity, "ShieldCapacity");
+            Number(s.Armor, "Armor");
+            Number(s.RechargeTime, "RechargeTime");
+            Number(s.DownTime, "DownTime");
+            Number(s.EnergyProduction, "EnergyProduction");
+            Number(s.EnergyStorage, "EnergyStorage");
+            Require(definition.Mass >= 0, "mass");
             var stats = new ShipStats(Number(s.Speed, "Speed"), Number(s.AfterBurnerSpeed, "AfterBurnerSpeed"),
                 Number(s.RotationSpeed, "RotationSpeed"), Number(s.Acceleration, "Acceleration"),
-                Number(s.AfterBurnerAcceleration, "AfterBurnerAcceleration"), Number(s.ShipMass, "ShipMass", true));
+                Number(s.AfterBurnerAcceleration, "AfterBurnerAcceleration"), Number(definition.Mass, "mass"));
             Require(definition.WeaponSlots.Light >= 0 && definition.WeaponSlots.Heavy >= 0, "weapon_slots");
             result.Add(name, new ShipData(definition, points, stats));
         }

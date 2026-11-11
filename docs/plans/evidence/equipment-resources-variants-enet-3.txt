@@ -1,0 +1,720 @@
+host
+SHIELD_CHECK state time=1,0 entity=1cedcf276d6b4126a71b710840122c44 current=100 max=100 behaviours= revision=64 energy=8,00000000000001 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=0 tick=120 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK state time=2,0 entity=1cedcf276d6b4126a71b710840122c44 current=100 max=100 behaviours= revision=124 energy=15,999999999999982 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Accepted
+[2026-11-11 23:47:53] [Info] NET join_ready peer=1645881857
+SHIELD_CHECK state time=3,0 entity=1cedcf276d6b4126a71b710840122c44 current=130 max=150 behaviours=shieldCapacityBoost:1:1921, revision=185 energy=23,999999999999954 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=3,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=100 max=100 behaviours= revision=58 energy=7,200000000000009 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Success
+SHIELD_CHECK state time=4,0 entity=1cedcf276d6b4126a71b710840122c44 current=150 max=150 behaviours=shieldCapacityBoost:1:1921, revision=245 energy=31,999999999999925 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=4,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=100 max=100 behaviours= revision=118 energy=15,199999999999985 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=1 tick=252 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=5,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:1921,shieldVariant:3:1453, revision=306 energy=39,9999999999999 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=5,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=126 max=150 behaviours=shieldCapacityBoost:2:2049, revision=179 energy=23,199999999999957 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Success
+SHIELD_CHECK state time=6,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:1921,shieldVariant:3:1453, revision=366 energy=47,99999999999987 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=6,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2049, revision=239 energy=31,19999999999993 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=2 tick=372 target=ab03859b19254f4cb05363c2f32d3c5f
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=7,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:1921,shieldVariant:3:1453, revision=426 energy=55,999999999999844 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=7,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=173,3333333333337 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1581, revision=301 energy=39,1999999999999 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Success
+SHIELD_CHECK state time=8,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:1921,shieldVariant:3:1453, revision=486 energy=63,999999999999815 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=8,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1581, revision=361 energy=47,199999999999875 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=3 tick=492 target=ab03859b19254f4cb05363c2f32d3c5f
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=9,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2301,shieldVariant:3:1453, revision=547 energy=72,00000000000021 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=9,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=422 energy=55,19999999999985 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Success
+SHIELD_CHECK state time=10,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2301,shieldVariant:3:1453, revision=607 energy=80,00000000000061 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=10,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=482 energy=63,19999999999982 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=4 tick=613 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=11,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1821, revision=669 energy=88,00000000000101 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=11,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=542 energy=71,20000000000017 storage=100 depleted=False protection=True downtime=0
+[2026-11-11 23:48:02] [Info] NET join_ready peer=1486475821
+SHIELD_CHECK equip result=Success
+SHIELD_CHECK state time=12,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1821, revision=729 energy=96,0000000000014 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=12,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=602 energy=79,20000000000057 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=12,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=100 max=100 behaviours= revision=58 energy=7,200000000000009 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=5 tick=733 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=13,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=13,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2541,shieldVariant:5:1693, revision=663 energy=87,20000000000097 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=13,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=100 max=100 behaviours= revision=118 energy=15,199999999999985 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Success
+SHIELD_CHECK state time=14,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=14,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2541,shieldVariant:5:1693, revision=723 energy=95,20000000000137 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=14,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=126 max=150 behaviours=shieldCapacityBoost:12:2589, revision=179 energy=23,199999999999957 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=6 tick=853 target=ab03859b19254f4cb05363c2f32d3c5f
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=15,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=15,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2061, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=15,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:2589, revision=239 energy=31,19999999999993 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Success
+SHIELD_CHECK state time=16,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=16,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2061, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=16,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=173,91666666666706 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=300 energy=39,1999999999999 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=7 tick=972 target=ab03859b19254f4cb05363c2f32d3c5f
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=17,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2781,shieldVariant:3:1934, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=17,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=17,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=360 energy=47,199999999999875 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=18,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:1934, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=18,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=18,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=420 energy=55,19999999999985 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=19,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2301, revision=763 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=19,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=19,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=480 energy=63,19999999999982 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=20,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=765 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=20,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=763 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=20,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=541 energy=71,20000000000017 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=21,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=825 energy=93,0000000000004 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=21,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=823 energy=93,0000000000004 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=21,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=601 energy=64,20000000000057 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=22,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=885 energy=86,0000000000008 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=22,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=883 energy=86,0000000000008 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=22,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2120, revision=662 energy=57,20000000000055 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=23,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=945 energy=79,0000000000012 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=23,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=943 energy=79,0000000000012 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=23,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2120, revision=722 energy=50,20000000000052 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=24,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=1005 energy=72,00000000000159 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=24,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1003 energy=72,00000000000159 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=24,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=783 energy=43,20000000000049 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=25,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=1066 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=25,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1064 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=25,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=844 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=26,0 entity=1cedcf276d6b4126a71b710840122c44 current=139,99999999999943 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2360, revision=1127 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=26,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=139,99999999999943 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1124 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=26,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=139,99999999999943 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=904 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=27,0 entity=1cedcf276d6b4126a71b710840122c44 current=104,99999999999943 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2360, revision=1187 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=27,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=104,99999999999943 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1184 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=27,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=104,99999999999943 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=964 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=28,0 entity=1cedcf276d6b4126a71b710840122c44 current=69,99999999999972 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1248 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=28,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=69,99999999999972 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1244 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=28,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=69,99999999999972 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1024 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=29,0 entity=1cedcf276d6b4126a71b710840122c44 current=34,999999999999645 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1308 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=29,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=34,999999999999645 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1304 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=29,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=34,999999999999645 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1084 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=30,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=30,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=30,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=31,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=31,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=31,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=32,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=32,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=32,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=33,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1369 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=33,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1365 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=33,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1145 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=34,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1369 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=34,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1365 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=34,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1145 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=35,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1370 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=35,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1366 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=35,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1146 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=36,0 entity=1cedcf276d6b4126a71b710840122c44 current=34,999999999999986 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1430 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=36,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=34,999999999999986 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1426 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=36,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=34,999999999999986 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1206 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=37,0 entity=1cedcf276d6b4126a71b710840122c44 current=70,00000000000006 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1490 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=37,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=66,00000000000001 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1487 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=37,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=70,00000000000006 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1266 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=38,0 entity=1cedcf276d6b4126a71b710840122c44 current=104,99999999999977 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1550 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=38,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=96,00000000000001 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1547 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=38,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=104,99999999999977 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1326 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=39,0 entity=1cedcf276d6b4126a71b710840122c44 current=139,99999999999977 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1610 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=39,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=126,00000000000001 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1607 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=39,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=139,99999999999977 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1386 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=40,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=40,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=40,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=41,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=41,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=41,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=42,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=42,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=42,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=43,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=43,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours=shieldCapacityBoost:2:2654, revision=1656 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=43,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=44,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=44,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours=shieldCapacityBoost:2:2654, revision=1656 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=44,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1447 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=45,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=45,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=45,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=17 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1450 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK unsolicited inventory/resource/eligibility updates converged
+SHIELD_CHECK state time=46,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=46,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=46,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=47 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1510 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=47,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=47,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=47,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=77 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1570 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=48,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=48,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=48,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=107 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1630 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=49,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=49,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=49,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=137 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1690 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=50,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=50,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=50,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1716 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=51,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=51,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=51,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1716 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=52,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=52,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=52,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=60,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=60,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=60,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=61,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=61,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=61,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=62,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=62,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=62,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=63,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=63,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=63,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=64,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=64,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=64,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=65,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=65,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=65,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=66,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=66,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=66,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=67,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=67,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=67,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=68,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=68,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=68,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=69,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=69,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=69,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=70,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=70,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=70,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=71,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=71,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=72,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=72,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=73,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=73,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=74,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=74,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=75,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=75,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=76,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=76,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=77,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=77,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=78,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=78,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=79,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=79,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=80,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=81,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=82,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=83,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=84,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=85,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=86,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=87,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=88,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=89,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK complete success=True active=89,0 allocated=59224144 elapsedTicks=897764008 charged=True drain=True recovered=True accepted=8 rejected=0 gc0=3 gc1=3 gc2=2
+client-0
+SHIELD_CHECK state time=1,0 entity=1cedcf276d6b4126a71b710840122c44 current=133 max=150 behaviours=shieldCapacityBoost:1:1921, revision=191 energy=24,79999999999995 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=1,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=100 max=100 behaviours= revision=64 energy=8,00000000000001 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=0 tick=246 target=ab03859b19254f4cb05363c2f32d3c5f
+SHIELD_CHECK state time=2,0 entity=1cedcf276d6b4126a71b710840122c44 current=150 max=150 behaviours=shieldCapacityBoost:1:1921, revision=251 energy=32,799999999999926 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=2,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=100 max=100 behaviours= revision=124 energy=15,999999999999982 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=3,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:1921,shieldVariant:3:1453, revision=312 energy=40,7999999999999 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=3,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=129 max=150 behaviours=shieldCapacityBoost:2:2049, revision=185 energy=23,999999999999954 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=4,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:1921,shieldVariant:3:1453, revision=372 energy=48,79999999999987 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=4,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2049, revision=245 energy=31,999999999999925 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=1 tick=378 target=ab03859b19254f4cb05363c2f32d3c5f
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=5,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:1921,shieldVariant:3:1453, revision=432 energy=56,79999999999984 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=5,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1581, revision=307 energy=39,9999999999999 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=6,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:1921,shieldVariant:3:1453, revision=492 energy=64,79999999999986 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=6,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1581, revision=367 energy=47,99999999999987 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=2 tick=498 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=7,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2301,shieldVariant:3:1453, revision=553 energy=72,80000000000025 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=7,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=428 energy=55,999999999999844 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=8,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2301,shieldVariant:3:1453, revision=613 energy=80,80000000000065 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=8,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=488 energy=63,999999999999815 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=3 tick=618 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=9,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1821, revision=675 energy=88,80000000000105 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=9,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=548 energy=72,00000000000021 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=9,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1 energy=0 storage=0 depleted=False protection=False downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=10,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1821, revision=735 energy=96,80000000000145 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=10,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=608 energy=80,00000000000061 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=10,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=100 max=100 behaviours= revision=64 energy=8,00000000000001 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=4 tick=738 target=ab03859b19254f4cb05363c2f32d3c5f
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=11,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=11,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2541,shieldVariant:5:1693, revision=669 energy=88,00000000000101 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=11,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=100 max=100 behaviours= revision=124 energy=15,999999999999982 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=12,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=12,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2541,shieldVariant:5:1693, revision=729 energy=96,0000000000014 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=12,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=129 max=150 behaviours=shieldCapacityBoost:12:2589, revision=185 energy=23,999999999999954 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=5 tick=858 target=ab03859b19254f4cb05363c2f32d3c5f
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=13,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=13,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2061, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=13,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:2589, revision=245 energy=31,999999999999925 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=14,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=14,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2061, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=14,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=306 energy=39,9999999999999 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=6 tick=978 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=15,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2781,shieldVariant:3:1934, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=15,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=15,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=366 energy=47,99999999999987 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=16,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:1934, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=16,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=16,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=426 energy=55,999999999999844 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=7 tick=1100 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=17,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2301, revision=763 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=17,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=17,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=486 energy=63,999999999999815 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=18,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=771 energy=99,30000000000004 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=18,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=769 energy=99,30000000000004 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=18,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=547 energy=70,50000000000021 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=19,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=831 energy=92,30000000000044 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=19,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=829 energy=92,30000000000044 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=19,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=607 energy=63,500000000000576 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=20,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=891 energy=85,30000000000084 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=20,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=889 energy=85,30000000000084 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=20,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2120, revision=668 energy=56,50000000000055 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=21,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=951 energy=78,30000000000123 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=21,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=949 energy=78,30000000000123 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=21,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2120, revision=728 energy=49,50000000000052 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=22,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=1013 energy=71,06666666666831 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=22,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1011 energy=71,06666666666831 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=22,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=791 energy=42,266666666667156 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=23,0 entity=1cedcf276d6b4126a71b710840122c44 current=171,49999999999994 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=1072 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=23,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=171,49999999999994 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1070 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=23,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=171,49999999999994 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=850 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=24,0 entity=1cedcf276d6b4126a71b710840122c44 current=136,49999999999937 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2360, revision=1133 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=24,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=136,49999999999937 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1130 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=24,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=136,49999999999937 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=910 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=25,0 entity=1cedcf276d6b4126a71b710840122c44 current=101,49999999999946 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2360, revision=1193 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=25,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=101,49999999999946 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1190 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=25,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=101,49999999999946 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=970 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=26,0 entity=1cedcf276d6b4126a71b710840122c44 current=66,49999999999974 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1254 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=26,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=66,49999999999974 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1250 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=26,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=66,49999999999974 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1030 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=27,0 entity=1cedcf276d6b4126a71b710840122c44 current=31,499999999999634 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1314 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=27,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=31,499999999999634 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1310 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=27,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=31,499999999999634 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1090 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=28,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=28,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=28,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=29,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=29,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=29,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=30,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=30,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=30,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=31,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1369 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=31,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1365 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=31,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1145 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=32,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1369 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=32,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1365 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=32,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1145 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=33,0 entity=1cedcf276d6b4126a71b710840122c44 current=3,5000000000000004 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1376 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=33,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=3,5000000000000004 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1372 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=33,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=3,5000000000000004 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1152 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=34,0 entity=1cedcf276d6b4126a71b710840122c44 current=38,5 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1436 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=34,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=38,5 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1432 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=34,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=38,5 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1212 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=35,0 entity=1cedcf276d6b4126a71b710840122c44 current=73,50000000000003 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1496 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=35,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=69,00000000000001 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1493 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=35,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=73,50000000000003 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1272 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=36,0 entity=1cedcf276d6b4126a71b710840122c44 current=108,49999999999974 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1556 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=36,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=99,00000000000001 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1553 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=36,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=108,49999999999974 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1332 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=37,0 entity=1cedcf276d6b4126a71b710840122c44 current=143,49999999999983 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1616 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=37,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=129 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1613 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=37,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=143,49999999999983 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1392 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=38,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=38,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=38,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=39,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=39,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=39,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=40,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=40,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=40,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=41,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=41,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours=shieldCapacityBoost:2:2654, revision=1656 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=41,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=42,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=42,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours=shieldCapacityBoost:2:2654, revision=1656 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=42,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1447 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK unsolicited inventory/resource/eligibility updates converged
+SHIELD_CHECK state time=43,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=43,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=43,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=20 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1456 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=44,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=44,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=44,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=50 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1516 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=45,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=45,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=45,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=80 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1576 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=46,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=46,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=46,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=110 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1636 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=47,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=47,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=47,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=140 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1696 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=48,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=48,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=48,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1716 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=49,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=49,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=49,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1716 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=50,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=50,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=50,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=51,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=51,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=51,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=52,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=52,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=52,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=60,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=60,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=60,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=61,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=61,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=61,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=62,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=62,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=62,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=63,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=63,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=63,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=64,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=64,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=64,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=65,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=65,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=65,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=66,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=66,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=66,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=67,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=67,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=67,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=68,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=68,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=68,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK complete success=True active=68,8 allocated=48336184 elapsedTicks=693072007 charged=True drain=True recovered=True accepted=8 rejected=0 gc0=2 gc1=2 gc2=1
+client-1
+SHIELD_CHECK state time=1,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1821, revision=735 energy=96,80000000000145 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=1,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2173,shieldVariant:5:1693, revision=608 energy=80,00000000000061 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=1,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=100 max=100 behaviours= revision=64 energy=8,00000000000001 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=0 tick=786 target=f1c4b33df6324dc9bcd6d5611d43556d
+SHIELD_CHECK state time=2,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=2,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2541,shieldVariant:5:1693, revision=669 energy=88,00000000000101 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=2,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=100 max=100 behaviours= revision=124 energy=15,999999999999982 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=3,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=3,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2541,shieldVariant:5:1693, revision=729 energy=96,0000000000014 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=3,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=129 max=150 behaviours=shieldCapacityBoost:12:2589, revision=185 energy=23,999999999999954 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=4,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=4,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2061, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=4,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:2589, revision=245 energy=31,999999999999925 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=1 tick=918 target=f1c4b33df6324dc9bcd6d5611d43556d
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=5,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2414,shieldVariant:3:1934, revision=760 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=5,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2061, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=5,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=306 energy=39,9999999999999 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=6,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2781,shieldVariant:3:1934, revision=761 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=6,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=6,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=366 energy=47,99999999999987 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=2 tick=1038 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=7,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:1934, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=7,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=7,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=426 energy=55,999999999999844 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=8,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2301, revision=763 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=8,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=762 energy=100 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=8,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=486 energy=63,999999999999815 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=3 tick=1158 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=9,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=771 energy=99,30000000000004 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=9,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=769 energy=99,30000000000004 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=9,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=547 energy=70,50000000000021 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=10,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=831 energy=92,30000000000044 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=10,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=829 energy=92,30000000000044 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=10,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:2589,shieldVariant:15:2120, revision=607 energy=63,500000000000576 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=4 tick=1278 target=f1c4b33df6324dc9bcd6d5611d43556d
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=11,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=891 energy=85,30000000000084 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=11,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=889 energy=85,30000000000084 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=11,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2120, revision=668 energy=56,50000000000055 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=12,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=951 energy=78,30000000000123 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=12,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=949 energy=78,30000000000123 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=12,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2120, revision=728 energy=49,50000000000052 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=5 tick=1398 target=f1c4b33df6324dc9bcd6d5611d43556d
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=13,0 entity=1cedcf276d6b4126a71b710840122c44 current=175 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=1011 energy=71,30000000000163 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=13,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=175 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1009 energy=71,30000000000163 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK state time=13,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=789 energy=42,50000000000049 storage=100 depleted=False protection=True downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=14,0 entity=1cedcf276d6b4126a71b710840122c44 current=171,49999999999994 max=175 behaviours=shieldCapacityBoost:1:2840,shieldVariant:3:2360, revision=1072 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=14,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=171,49999999999994 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1070 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=14,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=171,49999999999994 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=850 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=6 tick=1518 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=15,0 entity=1cedcf276d6b4126a71b710840122c44 current=136,49999999999937 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2360, revision=1133 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=15,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=136,49999999999937 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1130 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=15,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=136,49999999999937 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=910 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK equip result=Pending
+SHIELD_CHECK state time=16,0 entity=1cedcf276d6b4126a71b710840122c44 current=101,49999999999946 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2360, revision=1193 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=16,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=101,49999999999946 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1190 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=16,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=101,49999999999946 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=970 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK feedback=Pending
+SHIELD_CHECK activate step=7 tick=1638 target=1cedcf276d6b4126a71b710840122c44
+SHIELD_CHECK feedback=Accepted
+SHIELD_CHECK state time=17,0 entity=1cedcf276d6b4126a71b710840122c44 current=66,49999999999974 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1254 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=17,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=66,49999999999974 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1250 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=17,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=66,49999999999974 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1030 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=18,0 entity=1cedcf276d6b4126a71b710840122c44 current=31,499999999999634 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1314 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=18,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=31,499999999999634 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1310 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=18,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=31,499999999999634 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1090 energy=0 storage=0 depleted=True protection=False downtime=0
+SHIELD_CHECK state time=19,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=19,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=19,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=20,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=20,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=20,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=21,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1368 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=21,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1364 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=21,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1144 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=22,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1369 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=22,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1365 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=22,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1145 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=23,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1369 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=23,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1365 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=23,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1145 energy=0 storage=0 depleted=True protection=False downtime=1980
+SHIELD_CHECK state time=24,0 entity=1cedcf276d6b4126a71b710840122c44 current=3,5000000000000004 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1376 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=24,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=3,5000000000000004 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1372 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=24,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=3,5000000000000004 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1152 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=25,0 entity=1cedcf276d6b4126a71b710840122c44 current=38,5 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1436 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=25,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=38,5 max=175 behaviours=shieldCapacityBoost:2:2654,shieldVariant:5:2173, revision=1432 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=25,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=38,5 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1212 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=26,0 entity=1cedcf276d6b4126a71b710840122c44 current=73,50000000000003 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1496 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=26,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=69,00000000000001 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1493 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=26,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=73,50000000000003 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1272 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=27,0 entity=1cedcf276d6b4126a71b710840122c44 current=108,49999999999974 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1556 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=27,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=99,00000000000001 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1553 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=27,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=108,49999999999974 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1332 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=28,0 entity=1cedcf276d6b4126a71b710840122c44 current=143,49999999999983 max=175 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1616 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=28,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=129 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1613 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=28,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=143,49999999999983 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1392 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=29,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=29,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=29,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=30,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=30,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=30,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=31,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=31,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=150 max=150 behaviours=shieldCapacityBoost:2:2654, revision=1655 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=31,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=32,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=32,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours=shieldCapacityBoost:2:2654, revision=1656 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=32,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=175 max=175 behaviours=shieldCapacityBoost:12:3080,shieldVariant:15:2600, revision=1446 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=33,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1671 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=33,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours=shieldCapacityBoost:2:2654, revision=1656 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=33,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1447 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK unsolicited inventory/resource/eligibility updates converged
+SHIELD_CHECK state time=34,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=34,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=34,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=20 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1456 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=35,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=35,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=35,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=50 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1516 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=36,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321,shieldVariant:3:2841, revision=1673 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=36,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=36,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=80 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1576 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=37,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=37,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=37,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=110 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1636 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=38,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=38,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=38,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=140 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1696 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=39,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=39,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=39,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1716 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=40,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=40,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=40,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=150 max=150 behaviours=shieldCapacityBoost:12:3080, revision=1716 energy=0 storage=0 depleted=False protection=True downtime=1980
+SHIELD_CHECK state time=41,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=41,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=41,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=42,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=42,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=42,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=43,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=43,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=43,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=44,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours=shieldCapacityBoost:1:3321, revision=1674 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=44,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=44,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=45,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=45,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=45,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=46,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=46,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=46,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=47,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=47,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=47,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=48,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=48,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=48,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=49,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=49,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=49,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=50,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=50,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=50,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=51,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=51,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=51,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=52,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=52,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=52,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=53,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=54,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=55,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=56,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=57,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=58,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=ab03859b19254f4cb05363c2f32d3c5f current=0 max=0 behaviours= revision=1659 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=59,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=60,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=60,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=61,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=61,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=62,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=62,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=63,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=63,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=64,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=64,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=65,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=65,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=66,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=66,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=67,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=67,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=68,0 entity=1cedcf276d6b4126a71b710840122c44 current=0 max=0 behaviours= revision=1675 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK state time=68,0 entity=f1c4b33df6324dc9bcd6d5611d43556d current=0 max=0 behaviours= revision=1718 energy=0 storage=0 depleted=False protection=False downtime=1980
+SHIELD_CHECK complete success=True active=68,8 allocated=46238512 elapsedTicks=693167209 charged=True drain=True recovered=True accepted=8 rejected=0 gc0=2 gc1=2 gc2=1

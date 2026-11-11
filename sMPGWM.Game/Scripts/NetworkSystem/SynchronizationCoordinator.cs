@@ -29,6 +29,8 @@ public partial class SynchronizationCoordinator : Node
     private readonly Dictionary<int, CommandQueue> _queues = new();
     private readonly Dictionary<int, (string, long)> _bindings = new();
     private readonly Dictionary<int, ulong> _traffic = new();
+    private readonly List<MovementSample> _snapshotSamples = new(MovementWire.MaxPlayers);
+    private readonly List<int> _departedPeers = new(MovementWire.MaxPlayers);
 
     public void Activate()
     {
@@ -39,9 +41,15 @@ public partial class SynchronizationCoordinator : Node
         _active = true; _client.Activate();
     }
 
-    public byte[] Baseline() => MovementWire.Snapshot(Session, CompletedTick,
-        World.Players.Where(p => p.Value.ControlledShip != null).Select(p =>
-            MovementStateAdapter.Capture(p.Key, p.Value, _queues.TryGetValue(p.Key, out var q) ? q.LatestArrival : CompletedTick)).ToArray());
+    public byte[] Baseline()
+    {
+        _snapshotSamples.Clear();
+        foreach (var pair in World.Players)
+            if (pair.Value.ControlledShip != null)
+                _snapshotSamples.Add(MovementStateAdapter.Capture(pair.Key, pair.Value,
+                    _queues.TryGetValue(pair.Key, out var queue) ? queue.LatestArrival : CompletedTick));
+        return MovementWire.Snapshot(Session, CompletedTick, _snapshotSamples);
+    }
 
     public void AcceptCommands(int peer, byte[] bytes)
     {
@@ -71,14 +79,20 @@ public partial class SynchronizationCoordinator : Node
         if (!_active) return;
         if (CompletedTick >= MovementWire.MaxTick || PredictionTick >= MovementWire.MaxTick - 2)
         { Network.FailSession("Movement tick range exhausted."); return; }
-        foreach (int peer in _queues.Keys.Concat(_traffic.Keys).Distinct().ToArray())
+        _departedPeers.Clear();
+        foreach (var peer in _queues.Keys)
             if (!World.Players.TryGetValue(peer, out var owner) || owner.ControlledShip == null)
-            { ResetCommands(peer); _traffic.Remove(peer); }
+                _departedPeers.Add(peer);
+        foreach (var peer in _traffic.Keys)
+            if (!_queues.ContainsKey(peer) && (!World.Players.TryGetValue(peer, out var owner) || owner.ControlledShip == null))
+                _departedPeers.Add(peer);
+        foreach (var peer in _departedPeers) { ResetCommands(peer); _traffic.Remove(peer); }
         if (Network.IsHost())
         {
             Network.PublishWorldTopology();
             Player.SampleMovementInput();
             long tick = CompletedTick + 1;
+            Network.AdvanceGameplay(tick);
             foreach (var (peer, owner) in World.Players)
             {
                 var ship = owner.ControlledShip; if (ship == null) continue;
@@ -86,8 +100,8 @@ public partial class SynchronizationCoordinator : Node
                 if (peer == 1) q.Accept(new(tick, ship.InputState), CompletedTick);
                 ship.SetInput(q.Consume(tick)); ship.Simulate(1.0 / 60);
             }
-            Network.StepGameplay(tick);
             CompletedTick = tick;
+            Network.PublishGameplay(tick);
             if (tick % 2 == 0) Network.PublishMovement(Baseline());
             return;
         }
@@ -123,6 +137,12 @@ public partial class SynchronizationCoordinator : Node
     public bool Receive(byte[] bytes, bool baseline = false, long request = 0)
     {
         if (!MovementWire.ReadSnapshot(bytes, out var session, out var tick, out var samples)) return false;
+        foreach (var sample in samples)
+            if (World.Players.TryGetValue(sample.Peer, out var owner) && owner.ControlledShip is { } ship &&
+                ship.EntityId == sample.Entity && owner.ControlGeneration == sample.Generation &&
+                (sample.ConfigurationRevision < ship.MovementConfigurationRevision ||
+                 sample.ConfigurationRevision == ship.MovementConfigurationRevision && sample.Configuration != ship.MovementConfiguration))
+                return false;
         if (baseline)
         {
             if (!_client.AcceptsBaseline(session, request)) return false;
@@ -142,7 +162,11 @@ public partial class SynchronizationCoordinator : Node
             (owner, sample) => _remote.Apply(sample.Peer, owner.ControlledShip!, tick, sample, baseline),
             (owner, sample) =>
             {
-                if (baseline) _prediction.ApplyBaseline(tick, sample, owner.ControlledShip!);
+                if (baseline || sample.ConfigurationRevision != owner.ControlledShip!.MovementConfigurationRevision)
+                {
+                    _prediction.ApplyBaseline(tick, sample, owner.ControlledShip!);
+                    _client.RestartWarmup();
+                }
                 else if (reconcile && !_prediction.Reconcile(sample.Peer, owner, tick, sample)) Recover();
             });
         return true;

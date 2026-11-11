@@ -1,4 +1,4 @@
-Version: 1.0.0
+Version: 2.0.0
 Categories:
   - Id: engine
     DisplayName: Engines
@@ -13,12 +13,12 @@ Categories:
   - Id: shield_generator
     DisplayName: Shield Generators
     Icon: RPG.ItemStatShieldDefenseArmor
-    Values: Shield, RechargeTime, DownTime, EnergyConsumption, Mass
+    Values: ShieldCapacity, RechargeTime, DownTime, EnergyConsumption, Mass
     Description: "Provide protection against attacks. Shields consume Energy"
   - Id: reactor
     DisplayName: Reactors
     Icon: Weather.AtomicEnergyNuclearPowerPlant
-    Values: Energy, EnergyProduction
+    Values: EnergyProduction, Mass
     Description: "Delivers the ships energy. Without energy no weapons, no shield, no moving"
   - Id: battery
     DisplayName: Battery
@@ -33,12 +33,12 @@ Categories:
   - Id: light_weapon
     DisplayName: Light Weapons
     Icon: Warfare.WeaponSniperRifleGun
-    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, MagazinSize, ReloadDuration
+    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, MagazinSize, ReloadDuration, Mass
     Description: "A Weapon that needs a weapon slot to hold"
   - Id: heavy_weapon
     DisplayName: Heavy Weapons
     Icon: Warfare.AmmoRocketMissileRPG
-    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, ReloadDuration
+    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, ReloadDuration, Mass
     Description: "A Weapon that needs 2 or more slots to hold."
   - Id: consumable
     CanStack: true

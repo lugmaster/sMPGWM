@@ -3,6 +3,7 @@ using sMPGWM.Scripts.Items.Equipment;
 using sMPGWM.Scripts.Items.Inventory;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.StatSystem;
 
 namespace sMPGWM.Scripts.Items;
 
@@ -13,6 +14,7 @@ public sealed class PlayerItemState : IDisposable
     public EquipmentController Equipment { get; }
     private PlayerSession? _owner;
     private ShipController? _ship;
+    private bool _authoritative;
     private readonly string?[] _sources;
     private readonly ItemEntityId?[] _sourceItems;
 
@@ -25,21 +27,26 @@ public sealed class PlayerItemState : IDisposable
         Equipment.Changed += EquipmentChanged;
     }
 
-    public void Bind(PlayerSession owner)
+    public void Bind(PlayerSession owner, bool authoritative = false)
     {
-        if (_owner == owner) return;
+        if (_owner == owner && _authoritative == authoritative) return;
         if (_owner != null) _owner.ControlledShipChanged -= ShipChanged;
         _owner = owner;
+        _authoritative = authoritative;
         owner.ControlledShipChanged += ShipChanged;
         ShipChanged(_ship, owner.ControlledShip);
     }
 
     private void ShipChanged(ShipController? previous, ShipController? next)
     {
+        if (_ship != null) _ship.DefinitionChanged -= DefinitionChanged;
         RemoveGrants();
         _ship = next;
+        if (_ship != null) _ship.DefinitionChanged += DefinitionChanged;
         EquipmentChanged(Equipment.Snapshot);
     }
+
+    private void DefinitionChanged() => EquipmentChanged(Equipment.Snapshot);
 
     private void RemoveGrants()
     {
@@ -68,6 +75,16 @@ public sealed class PlayerItemState : IDisposable
             if (source == null) continue;
             _ship.Gameplay.Grants.SetSource(source, item!.Definition.AbilityIds);
         }
+        if (_authoritative)
+        {
+            var stats = EquipmentStatCalculator.Calculate(_ship.Data.StatModifiers, _ship.Data.Mass,
+                snapshot, Equipment.Definitions);
+            var batterySlot = Equipment.FindSlot("battery");
+            var battery = batterySlot >= 0 ? snapshot.Slots[batterySlot]?.Id.Value ?? 0 : 0;
+            _ship.Gameplay.ApplyEquipment(stats, battery);
+            _ship.Gameplay.InitializeResources();
+            _ship.RefreshMovementConfiguration();
+        }
     }
 
     public bool Provides(string slot, long source, string ability)
@@ -94,6 +111,7 @@ public sealed class PlayerItemState : IDisposable
     {
         if (_owner != null) _owner.ControlledShipChanged -= ShipChanged;
         RemoveGrants();
+        if (_ship != null) _ship.DefinitionChanged -= DefinitionChanged;
         _owner = null;
         _ship = null;
         Equipment.Changed -= EquipmentChanged;

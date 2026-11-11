@@ -8,6 +8,9 @@ public partial class PlayerStatsPanel : PanelContainer
 {
     private NetworkManager? _network;
     private StatBar _shield = null!;
+    private StatBar _energy = null!;
+    private Label _availability = null!;
+    private long _revision = -1;
     private string _entity = "";
     private double _current = double.NaN;
     private double _capacity = double.NaN;
@@ -16,6 +19,9 @@ public partial class PlayerStatsPanel : PanelContainer
     {
         _shield = GetNode<StatBar>("%BarContainer/StatBar");
         _shield.SetTitle("Shield");
+        _energy = GetNode<StatBar>("%BarContainer/EnergyBar");
+        _energy.SetTitle("Energy");
+        _availability = GetNode<Label>("%BarContainer/Availability");
         Refresh();
     }
 
@@ -23,6 +29,7 @@ public partial class PlayerStatsPanel : PanelContainer
     {
         _network = network;
         _entity = "";
+        _revision = -1;
         _current = _capacity = double.NaN;
         Refresh();
     }
@@ -36,11 +43,20 @@ public partial class PlayerStatsPanel : PanelContainer
         var entity = ship?.EntityId ?? "";
         var current = ship?.Gameplay.Shield.Current ?? 0;
         var capacity = ship?.Gameplay.Shield.Capacity ?? 0;
-        if (entity == _entity && current == _current && capacity == _capacity) return;
+        var revision = ship?.Gameplay.Revision ?? 0;
+        if (entity == _entity && current == _current && capacity == _capacity && revision == _revision) return;
+        _revision = revision;
         _entity = entity;
         _current = current;
         _capacity = capacity;
         _shield.Setup(current, capacity);
+        _energy.Setup(ship?.Gameplay.Energy.Current ?? 0, ship?.Gameplay.Energy.Capacity ?? 0);
+        var state = ship?.Gameplay;
+        _availability.Text = state?.EnergyDepleted == true ? "Power depleted — shield unprotected" :
+            state?.ShieldProtectionAvailable == true ? "Powered — shield protective" :
+            state != null && state.ShieldDowntimeDeadline > state.AuthoritativeTick ? "Powered — shield downtime" :
+            "Powered — shield unavailable";
+        _shield.Modulate = state?.ShieldProtectionAvailable == true ? Colors.White : new Color(0.65f, 0.65f, 0.65f);
     }
 
     public override void _ExitTree() => Bind(null);

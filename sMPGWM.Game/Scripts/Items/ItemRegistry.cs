@@ -101,6 +101,13 @@ public static class ItemRegistry
                     grants.Add(new((string)grant["BehaviourId"]!,
                         Enum.Parse<BehaviourGrantWhile>((string)grant["While"]!),
                         Enum.Parse<BehaviourGrantLifetime>((string)grant["Lifetime"]!)));
+            if (row["Values"] is JObject legacyValues)
+            {
+                if (legacyValues.ContainsKey("Shield"))
+                    throw new ArgumentException($"Item '{row["Id"]}': replace legacy Shield with ShieldCapacity (item data version 2).");
+                if (legacyValues.ContainsKey("Energy"))
+                    throw new ArgumentException($"Item '{row["Id"]}': remove legacy Energy; use EnergyProduction on reactors and EnergyStorage on batteries.");
+            }
             foreach (var required in category.Values)
             {
                 if (required == "AbilityIds")
@@ -118,6 +125,8 @@ public static class ItemRegistry
                     throw new ArgumentException($"Item '{row["Id"]}' has invalid damage source.");
                 if (scalar.Type != JTokenType.String && (!double.IsFinite((double)scalar) || (double)scalar < 0))
                     throw new ArgumentException($"Item '{row["Id"]}' has invalid value '{required}'.");
+                if (required == "RechargeTime" && (double)scalar <= 0)
+                    throw new ArgumentException($"Item '{row["Id"]}' requires positive RechargeTime in milliseconds.");
                 values.Add(required, scalar.Value);
             }
             if (row["Values"] is JObject supplied && supplied.Count != values.Count)

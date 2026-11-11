@@ -1,15 +1,15 @@
-Version: 1.1.0
+Version: 2.0.0
 Items:
   - Id: mock_standard_engine
     DisplayName: Standard Engine
     CategoryId: engine
     Values:
       EnergyConsumption: 1
-      Speed: 1
-      AfterBurnerSpeed: 1
-      RotationSpeed: 1
-      Acceleration: 1
-      AfterBurnerAcceleration: 1
+      Speed: 300
+      AfterBurnerSpeed: 400
+      RotationSpeed: 30
+      Acceleration: 1.2
+      AfterBurnerAcceleration: 1.7
       Mass: 1
     Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
   - Id: mock_advanced_engine
@@ -17,11 +17,11 @@ Items:
     CategoryId: engine
     Values:
       EnergyConsumption: 1
-      Speed: 1
-      AfterBurnerSpeed: 1
-      RotationSpeed: 1
-      Acceleration: 1
-      AfterBurnerAcceleration: 1
+      Speed: 300
+      AfterBurnerSpeed: 400
+      RotationSpeed: 30
+      Acceleration: 1.2
+      AfterBurnerAcceleration: 1.7
       Mass: 1
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
   - Id: mock_standard_hull
@@ -43,9 +43,9 @@ Items:
     CategoryId: shield_generator
     AbilityIds: [shieldCapacityBoost]
     Values:
-      Shield: 1
-      RechargeTime: 1
-      DownTime: 1
+      ShieldCapacity: 100
+      RechargeTime: 5000
+      DownTime: 3000
       EnergyConsumption: 1
       Mass: 1
     Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
@@ -54,9 +54,9 @@ Items:
     CategoryId: shield_generator
     AbilityIds: [shieldCapacityBoost]
     Values:
-      Shield: 1
-      RechargeTime: 1
-      DownTime: 1
+      ShieldCapacity: 100
+      RechargeTime: 5000
+      DownTime: 3000
       EnergyConsumption: 1
       Mass: 1
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
@@ -64,15 +64,15 @@ Items:
     DisplayName: Standard Reactor
     CategoryId: reactor
     Values:
-      Energy: 1
-      EnergyProduction: 1
+      Mass: 1
+      EnergyProduction: 15
     Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
   - Id: mock_advanced_reactor
     DisplayName: Advanced Reactor
     CategoryId: reactor
     Values:
-      Energy: 1
-      EnergyProduction: 1
+      Mass: 1
+      EnergyProduction: 15
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
   - Id: mock_standard_light_weapon
     DisplayName: Standard Light Weapon
@@ -85,6 +85,7 @@ Items:
       EnergyPerShot: 1
       MagazinSize: 1
       ReloadDuration: 1
+      Mass: 1
     Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
   - Id: mock_advanced_light_weapon
     DisplayName: Advanced Light Weapon
@@ -97,6 +98,7 @@ Items:
       EnergyPerShot: 1
       MagazinSize: 1
       ReloadDuration: 1
+      Mass: 1
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
   - Id: mock_standard_heavy_weapon
     DisplayName: Standard Heavy Weapon
@@ -108,6 +110,7 @@ Items:
       EnergyConsumption: 1
       EnergyPerShot: 1
       ReloadDuration: 1
+      Mass: 1
     Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
   - Id: mock_advanced_heavy_weapon
     DisplayName: Advanced Heavy Weapon
@@ -119,6 +122,7 @@ Items:
       EnergyConsumption: 1
       EnergyPerShot: 1
       ReloadDuration: 1
+      Mass: 1
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
   - Id: mock_standard_consumable
     DisplayName: Standard Consumable

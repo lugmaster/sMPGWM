@@ -1,4 +1,4 @@
-Version: 1.1.0
+Version: 1.2.0
 Stats:
   - Id: health
     DisplayName: Health
@@ -8,7 +8,7 @@ Stats:
     Description: "Armor reduces the incoming damage by a percentage."
   - Id: shield
     DisplayName: Shield
-    Description: "Shields absorb incoming damage."
+    Description: "Shield resource; maximum is the installed generator ShieldCapacity. Protection requires powered, available shields."
   - Id: energy
     DisplayName: Energy
     Description: "Energy supplies the ship systems with energy"
@@ -44,7 +44,7 @@ Stats:
     Description: "The afterburner acceleration a ship has currently"
   - Id: energy_storage
     DisplayName: Energy Storage
-    Description: Stored energy available to ship systems.
+    Description: Energy resource; maximum is the installed battery EnergyStorage.
   - Id: energy_production
     DisplayName: Energy Production
     Description: Rate at which reactors produce energy.
@@ -52,3 +52,15 @@ Stats:
   - Id: attack_speed
     DisplayName: Attack Speed
     Description: Weapon attack rate; increasing this value makes attacks faster.
+  - Id: rotation_speed
+    DisplayName: Rotation Speed
+    Description: Engine rotation rate before mass inertia.
+  - Id: energy_consumption
+    DisplayName: Energy Consumption
+    Description: Total equipped passive energy demand per second, including idle and unpowered systems.
+  - Id: recharge_time
+    DisplayName: Shield Recharge Time
+    Description: Milliseconds to regenerate from zero to ShieldCapacity.
+  - Id: down_time
+    DisplayName: Shield Down Time
+    Description: Milliseconds without shield protection or regeneration after shield charge reaches zero.

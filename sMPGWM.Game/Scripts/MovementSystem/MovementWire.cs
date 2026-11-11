@@ -8,17 +8,20 @@ using sMPGWM.Scripts.ShipSystem;
 namespace sMPGWM.Scripts.MovementSystem;
 
 public readonly record struct MovementSample(int Peer, string Entity, long Generation, long Revision,
-    Vector2 Position, float Rotation, Vector2 Velocity, ShipInputState Input, long Arrival, byte AppliedFlags = 0);
+    Vector2 Position, float Rotation, Vector2 Velocity, ShipInputState Input, long Arrival, byte AppliedFlags = 0,
+    long ConfigurationRevision = 0, MovementConfiguration Configuration = default);
 public readonly record struct MovementCommand(long Tick, ShipInputState Input);
 
 /// <summary>Fixed-size, bounded movement payload; transport envelope is separate from movement fields.</summary>
 public static class MovementWire
 {
     public const int MaxPlayers = 10, MaxCommands = 6, MaxBytes = 1400;
+    public const int SnapshotHeaderBytes = 25, SampleBytes = 111;
     public const long MaxTick = SnapshotEnvelope.MaxTick;
     public static byte[] Snapshot(Guid session, long tick, IReadOnlyList<MovementSample> samples)
     {
-        using var stream = new MemoryStream();
+        if (samples.Count > MaxPlayers) throw new InvalidOperationException("Snapshot capacity exceeded.");
+        using var stream = new MemoryStream(SnapshotHeaderBytes + SampleBytes * samples.Count);
         using var writer = new BinaryWriter(stream);
         SnapshotEnvelope.Write(writer, session, tick); writer.Write((byte)samples.Count);
         foreach (var s in samples)
@@ -27,6 +30,7 @@ public static class MovementWire
             writer.Write(s.Generation); writer.Write(s.Revision);
             WriteVector(writer, s.Position); writer.Write(s.Rotation); WriteVector(writer, s.Velocity);
             WriteInput(writer, s.Input); writer.Write(s.Arrival); writer.Write(s.AppliedFlags);
+            writer.Write(s.ConfigurationRevision); WriteConfiguration(writer, s.Configuration);
         }
         if (samples.Count > MaxPlayers || stream.Length > MaxBytes) throw new InvalidOperationException("Snapshot capacity exceeded.");
         return stream.ToArray();
@@ -48,10 +52,13 @@ public static class MovementWire
                 long generation = r.ReadInt64(), revision = r.ReadInt64();
                 var position = ReadVector(r); float rotation = r.ReadSingle(); var velocity = ReadVector(r);
                 var input = ReadInput(r); long arrival = r.ReadInt64(); byte applied = r.ReadByte();
+                var configurationRevision = r.ReadInt64(); var configuration = ReadConfiguration(r);
                 if (peer <= 0 || !peers.Add(peer) || !entities.Add(entity) || generation < 0 || revision < 0 ||
                     !position.IsFinite() || !velocity.IsFinite() || !float.IsFinite(rotation) || !Valid(input) ||
-                    arrival < 0 || arrival > MaxTick || applied > 7) return false;
-                samples.Add(new(peer, entity, generation, revision, position, rotation, velocity, input, arrival, applied));
+                    arrival < 0 || arrival > MaxTick || applied > 7 || configurationRevision < 0 || !configuration.IsValid ||
+                    !configuration.Enabled && applied != 0) return false;
+                samples.Add(new(peer, entity, generation, revision, position, rotation, velocity, input, arrival, applied,
+                    configurationRevision, configuration));
             }
             return r.BaseStream.Position == r.BaseStream.Length;
         }
@@ -87,6 +94,22 @@ public static class MovementWire
         catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException) { return false; }
     }
     public static bool Valid(ShipInputState i) => i.Direction.IsFinite() && i.Direction.LengthSquared() <= 1.001f && float.IsFinite(i.AimAngle);
+    private static void WriteConfiguration(BinaryWriter writer, MovementConfiguration configuration)
+    {
+        writer.Write(configuration.Speed); writer.Write(configuration.AfterBurnerSpeed);
+        writer.Write(configuration.RotationSpeed); writer.Write(configuration.Acceleration);
+        writer.Write(configuration.AfterBurnerAcceleration); writer.Write(configuration.Mass);
+        writer.Write(configuration.Enabled);
+    }
+    private static MovementConfiguration ReadConfiguration(BinaryReader reader)
+    {
+        var speed = reader.ReadSingle(); var afterburnerSpeed = reader.ReadSingle();
+        var rotation = reader.ReadSingle(); var acceleration = reader.ReadSingle();
+        var afterburnerAcceleration = reader.ReadSingle(); var mass = reader.ReadSingle();
+        var enabled = reader.ReadByte();
+        if (enabled > 1) throw new InvalidDataException("Invalid powered movement flag.");
+        return new(speed, afterburnerSpeed, rotation, acceleration, afterburnerAcceleration, mass, enabled != 0);
+    }
     private static void WriteVector(BinaryWriter w, Vector2 v) { w.Write(v.X); w.Write(v.Y); }
     private static Vector2 ReadVector(BinaryReader r) => new(r.ReadSingle(), r.ReadSingle());
     private static void WriteInput(BinaryWriter w, ShipInputState i)

@@ -62,14 +62,23 @@ public partial class NetworkManager
         _abilityQueue.Enqueue((peer, request, caster, generation, target, ability, origin));
     }
 
-    public void StepGameplay(long tick)
+    public void AdvanceGameplay(long tick)
     {
         if (!IsHost()) return;
         foreach (var ship in World.Entities.Values) ship.Gameplay.Expire(tick);
         if (_abilityQueue.Count != 0)
             _abilityQueue.Step(tick, World, Abilities, _playerItems,
                 _abilityPeerReady ??= MovementReady, _abilityCompleted ??= CompleteAbility);
-        if (tick % 2 != 0) return;
+        foreach (var ship in World.Entities.Values)
+        {
+            ship.Gameplay.AdvanceResources(tick);
+            ship.RefreshMovementConfiguration();
+        }
+    }
+
+    public void PublishGameplay(long tick)
+    {
+        if (!IsHost() || tick % 2 != 0) return;
         PublishItemChanges();
         foreach (var ship in World.Entities.Values)
             if (!_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var revision) || revision != ship.Gameplay.Revision)
@@ -109,7 +118,9 @@ public partial class NetworkManager
         if (!GameplaySnapshotCodec.TryDecode(rows, Abilities.Definitions, out var entries)) return false;
         foreach (var entry in entries)
             if (World.Entities.TryGetValue(entry.Entity, out var ship))
-                ship.Gameplay.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions);
+                ship.Gameplay.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions,
+                    entry.Stats, entry.EnergyCurrent, entry.EnergyDepleted, entry.ShieldProtectionAvailable,
+                    entry.ShieldDowntimeDeadline, entry.AuthoritativeTick, entry.ConfigurationRevision);
         return true;
     }
 

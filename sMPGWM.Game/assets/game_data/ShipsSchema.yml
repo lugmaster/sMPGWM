@@ -18,7 +18,8 @@ properties:
         - name
         - texture_path
         - collider_points
-        - ship_stats
+        - mass
+        - stat_modifiers
         - weapon_slots
       properties:
         name:
@@ -36,43 +37,59 @@ properties:
             maxItems: 2
             items:
               type: number
-        ship_stats:
+        mass:
+          type: number
+          minimum: 0
+          maximum: 3.4028234663852886e+38
+        stat_modifiers:
+          description: Flat adjustments to installed equipment; omitted fields are zero. Legacy ship_stats and ShieldCurrent are no longer supported.
           type: object
           additionalProperties: false
-          required:
-            - ShieldCapacity
-            - ShieldCurrent
-            - Speed
-            - AfterBurnerSpeed
-            - RotationSpeed
-            - Acceleration
-            - AfterBurnerAcceleration
-            - ShipMass
           properties:
             ShieldCapacity:
               type: number
-              minimum: 0
-            ShieldCurrent:
-              type: number
-              minimum: 0
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
             Speed:
               type: number
-              minimum: 0
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
             AfterBurnerSpeed:
               type: number
-              minimum: 0
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
             RotationSpeed:
               type: number
-              minimum: 0
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
             Acceleration:
               type: number
-              minimum: 0
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
             AfterBurnerAcceleration:
               type: number
-              minimum: 0
-            ShipMass:
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
+            Armor:
               type: number
-              minimum: 0
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
+            RechargeTime:
+              type: number
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
+            DownTime:
+              type: number
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
+            EnergyProduction:
+              type: number
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
+            EnergyStorage:
+              type: number
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
         weapon_slots:
           type: object
           additionalProperties: false

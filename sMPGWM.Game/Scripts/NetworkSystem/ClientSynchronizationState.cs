@@ -32,6 +32,7 @@ public sealed class ClientSynchronizationState(Func<ulong> now)
         return true;
     }
     public void FinishWarmup() { if (Phase == ClientSynchronizationPhase.Warming) Phase = ClientSynchronizationPhase.Predicting; }
+    public void RestartWarmup() { if (HasBaseline) Phase = ClientSynchronizationPhase.Warming; }
     public bool NeedsRecovery()
     {
         ulong current = now();

@@ -39,6 +39,7 @@ public sealed class PlayerStatsPanelTests // TEST-SUPPORT: STATS-HUD-014 | Tests
             world.ApproveSpawn(1, new("fighter")); // TEST-SUPPORT: STATS-HUD-034 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             var owner = world.Players[1]; // TEST-SUPPORT: STATS-HUD-035 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             var ship = owner.ControlledShip!; // TEST-SUPPORT: STATS-HUD-036 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            ship.Gameplay.ApplyEquipment(new(0, 0, 0, 0, 0, 0, 0, 100, 5000, 3000, 0, 0, 0, false, false, true, false, false), 0); // TEST-SUPPORT: STATS-HUD-EQUIP-001 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             ship.Gameplay.SetShieldCurrent(28); // TEST-SUPPORT: STATS-HUD-037 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             if (bindBeforeReady) panel.Bind(network); // TEST-SUPPORT: STATS-HUD-038 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             parent.AddChild(panel); // TEST-SUPPORT: STATS-HUD-039 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
@@ -79,6 +80,7 @@ public sealed class PlayerStatsPanelTests // TEST-SUPPORT: STATS-HUD-014 | Tests
             Assert.That(idleBytes, Is.Zero); // TEST-SUPPORT: STATS-HUD-072 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 
             var replacement = world.SpawnEntity(new(Guid.NewGuid().ToString("N"), "fighter", Vector2.Zero, 0, Vector2.Zero)); // TEST-SUPPORT: STATS-HUD-073 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            replacement.Gameplay.ApplyEquipment(new(0, 0, 0, 0, 0, 0, 0, 100, 5000, 3000, 0, 0, 0, false, false, true, false, false), 0); // TEST-SUPPORT: STATS-HUD-EQUIP-002 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             replacement.Gameplay.SetShieldCurrent(7); // TEST-SUPPORT: STATS-HUD-074 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             owner.AssignShip(replacement); // TEST-SUPPORT: STATS-HUD-075 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel._Process(1d / 60); // TEST-SUPPORT: STATS-HUD-076 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal

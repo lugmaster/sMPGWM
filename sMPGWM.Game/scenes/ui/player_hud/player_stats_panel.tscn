@@ -27,3 +27,11 @@ theme_override_constants/separation = 12
 
 [node name="StatBar" parent="MarginContainer/BarContainer" unique_id=1063959680 instance=ExtResource("2_lh4dq")]
 layout_mode = 2
+
+[node name="EnergyBar" parent="MarginContainer/BarContainer" instance=ExtResource("2_lh4dq")]
+layout_mode = 2
+
+[node name="Availability" type="Label" parent="MarginContainer/BarContainer"]
+layout_mode = 2
+mouse_filter = 2
+text = "Shield unavailable"

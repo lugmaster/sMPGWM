@@ -57,6 +57,10 @@ public class GodotIntegrationTests
                 [rendering]
                 renderer/rendering_method="gl_compatibility"
                 """);
+            var sourceProject = File.ReadAllText(Path.Combine(game, "project.godot")); // TEST-SUPPORT: RESOURCE-INPUT-STAGE-1 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
+            var inputStart = sourceProject.IndexOf("[input]", StringComparison.Ordinal); // TEST-SUPPORT: RESOURCE-INPUT-STAGE-2 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
+            var inputEnd = sourceProject.IndexOf("\n[", inputStart + 7, StringComparison.Ordinal); // TEST-SUPPORT: RESOURCE-INPUT-STAGE-3 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
+            File.AppendAllText(Path.Combine(staging, "project.godot"), "\n" + sourceProject[inputStart..inputEnd]); // TEST-SUPPORT: RESOURCE-INPUT-STAGE-4 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
             File.WriteAllText(Path.Combine(staging, "tests.tscn"), """
                 [gd_scene load_steps=2 format=3]
                 [ext_resource type="Script" path="res://Scripts/Util/Mocks/HeadlessTestHost.cs" id="1"]

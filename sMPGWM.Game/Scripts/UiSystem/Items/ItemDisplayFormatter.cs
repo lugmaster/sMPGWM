@@ -23,6 +23,12 @@ internal static class ItemDisplayFormatter
     {
         var tooltip = $"{data.DisplayName}\n{data.CategoryName}";
         if (data.Description.Length > 0) tooltip += $"\n{data.Description}";
+        foreach (var value in data.Values)
+        {
+            var unit = value.Key is "RechargeTime" or "DownTime" ? " ms" :
+                value.Key is "EnergyProduction" or "EnergyConsumption" ? " /s" : "";
+            tooltip += $"\n{value.Key}: {System.Convert.ToString(value.Value, CultureInfo.InvariantCulture)}{unit}";
+        }
         if (data.CanStack)
         {
             var limit = data.StackLimit == int.MaxValue ? "Unlimited" : data.StackLimit.ToString(CultureInfo.InvariantCulture);

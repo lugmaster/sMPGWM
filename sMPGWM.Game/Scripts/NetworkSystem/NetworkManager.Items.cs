@@ -28,9 +28,37 @@ public partial class NetworkManager
             foreach (var item in InitialItems.Slots)
                 if (item != null && items.Store.CreateItems(items.Inventory.Container, item.DefinitionId, item.Count) != InventoryResult.Success)
                     throw new InvalidOperationException("Could not create participant inventory.");
-        items.Bind(World.Players[peer]);
+        EquipStarterLoadout(items);
+        items.Bind(World.Players[peer], authoritative: true);
         _playerItems.Add(peer, items);
         return items;
+    }
+
+    private static void EquipStarterLoadout(PlayerItemState items)
+    {
+        foreach (var slot in items.Equipment.Definitions)
+        {
+            var index = items.Equipment.FindSlot(slot.Key);
+            if (items.Equipment.Snapshot.Slots[index] != null) continue;
+            var definition = "mock_standard_" + slot.AcceptedCategory;
+            var sourceIndex = -1;
+            for (var i = 0; i < items.Inventory.Snapshot.Slots.Count; i++)
+                if (items.Inventory.Snapshot.Slots[i]?.DefinitionId == definition)
+                { sourceIndex = i; break; }
+            if (sourceIndex < 0)
+            {
+                if (items.Store.CreateItems(items.Inventory.Container, definition, 1) != InventoryResult.Success)
+                    throw new InvalidOperationException("Could not create starter equipment: " + definition);
+                for (var i = 0; i < items.Inventory.Snapshot.Slots.Count; i++)
+                    if (items.Inventory.Snapshot.Slots[i]?.DefinitionId == definition)
+                    { sourceIndex = i; break; }
+            }
+            var item = items.Inventory.Snapshot.Slots[sourceIndex]!;
+            if (items.Store.TransferItem(item.Id, new(items.Inventory.Container.Id, sourceIndex),
+                    new(items.Equipment.Container.Id, index), items.Inventory.Revision, items.Equipment.Revision)
+                != TransferResult.Success)
+                throw new InvalidOperationException("Could not equip starter item: " + definition);
+        }
     }
 
     public TransferResult RequestItemTransfer(TransferRequest request)

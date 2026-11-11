@@ -5,6 +5,7 @@ Install tools/gameplay-validation-requirements.txt, then run this file from any 
 from pathlib import Path
 import copy
 import sys
+import math # TEST-SUPPORT: DATA-VALIDATOR-V2-8 | Tests: tools.validate_gameplay_data.main
 
 import yaml
 from jsonschema import Draft7Validator
@@ -22,6 +23,7 @@ CATALOGUES = {
     'conditions': ('Conditions.yml', 'ConditionSchema.yml', 'Conditions'),
     'categories': ('ItemCategoryDefinitions.yml', 'ItemCategorySchema.yml', 'Categories'),
     'items': ('ItemDefinitions.yml', 'ItemSchema.yml', 'Items'),
+    'ships': ('Ships.yml', 'ShipsSchema.yml', 'ships'), # TEST-SUPPORT: DATA-VALIDATOR-V2-26 | Tests: tools.validate_gameplay_data.main
     'damage': ('DamageSources.yml', 'DamageSourceSchema.yml', 'DamageSources'),
 }
 
@@ -56,12 +58,17 @@ def validate(documents, schemas):
             errors.append(f'{filename}:{list(error.absolute_path)}: {error.message}')
         indices[kind] = {}
         for entry in document.get(key, []):
-            id = entry.get('Id')
+            id = entry.get('name' if kind == 'ships' else 'Id') # TEST-SUPPORT: DATA-VALIDATOR-V2-61 | Tests: tools.validate_gameplay_data.main
             if id in indices[kind]:
                 errors.append(f'{filename}: duplicate Id {id}')
             indices[kind][id] = entry
     if errors:
         return errors
+
+    for name, ship in indices['ships'].items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-68 | Tests: tools.validate_gameplay_data.main
+        for field, value in {'mass': ship['mass'], **ship['stat_modifiers']}.items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-69 | Tests: tools.validate_gameplay_data.main
+            if not math.isfinite(value) or abs(value) > 3.4028234663852886e38: # TEST-SUPPORT: DATA-VALIDATOR-V2-70 | Tests: tools.validate_gameplay_data.main
+                errors.append(f'ships:{name}: {field} must be a finite float-representable value') # TEST-SUPPORT: DATA-VALIDATOR-V2-71 | Tests: tools.validate_gameplay_data.main
 
     damage_ids = set(indices['damage'])
     category_ids = set(indices['categories'])
@@ -162,6 +169,10 @@ def validate(documents, schemas):
                 if value not in damage_ids: errors.append(f'{owner}: unknown damage source')
             elif isinstance(value, bool) or not isinstance(value, (int, float)):
                 errors.append(f'{owner}: {key} must be numeric')
+            elif not math.isfinite(value) or value < 0: # TEST-SUPPORT: DATA-VALIDATOR-V2-172 | Tests: tools.validate_gameplay_data.main
+                errors.append(f'{owner}: {key} must be finite and nonnegative') # TEST-SUPPORT: DATA-VALIDATOR-V2-173 | Tests: tools.validate_gameplay_data.main
+            elif key == 'RechargeTime' and value <= 0: # TEST-SUPPORT: DATA-VALIDATOR-V2-174 | Tests: tools.validate_gameplay_data.main
+                errors.append(f'{owner}: RechargeTime must be positive milliseconds') # TEST-SUPPORT: DATA-VALIDATOR-V2-175 | Tests: tools.validate_gameplay_data.main
         if set(values) - (required - {'AbilityIds'}): errors.append(f'{owner}: unexpected category values')
         refs('abilities', item.get('AbilityIds', []), owner)
         for grant in item.get('BehaviourGrants', []):
@@ -188,6 +199,14 @@ def validate(documents, schemas):
 
 def negative_checks(documents, schemas):
     cases = [
+        ('legacy ship_stats', lambda d: d['ships']['ships'][0].update(ship_stats={})), # TEST-SUPPORT: DATA-VALIDATOR-V2-202 | Tests: tools.validate_gameplay_data.main
+        ('legacy ShieldCurrent', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(ShieldCurrent=10)), # TEST-SUPPORT: DATA-VALIDATOR-V2-203 | Tests: tools.validate_gameplay_data.main
+        ('invalid intrinsic mass', lambda d: d['ships']['ships'][0].update(mass=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-204 | Tests: tools.validate_gameplay_data.main
+        ('infinite modifier', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(Speed=float('inf'))), # TEST-SUPPORT: DATA-VALIDATOR-V2-205 | Tests: tools.validate_gameplay_data.main
+        ('zero recharge time', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(RechargeTime=0)), # TEST-SUPPORT: DATA-VALIDATOR-V2-206 | Tests: tools.validate_gameplay_data.main
+        ('negative downtime', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(DownTime=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-207 | Tests: tools.validate_gameplay_data.main
+        ('legacy generator Shield', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(Shield=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-208 | Tests: tools.validate_gameplay_data.main
+        ('legacy reactor Energy', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='reactor')['Values'].update(Energy=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-209 | Tests: tools.validate_gameplay_data.main
         ('missing item value', lambda d: d['items']['Items'][0]['Values'].pop('Speed')),
         ('unknown field', lambda d: d['abilities']['AbilityDefinitions'][0].update(Typo=True)),
         ('dangling reference', lambda d: d['abilities']['AbilityDefinitions'][0].update(EffectId='missing')),

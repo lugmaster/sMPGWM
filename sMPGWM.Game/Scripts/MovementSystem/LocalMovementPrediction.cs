@@ -41,6 +41,13 @@ public sealed class LocalMovementPrediction
     }
     public bool Reconcile(int peer, PlayerSession owner, long tick, MovementSample authoritative)
     {
+        var controlled = owner.ControlledShip!;
+        if (authoritative.ConfigurationRevision < controlled.MovementConfigurationRevision) return true;
+        if (authoritative.ConfigurationRevision != controlled.MovementConfigurationRevision)
+        {
+            ApplyBaseline(tick, authoritative, controlled);
+            return true;
+        }
         if ((_identity is { } identity && (identity.Entity != authoritative.Entity ||
             identity.Generation != authoritative.Generation || identity.Revision != authoritative.Revision)) ||
             !_history.TryGetValue(tick, out var predicted) || Tick - tick > 64) return false;

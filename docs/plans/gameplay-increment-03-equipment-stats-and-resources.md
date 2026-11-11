@@ -1,6 +1,6 @@
 # Gameplay increment 3 Equipment stats and resources
 
-Status: implementation plan; gameplay decisions agreed on 2026-11-11. Implementation has not started.
+Status: implemented and verified on 2026-11-11. See implementation and validation record below. Gameplay decisions agreed on 2026-11-11.
 
 Equipment supplies each installed system's baseline values. Ships add flat modifiers to those values. The host resolves the resulting stats, runs energy and shield simulation, and supplies authoritative movement parameters and resource state to clients.
 
@@ -219,3 +219,32 @@ Exercise at least a host plus two clients for functional integration and ten par
 Follow AGENTS.md traceability requirements for every executable declaration/line introduced solely for automated or manual verification, including fixture helpers: unique `TEST-SUPPORT` IDs with fully qualified consuming test method names. Use ordinary production mutation APIs in tests when available. New source files follow namespace directories, one type per file, straightforward loops, and allocation-conscious storage.
 
 Completion requires the agreed behavior, passing relevant regressions, working HUD and equipment interactions, correct joins/recovery, and recorded performance evidence at the required scale. Broader combat, ability, or stat features are not prerequisites for this increment.
+
+## Implementation and validation record
+
+The host composes installed equipment through `PlayerItemState`, initializes the explicit starter loadout once, and advances resources before movement. `EquipmentStatCalculator` caches item projections. `ResourcePool` applies all flats before summed percentages and retains owned contributions while a system is absent. Signed ship shield modifiers remain separate until that shared calculation, avoiding an early clamp. Battery identity changes discard stored energy; generator replacement preserves charge and downtime.
+
+Gameplay snapshots carry complete confirmed resources, stats, system presence, conditions, downtime and revisions. Movement samples independently carry their matching parameters and configuration revision, so delayed gameplay messages cannot change movement parameters. Configuration transitions rebase prediction without spending resources during replay. Ten samples occupy 1,135 bytes including the header, within the unchanged 1,400-byte limit. Wire compatibility is protocol 7 / gameplay protocol 5.
+
+The existing HUD displays shield and energy, with explicit power/protection feedback. Item tooltips display values and millisecond shield timing units. No weapon attacks, general ability energy costs, or subsystem toggle controls were added.
+
+### Data override migration
+
+Ship, item and item-category documents are version 2. `Ships.yml` replaces `ship_stats` with `stat_modifiers` and a separate nonnegative intrinsic `mass`. Optional modifiers are finite signed flats and default to zero. Remove `ShieldCurrent`; resource amounts are runtime state. Item generators rename `Shield` to `ShieldCapacity`; reactors remove `Energy`; reactors and both weapon categories require `Mass`. `RechargeTime` is positive milliseconds and `DownTime` is nonnegative milliseconds. Legacy fields fail validation with diagnostics. The battery is appended to the equipment slots, preserving existing slot keys and indices. Attribute metadata retains the existing `attack_speed` entry without implementing attack speed.
+
+For user/mod overrides, migrate these fields before loading with `ReloadConfigOnStart` disabled. A version bump alone does not replace an existing user file. The existing development reload option copies bundled defaults; keep override backups when using that option.
+
+### Verification
+
+- Content validator: 133 definitions across 12 catalogues; 17 invalid-content checks rejected.
+- `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj`: 263 passing outer tests, including the Godot harness with 181 passing in-engine cases. The game builds as part of this run. Existing `UiIcon.Size` and NUnit analyzer warnings remain.
+- Focused resource tests exercise 36,000 steps at five and ten ships with supply changes. Observed total times were 28.446 ms and 61.730 ms respectively; allocations were 280 B and 560 B, with no collections during those isolated loops. These numbers exclude networking, rendering, and startup.
+- Normal three-player ENet: all processes exited successfully and exercised charge, depletion, draining unprotected shields, restored protection, equipment swaps and late clients. [Recorded observations](evidence/equipment-resources-variants-enet-3.txt).
+- Impaired three-player ENet: 20–60 ms delay each way, 1% packet loss and reordering; 617 observations across 229 entity revisions converged. [Recorded observations](evidence/equipment-resources-variants-enet-3-impaired.txt).
+- Five-player ENet: 1,675 observations across 571 revisions converged. Host step mean 0.1871 ms, maximum 22.0093 ms; publication mean 33.2937 ms; movement payload maximum 580 bytes. Whole-process allocation was 80.95 MB over 89 seconds, including the verification fixture, UI and startup; GC counts 4/4/2 with 67.795 ms cumulative pause. [Recorded observations](evidence/equipment-resources-variants-enet-5.txt).
+- Ten-player impaired ENet: all ten processes exited successfully; 6,608 observations across 2,307 revisions converged. Host step mean 0.3198 ms, maximum 27.5743 ms; publication mean 33.2876 ms; movement maximum 1,135 bytes and sampled gameplay maximum 4,008 bytes. Whole-process allocation was 135.25 MB over 89 seconds including verification/startup; GC counts 8/8/2 with 123.152 ms cumulative pause. Occasional maximum step times exceed the 16.67 ms physics budget on this workstation, while measured mean cadence remains 30 Hz. [Recorded observations](evidence/equipment-resources-variants-enet-10-impaired.txt).
+- Ten-player normal ENet: all ten processes exited successfully; 6,657 observations across 2,087 revisions converged. Host step mean 0.2720 ms, maximum 23.9998 ms; publication mean 33.2891 ms; maximum movement/gameplay payloads 1,135/4,008 bytes. Whole-process allocation 136.63 MB over 89 seconds; GC counts 8/8/2 with 113.480 ms cumulative pause. [Recorded observations](evidence/equipment-resources-variants-enet-10.txt). Scale runs exercise resource/configuration transitions on stationary ships; prediction under nonzero input is covered separately.
+- Three-player impaired ENet with held forward input through power loss and recovery: all three processes exited successfully; 618 resource observations across 245 revisions converged, with no runtime errors. Host step mean 0.1385 ms, maximum 27.3071 ms; publication mean 33.2907 ms. [Recorded observations](evidence/equipment-resources-variants-enet-3-impaired-moving.txt). This complements the prediction regression that checks history replacement and confirms replay does not advance resources.
+- GodotSteam smoke: Steam initialized, a real Steam transport hosted a lobby and entered the game, simulated approximately 14 seconds, showed energy 100/100 and protective shield 100/100, then stopped the network and returned to the start menu cleanly (exit 0). The one-player movement sample was 136 bytes. This covers single-account host lifecycle, not a multi-account Steam remote-peer session.
+
+The process fixtures run in isolated copied projects and mark verification instrumentation with test traceability IDs. No forced garbage collection is used.
