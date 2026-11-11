@@ -48,6 +48,7 @@ Stats:
   - Id: energy_production
     DisplayName: Energy Production
     Description: Rate at which reactors produce energy.
+    # leave this alone for now - tbd later. 
   - Id: attack_speed
     DisplayName: Attack Speed
     Description: Weapon attack rate; increasing this value makes attacks faster.

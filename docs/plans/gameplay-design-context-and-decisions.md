@@ -6,6 +6,8 @@ Implementation update: [increment 2](gameplay-increment-02-ability-architecture.
 
 Date: 2026-11-10.
 
+Next increment planned on 2026-11-11: [equipment stats and resources](gameplay-increment-03-equipment-stats-and-resources.md). It records the later agreed equipment baselines, ship flat modifiers, total-mass movement behavior, energy supply, and shield regeneration/drain rules; those decisions supersede conflicting earlier proposals below. Implementation remains pending.
+
 Implementation plan: [Runtime stats and multiplayer Shield Capacity Boost](gameplay-increment-01-shield-capacity-vertical-slice.md).
 
 ## Purpose and authority
