@@ -38,7 +38,6 @@ public static class FileLoader
     {
         var result = LoadYamlAndValidate(userPath, defaultPath, schemaPath);
         if (result.IsSuccess) return (JObject)result.Value!;
-        AbortLoad(result.Error!);
         throw new InvalidOperationException(result.Error!.ToDisplayString());
     }
 

@@ -18,7 +18,8 @@ public static class ItemRegistry
 
     private sealed record RegistryData(ItemDefinitions Items, CategoryDefinitions Categories);
 
-    private static readonly Lazy<RegistryData> Data = new(Load);
+    private static Lazy<RegistryData> Data = new(Load);
+    internal static void ResetPreparation() => Data = new(Load);
 
     public static ItemDefinition GetById(string id) => Data.Value.Items.GetById(id);
 
@@ -34,20 +35,26 @@ public static class ItemRegistry
     {
         var categoryYaml = FileLoader.LoadYaml(FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYaml,
             FilePaths.ItemCategoryDataYamlSchema);
-        var categories = LoadItemCategoryDefinitions(categoryYaml, Icons.Get);
+        var categoryResult = CatalogueParser.Load(() => LoadItemCategoryDefinitions(categoryYaml, Icons.Get),
+            FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYamlSchema);
+        if (!categoryResult.IsSuccess) throw new InvalidOperationException(categoryResult.Error!.ToDisplayString());
+        var categories = categoryResult.Value!;
         var itemYaml = FileLoader.LoadYaml(FilePaths.UserItemDataYaml, FilePaths.ItemDataYaml,
             FilePaths.ItemDataYamlSchema);
-        return new RegistryData(new ItemDefinitions(LoadItemDefinitions(itemYaml, categories, Icons.Get).Values), new CategoryDefinitions(categories.Values));
+        var itemResult = CatalogueParser.Load(() => LoadItemDefinitions(itemYaml, categories, Icons.Get),
+            FilePaths.UserItemDataYaml, FilePaths.ItemDataYamlSchema);
+        if (!itemResult.IsSuccess) throw new InvalidOperationException(itemResult.Error!.ToDisplayString());
+        return new RegistryData(new ItemDefinitions(itemResult.Value!.Values), new CategoryDefinitions(categories.Values));
     }
 
     internal static Dictionary<string, ItemCategoryDefinition> LoadItemCategoryDefinitions(
         JObject yaml, Func<string, IconDefinition> resolveIcon) =>
-        GameplayCatalogueLoader.LoadItemCategoryDefinitions(yaml, resolveIcon);
+        ItemDefinitionParser.LoadItemCategoryDefinitions(yaml, resolveIcon);
 
     internal static Dictionary<string, ItemDefinition> LoadItemDefinitions(JObject yaml,
         Dictionary<string, ItemCategoryDefinition> categories, Func<string, IconDefinition> resolveIcon)
     {
-        var definitions = GameplayCatalogueLoader.LoadItemDefinitions(yaml, categories, resolveIcon);
+        var definitions = ItemDefinitionParser.LoadItemDefinitions(yaml, categories, resolveIcon);
         foreach (var definition in definitions.Values) EquipmentStatCalculator.Precompile(definition);
         return definitions;
     }

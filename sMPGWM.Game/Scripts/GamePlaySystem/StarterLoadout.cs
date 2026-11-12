@@ -2,11 +2,22 @@ using System;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ShipSystem;
+using sMPGWM.Scripts.EquipmentSystem;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
 public static class StarterLoadout
 {
+    public static void ValidateDefinitions()
+    {
+        foreach (var slot in EquipmentSlotDefinition.Defaults)
+        {
+            var definition = ItemRegistry.GetById("mock_standard_" + slot.AcceptedCategory);
+            if (definition.CategoryId != slot.AcceptedCategory)
+                throw new InvalidOperationException($"Starter equipment '{definition.Id}' does not fit '{slot.Key}'.");
+        }
+    }
+
     public static void Equip(ShipLoadout loadout, InventoryController inventory)
     {
         var store = loadout.Store;

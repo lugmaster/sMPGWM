@@ -41,6 +41,7 @@ public sealed class ShieldGameplayIntegrationTests // TEST-SUPPORT: EQUIPPED-INT
         var mock = new PlayerMock(); // TEST-SUPPORT: EQUIPPED-INTEGRATION-036 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
         try // TEST-SUPPORT: EQUIPPED-INTEGRATION-037 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
         {
+            coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData); // TEST-SUPPORT: INIT-ShieldGameplayIntegrationTests-PREP | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
             coordinator.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world, // TEST-SUPPORT: EQUIPPED-INTEGRATION-039 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
                 new(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port), coordinator, new DevelopmentGameFixture(mock, true))); // TEST-SUPPORT: EQUIPPED-INTEGRATION-040 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
             session!.Network.CreateNetwork(); // TEST-SUPPORT: EQUIPPED-INTEGRATION-041 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession

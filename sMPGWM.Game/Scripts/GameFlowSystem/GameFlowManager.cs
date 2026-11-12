@@ -32,7 +32,24 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         Session = new SessionCoordinator(CompleteLoading, PresentSessionFailure,
             error => Logger.Error($"Session cleanup failed: {error}"));
         _pendingStartupData = startupData;
-        ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.Loading);
+        BeginSessionLoading();
+    }
+
+    private async void BeginSessionLoading()
+    {
+        var generation = ++_navigationGeneration;
+        var session = Session!;
+        SetState(GameFlowState.Loading);
+        // Headless servers have no rendered frames to await.
+        if (DisplayServer.GetName() == "headless")
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        else
+            await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        if (!IsInsideTree() || generation != _navigationGeneration || session.State == SessionState.Stopped) return;
+        session.Initialization.PrepareDefinitions(GameConfig.EnsureCompatibilityData);
+        if (session.State == SessionState.Stopped) return;
+        try { ChangeScene(GameFlowSceneProvider.MainGameScene, GameFlowState.Loading); }
+        catch (Exception error) { session.Fail($"Cannot load game: {error.Message}"); }
     }
     
     public event Action<GameFlowState>? StateChanged;
@@ -43,9 +60,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         _gameFlowState = state;
         if (state == GameFlowState.Loading)
             ModalController.Instance.ShowLoadingScreen(() =>
-                GetTree().CurrentScene?.SceneFilePath == GameFlowSceneProvider.MainGameScene.ResourcePath
-                    ? (50, "Connecting session and spawning players...")
-                    : (0, "Loading game scene..."));
+                Session?.Initialization.Progress ?? (0, "Loading session..."));
         else
             ModalController.Instance.HideLoadingScreen();
         Logger.Info($"Game flow: {state}");
@@ -54,7 +69,8 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
     public void CompleteLoading()
     {
-        if (_gameFlowState == GameFlowState.Loading) SetState(GameFlowState.InGame);
+        if (_gameFlowState == GameFlowState.Loading && Session?.State == SessionState.Active)
+            SetState(GameFlowState.InGame);
     }
     
     public GameFlowState GameFlowState => _gameFlowState;
@@ -180,7 +196,6 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     private void ChangeScene(PackedScene scene, GameFlowState targetState)
     {
         ++_navigationGeneration;
-        if (targetState == GameFlowState.Loading) SetState(GameFlowState.Loading);
 
         var error = GetTree().ChangeSceneToPacked(scene);
 

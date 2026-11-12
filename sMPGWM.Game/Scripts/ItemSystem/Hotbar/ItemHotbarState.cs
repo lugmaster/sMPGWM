@@ -32,6 +32,17 @@ internal sealed class ItemHotbarState : IDisposable
 
     public void SetEditSession(ulong session) => _session = _disposed ? 0UL : session;
 
+    internal void RestoreState(ItemHotbarSnapshot snapshot)
+    {
+        if (_disposed || _publishing || Revision != 0)
+            throw new InvalidOperationException("Hotbar restoration requires unused state.");
+        foreach (var binding in Entries)
+            if (binding != null) throw new InvalidOperationException("Hotbar already contains bindings.");
+        Entries = snapshot.Entries;
+        Revision = snapshot.Revision;
+        _session = 0;
+    }
+
     public HotbarResult ValidateEdit(ulong session, long revision, int position)
     {
         if (_disposed) return HotbarResult.Disposed;

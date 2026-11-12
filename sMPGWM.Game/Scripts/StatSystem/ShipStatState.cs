@@ -97,6 +97,14 @@ public sealed class ShipStatState
     }
 
     internal void Clear() { Array.Clear(_contributions); _count = 0; }
+    internal void Restore(ShipStatState prepared)
+    {
+        Array.Copy(prepared._contributions, _contributions, _contributions.Length);
+        _count = prepared._count;
+        _effectsEnabled = prepared._effectsEnabled;
+        EquipmentInputs = prepared.EquipmentInputs;
+        Effective = prepared.Effective;
+    }
     private static int Compare(StatContributionSource left, StatContributionSource right)
     {
         var kind = left.Kind.CompareTo(right.Kind);

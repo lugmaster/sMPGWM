@@ -4,6 +4,36 @@ namespace sMPGWM.Tests.NetworkSystem;
 
 internal class JoinProtocolTests
 {
+    [Test] // TEST-SUPPORT: JOIN-ITEM-DELAY-001 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+    public void MissingItemsCannotCompleteOrExtendSnapshotDeadline() // TEST-SUPPORT: JOIN-ITEM-DELAY-002 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+    {
+        var client = new ClientJoinProtocol(100); // TEST-SUPPORT: JOIN-ITEM-DELAY-003 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        Assert.That(client.ApplyItems(0), Is.False); // TEST-SUPPORT: JOIN-ITEM-DELAY-004 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        client.Begin("token", 0); // TEST-SUPPORT: JOIN-ITEM-DELAY-005 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        client.AcceptHello("token", 10); // TEST-SUPPORT: JOIN-ITEM-DELAY-006 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        Assert.That(client.ApplyItems(15), Is.False); // TEST-SUPPORT: JOIN-ITEM-DELAY-007 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        client.ApplySnapshot(90); // TEST-SUPPORT: JOIN-ITEM-DELAY-008 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        Assert.That(client.HasWorld, Is.True); // TEST-SUPPORT: JOIN-ITEM-DELAY-009 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        Assert.That(client.Complete(100), Is.False); // TEST-SUPPORT: JOIN-ITEM-DELAY-010 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        Assert.That(client.ApplySnapshot(105), Is.False); // TEST-SUPPORT: JOIN-ITEM-DELAY-011 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        Assert.That(client.ApplyItems(110), Is.False); // TEST-SUPPORT: JOIN-ITEM-DELAY-012 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+        Assert.That(client.Expired(110), Is.True); // TEST-SUPPORT: JOIN-ITEM-DELAY-013 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MissingItemsCannotCompleteOrExtendSnapshotDeadline
+    }
+
+    [TestCase(false)] // TEST-SUPPORT: JOIN-ITEM-STOP-001 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+    [TestCase(true)] // TEST-SUPPORT: JOIN-ITEM-STOP-002 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+    public void CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks(bool itemsApplied) // TEST-SUPPORT: JOIN-ITEM-STOP-003 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+    {
+        var client = new ClientJoinProtocol(100); // TEST-SUPPORT: JOIN-ITEM-STOP-004 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+        client.Begin("token", 0); // TEST-SUPPORT: JOIN-ITEM-STOP-005 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+        client.AcceptHello("token", 1); // TEST-SUPPORT: JOIN-ITEM-STOP-006 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+        client.ApplySnapshot(2); // TEST-SUPPORT: JOIN-ITEM-STOP-007 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+        if (itemsApplied) client.ApplyItems(3); // TEST-SUPPORT: JOIN-ITEM-STOP-008 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+        client.Stop(); // TEST-SUPPORT: JOIN-ITEM-STOP-009 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+        Assert.That(client.ApplyItems(4), Is.False); // TEST-SUPPORT: JOIN-ITEM-STOP-010 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+        Assert.That(client.Complete(5), Is.False); // TEST-SUPPORT: JOIN-ITEM-STOP-011 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+        Assert.That(client.HasWorld, Is.False); // TEST-SUPPORT: JOIN-ITEM-STOP-012 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.CancellationWhileWaitingForItemsOrCompletionRejectsLateCallbacks
+    }
 
     [Test] // TEST-SUPPORT: JOIN-SNAPSHOT-001 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
     public void MembershipSnapshotIsReusedUntilMembershipChanges() // TEST-SUPPORT: JOIN-SNAPSHOT-002 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
@@ -118,7 +148,10 @@ internal class JoinProtocolTests
         Assert.That(client.Complete(15), Is.False);
         Assert.That(client.ApplySnapshot(20), Is.True);
         Assert.That(client.HasWorld, Is.True);
-        Assert.That(client.Phase, Is.EqualTo(ClientJoinPhase.AwaitingCompletion));
+        Assert.That(client.Phase, Is.EqualTo(ClientJoinPhase.AwaitingItems)); // TEST-SUPPORT: JOIN-ITEM-GATE-001 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.ClientRequiresMatchingHelloAndAppliedSnapshotBeforeCompletion
+        Assert.That(client.Complete(25), Is.False); // TEST-SUPPORT: JOIN-ITEM-GATE-002 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.ClientRequiresMatchingHelloAndAppliedSnapshotBeforeCompletion
+        Assert.That(client.ApplyItems(26), Is.True); // TEST-SUPPORT: JOIN-ITEM-GATE-003 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.ClientRequiresMatchingHelloAndAppliedSnapshotBeforeCompletion
+        Assert.That(client.ApplyItems(27), Is.False); // TEST-SUPPORT: JOIN-ITEM-GATE-004 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.ClientRequiresMatchingHelloAndAppliedSnapshotBeforeCompletion
         Assert.That(client.ApplySnapshot(25), Is.False);
         Assert.That(client.Complete(30), Is.True);
         Assert.That(client.Complete(35), Is.False);
@@ -127,18 +160,21 @@ internal class JoinProtocolTests
 
     [TestCase(ClientJoinPhase.AwaitingHello)]
     [TestCase(ClientJoinPhase.AwaitingSnapshot)]
+    [TestCase(ClientJoinPhase.AwaitingItems)] // TEST-SUPPORT: JOIN-ITEM-GATE-005 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.ClientCannotAdvanceAfterDeadline
     [TestCase(ClientJoinPhase.AwaitingCompletion)]
     public void ClientCannotAdvanceAfterDeadline(ClientJoinPhase phase)
     {
         var client = new ClientJoinProtocol(100);
         client.Begin("token", 0);
         if (phase != ClientJoinPhase.AwaitingHello) client.AcceptHello("token", 0);
-        if (phase == ClientJoinPhase.AwaitingCompletion) client.ApplySnapshot(0);
+        if (phase is ClientJoinPhase.AwaitingItems or ClientJoinPhase.AwaitingCompletion) client.ApplySnapshot(0); // TEST-SUPPORT: JOIN-ITEM-GATE-006 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.ClientCannotAdvanceAfterDeadline
+        if (phase == ClientJoinPhase.AwaitingCompletion) client.ApplyItems(0); // TEST-SUPPORT: JOIN-ITEM-GATE-007 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.ClientCannotAdvanceAfterDeadline
         Assert.That(client.Expired(99), Is.False);
         Assert.That(client.Expired(100), Is.True);
         Assert.That(client.AcceptHello("token", 100), Is.False);
         Assert.That(client.ApplySnapshot(100), Is.False);
         Assert.That(client.Complete(100), Is.False);
+        Assert.That(client.ApplyItems(100), Is.False); // TEST-SUPPORT: JOIN-ITEM-GATE-008 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.ClientCannotAdvanceAfterDeadline
     }
 
     [Test]

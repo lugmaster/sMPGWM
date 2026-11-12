@@ -8,6 +8,7 @@ using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.UtilitySystem;
 using sMPGWM.Scripts.UtilitySystem.Mocks;
 using PlayerMock = sMPGWM.Scripts.UtilitySystem.Mocks.PlayerMock;
+using sMPGWM.Scripts.WorldSystem;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
@@ -21,6 +22,13 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public MainGameState GameState => _gameState;
     public event Action<MainGameState>? OnGameStateChanged;
     [Export] public bool PopulateMockInventory { get; set; } = true;
+
+    public RestoredWorldState CaptureState()
+    {
+        if (_coordinator?.State != SessionState.Active || _session == null)
+            throw new InvalidOperationException("Only an active authoritative session can be captured.");
+        return _session.CaptureState();
+    }
 
     protected override void OnReady()
     {

@@ -13,6 +13,7 @@ public sealed class ItemHotbarController : IDisposable
     private readonly IItemTransfers _transfers;
     private readonly Action<Exception>? _reportError;
     private bool _disposed;
+    private bool _restored;
     public Func<bool>? EquipmentAbilitiesAvailable { get; set; }
     private bool _cachedEquipmentAvailability;
     public Predicate<string>? SupportsAbility { private get; init; }
@@ -84,7 +85,66 @@ public sealed class ItemHotbarController : IDisposable
         _state.SetEditSession(0);
     }
 
+    public void InitializeEquipmentAbilities()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_restored) return;
+        if (_state.Revision != 0) return;
+        foreach (var binding in _state.Entries)
+            if (binding != null) return;
+        var position = 0;
+        _state.SetEditSession(ulong.MaxValue);
+        try
+        {
+            for (var slot = 0; slot < _equipment.Definitions.Count; slot++)
+            {
+                if (_equipment.Snapshot.Slots[slot] is not { } item) continue;
+                foreach (var ability in item.Definition.AbilityIds)
+                {
+                    if (SupportsAbility?.Invoke(ability) == false) continue;
+                    if (position == ItemHotbarState.PositionCount) return;
+                    var result = _state.Assign(ulong.MaxValue, _state.Revision, position++,
+                        new EquipmentAbilityHotbarBinding(_equipment.Definitions[slot].Key, ability));
+                    if (result != HotbarResult.Success)
+                        throw new InvalidOperationException("Could not initialize equipment hotbar: " + result);
+                }
+            }
+        }
+        finally { _state.SetEditSession(0); }
+    }
+
     public IReadOnlyList<HotbarBinding?> Entries => _state.Entries;
+    public ItemHotbarSnapshot CaptureState() => new(_state.Revision, _state.Entries);
+
+    public void RestoreState(ItemHotbarSnapshot snapshot)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_restored) throw new InvalidOperationException("Hotbar state is already restored.");
+        foreach (var binding in snapshot.Entries)
+        {
+            if (binding is ConsumableHotbarBinding consumable && !ItemRegistry.TryGetById(consumable.DefinitionId, out _))
+                throw new ArgumentException("Unknown restored hotbar item: " + consumable.DefinitionId);
+            var slotKey = binding switch
+            {
+                EquipmentAbilityHotbarBinding ability => ability.SlotKey,
+                WeaponHotbarBinding weapon => weapon.SlotKey,
+                _ => null
+            };
+            if (slotKey != null)
+            {
+                var found = false;
+                foreach (var slot in _equipment.Definitions)
+                    if (slot.Key == slotKey) found = true;
+                if (!found) throw new ArgumentException("Unknown restored hotbar equipment slot: " + slotKey);
+            }
+            if (binding is EquipmentAbilityHotbarBinding equipmentAbility &&
+                !GameplayDefinitions.Current.Abilities.TryGetById(equipmentAbility.AbilityId, out _))
+                throw new ArgumentException("Unknown restored hotbar ability: " + equipmentAbility.AbilityId);
+        }
+        _state.RestoreState(snapshot);
+        _restored = true;
+        InvalidateAvailability();
+    }
     public long Revision => _state.Revision;
     private Action? _changed;
     private Delegate[] _observers = Array.Empty<Delegate>();

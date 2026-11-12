@@ -8,6 +8,13 @@ public sealed class AbilityRuntime : IDisposable
     public GameplayCatalogues Definitions { get; }
 
     public AbilityRuntime(GameplayCatalogues definitions) { Definitions = definitions; }
+    public long CaptureSequence() => _nextInstance;
+    public void RestoreSequence(long sequence)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (sequence < _nextInstance || sequence == long.MaxValue) throw new ArgumentOutOfRangeException(nameof(sequence));
+        _nextInstance = sequence;
+    }
     public AbilityActivationResult Activate(string abilityId, in AbilityActivationContext context, long tick)
     {
         if (_disposed) return AbilityActivationResult.SessionEnded;

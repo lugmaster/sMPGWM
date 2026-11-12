@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.WorldSystem;
 using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 
@@ -29,6 +30,14 @@ public sealed class GameplaySimulation : IDisposable
         _world = world;
         _abilities = abilities;
         _recordAbility = RecordAbility;
+        if (world.IsRestored) CompletedTick = world.InitialCompletedTick;
+    }
+
+    public RestoredWorldState CaptureState(long completedTick, ItemHotbarSnapshot? localHotbar = null)
+    {
+        if (_disposed || _stepping || CompletedTick >= 0 && completedTick != CompletedTick)
+            throw new InvalidOperationException("Capture requires a completed, idle simulation step.");
+        return _world.CaptureState(completedTick, _abilities.CaptureSequence(), localHotbar);
     }
 
     public bool QueueTransfer(int peer, string entity, long generation, TransferRequest request,

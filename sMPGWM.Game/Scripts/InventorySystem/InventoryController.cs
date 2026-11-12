@@ -13,8 +13,10 @@ public sealed class InventoryController : IDisposable, IInventoryView
     public ItemStore Items { get; }
     public ItemContainer Container { get; }
     private InventorySnapshot? _snapshot;
-    public InventorySnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
-        ? snapshot : _snapshot = new InventorySnapshot(Container.Revision, Container.Entities);
+    private ItemEntity?[]? _snapshotEntities;
+    public InventorySnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision &&
+        (_disposed || ReferenceEquals(_snapshotEntities, Container.Entities))
+        ? snapshot : _snapshot = new InventorySnapshot(Container.Revision, _snapshotEntities = Container.Entities);
     public int Capacity => _disposed ? Snapshot.Capacity : Container.Capacity;
     public long Revision => _disposed ? Snapshot.Revision : Container.Revision;
     public event Action<InventorySnapshot>? Changed;

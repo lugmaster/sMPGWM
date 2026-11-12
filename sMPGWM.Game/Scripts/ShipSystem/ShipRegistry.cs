@@ -12,7 +12,8 @@ public static class ShipRegistry
     private sealed class ShipDefinitions(IEnumerable<ShipData> definitions)
         : DefinitionRegistry<ShipData>(definitions, "ships");
 
-    private static readonly Lazy<ShipDefinitions> Data = new(() => new ShipDefinitions(Load().Values));
+    private static Lazy<ShipDefinitions> Data = new(() => new ShipDefinitions(Load().Values));
+    internal static void ResetPreparation() => Data = new(() => new ShipDefinitions(Load().Values));
     public static ShipData GetById(string id) => Data.Value.GetById(id);
     public static bool TryGetById(string id, out ShipData data) => Data.Value.TryGetById(id, out data!);
     public static IReadOnlyList<ShipData> GetAll() => Data.Value.GetAll();
@@ -21,11 +22,10 @@ public static class ShipRegistry
     {
         var yaml = FileLoader.LoadYaml(FilePaths.UserShipDataYaml,
             FilePaths.ShipDataYaml, FilePaths.ShipDataYamlSchema);
-        var result = GameplayCatalogueLoader.LoadShipDefinitions(yaml,
+        var result = ShipDefinitionLoader.Load(yaml,
             FilePaths.UserShipDataYaml, FilePaths.ShipDataYamlSchema);
         if (!result.IsSuccess)
         {
-            FileLoader.AbortLoad(result.Error!);
             throw new InvalidOperationException(result.Error!.ToDisplayString());
         }
         try
@@ -33,11 +33,10 @@ public static class ShipRegistry
             return Build(result.Value!, path => ResourceLoader.Load<Texture2D>(path) is { } texture &&
                 texture.GetWidth() > 0 && texture.GetHeight() > 0);
         }
-        catch (Exception e)
+        catch (ArgumentException e)
         {
-            FileLoader.AbortLoad(new DataLoadError("Invalid ship definition", e.Message,
-                FilePaths.UserShipDataYaml, FilePaths.ShipDataYamlSchema, e));
-            throw;
+            throw new InvalidOperationException(new DataLoadError("Invalid ship definition", e.Message,
+                FilePaths.UserShipDataYaml, FilePaths.ShipDataYamlSchema, e).ToDisplayString(), e);
         }
     }
 

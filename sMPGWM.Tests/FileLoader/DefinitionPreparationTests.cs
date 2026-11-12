@@ -1,0 +1,76 @@
+using System.Reflection; // TEST-SUPPORT: INIT-RETRY-001 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+using Godot; // TEST-SUPPORT: INIT-RETRY-002 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+using sMPGWM.Scripts.FileLoadingSystem; // TEST-SUPPORT: INIT-RETRY-003 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+using sMPGWM.Scripts.GameConfigSystem; // TEST-SUPPORT: INIT-RETRY-004 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+using sMPGWM.Scripts.GameplayDataSystem; // TEST-SUPPORT: INIT-RETRY-005 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: INIT-RETRY-006 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: INIT-RETRY-007 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+using File = System.IO.File; // TEST-SUPPORT: INIT-RETRY-008 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+
+namespace sMPGWM.Tests.FileLoader; // TEST-SUPPORT: INIT-RETRY-010 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+
+[Category("Godot")] // TEST-SUPPORT: INIT-RETRY-012 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+[NonParallelizable] // TEST-SUPPORT: INIT-RETRY-013 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+public class DefinitionPreparationTests // TEST-SUPPORT: INIT-RETRY-014 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+{ // TEST-SUPPORT: INIT-RETRY-015 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+    [Test] // TEST-SUPPORT: INIT-RETRY-016 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+    public void FailedPreparationClearsPartialCachesAndRetriesRepairedInputs() // TEST-SUPPORT: INIT-RETRY-017 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+    { // TEST-SUPPORT: INIT-RETRY-018 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        GameConfig.EnsureCompatibilityData(); // TEST-SUPPORT: INIT-RETRY-019 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var checksum = typeof(GameConfig).GetProperty(nameof(GameConfig.GameDataChecksum))!; // TEST-SUPPORT: INIT-RETRY-020 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var reload = typeof(GameConfig).GetProperty(nameof(GameConfig.ReloadConfigOnStart))!; // TEST-SUPPORT: INIT-RETRY-021 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var previousChecksum = GameConfig.GameDataChecksum; // TEST-SUPPORT: INIT-RETRY-022 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var previousReload = GameConfig.ReloadConfigOnStart; // TEST-SUPPORT: INIT-RETRY-023 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var captured = new Dictionary<string, string>(sMPGWM.Scripts.FileLoadingSystem.FileLoader.CapturedInputs); // TEST-SUPPORT: INIT-RETRY-024 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var registries = new[] { typeof(ItemRegistry), typeof(ShipRegistry), typeof(GameplayDefinitions) }; // TEST-SUPPORT: INIT-RETRY-025 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var fields = new FieldInfo[registries.Length]; // TEST-SUPPORT: INIT-RETRY-026 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var previousData = new object[registries.Length]; // TEST-SUPPORT: INIT-RETRY-027 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        for (var i = 0; i < registries.Length; i++) // TEST-SUPPORT: INIT-RETRY-028 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        { // TEST-SUPPORT: INIT-RETRY-029 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            fields[i] = registries[i].GetField("Data", BindingFlags.NonPublic | BindingFlags.Static)!; // TEST-SUPPORT: INIT-RETRY-030 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            previousData[i] = fields[i].GetValue(null)!; // TEST-SUPPORT: INIT-RETRY-031 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        } // TEST-SUPPORT: INIT-RETRY-032 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var path = ProjectSettings.GlobalizePath("user://config/gameplay/AbilityDefinitions.yml"); // TEST-SUPPORT: INIT-RETRY-033 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var original = File.ReadAllText(path); // TEST-SUPPORT: INIT-RETRY-034 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        var invalid = original.Replace("TargetingId: revivableAlly", "TargetingId: missing_targeting", StringComparison.Ordinal); // TEST-SUPPORT: INIT-RETRY-035 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        Assert.That(invalid, Is.Not.EqualTo(original)); // TEST-SUPPORT: INIT-RETRY-036 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        try // TEST-SUPPORT: INIT-RETRY-037 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        { // TEST-SUPPORT: INIT-RETRY-038 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            reload.SetValue(null, false); // TEST-SUPPORT: INIT-RETRY-039 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            checksum.SetValue(null, string.Empty); // TEST-SUPPORT: INIT-RETRY-040 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            ItemRegistry.ResetPreparation(); // TEST-SUPPORT: INIT-RETRY-041 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            ShipRegistry.ResetPreparation(); // TEST-SUPPORT: INIT-RETRY-042 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            GameplayDefinitions.ResetPreparation(); // TEST-SUPPORT: INIT-RETRY-043 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            sMPGWM.Scripts.FileLoadingSystem.FileLoader.CapturedInputs.Clear(); // TEST-SUPPORT: INIT-RETRY-044 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            File.WriteAllText(path, invalid); // TEST-SUPPORT: INIT-RETRY-045 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            var error = Assert.Throws<InvalidOperationException>(GameConfig.EnsureCompatibilityData); // TEST-SUPPORT: INIT-RETRY-046 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            Assert.That(error!.Message, Does.Contain("missing_targeting").And.Contain("TargetingId")); // TEST-SUPPORT: INIT-RETRY-047 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            Assert.That(GameConfig.GameDataChecksum, Is.Empty); // TEST-SUPPORT: INIT-RETRY-048 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            Assert.That(sMPGWM.Scripts.FileLoadingSystem.FileLoader.CapturedInputs, Is.Empty); // TEST-SUPPORT: INIT-RETRY-049 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            foreach (var field in fields) // TEST-SUPPORT: INIT-RETRY-050 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            { // TEST-SUPPORT: INIT-RETRY-051 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+                var cache = field.GetValue(null)!; // TEST-SUPPORT: INIT-RETRY-052 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+                Assert.That(cache.GetType().GetProperty("IsValueCreated")!.GetValue(cache), Is.False); // TEST-SUPPORT: INIT-RETRY-053 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            } // TEST-SUPPORT: INIT-RETRY-054 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            var repaired = original + "\n# repaired input\n"; // TEST-SUPPORT: INIT-RETRY-055 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            File.WriteAllText(path, repaired); // TEST-SUPPORT: INIT-RETRY-056 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            Assert.DoesNotThrow(GameConfig.EnsureCompatibilityData); // TEST-SUPPORT: INIT-RETRY-057 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            Assert.That(GameConfig.GameDataChecksum, Is.Not.Empty.And.Not.EqualTo(previousChecksum)); // TEST-SUPPORT: INIT-RETRY-058 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            Assert.That(sMPGWM.Scripts.FileLoadingSystem.FileLoader.CapturedInputs["AbilityDefinitions.yml"], Is.EqualTo(repaired)); // TEST-SUPPORT: INIT-RETRY-059 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            var prepared = GameplayDefinitions.Current; // TEST-SUPPORT: INIT-RETRY-060 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            var successfulChecksum = GameConfig.GameDataChecksum; // TEST-SUPPORT: INIT-RETRY-061 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            GameConfig.EnsureCompatibilityData(); // TEST-SUPPORT: INIT-RETRY-062 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            Assert.That(GameplayDefinitions.Current, Is.SameAs(prepared)); // TEST-SUPPORT: INIT-RETRY-063 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            Assert.That(GameConfig.GameDataChecksum, Is.EqualTo(successfulChecksum)); // TEST-SUPPORT: INIT-RETRY-064 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        } // TEST-SUPPORT: INIT-RETRY-065 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        finally // TEST-SUPPORT: INIT-RETRY-066 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        { // TEST-SUPPORT: INIT-RETRY-067 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            File.WriteAllText(path, original); // TEST-SUPPORT: INIT-RETRY-068 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            reload.SetValue(null, previousReload); // TEST-SUPPORT: INIT-RETRY-069 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            checksum.SetValue(null, previousChecksum); // TEST-SUPPORT: INIT-RETRY-070 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            for (var i = 0; i < fields.Length; i++) fields[i].SetValue(null, previousData[i]); // TEST-SUPPORT: INIT-RETRY-071 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            sMPGWM.Scripts.FileLoadingSystem.FileLoader.CapturedInputs.Clear(); // TEST-SUPPORT: INIT-RETRY-072 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+            foreach (var pair in captured) sMPGWM.Scripts.FileLoadingSystem.FileLoader.CapturedInputs.Add(pair.Key, pair.Value); // TEST-SUPPORT: INIT-RETRY-073 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+        } // TEST-SUPPORT: INIT-RETRY-074 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+    } // TEST-SUPPORT: INIT-RETRY-075 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs
+} // TEST-SUPPORT: INIT-RETRY-076 | Tests: sMPGWM.Tests.FileLoader.DefinitionPreparationTests.FailedPreparationClearsPartialCachesAndRetriesRepairedInputs

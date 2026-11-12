@@ -8,7 +8,7 @@ namespace sMPGWM.Scripts.ItemSystem;
 public sealed class ItemContainer
 {
     public const int MaxCapacity = 4096;
-    public ItemContainerId Id { get; } = new(RuntimeIds.Next());
+    public ItemContainerId Id { get; internal set; } = new(RuntimeIds.Next());
     public int Capacity => Slots.Count;
     public long Revision { get; internal set; }
     public IReadOnlyList<ItemEntityId?> Slots { get; private set; }

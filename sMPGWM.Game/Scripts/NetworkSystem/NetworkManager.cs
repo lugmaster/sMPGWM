@@ -128,7 +128,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             Logger.Info("Network Host: Listening");
             try
             {
-                World.ApproveSpawn(1, _startup.Player);
+                if (World.Players.TryGetValue(1, out var restoredHost)) World.LocalPlayer?.BindParticipant(restoredHost);
+                else World.ApproveSpawn(1, _startup.Player);
                 SessionReady?.Invoke();
             }
             catch (Exception error) { FailSession($"Host spawning failed: {error.Message}"); }
@@ -223,26 +224,35 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
                 throw new InvalidOperationException("Local controls were not bound.");
             if (Synchronization == null || !Synchronization.Receive(movement, true))
                 throw new InvalidOperationException("Invalid initial movement baseline.");
-            if (!ApplyGameplay(gameplay)) throw new InvalidOperationException("Invalid gameplay baseline.");
+            if (!ApplyGameplay(gameplay, true)) throw new InvalidOperationException("Invalid or incomplete gameplay baseline.");
             if (!_clientJoin.ApplySnapshot(Time.GetTicksMsec()))
                 throw new InvalidOperationException("Player spawning timed out.");
-            if (RpcId(1, nameof(ConfirmSpawnReady)) != Error.Ok) FailSession("Spawn acknowledgement failed.");
         }
         catch (Exception e) { FailSession($"Applying initial spawns failed: {e.Message}"); }
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ConfirmSpawnReady()
+    private void ConfirmSpawnReady(string session, string entity, long generation)
     {
         var peer = Multiplayer.GetRemoteSenderId();
-        if (!IsHost() || !_joins.Is(peer, PeerJoinPhase.Spawning)) return;
+        if (!IsHost() || !_joins.Is(peer, PeerJoinPhase.Spawning) || Synchronization == null ||
+            session != Synchronization.Session.ToString("N") || !World.Players.TryGetValue(peer, out var owner) ||
+            entity != owner.ControlledShip?.EntityId || generation != owner.ControlGeneration) return;
         var now = Time.GetTicksMsec();
         if (_joins.Expired(peer, now))
         {
             RejectJoin(peer, "Player join timed out.");
             return;
         }
-        if (RpcId(peer, nameof(JoinComplete), GameConfig.LobbyName) != Error.Ok)
+        // A joining client may have received topology changes since its initial snapshot.
+        if (RpcId(peer, nameof(ReceiveWorldTopology), session, World.CaptureTopology().ToVariant()) != Error.Ok ||
+            RpcId(peer, nameof(ReceiveGameplay), session, GameplaySnapshot()) != Error.Ok)
+        {
+            RejectJoin(peer, "Join completion state send failed.");
+            return;
+        }
+        if (!SendItems(peer)) return;
+        if (RpcId(peer, nameof(JoinComplete), GameConfig.LobbyName, session, entity, generation) != Error.Ok)
         {
             RejectJoin(peer, "Join completion send failed.");
             return;
@@ -259,14 +269,11 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void JoinComplete(string gameName)
+    private void JoinComplete(string gameName, string session, string entity, long generation)
     {
-        if (IsHostMessage() && !_hasItemBaseline)
-        {
-            FailSession("Missing authoritative inventory baseline.");
-            return;
-        }
-        if (!IsHostMessage() || !_clientJoin.Complete(Time.GetTicksMsec())) return;
+        if (!IsHostMessage() || Synchronization == null || session != Synchronization.Session.ToString("N") ||
+            World.LocalPlayer?.Participant is not { } owner || entity != owner.ControlledShip?.EntityId ||
+            generation != owner.ControlGeneration || !_hasItemBaseline || !_clientJoin.Complete(Time.GetTicksMsec())) return;
         _heartbeat!.ActivateClient();
         Logger.Info("NET local spawn complete; entering game");
         SessionReady?.Invoke();
@@ -367,6 +374,14 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         try
         {
             if (!WorldTopology.TryRead(payload, out var topology)) throw new InvalidOperationException("Invalid world topology.");
+            if (_clientJoin.Phase != ClientJoinPhase.Ready && World.LocalPlayer?.Participant is { } owner)
+            {
+                var unchanged = false;
+                foreach (var binding in topology.Participants)
+                    if (binding.Peer == Multiplayer.GetUniqueId() && binding.Generation == owner.ControlGeneration &&
+                        binding.Entity == owner.ControlledShip?.EntityId) unchanged = true;
+                if (!unchanged) throw new InvalidOperationException("Local control changed during initialization. Please rejoin.");
+            }
             foreach (int peer in World.ApplyTopology(topology)) Synchronization.BindingChanged(peer);
         }
         catch (Exception error) { FailSession($"Applying world topology failed: {error.Message}"); }
@@ -378,7 +393,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (!IsHost()) return;
         foreach (var (peer, join) in _joins.Snapshot())
-            if (join.Phase == PeerJoinPhase.Ready) RpcId(peer, nameof(ReceiveMovement), payload);
+            if (join.ReceivesWorld) RpcId(peer, nameof(ReceiveMovement), payload);
     }
     public void SendMovementCommands(byte[] payload)
     {
@@ -400,7 +415,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
     private void ReceiveMovement(byte[] payload)
     {
-        if (IsHostMessage() && _clientJoin.Phase == ClientJoinPhase.Ready) Synchronization?.Receive(payload);
+        if (IsHostMessage() && _clientJoin.HasWorld) Synchronization?.Receive(payload);
     }
     private bool AllowRequest(Dictionary<int, ulong> requests, int peer, ulong interval)
     {

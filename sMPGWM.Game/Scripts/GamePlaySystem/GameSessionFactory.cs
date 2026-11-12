@@ -23,6 +23,19 @@ internal static class GameSessionFactory
     public static GameSession Create(SessionScope scope, Node parent, UiCanvas canvas, Node world,
         NetworkStartupData startup, SessionCoordinator coordinator, IGameFixture fixture)
     {
+        if (startup.RestoredWorld is { } supplied)
+        {
+            if (startup.Role != NetworkRole.Host || supplied.Players.Count > startup.MaxPlayers)
+                throw new InvalidOperationException("Restored state requires a host with sufficient player capacity.");
+            var hasHost = false;
+            foreach (var owner in supplied.Players)
+            {
+                if (owner?.Binding == null || owner.Binding.Peer != 1)
+                    throw new InvalidOperationException("Restored network startup requires host-only participant bindings; remote peers need authenticated reconnect mapping.");
+                if (owner.Binding.Entity != "") hasHost = true;
+            }
+            if (!hasHost) throw new InvalidOperationException("Restored startup requires the host's controlled ship.");
+        }
         var abilities = scope.Own(new AbilityRuntime(GameplayDefinitions.Current));
         var participants = new GameWorld
         {
@@ -31,11 +44,17 @@ internal static class GameSessionFactory
         };
         scope.Defer(() => ReleaseNode(participants));
         scope.Defer(participants.Clear);
+        if (startup.RestoredWorld is { } restored)
+        {
+            participants.RestoreState(restored);
+            abilities.RestoreSequence(restored.AbilitySequence);
+        }
         var inventory = scope.Own(new InventoryController(participants.Items));
         var equipment = scope.Own(new EquipmentController(participants.Items));
         var transfers = scope.Own(new InventoryEquipmentTransferService(inventory, equipment));
         var hotbar = scope.Own(new ItemHotbarController(inventory, equipment, transfers,
             error => Logger.Error($"Hotbar observer failed: {error}")) { SupportsAbility = id => abilities.Definitions.Abilities.IsSupported(id, out _) });
+        if (startup.RestoredWorld?.LocalHotbar is { } savedHotbar) hotbar.RestoreState(savedHotbar);
         var player = new PlayerController { Name = "PlayerController" };
         scope.Defer(() => ReleaseNode(player));
         scope.Defer(player.Shutdown);
@@ -75,7 +94,7 @@ internal static class GameSessionFactory
         transfers.SetAuthority(network.RequestItemTransfer);
         targeting = new AbilityTargetingController(network, player, canvas) { Name = "AbilityTargeting" };
         world.AddChild(targeting);
-        scope.Own(new LocalPlayerBindings(player, network, canvas, transfers, hotbar, targeting, fixture, inventory, equipment));
+        var bindings = scope.Own(new LocalPlayerBindings(player, network, canvas, transfers, hotbar, targeting, fixture, inventory, equipment));
         canvas.CancelGameplayAction = () =>
         {
             if (!targeting.IsTargeting) return false;
@@ -91,15 +110,19 @@ internal static class GameSessionFactory
         canvas.BindGameplay(network);
         scope.Defer(() => canvas.BindGameplay(null));
         network.Synchronization = synchronization;
-        network.SessionReady += synchronization.Activate;
         parent.AddChild(synchronization);
         var notifications = new SessionNotifications(messages);
         network.Failed += coordinator.Fail;
-        network.SessionReady += coordinator.CompleteLoading;
+        network.SessionReady += () => coordinator.Initialization.Synchronize(() =>
+        {
+            hotbar.InitializeEquipmentAbilities();
+            bindings.VerifyReady();
+            synchronization.Activate();
+        });
         network.MembershipChanged += notifications.MembershipChanged;
         network.LocalJoined += notifications.LocalJoined;
         parent.AddChild(network);
-        return new GameSession(player, messages, network, fixture);
+        return new GameSession(player, messages, network, fixture) { Hotbar = hotbar };
     }
 
     private static void ReleaseNode(Node node)

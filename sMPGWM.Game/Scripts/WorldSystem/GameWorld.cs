@@ -13,7 +13,7 @@ namespace sMPGWM.Scripts.WorldSystem;
 
 public partial class GameWorld : Node
 {
-    public ItemStore Items { get; } = new();
+    public ItemStore Items { get; private set; } = new();
     public bool AuthoritativeItems { get; set; }
     public InventorySnapshot? InitialInventory { get; set; }
     public Action<ShipLoadout, InventoryController>? InitializeLoadout { get; set; }
@@ -34,10 +34,10 @@ public partial class GameWorld : Node
         player.InventoryInitialized = true;
     }
 
-    private readonly Dictionary<int, PlayerSession> _controllers = new();
-    private readonly Dictionary<int, ShipSpawnRecord> _records = new();
+    private Dictionary<int, PlayerSession> _controllers = new();
+    private Dictionary<int, ShipSpawnRecord> _records = new();
     private int _spawnIndex;
-    private readonly Dictionary<string, ShipController> _entities = new();
+    private Dictionary<string, ShipController> _entities = new();
     public IReadOnlyDictionary<string, ShipController> Entities => _entities;
     public event Action<ShipController>? EntitySpawned;
 
@@ -67,10 +67,9 @@ public partial class GameWorld : Node
             if (existing.ShipId != data.ShipId) throw new InvalidOperationException("Conflicting ship request.");
             return existing;
         }
-        var index = _spawnIndex++;
-        var record = new ShipSpawnRecord(peerId, Guid.NewGuid().ToString("N"), data.ShipId,
-            new Vector2(640 + index % 4 * 140, 360 + index / 4 * 140), 0, Vector2.Zero);
+        var record = NewWorldState.CreatePlayer(peerId, data, _spawnIndex);
         Spawn(record);
+        _spawnIndex++;
         return record;
     }
 

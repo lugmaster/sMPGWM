@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.ConditionSystem;
+using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.StatSystem;
 
 namespace sMPGWM.Scripts.ShipSystem;
@@ -58,6 +59,99 @@ public sealed class ShipRuntime : IDisposable
         _stats.SetEquipment(new(0, 0, 0, 0, 0, 0, 0, capacity, 5000, 0, 0, 0, 0, false, false, true, false, false));
         Effects = new(_stats);
         Conditions = _conditions.AsReadOnly();
+    }
+
+    public ShipRuntimeState CaptureState()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (!_initialized || _committing) throw new InvalidOperationException("Capture requires initialized gameplay state between commits.");
+        var behaviours = new BehaviourInstance[ActiveBehaviours.Count];
+        for (var i = 0; i < behaviours.Length; i++) behaviours[i] = ActiveBehaviours[i];
+        return new(EquipmentInputs, _batteryIdentity, _shield.Current, _energy.Current,
+            Revision, ConfigurationRevision, AuthoritativeTick, _lastResourceTick, ShieldDowntimeDeadline,
+            FactionId, AfterburnerActive, _initialized, Components.Presence, _pendingComponents,
+            Array.AsReadOnly(behaviours), Array.AsReadOnly(_conditions.ToArray()), Grants.CaptureState());
+    }
+
+    public void RestoreState(ShipRuntimeState state, GameplayCatalogues definitions)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(definitions);
+        if (_initialized || _committing) throw new InvalidOperationException("Restore requires an uninitialized authoritative runtime.");
+        if (!state.Initialized || state.EquipmentInputs != EquipmentInputs || state.BatteryIdentity != _batteryIdentity ||
+            state.Revision < 1 || state.Revision == long.MaxValue || state.ConfigurationRevision < 1 || state.ConfigurationRevision == long.MaxValue ||
+            state.AuthoritativeTick < 0 || state.LastResourceTick < -1 || state.LastResourceTick > state.AuthoritativeTick ||
+            state.ShieldDowntimeDeadline < 0 || state.FactionId < 0 || (state.Components & ~ShipComponentKind.All) != 0 ||
+            state.PendingComponents is { } pending && (pending & ~ShipComponentKind.All) != 0 ||
+            state.AfterburnerActive && (!state.EquipmentInputs.HasEngine || (state.Components & ShipComponentKind.Movement) == 0) ||
+            state.Behaviours == null || state.Behaviours.Count > MaxBehaviours || state.Conditions == null || state.Conditions.Count > MaxConditions || state.Grants == null)
+            throw new ArgumentException("Invalid restored runtime or equipment mismatch.");
+
+        var prepared = new ShipStatState();
+        prepared.SetEquipment(state.EquipmentInputs);
+        prepared.SetEffectsEnabled((state.Components & ShipComponentKind.Effects) != 0);
+        var behaviours = new BehaviourInstance[state.Behaviours.Count];
+        var identities = new HashSet<long>();
+        var behaviourIds = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < behaviours.Length; i++)
+        {
+            var instance = state.Behaviours[i];
+            if (instance.RuntimeId <= 0 || instance.RuntimeId == long.MaxValue || instance.Deadline < 0 ||
+                string.IsNullOrWhiteSpace(instance.DefinitionId) || !identities.Add(instance.RuntimeId) || !behaviourIds.Add(instance.DefinitionId))
+                throw new ArgumentException("Invalid or duplicate restored behaviour instance.");
+            SupportedBehaviour? supported = null;
+            foreach (var ability in definitions.Abilities.GetAll())
+                if (definitions.Abilities.TryGetPlan(ability.Id, out var plan) && plan.Behaviour.Definition.Id == instance.DefinitionId)
+                {
+                    supported = plan.Behaviour;
+                    break;
+                }
+            if (supported == null) throw new ArgumentException("Unsupported restored behaviour: " + instance.DefinitionId);
+            prepared.SetContribution(new(StatContributionKind.Effect, instance.RuntimeId), supported.Flat, supported.Fraction);
+            behaviours[i] = instance;
+        }
+        var stats = prepared.Effective;
+        ValidateShieldRate(stats.ShieldCapacity, stats);
+        if (!double.IsFinite(state.ShieldCurrent) || state.ShieldCurrent < 0 || state.ShieldCurrent > stats.ShieldCapacity ||
+            !double.IsFinite(state.EnergyCurrent) || state.EnergyCurrent < 0 || state.EnergyCurrent > stats.EnergyStorage)
+            throw new ArgumentException("Invalid restored resource values.");
+        var depleted = stats.EnergyProduction < stats.GetEnergyConsumption(state.AfterburnerActive) && state.EnergyCurrent == 0;
+        var conditions = new string[state.Conditions.Count];
+        var conditionIds = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < conditions.Length; i++)
+        {
+            var id = state.Conditions[i];
+            if (string.IsNullOrWhiteSpace(id) || !definitions.Conditions.TryGetById(id, out _) || !conditionIds.Add(id))
+                throw new ArgumentException("Invalid restored condition: " + id);
+            conditions[i] = id;
+        }
+        if (conditionIds.Contains("energyDepleted") != depleted)
+            throw new ArgumentException("Restored energy condition is inconsistent.");
+        if (state.PendingComponents is { } proposed)
+            prepared.Preview(state.EquipmentInputs, (proposed & ShipComponentKind.Effects) != 0);
+        var installComponents = Components.Prepare(state.Components);
+        var installGrants = Grants.PrepareRestore(state.Grants, definitions);
+
+        _stats.Restore(prepared);
+        Effects.Confirm(behaviours);
+        installComponents();
+        installGrants();
+        _conditions.Clear();
+        _conditions.AddRange(conditions);
+        _shield.Confirm(stats.ShieldCapacity, state.ShieldCurrent);
+        _energy.Confirm(stats.EnergyStorage, state.EnergyCurrent);
+        _pendingComponents = state.PendingComponents;
+        _lastResourceTick = state.LastResourceTick;
+        ShieldDowntimeDeadline = state.ShieldDowntimeDeadline;
+        AuthoritativeTick = state.AuthoritativeTick;
+        AfterburnerActive = state.AfterburnerActive;
+        EnergyDepleted = depleted;
+        FactionId = state.FactionId;
+        ConfigurationRevision = state.ConfigurationRevision;
+        Revision = state.Revision;
+        _initialized = true;
+        PublishChanges();
     }
 
     public void ApplyEquipment(ResolvedShipStats stats, ulong batteryIdentity, bool publish = true)

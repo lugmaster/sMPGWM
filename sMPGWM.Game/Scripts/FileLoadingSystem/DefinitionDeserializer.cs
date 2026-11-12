@@ -37,20 +37,11 @@ public static class DefinitionDeserializer
 
             return LoadResult<TDefinition>.Success(definition);
         }
-        catch (JsonSerializationException ex)
+        catch (JsonException ex)
         {
             return LoadResult<TDefinition>.Failure(new DataLoadError(
                 "Definition deserialization failed",
                 $"The validated data does not match the C# type {typeof(TDefinition).Name}.",
-                sourcePath,
-                schemaPath,
-                ex));
-        }
-        catch (Exception ex)
-        {
-            return LoadResult<TDefinition>.Failure(new DataLoadError(
-                "Unexpected deserialization error",
-                $"An unexpected error occurred while creating {typeof(TDefinition).Name}.",
                 sourcePath,
                 schemaPath,
                 ex));

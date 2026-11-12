@@ -10,11 +10,12 @@ internal static class Compatibility
 {
     internal static Dictionary<string, string> Capture()
     {
-        GameConfig.EnsureCompatibilityData();
+        if (string.IsNullOrEmpty(GameConfig.GameDataChecksum))
+            throw new InvalidOperationException("Session definitions and compatibility data have not been prepared.");
         return new()
         {
             ["handshake"] = "2",
-            ["protocol"] = "9",
+            ["protocol"] = "10",
             ["game_id"] = GameConfig.LobbyGameId,
             ["mode"] = GameConfig.LobbyMode,
             ["version"] = GameConfig.Version,

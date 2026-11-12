@@ -87,6 +87,14 @@ internal sealed class LocalPlayerBindings : IDisposable
         _targeting.BindEquipment(_owner?.ControlledShip?.Equipment);
     }
 
+    public void VerifyReady()
+    {
+        if (_disposed || _owner == null || _owner != _player.Participant ||
+            _boundShip == null || _boundShip != _owner.ControlledShip ||
+            !_network.ItemBaselineReady || !_transfers.Ready)
+            throw new InvalidOperationException("Local inventory, equipment, and ship bindings are incomplete.");
+    }
+
     public void Dispose()
     {
         if (_disposed) return;

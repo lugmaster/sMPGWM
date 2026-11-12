@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.AbilitySystem;
+using Array = Godot.Collections.Array;
 
 namespace sMPGWM.Scripts.NetworkSystem;
 
@@ -103,9 +104,15 @@ public partial class NetworkManager
         return rows;
     }
 
-    private bool ApplyGameplay(Godot.Collections.Array rows)
+    private bool ApplyGameplay(Array rows, bool requireComplete)
     {
         if (!GameplaySnapshotCodec.TryDecode(rows, Abilities.Definitions, out var entries)) return false;
+        if (requireComplete)
+        {
+            if (entries.Length != World.Entities.Count) return false;
+            foreach (var entry in entries)
+                if (!World.Entities.ContainsKey(entry.Entity)) return false;
+        }
         foreach (var entry in entries)
             if (World.Entities.TryGetValue(entry.Entity, out var ship))
                 ship.Runtime.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions,
@@ -117,7 +124,8 @@ public partial class NetworkManager
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveGameplay(string session, Godot.Collections.Array rows)
     {
-        if (IsHostMessage() && _clientJoin.HasWorld && session == Synchronization!.Session.ToString("N") && !ApplyGameplay(rows))
+        if (IsHostMessage() && _clientJoin.HasWorld && session == Synchronization!.Session.ToString("N") &&
+            !ApplyGameplay(rows, _clientJoin.Phase != ClientJoinPhase.Ready))
             FailSession("Invalid gameplay snapshot.");
     }
     private void ReplyAbility(int peer, long request, AbilityActivationResult result)

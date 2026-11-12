@@ -11,8 +11,10 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     public ItemStore Items { get; }
     public ItemContainer Container { get; }
     private EquipmentSnapshot? _snapshot;
-    public EquipmentSnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
-        ? snapshot : _snapshot = new EquipmentSnapshot(Container.Revision, Container.Entities);
+    private ItemEntity?[]? _snapshotEntities;
+    public EquipmentSnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision &&
+        (_disposed || ReferenceEquals(_snapshotEntities, Container.Entities))
+        ? snapshot : _snapshot = new EquipmentSnapshot(Container.Revision, _snapshotEntities = Container.Entities);
     public long Revision => _disposed ? Snapshot.Revision : Container.Revision;
     public event Action<EquipmentSnapshot>? Changed;
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :

@@ -77,6 +77,27 @@ public partial class ShipController : CharacterBody2D
     { DiscontinuityRevision = revision; AppliedMovementFlags = flags; }
     public ShipInputState InputState => _input;
     public long DiscontinuityRevision { get; private set; }
+    public ShipMovementState CaptureMovementState() => new(_input, DiscontinuityRevision,
+        AppliedMovementFlags, PresentedMovementFlags, MovementConfigurationRevision, MovementConfiguration);
+
+    public void RestoreMovementState(ShipMovementState state)
+    {
+        var stats = Runtime.Stats;
+        var expected = new MovementConfiguration(stats.Speed, stats.AfterBurnerSpeed, stats.RotationSpeed,
+            stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Runtime.MovementAvailable);
+        if (!state.Configuration.IsValid || state.Configuration != expected || state.ConfigurationRevision != Runtime.ConfigurationRevision ||
+            state.DiscontinuityRevision < 0 || state.DiscontinuityRevision == long.MaxValue ||
+            state.AppliedFlags > 7 || state.PresentedFlags > 7 || !MovementWire.Valid(state.Input))
+            throw new ArgumentException("Invalid restored movement state.");
+        MovementConfigurationRevision = 0;
+        InstallMovementConfiguration(state.ConfigurationRevision, state.Configuration);
+        DiscontinuityRevision = state.DiscontinuityRevision;
+        AppliedMovementFlags = state.AppliedFlags;
+        _input = state.Input;
+        CaptureState();
+        Presentation.Snap();
+        PresentedMovementFlags = state.PresentedFlags;
+    }
     public void Restore(Vector2 position, float rotation, Vector2 velocity, ShipInputState input)
     {
         GlobalPosition = position; GlobalRotation = rotation; Velocity = velocity; _input = input;

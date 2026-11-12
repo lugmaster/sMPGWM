@@ -57,14 +57,27 @@ public static class GameConfig
         if (!string.IsNullOrEmpty(GameDataChecksum)) return;
         if (string.IsNullOrEmpty(ConfigDataChecksum))
             throw new InvalidOperationException("Configuration is not loaded.");
-        _ = ItemRegistry.GetAll();
-        _ = ShipRegistry.GetAll();
-        _ = GameplayDefinitions.Current;
-        var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoader.CapturedInputs);
-        inputs.Add("GameplayProtocol", "5:equipment-resources-movement-configuration-battery");
-        GameDataChecksum = ChecksumGenerator.Compute(inputs);
-        foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
-        Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={GameDataChecksum}");
+        try
+        {
+            _ = ItemRegistry.GetAll();
+            _ = ShipRegistry.GetAll();
+            _ = GameplayDefinitions.Current;
+            sMPGWM.Scripts.GamePlaySystem.StarterLoadout.ValidateDefinitions();
+            var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoader.CapturedInputs);
+            inputs.Add("GameplayProtocol", "6:complete-initial-state-readiness");
+            var checksum = ChecksumGenerator.Compute(inputs);
+            foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
+            Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={checksum}");
+            GameDataChecksum = checksum;
+        }
+        catch
+        {
+            GameplayDefinitions.ResetPreparation();
+            ShipRegistry.ResetPreparation();
+            ItemRegistry.ResetPreparation();
+            FileLoader.CapturedInputs.Clear();
+            throw;
+        }
     }
 
     private static Variant GetConfigValue(string section, string key)

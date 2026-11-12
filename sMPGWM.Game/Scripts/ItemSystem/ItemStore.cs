@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Scripts.ItemSystem;
 
@@ -10,9 +11,73 @@ public sealed class ItemStore
     private readonly Dictionary<ItemEntityId, ItemLocation> _locations = new();
     private readonly Dictionary<ItemContainerId, ItemContainer> _containers = new();
     internal bool Publishing { get; private set; }
+    internal bool IsEmpty => _containers.Count == 0 && _items.Count == 0 && _locations.Count == 0;
 
     public ItemEntity GetItem(ItemEntityId id) => _items[id];
     public ItemLocation GetLocation(ItemEntityId id) => _locations[id];
+
+    public ItemContainerState Capture(ItemContainer container)
+    {
+        if (!Owns(container) || container.Disposed) throw new InvalidOperationException("Storage is not owned by this store.");
+        if (Publishing) throw new InvalidOperationException("Cannot capture storage during publication.");
+        return new ItemContainerState(container.Id, container.Revision, container.GrowthChunk, container.Entities);
+    }
+
+    /// <summary>Installs supplied identities into unpublished, empty containers as one authoritative transaction.</summary>
+    public void Restore(IReadOnlyList<ItemContainerRestoration> batch)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+        if (Publishing) throw new InvalidOperationException("Cannot restore storage during publication.");
+        if (batch.Count == 0) return;
+        var changes = new Dictionary<ItemContainer, ItemEntity?[]>();
+        var restoredIds = new HashSet<ulong>();
+        var entries = new ItemContainerRestoration[batch.Count];
+        ulong maximumId = 0;
+        for (var i = 0; i < entries.Length; i++)
+        {
+            var entry = batch[i];
+            var container = entry.Container;
+            var state = entry.State;
+            if (container == null || state == null || !Owns(container) || container.Disposed || container.Revision != 0)
+                throw new ArgumentException("Restoration requires pristine containers owned by this store.", nameof(batch));
+            foreach (var item in container.Entities)
+                if (item != null) throw new ArgumentException("Restoration cannot replace existing items.", nameof(batch));
+            if (state.Id.Value == 0 || state.Id.Value >= long.MaxValue || state.Revision < 0 ||
+                state.GrowthChunk != container.GrowthChunk || !restoredIds.Add(state.Id.Value))
+                throw new ArgumentException("Invalid or duplicate restored container identity, revision, or growth policy.", nameof(batch));
+            maximumId = Math.Max(maximumId, state.Id.Value);
+            var slots = new ItemEntity?[state.Slots.Count];
+            for (var slot = 0; slot < slots.Length; slot++)
+            {
+                if (state.Slots[slot] is not { } item) continue;
+                if (item.Id.Value == 0 || item.Id.Value >= long.MaxValue || !restoredIds.Add(item.Id.Value) ||
+                    !ItemRegistry.TryGetById(item.DefinitionId, out var definition))
+                    throw new ArgumentException("Invalid, duplicate, or unknown restored item identity/definition.", nameof(batch));
+                slots[slot] = new ItemEntity(item.Id, definition, item.Count);
+                maximumId = Math.Max(maximumId, item.Id.Value);
+            }
+            if (!Valid(container, slots) || !changes.TryAdd(container, slots))
+                throw new ArgumentException("Invalid restored placement, stack, capacity, or duplicate destination.", nameof(batch));
+            entries[i] = entry;
+        }
+        foreach (var container in _containers.Values)
+            if (!changes.ContainsKey(container) && restoredIds.Contains(container.Id.Value))
+                throw new ArgumentException("Restored identity conflicts with retained storage.", nameof(batch));
+        foreach (var item in _items.Keys)
+            if (restoredIds.Contains(item.Value))
+                throw new ArgumentException("Restored identity conflicts with a retained item.", nameof(batch));
+        var transaction = Prepare(changes);
+        RuntimeIds.ReserveThrough(maximumId);
+        foreach (var entry in entries) _containers.Remove(entry.Container.Id);
+        foreach (var entry in entries)
+        {
+            entry.Container.Id = entry.State.Id;
+            _containers.Add(entry.Container.Id, entry.Container);
+        }
+        transaction.Commit();
+        foreach (var entry in entries) entry.Container.Revision = entry.State.Revision;
+        Publish(changes.Keys);
+    }
 
     public void DestroyContainer(ItemContainer container)
     {

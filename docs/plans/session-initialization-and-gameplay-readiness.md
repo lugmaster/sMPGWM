@@ -1,6 +1,32 @@
 # Session initialization and gameplay readiness implementation plan
 
-Status: planned. Implementation has not started.
+Status: initialization and in-memory restored-state installation implemented. Loader separation, activation gating, complete initial synchronization, new-state setup, and supplied-state installation have regression coverage. Remaining performance/transport measurements and final cleanup are tracked in the standalone [Multiplayer performance measurements and final cleanup review](multiplayer-performance-and-final-cleanup.md) plan. This does not claim measured multiplayer performance or completion of the cleanup review.
+
+Implementation evidence (2026-11-12): the pre-change `dotnet test sMPGWM.sln --no-restore` baseline passed 279 tests. Validation after the initialization increment passed 297 top-level tests, including the integration wrapper that ran 208 in-engine tests with zero failures. Restored-state validation passed 303 top-level tests and 227 in-engine tests with zero failures using the same command. Added cases cover item restoration, authoritative runtime continuity, complete world installation/rollback, host restart, hotbar restoration, and rejected stale remote-peer ownership. The same command exercises the managed suite and launches the separate Godot test runner. Existing warnings are CS0108 in UiIcon and NUnit2009 in AbilityArchitectureTests. The explicit multiplayer convergence/benchmark workloads are not included in the ordinary run.
+
+Current lifecycle and ownership:
+
+- All four Host/Join paths converge on `GameFlowManager.StartNetworkGame`. Menu configuration and Steam application services remain outside the session. Scene resources are no longer eagerly loaded by static scene-provider fields.
+- Navigation shows loading and waits for `FramePostDraw` before preparing definitions and loading the game scene. Headless startup uses a process-frame boundary because there is no rendered frame. Navigation generation and stopped-session checks reject cancelled continuations.
+- `SessionInitialization` reports definition preparation, scene/session construction, synchronization, binding verification, and readiness. `SessionCoordinator` alone transitions to Active and owns cleanup through `SessionScope`. Failure closes both gates before cleanup; duplicate or stale readiness reports do nothing.
+- Compatibility preparation explicitly loads and validates item, ship, and gameplay registries plus starter requirements. Only successful preparation publishes the checksum. Failure resets all three lazy caches and captured compatibility inputs; repaired content can be retried. Successful immutable definitions remain reusable. Compatibility capture now requires preparation instead of loading implicitly.
+- `GameSessionFactory` connects the network milestone to initialization. It assigns supported equipment abilities to the initial hotbar, verifies local ship/inventory/equipment bindings, and activates synchronization before the coordinator dismisses loading and enables gameplay input. These steps execute synchronously on the engine thread, without an intervening physics frame.
+- A client must install topology, local control, movement, gameplay, and private item state before acknowledging spawn readiness. Acknowledgement and completion include session/entity/control-generation identity. The host sends current topology, full gameplay state, and owner items before completion to cover changes during joining. Live movement and item updates continue during loading. Local control reassignment during initial synchronization fails cleanly and asks the participant to rejoin; runtime control reassignment remains supported.
+- `NewWorldState.CreatePlayer` supplies fresh spawn records. `RestoredWorldState` supplies in-memory snapshots; `GameWorld.RestoreState` validates and stages their installation before publishing entities or binding a local player. Production starter equipment remains independent of optional development inventory. Fresh shield-full/energy-empty semantics are unchanged and are never reapplied to restored ships.
+
+Validation covers contextual catalogue errors, programming-error propagation, actual malformed-definition failure/repair/retry, preparation and readiness cancellation, duplicate/stale completion, complete gameplay snapshot coverage, first movement and supported ability activation, resource/item idempotence, explicit empty loadouts, and preservation of user hotbar edits. New test-support IDs are unique. Protocol compatibility was deliberately advanced to wire version 10 and gameplay fingerprint 6; unchanged authored definition/schema bytes retain their capture format.
+
+Completed restored-state work:
+
+- `GamePlayManager.CaptureState()` captures an active authoritative session at an idle completed-step boundary. The snapshot records ships, participant ownership/control generations, item/container identities and locations, revisions, resources, component state, active effects/deadlines, grants, movement continuity, simulation tick, ability identity sequence, spawn ordinal, and the local hotbar. Queued transport commands, authentication, prediction history, and edit-session tokens are not restored; a new transport session receives a new identity.
+- Supply the snapshot through `NetworkStartupData.RestoredWorld` and use normal `GameFlowManager.StartNetworkGame` loading. The factory installs it before constructing bindings or starting networking. Simulation resumes after the saved completed tick. New participants still use the normal new-player policy.
+- `ItemStore.Restore` validates the entire container batch, resolves current definitions, prepares authoritative loadout changes, reserves future IDs beyond restored identities, then installs identities/locations/revisions consistently. Inventory/equipment views handle restored revision zero without stale cached snapshots.
+- `ShipRuntime.RestoreState` reconstructs authoritative effect contributions and restores resource/grant/component continuity after equipment installation. It does not call replica confirmation as a substitute for authoritative state and does not initialize fresh resources. Restored movement configuration is checked against resolved runtime values.
+- World installation stages a separate item store and detached ships/participants. Malformed topology, items, runtime, movement, expired effects, and reused effect identities fail before world publication and permit a corrected retry. Repeating installation of the identical snapshot is harmless. Restored empty hotbars remain empty, including revision-zero hotbars; unknown hotbar references are rejected before binding.
+
+Restoration boundary: general `GameWorld.RestoreState` preserves all supplied participant bindings, including multiple participants and uncontrolled ships. Restarting an actual transport currently accepts host-only participant bindings. Saved ENet peer numbers are not authenticated persistent identities, so startup explicitly rejects saved remote bindings instead of silently duplicating players or giving a new connection another player's state. Authenticated reconnect identity mapping belongs with a future persistence/session identity feature; it is not implemented by this storage-free seam. A host-only restored session can admit new clients normally. Save files, serialization formats, storage, and migration remain outside scope.
+
+Remaining validation: rendered Steam/ENet startup, real multi-peer late joins under impairment, five/ten-player frame/publication/allocation/GC measurements, retained-resource profiling, and the complete transaction audit now live in workstream 1 of the standalone follow-up plan. Task 8's separate simplification review is workstream 2. Their historical checkboxes below remain open where evidence has not been collected. No performance or Steam acceptance is inferred from ordinary tests.
 
 Establish a clear boundary between StartMenu, SessionInitialization behind the loading screen, and active gameplay. Completing loading must mean the player can immediately take off and use the supported abilities supplied by their loadout. All initial world, inventory, equipment, resource, and synchronization work must already be complete.
 
@@ -84,54 +110,54 @@ Preserve existing resource semantics: resolve a new ship's initial loadout, then
 
 ### 1 Establish the lifecycle and regression baseline
 
-- [ ] Map startup and cleanup for Host/Join across Steam/ENet, including first registry access, scene construction, local bindings, baseline application, activation, and late joins.
-- [ ] Record current build/test results and existing failures. Use current results rather than historical test counts from prior plans.
-- [ ] Identify the existing tests that protect ownership, transactions, equipment grants, resource initialization, joins, session disposal, and movement.
+- [x] Map startup and cleanup for Host/Join across Steam/ENet, including first registry access, scene construction, local bindings, baseline application, activation, and late joins.
+- [x] Record current build/test results and existing failures. Use current results rather than historical test counts from prior plans.
+- [x] Identify the existing tests that protect ownership, transactions, equipment grants, resource initialization, joins, session disposal, and movement.
 - [ ] Record a reproducible runtime baseline at 5 and 10 players, with normal gameplay, equipment changes, and late joins. Separate diagnostic logging overhead from ordinary runtime measurements.
 
 Acceptance: the implementation has a concrete map of the current gates and measurable comparisons for changed runtime paths. The existing gameplay contract remains the reference.
 
 ### 2 Separate definition loading responsibilities
 
-- [ ] Keep typed catalogue descriptors and extract `Catalogue<T>` to its own file with a matching namespace.
-- [ ] Separate item/category parsing and validation from ability/effect parsing. Give ship deserialization an explicit home rather than an unrelated forwarding method in the gameplay catalogue loader.
-- [ ] Keep file access and schema validation in the loading layer, parsing in focused parsers, and lookup/storage in registries. Retain a small shared parser helper only for genuinely shared behaviour.
-- [ ] Standardize expected loading failures using the existing `LoadResult<T>` and `DataLoadError` conventions at loading boundaries. Include source/schema paths, definition ID, and offending field or reference where applicable.
-- [ ] Cover unknown categories, duplicate IDs, invalid stacking, invalid numeric values, and unresolved gameplay references. Keep duplicate detection within contextual error handling and avoid blanket catches that disguise programming errors as bad content.
-- [ ] Preserve data formats, defaults, authored IDs, compatibility input capture, and existing precompilation. Temporary arrays, dictionaries, and additional validation passes are acceptable when they improve clarity.
+- [x] Keep typed catalogue descriptors and extract `Catalogue<T>` to its own file with a matching namespace.
+- [x] Separate item/category parsing and validation from ability/effect parsing. Give ship deserialization an explicit home rather than an unrelated forwarding method in the gameplay catalogue loader.
+- [x] Keep file access and schema validation in the loading layer, parsing in focused parsers, and lookup/storage in registries. Retain a small shared parser helper only for genuinely shared behaviour.
+- [x] Standardize expected loading failures using the existing `LoadResult<T>` and `DataLoadError` conventions at loading boundaries. Include source/schema paths, definition ID, and offending field or reference where applicable.
+- [x] Cover unknown categories, duplicate IDs, invalid stacking, invalid numeric values, and unresolved gameplay references. Keep duplicate detection within contextual error handling and avoid blanket catches that disguise programming errors as bad content.
+- [x] Preserve data formats, defaults, authored IDs, compatibility input capture, and existing precompilation. Temporary arrays, dictionaries, and additional validation passes are acceptable when they improve clarity.
 
 Acceptance: existing valid data produces equivalent definitions and gameplay values. Invalid data produces actionable diagnostics. Loader extraction does not change compatibility checksums for unchanged inputs.
 
 ### 3 Establish SessionInitialization and its activation gate
 
-- [ ] Keep StartMenu as UiCanvas/menu presentation with application services only. Audit eager scene/static initialization for gameplay work occurring before the loading screen.
+- [x] Keep StartMenu as UiCanvas/menu presentation with application services only. Audit eager scene/static initialization for gameplay work occurring before the loading screen.
 - [ ] Ensure every Host/Join path shows and renders loading before starting session preparation.
-- [ ] Introduce the explicit initialization orchestrator under the existing coordinator and scope. Define stage progress, prerequisites, failure, cancellation, and one successful completion transition.
+- [x] Introduce the explicit initialization orchestrator under the existing coordinator and scope. Define stage progress, prerequisites, failure, cancellation, and one successful completion transition.
 - [ ] Invoke registry loading, cross-reference validation, compatibility preparation, and required resource preparation explicitly within initialization. Preserve reuse of already valid immutable data without making lazy first access the readiness contract.
-- [ ] Define publication of the complete prepared definition set and reset failed preparation state, including affected captured compatibility inputs. Audit the existing static `Lazy` holders so failure followed by retry does not reuse a cached exception or mixed data. Keep successful data stable for every active session.
-- [ ] Replace direct network-to-loading-completion wiring with reports to initialization. Enable simulation participation/input and dismiss loading only after the full contract is satisfied, without an observable partially active frame.
-- [ ] Preserve cleanup after partial construction and reject callbacks from stopped or superseded sessions. Loading completion and cancellation must remain harmless when reported more than once.
+- [x] Define publication of the complete prepared definition set and reset failed preparation state, including affected captured compatibility inputs. Audit the existing static `Lazy` holders so failure followed by retry does not reuse a cached exception or mixed data. Keep successful data stable for every active session.
+- [x] Replace direct network-to-loading-completion wiring with reports to initialization. Enable simulation participation/input and dismiss loading only after the full contract is satisfied, without an observable partially active frame.
+- [x] Preserve cleanup after partial construction and reject callbacks from stopped or superseded sessions. Loading completion and cancellation must remain harmless when reported more than once.
 
 Acceptance: transport connection or scene readiness alone cannot activate gameplay. Failure at any initialization stage releases the resources acquired so far and permits a clean new Host/Join attempt.
 
 ### 4 Install complete initial world and player state
 
-- [ ] Separate obtaining initial authoritative world state from constructing and installing it. Supply the current new-world path now, with a narrow seam for a future restored-world source.
-- [ ] Make the dependency order explicit: definitions/resources, world/entities, player ownership, inventory/equipment, derived stats/grants, resource state, and local bindings. Prepare prerequisites before publishing a participant as ready.
-- [ ] Complete all initial inventory creation, equipment installation, hotbar assignments, and required presentation state during initialization. Remove delayed initialization or first-interaction fallbacks for these responsibilities.
-- [ ] Distinguish new-player/new-ship defaults from supplied restored state. A future restore must preserve entity/item identities, ownership, equipment, current resources, and continuity metadata, and must not reapply starter equipment or fresh-resource initialization.
-- [ ] Ensure the production startup policy supplies the intended playable loadout independently of optional development fixtures. Preserve supported mechanics and explicit empty-loadout scenarios used elsewhere.
-- [ ] Keep the persistence seam concrete and small. Do not add save storage, a speculative save schema, or a general provider framework.
+- [x] Separate obtaining initial authoritative world state from constructing and installing it. Supply the current new-world path now, with a narrow seam for a future restored-world source.
+- [x] Make the dependency order explicit: definitions/resources, world/entities, player ownership, inventory/equipment, derived stats/grants, resource state, and local bindings. Prepare prerequisites before publishing a participant as ready.
+- [x] Complete all initial inventory creation, equipment installation, hotbar assignments, and required presentation state during initialization. Remove delayed initialization or first-interaction fallbacks for these responsibilities.
+- [x] Distinguish new-player/new-ship defaults from supplied restored state. A future restore must preserve entity/item identities, ownership, equipment, current resources, and continuity metadata, and must not reapply starter equipment or fresh-resource initialization.
+- [x] Ensure the production startup policy supplies the intended playable loadout independently of optional development fixtures. Preserve supported mechanics and explicit empty-loadout scenarios used elsewhere.
+- [x] Keep the persistence seam concrete and small. Do not add save storage, a speculative save schema, or a general provider framework.
 
 Acceptance: the first active frame can move and execute an available supported ability without completing inventory/equipment setup. Initializing a supplied state through focused tests does not duplicate items, grants, or resource initialization. Runtime control switches retain the existing ownership contract.
 
 ### 5 Complete synchronization before reporting readiness
 
 - [ ] Define the initial synchronization contract for topology, local control, movement/gameplay state, private item state, revisions, and binding/session identity.
-- [ ] Consolidate the existing snapshot and item-baseline safeguards. Acknowledge application readiness only when all required initial state and bindings are installed, rather than acknowledging spawn as though it represents the complete state.
+- [x] Consolidate the existing snapshot and item-baseline safeguards. Acknowledge application readiness only when all required initial state and bindings are installed, rather than acknowledging spawn as though it represents the complete state.
 - [ ] Specify a coherent snapshot-to-live-update handoff using the existing session/tick/revision mechanisms. Handle updates received during loading without rolling state back or requiring the live world to become static.
-- [ ] Preserve authority checks, stale-message rejection, timeouts, duplicate handling, and private inventory visibility. Protocol changes must update compatibility/version checks and corresponding tests together.
-- [ ] Keep late-join initialization scoped to the joining participant. Do not rerun session initialization or pause existing players on the host.
+- [x] Preserve authority checks, stale-message rejection, timeouts, duplicate handling, and private inventory visibility. Protocol changes must update compatibility/version checks and corresponding tests together.
+- [x] Keep late-join initialization scoped to the joining participant. Do not rerun session initialization or pause existing players on the host.
 
 Acceptance: delayed or missing required state keeps the client loading or leads to a controlled failure. Duplicate/stale messages cannot activate the wrong session or overwrite newer state. Every supported transport follows the same application-readiness contract.
 

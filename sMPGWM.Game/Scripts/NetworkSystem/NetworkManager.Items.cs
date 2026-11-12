@@ -103,7 +103,7 @@ public partial class NetworkManager
     {
         foreach (var (peer, player) in World.Players)
         {
-            if (peer == 1 || !_joins.Is(peer, PeerJoinPhase.Ready)) continue;
+            if (peer == 1 || !(_joins.Is(peer, PeerJoinPhase.Spawning) || _joins.Is(peer, PeerJoinPhase.Ready))) continue;
             if (!_publishedItemRevisions.TryGetValue(peer, out var published) ||
                 published != (player.ControlGeneration, player.Inventory.Revision, player.ControlledShip?.Equipment.Revision ?? 0))
                 if (!SendItems(peer)) return;
@@ -133,6 +133,9 @@ public partial class NetworkManager
         var wasReady = _hasItemBaseline;
         _hasItemBaseline = true;
         if (!wasReady) ItemBindingChanged?.Invoke();
+        if (_stopped || !_clientJoin.ApplyItems(Time.GetTicksMsec())) return;
+        if (RpcId(1, nameof(ConfirmSpawnReady), session, owner.ControlledShip?.EntityId ?? "",
+                owner.ControlGeneration) != Error.Ok) FailSession("Spawn acknowledgement failed.");
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]

@@ -41,7 +41,7 @@ public class ItemRegistryTests
         ((JArray)yaml["Categories"]!).Add(yaml["Categories"]![0]!.DeepClone());
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemCategoryDefinitions(yaml, _ => null!));
         var items = Read("ItemDefinitions.yml", "ItemSchema.yml");
-        Assert.Throws<KeyNotFoundException>(() => ItemRegistry.LoadItemDefinitions(items, new(), _ => null!));
+        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, new(), _ => null!)); // TEST-SUPPORT: INIT-ITEM-UNKNOWN-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.DuplicateIdsAndUnknownCategoriesAreRejected
     }
 
     [Test]

@@ -40,7 +40,11 @@ public partial class SynchronizationCoordinator : Node
     public void Activate()
     {
         if (Engine.PhysicsTicksPerSecond != 60) { Network.FailSession("Synchronization requires 60 Hz physics."); return; }
-        if (Network.IsHost()) Session = Guid.NewGuid();
+        if (Network.IsHost())
+        {
+            Session = Guid.NewGuid();
+            CompletedTick = World.InitialCompletedTick;
+        }
         else if (!_client.HasBaseline) { Network.FailSession("Missing movement baseline."); return; }
         Player.UsePredictionCamera(!Network.IsHost());
         _active = true; _client.Activate();
@@ -159,7 +163,7 @@ public partial class SynchronizationCoordinator : Node
             _client.ApplyBaseline(session, tick);
             _prediction.Reset(tick); _remote.Reset(tick); _clock.ClearProbes();
         }
-        else if (!_active || !_client.ObserveSnapshot(session, tick)) return false;
+        else if (!_client.ObserveSnapshot(session, tick)) return false;
         CompletedTick = tick;
         _clock.Observe(tick, baseline);
         // Warm-up snapshots refresh liveness and remote proxies but cannot reconcile an unfinished history.
@@ -168,7 +172,7 @@ public partial class SynchronizationCoordinator : Node
             (owner, sample) => _remote.Apply(sample.Peer, owner.ControlledShip!, tick, sample, baseline),
             (owner, sample) =>
             {
-                if (baseline || sample.ConfigurationRevision != owner.ControlledShip!.MovementConfigurationRevision)
+                if (baseline || !_active || sample.ConfigurationRevision != owner.ControlledShip!.MovementConfigurationRevision)
                 {
                     _prediction.ApplyBaseline(tick, sample, owner.ControlledShip!);
                     _client.RestartWarmup();
