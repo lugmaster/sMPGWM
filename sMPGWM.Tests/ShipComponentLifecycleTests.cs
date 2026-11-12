@@ -1,6 +1,7 @@
 using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: COMPONENT-LIFECYCLE-000 | Tests: sMPGWM.Tests.ShipComponentLifecycleTests.PowerAndShieldDetachPreserveAmountsAndHardware
 using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: COMPONENT-LIFECYCLE-001 | Tests: sMPGWM.Tests.ShipComponentLifecycleTests.PowerAndShieldDetachPreserveAmountsAndHardware
-using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: COMPONENT-LIFECYCLE-002 | Tests: sMPGWM.Tests.ShipComponentLifecycleTests.PowerAndShieldDetachPreserveAmountsAndHardware
+using sMPGWM.Scripts.NetworkSystem;
+using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: COMPONENT-LIFECYCLE-002 | Tests: sMPGWM.Tests.ShipComponentLifecycleTests.PowerAndShieldDetachPreserveAmountsAndHardware
 using sMPGWM.Scripts.StatSystem; // TEST-SUPPORT: COMPONENT-LIFECYCLE-003 | Tests: sMPGWM.Tests.ShipComponentLifecycleTests.PowerAndShieldDetachPreserveAmountsAndHardware
 namespace sMPGWM.Tests; // TEST-SUPPORT: COMPONENT-LIFECYCLE-004 | Tests: sMPGWM.Tests.ShipComponentLifecycleTests.PowerAndShieldDetachPreserveAmountsAndHardware
 

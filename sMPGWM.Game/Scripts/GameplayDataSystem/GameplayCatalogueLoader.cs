@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -92,7 +93,7 @@ public static class GameplayCatalogueLoader
             ? parsed : throw new ArgumentException($"{value.Path}: unsupported value '{value}'."));
 
     private static AbilityDefinition Ability(JToken r) => new(
-        Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"), (string?)r["Icon"],
+        Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"), r["Icon"] is { Type: JTokenType.String } icon ? Icons.GetReference((string)icon!) : null,
         Text(r, "TargetingId"), Text(r, "EffectId"), EnumValue<ActivationKind>(r, "Activation"),
         Number(r, "CooldownMs"), List(r["Costs"], c => new AbilityCost(Text(c, "StatId"), Number(c, "Amount"))),
         EnumValue<AbilityAvailability>(r, "Availability"), Strings(r, "BlockedByConditions"));
@@ -107,7 +108,7 @@ public static class GameplayCatalogueLoader
         var removal = r["OnRemove"];
         var lethal = r["LethalProtection"];
         var periodic = r["PeriodicAccumulator"];
-        return new(Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"), (string?)r["Icon"],
+        return new(Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"), r["Icon"] is { Type: JTokenType.String } icon ? Icons.GetReference((string)icon!) : null,
             EnumValue<BehaviourDisposition>(r, "Disposition"),
             new(EnumValue<BehaviourLifetimeKind>(lifetime, "Kind"), OptionalNumber(lifetime, "DurationMs")),
             new(EnumValue<StackingScope>(stacking, "Scope"), EnumValue<StackingPolicy>(stacking, "Policy"),

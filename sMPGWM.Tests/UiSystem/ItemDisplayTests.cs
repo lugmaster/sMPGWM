@@ -1,7 +1,7 @@
-using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
 namespace sMPGWM.Tests.UiSystem;
 

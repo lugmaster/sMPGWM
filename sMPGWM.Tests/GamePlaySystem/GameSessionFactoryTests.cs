@@ -1,11 +1,11 @@
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.MovementSystem;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.UiSystem;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 using HeartbeatMonitor = sMPGWM.Scripts.NetworkSystem.HeartbeatMonitor;
 
 namespace sMPGWM.Tests.GamePlaySystem;

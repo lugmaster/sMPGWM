@@ -1,6 +1,6 @@
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Inventory;
-using sMPGWM.Scripts.Util.Mocks;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.UtilitySystem.Mocks;
 
 namespace sMPGWM.Tests.InventorySystem;
 

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cwxygnsnchh73"]
 
-[ext_resource type="Script" uid="uid://cdqk61d82qqan" path="res://Scripts/Util/UiComponents/NotificationIcon.cs" id="1_vkvfo"]
+[ext_resource type="Script" uid="uid://cdqk61d82qqan" path="res://Scripts/UtilitySystem/UiComponents/NotificationIcon.cs" id="1_vkvfo"]
 
 [node name="NotificationIcon" type="Button" unique_id=2048931584]
 custom_minimum_size = Vector2(48, 48)

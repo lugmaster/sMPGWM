@@ -1,6 +1,7 @@
 using Godot; // TEST-SUPPORT: RESOURCE-SNAPSHOT-001 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip, sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
 using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: RESOURCE-SNAPSHOT-002 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip, sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: RESOURCE-SNAPSHOT-003 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip, sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+using sMPGWM.Scripts.NetworkSystem;
+using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: RESOURCE-SNAPSHOT-003 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip, sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
 using sMPGWM.Scripts.StatSystem; // TEST-SUPPORT: RESOURCE-SNAPSHOT-004 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip, sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: RESOURCE-SNAPSHOT-005 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip, sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues

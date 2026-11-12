@@ -4,7 +4,7 @@ using sMPGWM.Scripts.NetworkSystem;
 namespace sMPGWM.Scripts.GamePlaySystem;
 
 internal sealed record GameSession(
-    PlayerController Player,
+    PlayerControllerSystem.PlayerController Player,
     MessageController Messages,
     NetworkManager Network,
     IGameFixture Fixture);

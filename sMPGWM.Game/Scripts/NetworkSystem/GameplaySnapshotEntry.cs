@@ -1,5 +1,6 @@
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.StatSystem;
 
 namespace sMPGWM.Scripts.NetworkSystem;

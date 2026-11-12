@@ -1,4 +1,4 @@
-﻿using Godot;
+using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 

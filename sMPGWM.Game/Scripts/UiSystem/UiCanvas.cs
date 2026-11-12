@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Hotbar;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.MessageStackSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using GameOverlayMenu = sMPGWM.Scripts.UtilitySystem.UiComponents.GameOverlayMenu;
 
 namespace sMPGWM.Scripts.UiSystem;
 

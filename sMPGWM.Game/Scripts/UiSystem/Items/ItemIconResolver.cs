@@ -1,5 +1,5 @@
 using Godot;
-using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.UiSystem.Items;
 
@@ -7,8 +7,8 @@ internal static class ItemIconResolver
 {
     private static Texture2D? _placeholder;
 
-    internal static Texture2D Item(ItemDefinition definition) => definition.Icon.IconTexture;
-    internal static Texture2D Category(ItemCategoryDefinition category) => category.Icon.IconTexture;
+    internal static Texture2D Item(ItemDefinition definition) => definition.Icon!.IconTexture;
+    internal static Texture2D Category(ItemCategoryDefinition category) => category.Icon!.IconTexture;
 
     internal static Texture2D Placeholder()
     {

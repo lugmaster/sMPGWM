@@ -1,7 +1,7 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 

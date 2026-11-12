@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
-using sMPGWM.Scripts.Steam;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.SteamSystem;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using FilterToolbar = sMPGWM.Scripts.UtilitySystem.UiComponents.FilterToolbar;
+using SteamworksHelper = sMPGWM.Scripts.SteamSystem.SteamworksHelper;
 
 namespace sMPGWM.Scripts.StartMenuSystem.LobbyList;
 

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Inventory;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.WorldSystem;
 using Array = Godot.Collections.Array;
 
 namespace sMPGWM.Scripts.NetworkSystem;

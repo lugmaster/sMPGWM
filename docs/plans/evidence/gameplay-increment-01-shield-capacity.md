@@ -10,7 +10,7 @@ Date: 2026-11-10. Runtime: Godot 4.7.2 .NET on Windows.
 
 
 
-- `Scripts/GamePlaySystem/GameplayDefinitions.cs` resolves the supported ability/effect/Behaviour/targeting dependency chain from validated YAML into an immutable `ShieldBoostDefinition`. Other authored abilities remain unavailable for execution. Unsupported combinations in the selected chain fail loading.
+- `Scripts/GameplayDataSystem/GameplayDefinitions.cs` resolves the supported ability/effect/Behaviour/targeting dependency chain from validated YAML into an immutable `ShieldBoostDefinition`. Other authored abilities remain unavailable for execution. Unsupported combinations in the selected chain fail loading.
 
 - `ResourcePool.cs` stores current/base/effective capacity and stable owner contributions. Formula: `max(0, B + sum(flat) + B * sum(fraction))`. Sorted owner traversal makes application order irrelevant. Capacity increases do not heal; decreases clamp current. `ShipGameplayState.cs` owns the active instance, revision and deadline.
 

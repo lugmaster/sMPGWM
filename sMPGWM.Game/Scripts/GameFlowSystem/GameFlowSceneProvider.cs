@@ -1,6 +1,6 @@
 using System;
 using Godot;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Scripts.GameFlowSystem;
 

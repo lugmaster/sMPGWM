@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cg8f4fn37ikfw"]
 
-[ext_resource type="Script" uid="uid://dhb28xihgpk3g" path="res://Scripts/Util/Mocks/PlayerMock.cs" id="1_u86lt"]
+[ext_resource type="Script" uid="uid://dhb28xihgpk3g" path="res://Scripts/UtilitySystem/Mocks/PlayerMock.cs" id="1_u86lt"]
 
 [node name="WorldScene" type="Node2D" unique_id=721027220]
 

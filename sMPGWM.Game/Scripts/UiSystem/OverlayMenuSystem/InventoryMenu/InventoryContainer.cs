@@ -2,10 +2,12 @@
 
 using Godot;
 using System;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.Items;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using ClickableIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.ClickableIcon;
+using ItemGrid = sMPGWM.Scripts.UtilitySystem.UiComponents.ItemGrid;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 

@@ -1,7 +1,8 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
-using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.GameplayDataSystem;
+using sMPGWM.Scripts.ItemSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GameConfigSystem;
@@ -56,7 +57,7 @@ public static class GameConfig
             throw new InvalidOperationException("Configuration is not loaded.");
         _ = ItemRegistry.GetAll();
         _ = ShipSystem.ShipRegistry.GetAll();
-        _ = sMPGWM.Scripts.GamePlaySystem.GameplayDefinitions.Current;
+        _ = GameplayDefinitions.Current;
         var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoadingSystem.FileLoader.CapturedInputs);
         inputs.Add("GameplayProtocol", "5:equipment-resources-movement-configuration-battery");
         GameDataChecksum = ChecksumGenerator.Compute(inputs);

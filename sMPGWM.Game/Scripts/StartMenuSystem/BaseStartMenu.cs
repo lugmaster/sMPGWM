@@ -1,5 +1,6 @@
-﻿using Godot;
-using sMPGWM.Scripts.Util.UiComponents;
+using Godot;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using BaseMenu = sMPGWM.Scripts.UtilitySystem.UiComponents.BaseMenu;
 
 namespace sMPGWM.Scripts.StartMenuSystem;
 

@@ -2,12 +2,12 @@ using System;
 using Godot;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.GameFlowSystem;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.UtilitySystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GameConfigSystem;
 
-public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
+public partial class ConfigLoader : UtilitySystem.AbstractSingleton<ConfigLoader>
 {
     private const string ConfigSection = "config";
     private const string ReloadConfigOnStartKey = "reload_config_on_start";

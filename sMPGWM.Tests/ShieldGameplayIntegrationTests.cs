@@ -1,16 +1,21 @@
 using Godot; // TEST-SUPPORT: EQUIPPED-INTEGRATION-001 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 using System.Reflection; // TEST-SUPPORT: EQUIPPED-INTEGRATION-002 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
-using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: EQUIPPED-INTEGRATION-003 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
+using sMPGWM.Scripts.AbilitySystem;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.GameplayDataSystem; // TEST-SUPPORT: EQUIPPED-INTEGRATION-003 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: EQUIPPED-INTEGRATION-004 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
-using sMPGWM.Scripts.InputSystem; // TEST-SUPPORT: EQUIPPED-INTEGRATION-005 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: EQUIPPED-INTEGRATION-006 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: EQUIPPED-INTEGRATION-007 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
-using sMPGWM.Scripts.Items.Hotbar; // TEST-SUPPORT: EQUIPPED-INTEGRATION-008 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
+using sMPGWM.Scripts.InputSystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar; // TEST-SUPPORT: EQUIPPED-INTEGRATION-005 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
+// TEST-SUPPORT: EQUIPPED-INTEGRATION-006 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
+// TEST-SUPPORT: EQUIPPED-INTEGRATION-007 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
+// TEST-SUPPORT: EQUIPPED-INTEGRATION-008 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: EQUIPPED-INTEGRATION-009 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 using sMPGWM.Scripts.UiSystem; // TEST-SUPPORT: EQUIPPED-INTEGRATION-010 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 using sMPGWM.Scripts.UiSystem.HudSystem.Hotbar; // TEST-SUPPORT: EQUIPPED-INTEGRATION-011 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
-using sMPGWM.Scripts.Util.Mocks; // TEST-SUPPORT: EQUIPPED-INTEGRATION-012 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
-using sMPGWM.Scripts.Util.UiComponents; // TEST-SUPPORT: EQUIPPED-INTEGRATION-013 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
+using sMPGWM.Scripts.UtilitySystem.Mocks; // TEST-SUPPORT: EQUIPPED-INTEGRATION-012 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.Mocks;
+using PlayerMock = sMPGWM.Scripts.UtilitySystem.Mocks.PlayerMock; // TEST-SUPPORT: EQUIPPED-INTEGRATION-013 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: EQUIPPED-INTEGRATION-015 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 
@@ -74,7 +79,7 @@ public sealed class ShieldGameplayIntegrationTests // TEST-SUPPORT: EQUIPPED-INT
                 ship.Equipment.Revision)), Is.EqualTo(HotbarResult.Success)); // TEST-SUPPORT: EQUIPPED-INTEGRATION-065 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
             canvas.BindHotbar(hotbar, System.Array.Empty<IconDefinition>()); // TEST-SUPPORT: EQUIPPED-INTEGRATION-066 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
             var view = canvas.GetNode<HotbarControl>("%PlayerHud/HotbarAnchor/HotbarControl"); // TEST-SUPPORT: EQUIPPED-INTEGRATION-067 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
-            Assert.That(view.Icons[0].Icon, Is.SameAs(Icons.Get(GameplayDefinitions.Current.Abilities.GetById("shieldCapacityBoost").Icon!).IconTexture)); // TEST-SUPPORT: EQUIPPED-INTEGRATION-068 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
+            Assert.That(view.Icons[0].Icon, Is.SameAs(GameplayDefinitions.Current.Abilities.GetById("shieldCapacityBoost").Icon!.IconTexture)); // TEST-SUPPORT: EQUIPPED-INTEGRATION-068 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
             var targeting = world.GetNode<AbilityTargetingController>("AbilityTargeting"); // TEST-SUPPORT: EQUIPPED-INTEGRATION-069 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
             hotbar.Activate(0, _ => Assert.Fail("Unexpected action"), request => targeting.Begin((EquipmentAbilityHotbarBinding)request.Binding)); // TEST-SUPPORT: EQUIPPED-INTEGRATION-070 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
             Assert.That(targeting.IsTargeting, Is.True); // TEST-SUPPORT: EQUIPPED-INTEGRATION-071 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession

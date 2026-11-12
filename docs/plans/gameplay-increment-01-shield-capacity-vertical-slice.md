@@ -35,7 +35,7 @@ Do not implement combat damage, shield regeneration, death/revival, condition-dr
 
 | Existing code/data | Integration intent |
 | --- | --- |
-| `Scripts/Items/Hotbar/HotbarBinding.cs` / `ItemHotbarController.Activate` | Reuse ActionHotbarBinding and the action callback for the development ability. Preserve item/weapon hotbar paths. |
+| `Scripts/ItemSystem/Hotbar/HotbarBinding.cs` / `ItemHotbarController.Activate` | Reuse ActionHotbarBinding and the action callback for the development ability. Preserve item/weapon hotbar paths. |
 | `Scripts/ShipSystem/ShipDefinitionsDocument.cs` and ship loader/schema | Existing stats cover movement. Add explicit initial Shield pool data without rewriting movement configuration. |
 | `Scripts/ShipSystem/ShipController.cs` | Entity identity and controlling-player binding already exist. ShipState currently contains movement state, not gameplay pools. |
 | `Scripts/NetworkSystem/SynchronizationCoordinator.cs`, NetworkTicker, NetworkClock | Reuse host scheduling and session timing; do not create independent per-ship clocks. |

@@ -4,13 +4,14 @@ using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.NetworkSystem;
-using sMPGWM.Scripts.Steam;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.SteamSystem;
+using sMPGWM.Scripts.UtilitySystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+using SteamworksHelper = sMPGWM.Scripts.SteamSystem.SteamworksHelper;
 
 namespace sMPGWM.Scripts.StartMenuSystem;
 
-public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
+public partial class StartMenuManager : UtilitySystem.AbstractSingleton<StartMenuManager>
 {
     public void ShowJoinGameMenu()
     {

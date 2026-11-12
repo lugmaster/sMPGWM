@@ -1,8 +1,8 @@
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.StatSystem;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: EQUIP-CALC-1 | Tests: sMPGWM.Tests.EquipmentStatCalculatorTests.InstalledComponentsReceiveModifiersAndWeaponsContributeOnlyMassAndDemand, sMPGWM.Tests.EquipmentStatCalculatorTests.InvalidTimingAndOverflowAreRejected
 

@@ -1,17 +1,20 @@
 using Godot;
 using System;
 using sMPGWM.Scripts.AbilitySystem;
-using sMPGWM.Scripts.Util.Mocks;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Hotbar;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.GameplayDataSystem;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
+using sMPGWM.Scripts.UtilitySystem.Mocks;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.NetworkSystem;
-using sMPGWM.Scripts.Parallax;
+using sMPGWM.Scripts.ParallaxSystem;
+using sMPGWM.Scripts.PlayerControllerSystem;
 using sMPGWM.Scripts.UiSystem;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+using ParallaxMotion = sMPGWM.Scripts.ParallaxSystem.ParallaxMotion;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
@@ -29,7 +32,7 @@ internal static class GameSessionFactory
         var transfers = scope.Own(new InventoryEquipmentTransferService(inventory, equipment));
         var hotbar = scope.Own(new ItemHotbarController(inventory, equipment, transfers,
             error => Logger.Error($"Hotbar observer failed: {error}")) { SupportsAbility = id => abilities.Definitions.Abilities.IsSupported(id, out _) });
-        var player = new PlayerController { Name = "PlayerController" };
+        var player = new PlayerControllerSystem.PlayerController { Name = "PlayerController" };
         scope.Defer(() => ReleaseNode(player));
         scope.Defer(player.Shutdown);
         var messages = scope.Own(new MessageController(canvas, player.InputPolicy,

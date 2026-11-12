@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Items.Hotbar;
+using sMPGWM.Scripts.GameplayDataSystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using ClickableIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.ClickableIcon;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 
@@ -138,8 +140,8 @@ public partial class HotbarControl : PanelContainer
             }
             else if (_controller.Entries[position] is EquipmentAbilityHotbarBinding ability)
             {
-                var definition = GamePlaySystem.GameplayDefinitions.Current.Abilities.GetById(ability.AbilityId);
-                var texture = Util.UiComponents.Icons.Get(definition.Icon ?? "Software.WarningSignCircleQuestionMarkHelp").IconTexture;
+                var definition = GameplayDefinitions.Current.Abilities.GetById(ability.AbilityId);
+                var texture = (definition.Icon ?? UtilitySystem.UiComponents.Icons.Software.WarningSignCircleQuestionMarkHelp).IconTexture;
                 icon.SetDisplay(texture, new IconDisplayData(availability.Label));
                 icon.DisplayModulate = Colors.White;
                 icon.Modulate = availability.Available ? Colors.White : new Color(1, 1, 1, .35f);

@@ -1,9 +1,9 @@
 using Godot;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Hotbar;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.HudSystem.Hotbar;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
 namespace sMPGWM.Tests.UiSystem; // TEST-SUPPORT: HOTBAR-ICON-001 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
 
@@ -24,8 +24,8 @@ public sealed class HotbarIconTests // TEST-SUPPORT: HOTBAR-ICON-003 | Tests: sM
         controller.BindAction(1, secondKey); // TEST-SUPPORT: HOTBAR-ICON-014 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
         var session = transfers.OpenEditSession(); // TEST-SUPPORT: HOTBAR-ICON-015 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
         controller.SetEditSession(session); // TEST-SUPPORT: HOTBAR-ICON-016 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
-        var first = Icons.Get("Weather.SunnyWarmHotSummerSeason"); // TEST-SUPPORT: HOTBAR-ICON-017 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
-        var second = Icons.Get("Misc.MedkitMedicineHealthPickup"); // TEST-SUPPORT: HOTBAR-ICON-018 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
+        var first = Icons.Weather.SunnyWarmHotSummerSeason; // TEST-SUPPORT: HOTBAR-ICON-017 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
+        var second = Icons.Misc.MedkitMedicineHealthPickup; // TEST-SUPPORT: HOTBAR-ICON-018 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
         var named = new Dictionary<string, IconDefinition> { [firstKey] = first, [secondKey] = second }; // TEST-SUPPORT: HOTBAR-ICON-019 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
         var view = GD.Load<PackedScene>("res://scenes/ui/player_hud/hotbar_control.tscn").Instantiate<HotbarControl>(); // TEST-SUPPORT: HOTBAR-ICON-020 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind
         var root = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests"); // TEST-SUPPORT: HOTBAR-ICON-021 | Tests: sMPGWM.Tests.UiSystem.HotbarIconTests.ActionTexturesSurviveRefreshMoveAndRebind

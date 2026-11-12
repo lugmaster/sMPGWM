@@ -1,10 +1,11 @@
 using Godot;
+using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Hotbar;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.UiSystem;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using PlayerController = sMPGWM.Scripts.PlayerControllerSystem.PlayerController;
 
 namespace sMPGWM.Scripts.AbilitySystem;
 

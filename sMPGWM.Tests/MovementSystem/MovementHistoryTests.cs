@@ -1,6 +1,7 @@
 using Godot; // TEST-SUPPORT: MOVEMENT-HISTORY-001 | Tests: sMPGWM.Tests.MovementSystem.MovementHistoryTests.RecentCommandsStayOrderedAcrossAcknowledgementReplayAndReset
 using sMPGWM.Scripts.MovementSystem; // TEST-SUPPORT: MOVEMENT-HISTORY-002 | Tests: sMPGWM.Tests.MovementSystem.MovementHistoryTests.RecentCommandsStayOrderedAcrossAcknowledgementReplayAndReset
-using sMPGWM.Scripts.World; // TEST-SUPPORT: MOVEMENT-HISTORY-003 | Tests: sMPGWM.Tests.MovementSystem.MovementHistoryTests.RecentCommandsStayOrderedAcrossAcknowledgementReplayAndReset
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld; // TEST-SUPPORT: MOVEMENT-HISTORY-003 | Tests: sMPGWM.Tests.MovementSystem.MovementHistoryTests.RecentCommandsStayOrderedAcrossAcknowledgementReplayAndReset
 
 namespace sMPGWM.Tests.MovementSystem; // TEST-SUPPORT: MOVEMENT-HISTORY-004 | Tests: sMPGWM.Tests.MovementSystem.MovementHistoryTests.RecentCommandsStayOrderedAcrossAcknowledgementReplayAndReset
 

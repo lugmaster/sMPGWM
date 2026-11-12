@@ -1,5 +1,5 @@
-using sMPGWM.Scripts.Items.Inventory;
-using sMPGWM.Scripts.Util.Mocks;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.UtilitySystem.Mocks;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
 namespace sMPGWM.Tests.UiSystem;

@@ -1,56 +1,39 @@
 Scripts/
-|-- AbilitySystem/ 
+|-- AbilitySystem/
 |-- CollisionSystem/
 |-- CombatSystem/
 |-- ConditionSystem/
+|-- EnergySystem/
+|-- EquipmentSystem/
 |-- FileLoadingSystem/
 |-- GameConfigSystem/
 |-- GameFlowSystem/
 |-- GameplayDataSystem/
 |-- GamePlaySystem/
 |-- InputSystem/
-|-- Items/  #Rename to ItemSystem
-|   |-- Equipment/ #Consolidate with Shipsystem Equipment. Only one should stay
-|   |-- Hotbar/
-|   |-- Inventory/ 
+|-- InventorySystem/
+|-- ItemSystem/
 |-- LoggingSystem/
 |-- MessageSystem/
 |-- MovementSystem/
 |-- NetworkSystem/
-|   |-- NetworkInternal/
-|   |-- SynchronisationSystem/
-|-- Parallax/
-|-- PlayerController/
+|-- ParallaxSystem/
+|-- PlayerControllerSystem/
 |-- ProjectileSystem/
-|-- ShipSystem/
-|   |-- Equipment/
-|   |-- Hotbar/
-|-- StartMenuSystem/
-|   |-- LobbyList/
-|-- StatSystem/
-|-- EnergySystem/
 |-- ShieldSystem/
-|-- EngineSystem/
-|-- HullSystem/
-|-- Steam/
+|-- ShipSystem/
+|-- StartMenuSystem/
+|-- StatSystem/
+|-- SteamSystem/
 |-- TagSystem/
-|   |-- Definitions/
-|   |-- Exceptions/
-|   |-- Ids/
-|   |-- Internal/
-|   |-- Queries/
 |-- UiSystem/
-|   |-- HudSystem/
-|   |   -- Hotbar/
-|   |-- Items/
-|   |-- MessageStackSystem/
-|   |-- OverlayMenuSystem/
-|       |-- InventoryMenu/
-|-- Util/
-|   |-- Mocks/
-|   |-- UiComponents/
-`-- World/
+|-- UtilitySystem/
+|-- WorldSystem/
 
-Use the abstract GameplayDataSystem for Items and ItemCategories as well. 
+Items, item categories, and runtime ship data inherit GameplayDefinition and use DefinitionRegistry. ShipDefinition remains the serialized ship input model.
+
+GamePlaySystem owns session orchestration. ShipSystem owns ship state and resource pools; AbilitySystem owns admission and effects; MovementSystem owns movement capability; ShieldSystem and EnergySystem own shield and power simulation.
+
+Runtime icons use IconDefinition objects from Icons. Authored icon keys are resolved at the loading boundary. Gameplay catalogue icons retain typed accessors so loading definitions does not require the Godot scene tree; textures are accessed when rendered. 
 
 Make a proper SynchronizationSystem where all gets bundled and synced

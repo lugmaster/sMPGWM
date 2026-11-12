@@ -1,6 +1,7 @@
 using sMPGWM.Scripts.UiSystem.MessageStackSystem;
-using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using GameOverlayMenu = sMPGWM.Scripts.UtilitySystem.UiComponents.GameOverlayMenu;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 

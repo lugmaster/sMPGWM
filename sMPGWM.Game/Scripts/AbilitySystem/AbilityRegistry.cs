@@ -1,7 +1,7 @@
 using System;
-using sMPGWM.Scripts.Items;
 using System.Collections.Generic;
 using sMPGWM.Scripts.GameplayDataSystem;
+using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.AbilitySystem;
 

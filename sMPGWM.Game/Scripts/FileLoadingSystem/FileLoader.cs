@@ -1,4 +1,4 @@
-﻿using Godot;
+using Godot;
 using Newtonsoft.Json.Linq;
 using System;
 using sMPGWM.Scripts.GameConfigSystem;

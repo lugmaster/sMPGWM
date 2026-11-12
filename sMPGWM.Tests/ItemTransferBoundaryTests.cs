@@ -1,6 +1,9 @@
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: TRANSFER-BOUNDARY-001 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: TRANSFER-BOUNDARY-002 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
-using sMPGWM.Scripts.Items.Inventory; // TEST-SUPPORT: TRANSFER-BOUNDARY-003 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem;
+// TEST-SUPPORT: TRANSFER-BOUNDARY-001 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
+// TEST-SUPPORT: TRANSFER-BOUNDARY-002 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
+
+// TEST-SUPPORT: TRANSFER-BOUNDARY-003 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: TRANSFER-BOUNDARY-004 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
 

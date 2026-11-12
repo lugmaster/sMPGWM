@@ -1,6 +1,7 @@
 using Godot;
 using sMPGWM.Scripts.NetworkSystem;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using StatBar = sMPGWM.Scripts.UtilitySystem.UiComponents.StatBar;
 
 namespace sMPGWM.Scripts.UiSystem.HudSystem;
 

@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,10 +9,13 @@ namespace sMPGWM.Scripts.ShipSystem;
 
 public static class ShipRegistry
 {
-    private static readonly Lazy<IReadOnlyDictionary<string, ShipData>> Data = new(Load);
-    public static ShipData GetById(string id) => Data.Value[id];
-    public static bool TryGetById(string id, out ShipData data) => Data.Value.TryGetValue(id, out data!);
-    public static IReadOnlyList<ShipData> GetAll() => Array.AsReadOnly(Data.Value.Values.ToArray());
+    private sealed class ShipDefinitions(IEnumerable<ShipData> definitions)
+        : DefinitionRegistry<ShipData>(definitions, "ships");
+
+    private static readonly Lazy<ShipDefinitions> Data = new(() => new ShipDefinitions(Load().Values));
+    public static ShipData GetById(string id) => Data.Value.GetById(id);
+    public static bool TryGetById(string id, out ShipData data) => Data.Value.TryGetById(id, out data!);
+    public static IReadOnlyList<ShipData> GetAll() => Data.Value.GetAll();
 
     private static IReadOnlyDictionary<string, ShipData> Load()
     {

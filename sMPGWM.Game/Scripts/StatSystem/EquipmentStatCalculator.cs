@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ShipSystem;
 
 namespace sMPGWM.Scripts.StatSystem;

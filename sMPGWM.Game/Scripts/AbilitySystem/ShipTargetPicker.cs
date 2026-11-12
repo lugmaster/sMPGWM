@@ -1,6 +1,7 @@
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 
 namespace sMPGWM.Scripts.AbilitySystem;
 

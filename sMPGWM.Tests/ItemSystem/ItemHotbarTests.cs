@@ -1,11 +1,11 @@
 using System.Collections;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Hotbar;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.Items;
-using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.Util.Mocks;
+using sMPGWM.Scripts.UtilitySystem;
+using sMPGWM.Scripts.UtilitySystem.Mocks;
 
 namespace sMPGWM.Tests.ItemSystem;
 

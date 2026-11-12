@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Tests.ItemSystem;
 

@@ -1,4 +1,5 @@
 using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.StatSystem;
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: EQUIP-RES-1 | Tests: sMPGWM.Tests.EquipmentResourceTests.EnergySupplyAndBatteryIdentityFollowTheEquipment, sMPGWM.Tests.EquipmentResourceTests.EqualityWithoutBatteryPowersSystemsAndDeficitNeverOscillates, sMPGWM.Tests.EquipmentResourceTests.ShieldDowntimeSurvivesReplacementAndStartsOnlyOnTransition, sMPGWM.Tests.EquipmentResourceTests.OwnedModifiersSurviveMissingSystemAndUseAllFlatValues, sMPGWM.Tests.EquipmentResourceTests.SustainedResourceSimulationMeasuresTimingAndAllocations

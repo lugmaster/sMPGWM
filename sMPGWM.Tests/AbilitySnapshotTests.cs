@@ -2,6 +2,7 @@ using Godot;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.NetworkSystem;
+using sMPGWM.Scripts.ShipSystem;
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: ABILITY-SNAPSHOT-001 | Tests: sMPGWM.Tests.AbilitySnapshotTests.MultipleBehavioursRoundTripAndMalformedSnapshotsAreRejected
 

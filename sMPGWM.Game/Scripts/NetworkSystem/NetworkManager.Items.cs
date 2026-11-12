@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.NetworkSystem;
 

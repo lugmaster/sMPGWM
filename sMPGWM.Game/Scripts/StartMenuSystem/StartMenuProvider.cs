@@ -1,5 +1,5 @@
-﻿using Godot;
-using sMPGWM.Scripts.Util;
+using Godot;
+using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Scripts.StartMenuSystem;
 

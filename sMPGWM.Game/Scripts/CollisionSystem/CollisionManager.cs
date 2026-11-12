@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Scripts.CollisionSystem;
 
-public partial class CollisionManager : AbstractSingleton<CollisionManager>
+public partial class CollisionManager : UtilitySystem.AbstractSingleton<CollisionManager>
 {
     private static readonly Dictionary<CollisionTypes, (uint layer, uint mask)> CollisionPresets = new()
     {

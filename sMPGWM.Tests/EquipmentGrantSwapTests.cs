@@ -1,7 +1,10 @@
-using Godot; // TEST-SUPPORT: GRANT-SWAP-001 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: GRANT-SWAP-002 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: GRANT-SWAP-003 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
-using sMPGWM.Scripts.World; // TEST-SUPPORT: GRANT-SWAP-004 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
+using Godot;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: GRANT-SWAP-001 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
+// TEST-SUPPORT: GRANT-SWAP-002 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
+// TEST-SUPPORT: GRANT-SWAP-003 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld; // TEST-SUPPORT: GRANT-SWAP-004 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: GRANT-SWAP-005 | Tests: sMPGWM.Tests.EquipmentGrantSwapTests.SwappingGrantBearingSlotsRetainsBothSources
 

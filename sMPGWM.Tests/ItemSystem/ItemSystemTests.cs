@@ -1,7 +1,7 @@
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Inventory;
-using ItemLocation = sMPGWM.Scripts.Items.ItemLocation;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
+using ItemLocation = sMPGWM.Scripts.ItemSystem.ItemLocation;
 
 namespace sMPGWM.Tests.ItemSystem;
 

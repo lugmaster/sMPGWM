@@ -1,7 +1,7 @@
 using System;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Hotbar;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
+using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 

@@ -1,12 +1,15 @@
 using sMPGWM.Scripts.StatSystem; // TEST-SUPPORT: OWNERSHIP-TYPED-0 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 using System.Reflection; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-0 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 using Godot; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-1 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-2 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-3 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-4 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.Items.Inventory; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-5 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.AbilitySystem;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-2 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+// TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-3 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+// TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-4 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+// TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-5 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-6 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.World; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-7 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-7 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 namespace sMPGWM.Tests; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-8 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 [Category("Godot")] // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-9 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 public sealed class EquipmentGrantLifecycleTests // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-10 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp

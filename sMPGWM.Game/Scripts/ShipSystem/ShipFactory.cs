@@ -1,7 +1,8 @@
 using System;
-using sMPGWM.Scripts.Items;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.ItemSystem;
+
 namespace sMPGWM.Scripts.ShipSystem;
 public static class ShipFactory
 {

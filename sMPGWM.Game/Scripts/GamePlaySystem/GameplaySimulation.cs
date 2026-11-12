@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.AbilitySystem;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 

@@ -64,7 +64,7 @@ Primary files: [NetworkManager](../../../sMPGWM.Game/Scripts/Network/NetworkMana
 
 ## World and item ownership revision (2026-11-03)
 
-The current workspace implementation now uses `Scripts/World/GameWorld.cs` instead of
+The current workspace implementation now uses `Scripts/WorldSystem/GameWorld.cs` instead of
 `Network/MpManager.cs`. GameWorld is session-owned, not a singleton. It owns ship
 nodes and the player binding table. `PlayerSession` replaces `MpController` with a
 plain C# object: changing control never reparents or destroys a ship. One scene

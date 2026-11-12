@@ -3,10 +3,11 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.Items;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using ClickableIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.ClickableIcon;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 

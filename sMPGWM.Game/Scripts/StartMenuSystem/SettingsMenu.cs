@@ -1,4 +1,4 @@
-﻿namespace sMPGWM.Scripts.StartMenuSystem;
+namespace sMPGWM.Scripts.StartMenuSystem;
 
 public partial class SettingsMenu : BaseStartMenu
 {

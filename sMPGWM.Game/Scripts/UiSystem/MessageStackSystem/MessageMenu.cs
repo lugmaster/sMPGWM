@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using GameOverlayMenu = sMPGWM.Scripts.UtilitySystem.UiComponents.GameOverlayMenu;
 
 namespace sMPGWM.Scripts.UiSystem.MessageStackSystem;
 

@@ -119,7 +119,7 @@ Paths below are relative to the repository root.
 
 | Area | Starting file |
 | --- | --- |
-| Published catalogue set | `sMPGWM.Game/Scripts/GamePlaySystem/GameplayDefinitions.cs` |
+| Published catalogue set | `sMPGWM.Game/Scripts/GameplayDataSystem/GameplayDefinitions.cs` |
 | Typed loading and validation | `sMPGWM.Game/Scripts/GameplayDataSystem/GameplayCatalogueLoader.cs`, `GameplayCatalogueValidator.cs` |
 | Execution support, admission, and application | `sMPGWM.Game/Scripts/AbilitySystem/AbilityRuntime.cs` |
 | Per-ship instances and expiration | `sMPGWM.Game/Scripts/GamePlaySystem/ShipGameplayState.cs` |

@@ -1,4 +1,4 @@
-using sMPGWM.Scripts.Steam;
+using sMPGWM.Scripts.SteamSystem;
 
 namespace sMPGWM.Tests.NetworkSystem;
 

@@ -24,16 +24,16 @@ public class GodotIntegrationTests
             CopyTree(Path.Combine(game, "assets/ui/icons/atlases"), Path.Combine(staging, "assets/ui/icons/atlases"));
             foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "icons_0.png-*"))
                 Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
-            foreach (var file in new[] { "Scripts/Util/AbstractSingleton.cs", "Scripts/Util/Mocks/HeadlessTestHost.cs", "Scripts/Util/UiComponents/IconDefinitions.cs", "Scripts/World/GameWorld.cs", "Scripts/InputSystem/InputController.cs" })
+            foreach (var file in new[] { "Scripts/UtilitySystem/AbstractSingleton.cs", "Scripts/UtilitySystem/Mocks/HeadlessTestHost.cs", "Scripts/UtilitySystem/UiComponents/IconDefinitions.cs", "Scripts/WorldSystem/GameWorld.cs", "Scripts/InputSystem/InputController.cs" })
                 Copy(Path.Combine(game, file), Path.Combine(staging, file));
             CopyTree(Path.Combine(game, "Scripts/ShipSystem"), Path.Combine(staging, "Scripts/ShipSystem"));
-            foreach (var file in new[] { "Scripts/GamePlaySystem/PlayerController.cs", "Scripts/UiSystem/UiCanvas.cs",
+            foreach (var file in new[] { "Scripts/PlayerControllerSystem/PlayerController.cs", "Scripts/UiSystem/UiCanvas.cs",
                          "Scripts/UiSystem/HudSystem/PlayerHud.cs", "Scripts/UiSystem/HudSystem/Hotbar/HotbarControl.cs",
                          "Scripts/UiSystem/OverlayMenuSystem/UiWindowManager.cs" })
                 Copy(Path.Combine(game, file), Path.Combine(staging, file));
             Copy(Path.Combine(game, "scenes/game/game_objects/ship.tscn"), Path.Combine(staging, "scenes/game/game_objects/ship.tscn"));
             // Session construction tests exercise the real canvas and runtime node composition.
-            foreach (var directory in new[] { "Scripts/UiSystem", "Scripts/Util/UiComponents", "Scripts/NetworkSystem", "Scripts/MovementSystem", "Scripts/GamePlaySystem", "Scripts/GameConfigSystem", "scenes/ui" })
+            foreach (var directory in new[] { "Scripts/UiSystem", "Scripts/UtilitySystem/UiComponents", "Scripts/NetworkSystem", "Scripts/MovementSystem", "Scripts/GamePlaySystem", "Scripts/GameConfigSystem", "scenes/ui" })
                 CopyTree(Path.Combine(game, directory), Path.Combine(staging, directory));
             Copy(Path.Combine(game, "config/config.cfg"), Path.Combine(staging, "config/config.cfg"));
             Copy(Path.Combine(game, "scenes/game/ui_canvas.tscn"), Path.Combine(staging, "scenes/game/ui_canvas.tscn"));
@@ -51,7 +51,7 @@ public class GodotIntegrationTests
                 run/main_scene="res://tests.tscn"
                 [autoload]
                 ConfigLoader="*res://Scripts/GameConfigSystem/ConfigLoader.cs"
-                IconDefinitions="*res://Scripts/Util/UiComponents/IconDefinitions.cs"
+                IconDefinitions="*res://Scripts/UtilitySystem/UiComponents/IconDefinitions.cs"
                 [dotnet]
                 project/assembly_name="sMPGWM"
                 [rendering]
@@ -63,7 +63,7 @@ public class GodotIntegrationTests
             File.AppendAllText(Path.Combine(staging, "project.godot"), "\n" + sourceProject[inputStart..inputEnd]); // TEST-SUPPORT: RESOURCE-INPUT-STAGE-4 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
             File.WriteAllText(Path.Combine(staging, "tests.tscn"), """
                 [gd_scene load_steps=2 format=3]
-                [ext_resource type="Script" path="res://Scripts/Util/Mocks/HeadlessTestHost.cs" id="1"]
+                [ext_resource type="Script" path="res://Scripts/UtilitySystem/Mocks/HeadlessTestHost.cs" id="1"]
                 [node name="Tests" type="Node"]
                 script = ExtResource("1")
                 """);

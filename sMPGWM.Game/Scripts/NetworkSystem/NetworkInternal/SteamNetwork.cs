@@ -2,8 +2,9 @@ using System;
 using GDExtension.Wrappers;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
-using sMPGWM.Scripts.Steam;
+using sMPGWM.Scripts.SteamSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+using SteamworksHelper = sMPGWM.Scripts.SteamSystem.SteamworksHelper;
 
 namespace sMPGWM.Scripts.NetworkSystem.NetworkInternal;
 

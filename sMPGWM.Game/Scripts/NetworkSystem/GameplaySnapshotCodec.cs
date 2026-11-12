@@ -4,6 +4,7 @@ using Godot;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.GameplayDataSystem;
+using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.StatSystem;
 
 namespace sMPGWM.Scripts.NetworkSystem;

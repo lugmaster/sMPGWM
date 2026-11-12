@@ -3,13 +3,15 @@ using System.Threading.Tasks;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.NetworkSystem;
-using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.SteamSystem;
+using sMPGWM.Scripts.UtilitySystem;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+using ModalController = sMPGWM.Scripts.UtilitySystem.UiComponents.ModalController;
 
 namespace sMPGWM.Scripts.GameFlowSystem;
 
-public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
+public partial class GameFlowManager : UtilitySystem.AbstractSingleton<GameFlowManager>
 {
     private GameFlowState _gameFlowState = GameFlowState.StartMenu;
     private NetworkStartupData? _pendingStartupData;
@@ -131,7 +133,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitGame)} requested with {nameof(reason)}={reason}.");
         SetState(GameFlowState.Disconnecting);
         Session?.Stop();
-        if (Steam.SteamworksHelper.Instance != null) Steam.SteamworksHelper.ShutdownSteam();
+        if (SteamworksHelper.Instance != null) SteamworksHelper.ShutdownSteam();
         Logger.Debug($"{nameof(GameFlowManager)}.{nameof(QuitGame)} completed Steam shutdown.");
         Instance.CallDeferred(nameof(QuitGameInternal));
     }

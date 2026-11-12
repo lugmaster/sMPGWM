@@ -3,7 +3,9 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using ClickableIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.ClickableIcon;
+using NotificationIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.NotificationIcon;
 
 namespace sMPGWM.Scripts.UiSystem.HudSystem;
 

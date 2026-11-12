@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://blpeeet1wau7f"]
 
 [ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_u3bbg"]
-[ext_resource type="Script" uid="uid://d4f1bm0wpg3bd" path="res://Scripts/Util/UiComponents/AlertModal.cs" id="2_r7lag"]
+[ext_resource type="Script" uid="uid://d4f1bm0wpg3bd" path="res://Scripts/UtilitySystem/UiComponents/AlertModal.cs" id="2_r7lag"]
 [ext_resource type="Texture2D" uid="uid://bf2ajse5k1pat" path="res://assets/mocks/diamond.png" id="2_v2rh6"]
 
 [node name="AlertModal" unique_id=1431156458 instance=ExtResource("1_u3bbg")]

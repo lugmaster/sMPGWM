@@ -1,14 +1,17 @@
 using Godot; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-0 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 using System.Reflection; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-1 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
-using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-2 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
+using sMPGWM.Scripts.AbilitySystem;
+using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-2 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-3 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
-using sMPGWM.Scripts.InputSystem; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-4 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-5 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-6 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
-using sMPGWM.Scripts.Items.Hotbar; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-7 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
+using sMPGWM.Scripts.InputSystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-4 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
+// TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-5 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
+// TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-6 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
+// TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-7 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-8 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 using sMPGWM.Scripts.UiSystem; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-9 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
-using sMPGWM.Scripts.Util.Mocks; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-10 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
+using sMPGWM.Scripts.UtilitySystem.Mocks;
+using PlayerMock = sMPGWM.Scripts.UtilitySystem.Mocks.PlayerMock; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-10 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 namespace sMPGWM.Tests; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-11 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 [Category("Godot")] // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-12 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 public sealed class LocalBindingIntegrationTests // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-13 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments

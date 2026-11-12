@@ -1,5 +1,5 @@
 using sMPGWM.Scripts.ShipSystem;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.WorldSystem;
 
 namespace sMPGWM.Scripts.MovementSystem;
 

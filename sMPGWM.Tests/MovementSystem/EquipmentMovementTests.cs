@@ -1,5 +1,6 @@
 using Godot;
 using sMPGWM.Scripts.MovementSystem;
+using sMPGWM.Scripts.WorldSystem;
 
 namespace sMPGWM.Tests.MovementSystem; // TEST-SUPPORT: EQMOVE-1 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.UnpoweredMovementPreservesVelocityDespiteEveryControl, sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip, sMPGWM.Tests.MovementSystem.EquipmentMovementTests.MalformedMovementConfigurationIsRejected
  // TEST-SUPPORT: EQMOVE-2 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.UnpoweredMovementPreservesVelocityDespiteEveryControl, sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip, sMPGWM.Tests.MovementSystem.EquipmentMovementTests.MalformedMovementConfigurationIsRejected
@@ -47,7 +48,7 @@ public class EquipmentMovementTests // TEST-SUPPORT: EQMOVE-3 | Tests: sMPGWM.Te
     [Test, Category("Godot")] // TEST-SUPPORT: EQMOVE-101 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.ConfigurationChangesDiscardIncompatiblePredictionHistory
     public void ConfigurationChangesDiscardIncompatiblePredictionHistory() // TEST-SUPPORT: EQMOVE-102 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.ConfigurationChangesDiscardIncompatiblePredictionHistory
     { // TEST-SUPPORT: EQMOVE-103 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.ConfigurationChangesDiscardIncompatiblePredictionHistory
-        var world = new sMPGWM.Scripts.World.GameWorld(); // TEST-SUPPORT: EQMOVE-104 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.ConfigurationChangesDiscardIncompatiblePredictionHistory
+        var world = new GameWorld(); // TEST-SUPPORT: EQMOVE-104 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.ConfigurationChangesDiscardIncompatiblePredictionHistory
         ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world); // TEST-SUPPORT: EQMOVE-105 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.ConfigurationChangesDiscardIncompatiblePredictionHistory
         try // TEST-SUPPORT: EQMOVE-106 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.ConfigurationChangesDiscardIncompatiblePredictionHistory
         { // TEST-SUPPORT: EQMOVE-107 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.ConfigurationChangesDiscardIncompatiblePredictionHistory

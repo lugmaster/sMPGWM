@@ -1,7 +1,12 @@
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: LOCAL-REBIND-0 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: LOCAL-REBIND-1 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
-using sMPGWM.Scripts.Items.Inventory; // TEST-SUPPORT: LOCAL-REBIND-2 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
-using sMPGWM.Scripts.Items.Hotbar; // TEST-SUPPORT: LOCAL-REBIND-3 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
+// TEST-SUPPORT: LOCAL-REBIND-0 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
+// TEST-SUPPORT: LOCAL-REBIND-1 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
+// TEST-SUPPORT: LOCAL-REBIND-2 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
+
+// TEST-SUPPORT: LOCAL-REBIND-3 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
 namespace sMPGWM.Tests; // TEST-SUPPORT: LOCAL-REBIND-4 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
 [Category("Godot")] // TEST-SUPPORT: LOCAL-REBIND-5 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits
 public sealed class LocalBindingTests // TEST-SUPPORT: LOCAL-REBIND-6 | Tests: sMPGWM.Tests.LocalBindingTests.EqualRevisionRebindPreservesAssignmentsAndRevokesOldEdits

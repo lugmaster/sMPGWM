@@ -1,5 +1,8 @@
-using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using ClickableIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.ClickableIcon;
+using IconWithLabel = sMPGWM.Scripts.UtilitySystem.UiComponents.IconWithLabel;
+using StatBar = sMPGWM.Scripts.UtilitySystem.UiComponents.StatBar;
 
 namespace sMPGWM.Scripts.UiSystem.HudSystem;
 

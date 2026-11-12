@@ -1,9 +1,9 @@
-using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.Util.Mocks;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.UtilitySystem;
+using sMPGWM.Scripts.UtilitySystem.Mocks;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Hotbar;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 

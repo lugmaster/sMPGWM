@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://j88ps3ai1b35"]
 
 [ext_resource type="PackedScene" uid="uid://bxfy1glfrrw6a" path="res://scenes/ui/base/clickable_icon.tscn" id="1_uawvf"]
-[ext_resource type="Script" uid="uid://cckftqbepynbt" path="res://Scripts/Util/UiComponents/ItemGrid.cs" id="1_wpadi"]
+[ext_resource type="Script" uid="uid://cckftqbepynbt" path="res://Scripts/UtilitySystem/UiComponents/ItemGrid.cs" id="1_wpadi"]
 
 [node name="ItemGrid" type="ScrollContainer" unique_id=931566361]
 anchors_preset = 15

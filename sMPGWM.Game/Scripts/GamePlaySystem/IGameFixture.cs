@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.MessageSystem;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 

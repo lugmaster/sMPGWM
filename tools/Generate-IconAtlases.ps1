@@ -9,7 +9,7 @@ Add-Type -AssemblyName System.Drawing
 $gameRoot = (Resolve-Path -LiteralPath $GameDirectory).Path
 $sourceDirectory = Join-Path $gameRoot 'assets/ui/icons/1-bit_Pixel_Icons'
 $outputDirectory = Join-Path $gameRoot 'assets/ui/icons/atlases'
-$accessorPath = Join-Path $gameRoot 'Scripts/Util/UiComponents/Icons.cs'
+$accessorPath = Join-Path $gameRoot 'Scripts/UtilitySystem/UiComponents/Icons.cs'
 $atlasSize = 1024
 $cellSize = 20
 $padding = 1
@@ -154,6 +154,13 @@ $code = [System.Text.StringBuilder]::new()
 [void]$code.AppendLine('{')
 $lookupHelpers = @'
     public static bool IsDefined(string key) => FindProperty(key) != null;
+
+    public static IconDefinition GetReference(string key)
+    {
+        var property = FindProperty(key)
+            ?? throw new ArgumentException($"Unknown icon key: {key}.", nameof(key));
+        return new IconDefinition(property.GetMethod!.CreateDelegate<Func<IconDefinition>>());
+    }
 
     public static IconDefinition Get(string key)
     {

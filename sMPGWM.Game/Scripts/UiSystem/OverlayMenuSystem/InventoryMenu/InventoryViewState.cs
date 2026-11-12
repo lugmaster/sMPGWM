@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 

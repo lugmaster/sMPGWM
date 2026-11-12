@@ -1,6 +1,7 @@
 using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using GameOverlayMenu = sMPGWM.Scripts.UtilitySystem.UiComponents.GameOverlayMenu;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 

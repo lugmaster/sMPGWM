@@ -4,14 +4,15 @@ using System.Linq;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.NetworkSystem.NetworkInternal;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.UtilitySystem;
 using sMPGWM.Scripts.ShipSystem;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.NetworkSystem;
 
-public partial class NetworkManager : AbstractSingleton<NetworkManager>
+public partial class NetworkManager : UtilitySystem.AbstractSingleton<NetworkManager>
 {
     private BaseNetwork? _activeNetwork;
     private NetworkStartupData? _startup;

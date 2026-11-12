@@ -1,4 +1,5 @@
-using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: STAT-MIGRATE-0 | Tests: sMPGWM.Tests.ResourcePoolTests.InvalidContributionCannotCorruptThePool
+using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: STAT-MIGRATE-0 | Tests: sMPGWM.Tests.ResourcePoolTests.InvalidContributionCannotCorruptThePool
 using sMPGWM.Scripts.StatSystem; // TEST-SUPPORT: STAT-MIGRATE-1 | Tests: sMPGWM.Tests.ResourcePoolTests.InvalidContributionCannotCorruptThePool
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: STAT-MIGRATE-3 | Tests: sMPGWM.Tests.ResourcePoolTests.InvalidContributionCannotCorruptThePool

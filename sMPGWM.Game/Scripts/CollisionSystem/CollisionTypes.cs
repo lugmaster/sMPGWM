@@ -1,4 +1,4 @@
-﻿namespace sMPGWM.Scripts.CollisionSystem;
+namespace sMPGWM.Scripts.CollisionSystem;
 
 public enum CollisionTypes
 {

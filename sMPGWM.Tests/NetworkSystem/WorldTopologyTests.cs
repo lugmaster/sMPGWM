@@ -2,7 +2,8 @@ using Godot;
 using sMPGWM.Scripts.MovementSystem;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.ShipSystem;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 
 namespace sMPGWM.Tests.NetworkSystem;
 
@@ -23,7 +24,7 @@ public class WorldTopologyTests
             Assert.That(world.Players, Is.Empty);
             Assert.That(ship.GetParent(), Is.SameAs(world));
             Assert.Throws<InvalidOperationException>(() => world.SpawnEntity(EntitySpawnRecord.From(record)));
-            var player = new sMPGWM.Scripts.World.PlayerSession { ControllingPeerId = 1 };
+            var player = new PlayerSession { ControllingPeerId = 1 };
             player.AssignShip(ship);
             player.AssignShip(null);
             Assert.That(ship.GetParent(), Is.SameAs(world));

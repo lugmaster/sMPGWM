@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bli57o43qurcm"]
 
 [ext_resource type="PackedScene" uid="uid://8lamqivv07af" path="res://scenes/ui/base/base_menu.tscn" id="1_u3tyy"]
-[ext_resource type="Script" uid="uid://xdhj3fyro68e" path="res://Scripts/Util/UiComponents/GameOverlayMenu.cs" id="2_u7kbo"]
+[ext_resource type="Script" uid="uid://xdhj3fyro68e" path="res://Scripts/UtilitySystem/UiComponents/GameOverlayMenu.cs" id="2_u7kbo"]
 
 [sub_resource type="Theme" id="Theme_overlay"]
 default_font_size = 13

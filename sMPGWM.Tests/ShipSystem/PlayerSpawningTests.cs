@@ -1,7 +1,8 @@
 using Godot;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.ShipSystem;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 
 namespace sMPGWM.Tests.ShipSystem;
 

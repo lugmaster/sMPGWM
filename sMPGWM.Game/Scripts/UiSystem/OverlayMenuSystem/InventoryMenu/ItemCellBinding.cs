@@ -1,5 +1,5 @@
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 

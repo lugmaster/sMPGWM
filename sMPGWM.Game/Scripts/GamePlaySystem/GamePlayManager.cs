@@ -4,17 +4,18 @@ using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem;
-using sMPGWM.Scripts.Util;
-using sMPGWM.Scripts.Util.Mocks;
+using sMPGWM.Scripts.UtilitySystem;
+using sMPGWM.Scripts.UtilitySystem.Mocks;
+using PlayerMock = sMPGWM.Scripts.UtilitySystem.Mocks.PlayerMock;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
-public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
+public partial class GamePlayManager : UtilitySystem.AbstractSingleton<GamePlayManager>
 {
     private GameSession? _session;
     private SessionCoordinator? _coordinator;
     private MainGameState _gameState = MainGameState.Inactive;
-    public PlayerController LocalPlayer => _session?.Player!;
+    public PlayerControllerSystem.PlayerController LocalPlayer => _session?.Player!;
     public MessageController MessageController => _session?.Messages!;
     public MainGameState GameState => _gameState;
     public event Action<MainGameState>? OnGameStateChanged;

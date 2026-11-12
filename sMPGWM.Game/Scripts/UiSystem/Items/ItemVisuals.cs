@@ -1,8 +1,9 @@
 
 
 using Godot;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using ClickableIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.ClickableIcon;
 
 namespace sMPGWM.Scripts.UiSystem.Items;
 

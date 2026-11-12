@@ -1,6 +1,7 @@
 using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.FileLoadingSystem;
-using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
 namespace sMPGWM.Tests.ItemSystem;
 
@@ -96,7 +97,7 @@ public class ItemRegistryTests
             };
             Assert.That(items["test"].StackLimit, Is.EqualTo(expected));
             Assert.That(items["test"].CanStack, Is.EqualTo(expected > 1));
-            Assert.That(sMPGWM.Scripts.Util.UiComponents.Icons.IsDefined(iconKey!), Is.True);
+            Assert.That(Icons.IsDefined(iconKey!), Is.True);
         }
     }
 

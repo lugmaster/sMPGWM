@@ -1,15 +1,16 @@
 using System.Reflection;
 using Godot;
+using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
-using sMPGWM.Scripts.Items.Inventory;
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.WorldSystem;
+using PlayerController = sMPGWM.Scripts.PlayerControllerSystem.PlayerController;
 
 namespace sMPGWM.Tests.GamePlaySystem;
 

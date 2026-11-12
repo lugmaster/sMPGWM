@@ -1,14 +1,19 @@
 using System.Reflection; // TEST-SUPPORT: STATS-HUD-001 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 using Godot; // TEST-SUPPORT: STATS-HUD-002 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: STATS-HUD-003 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+using sMPGWM.Scripts.AbilitySystem;
+using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: STATS-HUD-003 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: STATS-HUD-004 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: STATS-HUD-005 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: STATS-HUD-006 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: STATS-HUD-007 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+// TEST-SUPPORT: STATS-HUD-005 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+// TEST-SUPPORT: STATS-HUD-006 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+using sMPGWM.Scripts.NetworkSystem;
+using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: STATS-HUD-007 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 using sMPGWM.Scripts.UiSystem; // TEST-SUPPORT: STATS-HUD-008 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 using sMPGWM.Scripts.UiSystem.HudSystem; // TEST-SUPPORT: STATS-HUD-009 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-using sMPGWM.Scripts.Util.UiComponents; // TEST-SUPPORT: STATS-HUD-010 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-using sMPGWM.Scripts.World; // TEST-SUPPORT: STATS-HUD-011 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+using sMPGWM.Scripts.UtilitySystem.UiComponents; // TEST-SUPPORT: STATS-HUD-010 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
+using PlayerController = sMPGWM.Scripts.PlayerControllerSystem.PlayerController;
+using StatBar = sMPGWM.Scripts.UtilitySystem.UiComponents.StatBar; // TEST-SUPPORT: STATS-HUD-011 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 
 namespace sMPGWM.Tests.UiSystem; // TEST-SUPPORT: STATS-HUD-012 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 

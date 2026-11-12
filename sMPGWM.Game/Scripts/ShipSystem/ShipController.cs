@@ -1,23 +1,23 @@
 using System;
 using Godot;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.MovementSystem;
-using sMPGWM.Scripts.World;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.WorldSystem;
 
 namespace sMPGWM.Scripts.ShipSystem;
 public partial class ShipController : CharacterBody2D
 {
     internal PlayerSession? ControllingPlayer { get; set; }
     public string EntityId { get; internal set; } = "";
-    public sMPGWM.Scripts.GamePlaySystem.ShipRuntime Runtime { get; private set; } = null!;
+    public ShipRuntime Runtime { get; private set; } = null!;
     private ShipData _data = null!;
     private readonly MovementMotor _motor = new();
     private ShipLoadout? _loadout;
     public ShipLoadout Loadout => _loadout ??= new ShipLoadout(this, new ItemStore(), false);
     public EquipmentController Equipment => Loadout.Equipment;
     public sMPGWM.Scripts.StatSystem.ResolvedShipStats Stats => Runtime.Stats;
-    public sMPGWM.Scripts.GamePlaySystem.ShipResources Resources => Runtime.Resources;
+    public ShipResources Resources => Runtime.Resources;
 
     public void ConfigureLoadout(ItemStore store, bool authoritative)
     {

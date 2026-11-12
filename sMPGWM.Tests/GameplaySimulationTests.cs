@@ -1,10 +1,13 @@
 using Godot; // TEST-SUPPORT: SIMULATION-PHASE-1 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: SIMULATION-PHASE-2 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: SIMULATION-PHASE-3 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: SIMULATION-PHASE-4 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: SIMULATION-PHASE-5 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+using sMPGWM.Scripts.AbilitySystem;
+using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: SIMULATION-PHASE-2 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: SIMULATION-PHASE-3 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+// TEST-SUPPORT: SIMULATION-PHASE-4 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+// TEST-SUPPORT: SIMULATION-PHASE-5 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
 using sMPGWM.Scripts.StatSystem; // TEST-SUPPORT: SIMULATION-PHASE-6 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-using sMPGWM.Scripts.World; // TEST-SUPPORT: SIMULATION-PHASE-7 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld; // TEST-SUPPORT: SIMULATION-PHASE-7 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: SIMULATION-PHASE-9 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
 

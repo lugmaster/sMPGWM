@@ -2,7 +2,8 @@ using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.GameplayDataSystem;
-using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.ShipSystem;
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: ABILITY-TEST-001 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable, sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime, sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
 

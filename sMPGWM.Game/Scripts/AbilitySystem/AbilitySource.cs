@@ -1,7 +1,7 @@
 using System;
+using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.Items;
-using sMPGWM.Scripts.Items.Equipment;
+using sMPGWM.Scripts.ShipSystem;
 
 namespace sMPGWM.Scripts.AbilitySystem;
 
@@ -28,7 +28,7 @@ public readonly record struct AbilitySource(AbilitySourceKind Kind, string Key, 
             AbilitySourceKind.AllShips => ability.Availability == AbilityAvailability.AllShips,
             _ => false
         });
-    private bool Provides(sMPGWM.Scripts.Items.Equipment.EquipmentController? equipment, string ability)
+    private bool Provides(EquipmentController? equipment, string ability)
     {
         if (equipment == null) return false;
         var index = equipment.FindSlot(Key);

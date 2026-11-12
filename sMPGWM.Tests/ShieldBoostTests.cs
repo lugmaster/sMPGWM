@@ -1,5 +1,6 @@
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.ShipSystem;
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: ABILITY-REGRESSION-001 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp, sMPGWM.Tests.ShieldBoostTests.DuplicatesReplayAndEvictedRequestsNeverExecute, sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline, sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
 

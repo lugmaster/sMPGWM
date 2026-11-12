@@ -18,9 +18,9 @@ config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 
 GameFlowManager="*uid://dnk44tr6vs3ar"
 ConfigLoader="*res://Scripts/GameConfigSystem/ConfigLoader.cs"
-IconDefinitions="*res://Scripts/Util/UiComponents/IconDefinitions.cs"
+IconDefinitions="*res://Scripts/UtilitySystem/UiComponents/IconDefinitions.cs"
 SteamworksHelper="*uid://cwgdwq3g3khns"
-ModalController="*res://Scripts/Util/UiComponents/ModalController.cs"
+ModalController="*res://Scripts/UtilitySystem/UiComponents/ModalController.cs"
 
 [debug]
 

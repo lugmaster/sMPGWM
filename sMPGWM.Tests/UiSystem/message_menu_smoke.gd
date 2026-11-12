@@ -80,7 +80,7 @@ func run() -> void:
         var world_probe := WorldProbe.new()
         game.get_node("WorldViewPortContainer/WorldViewport/WorldScene").add_child(world_probe)
         expect(game.get_node("WorldViewPortContainer/WorldViewport").size == Vector2i(1280, 720), "World viewport remains 1280 by 720")
-        var fixture = load("res://Scripts/Util/Mocks/MessageSmokeFixture.cs").new()
+        var fixture = load("res://Scripts/UtilitySystem/Mocks/MessageSmokeFixture.cs").new()
         fixture.call("Bind", game)
         var canvas := game.get_node("UiCanvas")
         var row := canvas.get_node("Root/MenuLayer/UiContainer/MenuHost/WindowScroll/WindowRow")

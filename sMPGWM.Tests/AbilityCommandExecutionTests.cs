@@ -1,9 +1,12 @@
 using Godot; // TEST-SUPPORT: ABILITY-EXECUTION-001 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
-using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: ABILITY-EXECUTION-002 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: ABILITY-EXECUTION-003 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: ABILITY-EXECUTION-004 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
-using sMPGWM.Scripts.Items.Inventory; // TEST-SUPPORT: ABILITY-EXECUTION-005 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
-using sMPGWM.Scripts.World; // TEST-SUPPORT: ABILITY-EXECUTION-006 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
+using sMPGWM.Scripts.AbilitySystem;
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.InventorySystem; // TEST-SUPPORT: ABILITY-EXECUTION-002 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
+// TEST-SUPPORT: ABILITY-EXECUTION-003 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
+// TEST-SUPPORT: ABILITY-EXECUTION-004 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
+// TEST-SUPPORT: ABILITY-EXECUTION-005 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld; // TEST-SUPPORT: ABILITY-EXECUTION-006 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
 
 namespace sMPGWM.Tests; // TEST-SUPPORT: ABILITY-EXECUTION-007 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
 

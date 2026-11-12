@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Godot;
-using sMPGWM.Scripts.Util;
+using sMPGWM.Scripts.UtilitySystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.InputSystem;
 
-public partial class InputController : AbstractSingleton<InputController>
+public partial class InputController : UtilitySystem.AbstractSingleton<InputController>
 {
     public Vector2 Direction { get; private set; } = Vector2.Zero;
     

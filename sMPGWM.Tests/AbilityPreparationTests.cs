@@ -1,5 +1,7 @@
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.ShipSystem;
+
 namespace sMPGWM.Tests; // TEST-SUPPORT: PREPARATION-2 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
 public sealed class AbilityPreparationTests // TEST-SUPPORT: PREPARATION-3 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
 {

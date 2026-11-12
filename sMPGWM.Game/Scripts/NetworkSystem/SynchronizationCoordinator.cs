@@ -4,7 +4,9 @@ using System.Linq;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.MovementSystem;
-using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.WorldSystem;
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
+using PlayerController = sMPGWM.Scripts.PlayerControllerSystem.PlayerController;
 
 namespace sMPGWM.Scripts.NetworkSystem;
 

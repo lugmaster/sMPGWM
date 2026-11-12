@@ -1,10 +1,11 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using System.Collections.Generic;
 using Godot;
 
 namespace sMPGWM.Scripts.ShipSystem;
 
-public sealed class ShipData
+public sealed record ShipData : GameplayDefinition
 {
     public string Name { get; }
     public string TexturePath { get; }
@@ -16,6 +17,7 @@ public sealed class ShipData
     public int HeavyWeaponSlots { get; }
 
     internal ShipData(ShipDefinition definition, Vector2[] points, ShipStats stats)
+        : base(definition.Name, definition.Name, "", null)
     {
         Name = definition.Name;
         TexturePath = definition.TexturePath;
