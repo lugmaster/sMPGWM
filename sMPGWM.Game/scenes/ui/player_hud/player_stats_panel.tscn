@@ -2,8 +2,10 @@
 
 [ext_resource type="Script" uid="uid://ciymk6iiyw7f1" path="res://Scripts/UiSystem/HudSystem/PlayerStatsPanel.cs" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://b71y4hy7l1fqd" path="res://scenes/ui/base/stat_bar.tscn" id="2_lh4dq"]
+[ext_resource type="PackedScene" uid="uid://c0hl3kglrv4nb" path="res://scenes/ui/base/icon_with_label.tscn" id="3_eiokr"]
 
 [node name="PlayerStatsPanel" type="PanelContainer" unique_id=1531154431]
+custom_minimum_size = Vector2(340, 0)
 offset_right = 360.0
 offset_bottom = 104.0
 size_flags_vertical = 0
@@ -18,20 +20,53 @@ theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="BarContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1281623172]
+[node name="MainContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1995539040]
+layout_mode = 2
+
+[node name="BarContainer" type="VBoxContainer" parent="MarginContainer/MainContainer" unique_id=1281623172]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 theme_override_constants/separation = 12
 
-[node name="StatBar" parent="MarginContainer/BarContainer" unique_id=1063959680 instance=ExtResource("2_lh4dq")]
+[node name="StatBar" parent="MarginContainer/MainContainer/BarContainer" unique_id=1063959680 instance=ExtResource("2_lh4dq")]
 layout_mode = 2
 
-[node name="EnergyBar" parent="MarginContainer/BarContainer" instance=ExtResource("2_lh4dq")]
+[node name="EnergyBar" parent="MarginContainer/MainContainer/BarContainer" unique_id=208467708 instance=ExtResource("2_lh4dq")]
 layout_mode = 2
 
-[node name="Availability" type="Label" parent="MarginContainer/BarContainer"]
+[node name="Availability" type="Label" parent="MarginContainer/MainContainer/BarContainer" unique_id=742321719]
 layout_mode = 2
-mouse_filter = 2
 text = "Shield unavailable"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/MainContainer" unique_id=50968852]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="MarginContainer/MainContainer" unique_id=624109534]
+layout_mode = 2
+columns = 3
+
+[node name="IconWithLabel" parent="MarginContainer/MainContainer/GridContainer" unique_id=1048780216 instance=ExtResource("3_eiokr")]
+layout_mode = 2
+
+[node name="IconWithLabel2" parent="MarginContainer/MainContainer/GridContainer" unique_id=1942192358 instance=ExtResource("3_eiokr")]
+layout_mode = 2
+
+[node name="IconWithLabel3" parent="MarginContainer/MainContainer/GridContainer" unique_id=829958865 instance=ExtResource("3_eiokr")]
+layout_mode = 2
+
+[node name="IconWithLabel4" parent="MarginContainer/MainContainer/GridContainer" unique_id=640005979 instance=ExtResource("3_eiokr")]
+layout_mode = 2
+
+[node name="IconWithLabel5" parent="MarginContainer/MainContainer/GridContainer" unique_id=1645562815 instance=ExtResource("3_eiokr")]
+layout_mode = 2
+
+[node name="IconWithLabel6" parent="MarginContainer/MainContainer/GridContainer" unique_id=285097177 instance=ExtResource("3_eiokr")]
+layout_mode = 2
+
+[node name="IconWithLabel7" parent="MarginContainer/MainContainer/GridContainer" unique_id=84163367 instance=ExtResource("3_eiokr")]
+layout_mode = 2
+
+[node name="IconWithLabel8" parent="MarginContainer/MainContainer/GridContainer" unique_id=2016912611 instance=ExtResource("3_eiokr")]
+layout_mode = 2
