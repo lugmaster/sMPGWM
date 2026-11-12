@@ -2,6 +2,8 @@
 
 Status: implemented and verified on 2026-11-11. See implementation and validation record below. Gameplay decisions agreed on 2026-11-11.
 
+Planned follow-up: [gameplay architecture cleanup](gameplay-architecture-cleanup.md) covers player/ship ownership, effective stats, detachable systems, and their UI/network migration. It also records the current tested afterburner demand rule, which differs from the original no-extra-demand statement below. The cleanup is not yet implemented.
+
 Equipment supplies each installed system's baseline values. Ships add flat modifiers to those values. The host resolves the resulting stats, runs energy and shield simulation, and supplies authoritative movement parameters and resource state to clients.
 
 This increment builds on [the ability runtime and authoritative equipment integration](gameplay-increment-02-ability-architecture.md). Its rules supersede conflicting earlier stat proposals in [the design context](gameplay-design-context-and-decisions.md) and [Stats.md](../documentation/Stats.md), particularly modifier ordering, capacity increases, resource cadence, and equipment requirements.
