@@ -4,7 +4,7 @@ using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Scripts.CollisionSystem;
 
-public partial class CollisionManager : UtilitySystem.AbstractSingleton<CollisionManager>
+public partial class CollisionManager : AbstractSingleton<CollisionManager>
 {
     private static readonly Dictionary<CollisionTypes, (uint layer, uint mask)> CollisionPresets = new()
     {

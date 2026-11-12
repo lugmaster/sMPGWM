@@ -11,7 +11,7 @@ using SteamworksHelper = sMPGWM.Scripts.SteamSystem.SteamworksHelper;
 
 namespace sMPGWM.Scripts.StartMenuSystem;
 
-public partial class StartMenuManager : UtilitySystem.AbstractSingleton<StartMenuManager>
+public partial class StartMenuManager : AbstractSingleton<StartMenuManager>
 {
     public void ShowJoinGameMenu()
     {

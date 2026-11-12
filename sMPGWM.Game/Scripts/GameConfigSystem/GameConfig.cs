@@ -1,3 +1,5 @@
+using sMPGWM.Scripts.ShipSystem;
+using sMPGWM.Scripts.FileLoadingSystem;
 using System;
 using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
@@ -56,9 +58,9 @@ public static class GameConfig
         if (string.IsNullOrEmpty(ConfigDataChecksum))
             throw new InvalidOperationException("Configuration is not loaded.");
         _ = ItemRegistry.GetAll();
-        _ = ShipSystem.ShipRegistry.GetAll();
+        _ = ShipRegistry.GetAll();
         _ = GameplayDefinitions.Current;
-        var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoadingSystem.FileLoader.CapturedInputs);
+        var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoader.CapturedInputs);
         inputs.Add("GameplayProtocol", "5:equipment-resources-movement-configuration-battery");
         GameDataChecksum = ChecksumGenerator.Compute(inputs);
         foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");

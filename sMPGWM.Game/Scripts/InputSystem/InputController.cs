@@ -6,7 +6,7 @@ using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.InputSystem;
 
-public partial class InputController : UtilitySystem.AbstractSingleton<InputController>
+public partial class InputController : AbstractSingleton<InputController>
 {
     public Vector2 Direction { get; private set; } = Vector2.Zero;
     

@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.PlayerControllerSystem;
 using System;
 using Godot;
 using sMPGWM.Scripts.GameConfigSystem;
@@ -10,12 +11,12 @@ using PlayerMock = sMPGWM.Scripts.UtilitySystem.Mocks.PlayerMock;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
-public partial class GamePlayManager : UtilitySystem.AbstractSingleton<GamePlayManager>
+public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
 {
     private GameSession? _session;
     private SessionCoordinator? _coordinator;
     private MainGameState _gameState = MainGameState.Inactive;
-    public PlayerControllerSystem.PlayerController LocalPlayer => _session?.Player!;
+    public PlayerController LocalPlayer => _session?.Player!;
     public MessageController MessageController => _session?.Messages!;
     public MainGameState GameState => _gameState;
     public event Action<MainGameState>? OnGameStateChanged;

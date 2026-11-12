@@ -1,20 +1,22 @@
+using Newtonsoft.Json.Linq; // TEST-SUPPORT: CATALOGUE-SHIP-001 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+using sMPGWM.Scripts.GameplayDataSystem; // TEST-SUPPORT: CATALOGUE-SHIP-002 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.ShipSystem;
 
 namespace sMPGWM.Tests.FileLoader;
 
-public class ShipDefinitionTests // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-6 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+public class ShipDefinitionTests // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-6 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
 {
-    private static string Read(string name) // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-8 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+    private static string Read(string name) // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-8 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
     {
-        var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-10 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
-        while (directory != null) // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-11 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+        var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-10 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+        while (directory != null) // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-11 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
         {
-            var path = Path.Combine(directory.FullName, "sMPGWM.Game", "assets", "game_data", name); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-13 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
-            if (File.Exists(path)) return File.ReadAllText(path); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-14 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
-            directory = directory.Parent; // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-15 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+            var path = Path.Combine(directory.FullName, "sMPGWM.Game", "assets", "game_data", name); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-13 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+            if (File.Exists(path)) return File.ReadAllText(path); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-14 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+            directory = directory.Parent; // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-15 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
         }
-        throw new FileNotFoundException(name); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-17 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+        throw new FileNotFoundException(name); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-17 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource, sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
     }
 
     [Test] // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-20 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
@@ -52,7 +54,22 @@ public class ShipDefinitionTests // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-6 
         Assert.That(result.Error!.ToDisplayString(), Does.Contain("Ships.yml")); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-52 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
     }
 
-    private static LoadResult<ShipDefinitionsDocument> Parse(string yaml) => // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-55 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
-        YamlParser.ValidateAndDeserialize<ShipDefinitionsDocument>(yaml, Read("ShipsSchema.yml"), // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-56 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
-            "Ships.yml", "ShipsSchema.yml"); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-57 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+    [Test] // TEST-SUPPORT: CATALOGUE-SHIP-003 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+    public void CatalogueConversionRejectsUnknownMembersAndPreservesSource() // TEST-SUPPORT: CATALOGUE-SHIP-004 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+    {
+        var token = (JObject)YamlParser.ParseToken(Read("Ships.yml"), "Ships.yml").Value!; // TEST-SUPPORT: CATALOGUE-SHIP-005 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+        token["ships"]![0]!["unknown_member"] = 1; // TEST-SUPPORT: CATALOGUE-SHIP-006 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+        var result = GameplayCatalogueLoader.LoadShipDefinitions(token, "Ships.yml", "ShipsSchema.yml"); // TEST-SUPPORT: CATALOGUE-SHIP-007 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+        Assert.That(result.IsSuccess, Is.False); // TEST-SUPPORT: CATALOGUE-SHIP-008 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+        Assert.That(result.Error!.SourcePath, Is.EqualTo("Ships.yml")); // TEST-SUPPORT: CATALOGUE-SHIP-009 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+        Assert.That(result.Error.SchemaPath, Is.EqualTo("ShipsSchema.yml")); // TEST-SUPPORT: CATALOGUE-SHIP-010 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+        Assert.That(result.Error.ToDisplayString(), Does.Contain("unknown_member")); // TEST-SUPPORT: CATALOGUE-SHIP-011 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.CatalogueConversionRejectsUnknownMembersAndPreservesSource
+    }
+
+    private static LoadResult<ShipDefinitionsDocument> Parse(string yaml) // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-55 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+    {
+        var result = YamlParser.ValidateAndReturn(yaml, Read("ShipsSchema.yml"), "Ships.yml", "ShipsSchema.yml"); // TEST-SUPPORT: CATALOGUE-SHIP-012 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+        if (!result.IsSuccess) return LoadResult<ShipDefinitionsDocument>.Failure(result.Error!); // TEST-SUPPORT: CATALOGUE-SHIP-013 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+        return GameplayCatalogueLoader.LoadShipDefinitions((JObject)result.Value!, "Ships.yml", "ShipsSchema.yml"); // TEST-SUPPORT: CATALOGUE-SHIP-014 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
+    }
 }

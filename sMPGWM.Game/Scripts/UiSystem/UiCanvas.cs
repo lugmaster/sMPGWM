@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.NetworkSystem;
 using System;
 using System.Collections.Generic;
 using Godot;
@@ -178,12 +179,12 @@ public partial class UiCanvas : CanvasLayer
         _inventoryMenu?.BindHotbar(_hotbar, _playerHud.Hotbar);
     }
 
-    internal void BindGameplay(NetworkSystem.NetworkManager? network)
+    internal void BindGameplay(NetworkManager? network)
     {
         if (network == null && _gameplayFeedback != null) _gameplayFeedback.Text = "";
         var panels = FindChildren("*", "", true, false);
         foreach (var panel in panels)
-            if (panel is HudSystem.PlayerStatsPanel stats) stats.Bind(network);
+            if (panel is PlayerStatsPanel stats) stats.Bind(network);
     }
 
     internal void BindHotbar(ItemHotbarController controller, IReadOnlyList<IconDefinition> actions)

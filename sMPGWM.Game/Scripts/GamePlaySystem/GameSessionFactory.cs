@@ -32,7 +32,7 @@ internal static class GameSessionFactory
         var transfers = scope.Own(new InventoryEquipmentTransferService(inventory, equipment));
         var hotbar = scope.Own(new ItemHotbarController(inventory, equipment, transfers,
             error => Logger.Error($"Hotbar observer failed: {error}")) { SupportsAbility = id => abilities.Definitions.Abilities.IsSupported(id, out _) });
-        var player = new PlayerControllerSystem.PlayerController { Name = "PlayerController" };
+        var player = new PlayerController { Name = "PlayerController" };
         scope.Defer(() => ReleaseNode(player));
         scope.Defer(player.Shutdown);
         var messages = scope.Own(new MessageController(canvas, player.InputPolicy,

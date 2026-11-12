@@ -5,7 +5,7 @@ using sMPGWM.Scripts.UtilitySystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 namespace sMPGWM.Scripts.NetworkSystem;
 
-public partial class HeartbeatMonitor : UtilitySystem.AbstractSingleton<HeartbeatMonitor>
+public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
 {
     public event Action<string>? Failed;
     public event Action<int, string>? PeerTimedOut;

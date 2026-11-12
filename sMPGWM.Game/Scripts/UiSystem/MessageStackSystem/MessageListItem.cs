@@ -19,7 +19,7 @@ public partial class MessageListItem : Button
         _title = GetNode<Label>("HBoxContainer/TitleLabel");
     }
 
-    internal void Display(sMPGWM.Scripts.MessageSystem.PlayerMessage message, bool selected)
+    internal void Display(PlayerMessage message, bool selected)
     {
         SetPressedNoSignal(selected);
         if (ReferenceEquals(_message, message) && _selected == selected) return;

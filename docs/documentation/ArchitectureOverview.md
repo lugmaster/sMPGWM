@@ -32,6 +32,8 @@ Scripts/
 
 Items, item categories, and runtime ship data inherit GameplayDefinition and use DefinitionRegistry. ShipDefinition remains the serialized ship input model.
 
+GameplayCatalogueLoader converts validated YAML documents into gameplay definitions, including items, item categories, and ship documents. FileLoader owns schema validation and user override paths. ItemRegistry prepares equipment stats after conversion; ShipRegistry validates textures and geometry while building runtime ship data.
+
 GamePlaySystem owns session orchestration. ShipSystem owns ship state and resource pools; AbilitySystem owns admission and effects; MovementSystem owns movement capability; ShieldSystem and EnergySystem own shield and power simulation.
 
 Runtime icons use IconDefinition objects from Icons. Authored icon keys are resolved at the loading boundary. Gameplay catalogue icons retain typed accessors so loading definitions does not require the Godot scene tree; textures are accessed when rendered. 

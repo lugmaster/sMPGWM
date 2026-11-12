@@ -12,7 +12,7 @@ using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.NetworkSystem;
 
-public partial class NetworkManager : UtilitySystem.AbstractSingleton<NetworkManager>
+public partial class NetworkManager : AbstractSingleton<NetworkManager>
 {
     private BaseNetwork? _activeNetwork;
     private NetworkStartupData? _startup;

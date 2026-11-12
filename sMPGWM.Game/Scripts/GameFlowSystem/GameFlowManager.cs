@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameConfigSystem;
 using System;
 using System.Threading.Tasks;
 using Godot;
@@ -11,7 +12,7 @@ using ModalController = sMPGWM.Scripts.UtilitySystem.UiComponents.ModalControlle
 
 namespace sMPGWM.Scripts.GameFlowSystem;
 
-public partial class GameFlowManager : UtilitySystem.AbstractSingleton<GameFlowManager>
+public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 {
     private GameFlowState _gameFlowState = GameFlowState.StartMenu;
     private NetworkStartupData? _pendingStartupData;
@@ -153,8 +154,8 @@ public partial class GameFlowManager : UtilitySystem.AbstractSingleton<GameFlowM
     public void StartGame(NetworkRole networkRole, NetworkType networkType)
     {
         StartNetworkGame(new NetworkStartupData(networkRole, networkType,
-            GameConfigSystem.GameConfig.MaxPlayers, GameConfigSystem.GameConfig.ConnectionTimeout,
-            GameConfigSystem.GameConfig.ServerIpAddress, GameConfigSystem.GameConfig.Port));
+            GameConfig.MaxPlayers, GameConfig.ConnectionTimeout,
+            GameConfig.ServerIpAddress, GameConfig.Port));
     }
 
     private void QuitToStartMenuInternal(long generation)

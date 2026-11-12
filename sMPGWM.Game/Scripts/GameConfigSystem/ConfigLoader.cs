@@ -7,7 +7,7 @@ using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GameConfigSystem;
 
-public partial class ConfigLoader : UtilitySystem.AbstractSingleton<ConfigLoader>
+public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
 {
     private const string ConfigSection = "config";
     private const string ReloadConfigOnStartKey = "reload_config_on_start";

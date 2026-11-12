@@ -19,10 +19,18 @@ public static class ShipRegistry
 
     private static IReadOnlyDictionary<string, ShipData> Load()
     {
-        var definitions = ShipDefinitionLoader.Load();
+        var yaml = FileLoader.LoadYaml(FilePaths.UserShipDataYaml,
+            FilePaths.ShipDataYaml, FilePaths.ShipDataYamlSchema);
+        var result = GameplayCatalogueLoader.LoadShipDefinitions(yaml,
+            FilePaths.UserShipDataYaml, FilePaths.ShipDataYamlSchema);
+        if (!result.IsSuccess)
+        {
+            FileLoader.AbortLoad(result.Error!);
+            throw new InvalidOperationException(result.Error!.ToDisplayString());
+        }
         try
         {
-            return Build(definitions, path => ResourceLoader.Load<Texture2D>(path) is { } texture &&
+            return Build(result.Value!, path => ResourceLoader.Load<Texture2D>(path) is { } texture &&
                 texture.GetWidth() > 0 && texture.GetHeight() > 0);
         }
         catch (Exception e)

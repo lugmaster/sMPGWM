@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.AbilitySystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +26,7 @@ public partial class SynchronizationCoordinator : Node
     public double HostEstimate => _clock.HostEstimate;
     private bool _active;
     private Func<int, bool>? _gameplayReady;
-    private Action<int, long, sMPGWM.Scripts.AbilitySystem.AbilityActivationResult>? _abilityCompleted;
+    private Action<int, long, AbilityActivationResult>? _abilityCompleted;
     private readonly NetworkClock _clock = new(Time.GetTicksMsec);
     private readonly ClientSynchronizationState _client = new(Time.GetTicksMsec);
     private readonly LocalMovementPrediction _prediction = new();

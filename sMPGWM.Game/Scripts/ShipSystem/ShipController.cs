@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.StatSystem;
 using System;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -16,7 +17,7 @@ public partial class ShipController : CharacterBody2D
     private ShipLoadout? _loadout;
     public ShipLoadout Loadout => _loadout ??= new ShipLoadout(this, new ItemStore(), false);
     public EquipmentController Equipment => Loadout.Equipment;
-    public sMPGWM.Scripts.StatSystem.ResolvedShipStats Stats => Runtime.Stats;
+    public ResolvedShipStats Stats => Runtime.Stats;
     public ShipResources Resources => Runtime.Resources;
 
     public void ConfigureLoadout(ItemStore store, bool authoritative)

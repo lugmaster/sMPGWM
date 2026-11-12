@@ -2,7 +2,7 @@ using sMPGWM.Scripts.UtilitySystem;
 
 namespace sMPGWM.Scripts.FileLoadingSystem;
 
-public partial class FilePaths : UtilitySystem.AbstractSingleton<FilePaths>
+public partial class FilePaths : AbstractSingleton<FilePaths>
 {
     // Game configs
     public const string SystemConfigPath = "res://config/config.cfg";
