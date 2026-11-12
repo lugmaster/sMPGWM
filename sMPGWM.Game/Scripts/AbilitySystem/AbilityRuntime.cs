@@ -11,9 +11,10 @@ public sealed class AbilityRuntime : IDisposable
     public AbilityActivationResult Activate(string abilityId, in AbilityActivationContext context, long tick)
     {
         if (_disposed) return AbilityActivationResult.SessionEnded;
+        if (!context.Caster.AbilityAdmissionAvailable) return AbilityActivationResult.AbilityNotGranted;
         if (!Definitions.Abilities.TryGetPlan(abilityId, out var plan))
             return Definitions.Abilities.TryGetById(abilityId, out _) ? AbilityActivationResult.UnsupportedAbility : AbilityActivationResult.AbilityNotGranted;
-        if (!context.Caster.Grants.Contains(abilityId) && plan.Definition.Availability != AbilityAvailability.AllShips)
+        if (!context.Caster.Components.AbilityAdmission!.Allows(plan.Definition, context.Caster.Grants))
             return AbilityActivationResult.AbilityNotGranted;
         if (AbilityEligibility.Rejection(plan.Definition, plan.Targeting, context) is { } rejection) return rejection;
         try

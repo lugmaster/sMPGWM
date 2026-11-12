@@ -27,6 +27,8 @@ public static class EquipmentStatCalculator
         }
     }
 
+    internal static void Precompile(ItemDefinition definition) => Cache.GetValue(definition, static item => new Values(item));
+
     public static ResolvedShipStats Calculate(ShipStatModifiersDefinition modifiers, double intrinsicMass,
         EquipmentSnapshot equipment, IReadOnlyList<EquipmentSlotDefinition> slots)
     {

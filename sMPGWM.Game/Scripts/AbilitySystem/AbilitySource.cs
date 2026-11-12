@@ -1,6 +1,7 @@
 using System;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.Items.Equipment;
 
 namespace sMPGWM.Scripts.AbilitySystem;
 
@@ -19,12 +20,21 @@ public readonly record struct AbilitySource(AbilitySourceKind Kind, string Key, 
         _ => false
     };
 
-    public bool IsAvailable(AbilityDefinition ability, ShipGameplayState caster, PlayerItemState? items) =>
-        IsValid && (Kind switch
+    public bool IsAvailable(AbilityDefinition ability, ShipRuntime caster, EquipmentController? items) =>
+        IsValid && caster.AbilityAdmissionAvailable && (Kind switch
         {
-            AbilitySourceKind.Equipment => items?.Provides(Key, Entity, ability.Id) == true,
+            AbilitySourceKind.Equipment => Provides(items, ability.Id),
             AbilitySourceKind.Grant => caster.Grants.ContainsSource(Key, ability.Id),
             AbilitySourceKind.AllShips => ability.Availability == AbilityAvailability.AllShips,
             _ => false
         });
+    private bool Provides(sMPGWM.Scripts.Items.Equipment.EquipmentController? equipment, string ability)
+    {
+        if (equipment == null) return false;
+        var index = equipment.FindSlot(Key);
+        if (index < 0 || equipment.Snapshot.Slots[index] is not { } item || item.Id.Value != (ulong)Entity) return false;
+        foreach (var id in item.Definition.AbilityIds)
+            if (id == ability) return true;
+        return false;
+    }
 }

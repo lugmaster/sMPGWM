@@ -15,21 +15,17 @@ using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
-internal sealed record GameSession(
-    PlayerController Player,
-    MessageController Messages,
-    NetworkManager Network,
-    IGameFixture Fixture);
-
 internal static class GameSessionFactory
 {
     public static GameSession Create(SessionScope scope, Node parent, UiCanvas canvas, Node world,
         NetworkStartupData startup, SessionCoordinator coordinator, IGameFixture fixture)
     {
         var abilities = scope.Own(new AbilityRuntime(GameplayDefinitions.Current));
-        var items = scope.Own(new PlayerItemState());
-        var inventory = items.Inventory;
-        var equipment = items.Equipment;
+        var participants = new GameWorld { Name = nameof(GameWorld), AuthoritativeItems = startup.Role == NetworkRole.Host };
+        scope.Defer(() => ReleaseNode(participants));
+        scope.Defer(participants.Clear);
+        var inventory = scope.Own(new InventoryController(participants.Items));
+        var equipment = scope.Own(new EquipmentController(participants.Items));
         var transfers = scope.Own(new InventoryEquipmentTransferService(inventory, equipment));
         var hotbar = scope.Own(new ItemHotbarController(inventory, equipment, transfers,
             error => Logger.Error($"Hotbar observer failed: {error}")) { SupportsAbility = id => abilities.Definitions.Abilities.IsSupported(id, out _) });
@@ -39,7 +35,8 @@ internal static class GameSessionFactory
         var messages = scope.Own(new MessageController(canvas, player.InputPolicy,
             error => Logger.Error($"Message observer failed: {error}")));
         fixture.Populate(inventory, messages, startup.Role == NetworkRole.Host);
-        var initialItems = inventory.Snapshot;
+        participants.InitialInventory = inventory.Snapshot;
+        participants.Items.EvictReplica(inventory.Container);
         scope.Defer(() =>
         {
             if (GodotObject.IsInstanceValid(canvas)) canvas.UnbindInventory();
@@ -56,12 +53,10 @@ internal static class GameSessionFactory
         canvas.BindHotbar(hotbar, fixture.Actions);
         player.SetSessionActive(false);
 
-        var participants = new GameWorld { Name = nameof(GameWorld), LocalPlayer = player };
-        scope.Defer(() => ReleaseNode(participants));
-        scope.Defer(participants.Clear);
+        participants.LocalPlayer = player;
         participants.AddChild(new ParallaxMotion { Name = nameof(ParallaxMotion) });
         world.AddChild(participants);
-        var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities, LocalItems = items, InitialItems = initialItems };
+        var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities, Simulation = scope.Own(new GameplaySimulation(participants, abilities)) };
         scope.Defer(() => ReleaseNode(network));
         scope.Defer(network.StopSession);
         var synchronization = new SynchronizationCoordinator
@@ -73,6 +68,7 @@ internal static class GameSessionFactory
         transfers.SetAuthority(network.RequestItemTransfer);
         targeting = new AbilityTargetingController(network, player, canvas) { Name = "AbilityTargeting" };
         world.AddChild(targeting);
+        scope.Own(new LocalPlayerBindings(player, network, canvas, transfers, hotbar, targeting, fixture, inventory, equipment));
         canvas.CancelGameplayAction = () =>
         {
             if (!targeting.IsTargeting) return false;

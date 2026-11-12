@@ -2,30 +2,47 @@ using System;
 using Godot;
 using sMPGWM.Scripts.MovementSystem;
 using sMPGWM.Scripts.World;
+using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.Items.Equipment;
 
 namespace sMPGWM.Scripts.ShipSystem;
-public readonly record struct ShipInputState(Vector2 Direction, float AimAngle, bool HasAim, bool Afterburner, bool Brake, bool AutomaticBraking);
-public sealed class ShipState
-{
-    public Vector2 Position { get; internal set; }
-    public float Rotation { get; internal set; }
-    public Vector2 Velocity { get; internal set; }
-}
 public partial class ShipController : CharacterBody2D
 {
     internal PlayerSession? ControllingPlayer { get; set; }
     public string EntityId { get; internal set; } = "";
-    public sMPGWM.Scripts.GamePlaySystem.ShipGameplayState Gameplay { get; private set; } = null!;
+    public sMPGWM.Scripts.GamePlaySystem.ShipRuntime Runtime { get; private set; } = null!;
     private ShipData _data = null!;
-    private float _rotationInertia;
-    private float _friction;
+    private readonly MovementMotor _motor = new();
+    private ShipLoadout? _loadout;
+    public ShipLoadout Loadout => _loadout ??= new ShipLoadout(this, new ItemStore(), false);
+    public EquipmentController Equipment => Loadout.Equipment;
+    public sMPGWM.Scripts.StatSystem.ResolvedShipStats Stats => Runtime.Stats;
+    public sMPGWM.Scripts.GamePlaySystem.ShipResources Resources => Runtime.Resources;
+
+    public void ConfigureLoadout(ItemStore store, bool authoritative)
+    {
+        if (_loadout == null) _loadout = new ShipLoadout(this, store, authoritative);
+        else
+        {
+            if (!ReferenceEquals(_loadout.Store, store)) throw new InvalidOperationException("Ship equipment already belongs to another store.");
+            _loadout.SetAuthoritative(authoritative);
+        }
+    }
+
+    public override void _ExitTree()
+    {
+        _loadout?.Dispose();
+        Runtime?.Dispose();
+        DefinitionChanged = null;
+        Teleported = null;
+    }
     public ShipData Data
     {
         get => _data;
         internal set
         {
             _data = value;
-            Gameplay ??= new();
+            Runtime ??= new();
             DefinitionChanged?.Invoke();
         }
     }
@@ -36,10 +53,10 @@ public partial class ShipController : CharacterBody2D
 
     public void RefreshMovementConfiguration()
     {
-        var stats = Gameplay.Stats;
+        var stats = Runtime.Stats;
         var configuration = new MovementConfiguration(stats.Speed, stats.AfterBurnerSpeed, stats.RotationSpeed,
-            stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Gameplay.MovementAvailable);
-        InstallMovementConfiguration(Gameplay.ConfigurationRevision, configuration);
+            stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Runtime.MovementAvailable);
+        InstallMovementConfiguration(Runtime.ConfigurationRevision, configuration);
     }
 
     internal void InstallMovementConfiguration(long revision, MovementConfiguration configuration)
@@ -48,8 +65,7 @@ public partial class ShipController : CharacterBody2D
         if (revision < 0 || !configuration.IsValid) throw new ArgumentException("Invalid movement configuration.");
         MovementConfiguration = configuration;
         MovementConfigurationRevision = revision;
-        _rotationInertia = (float)Math.Min(float.MaxValue, 1d + configuration.Mass * 1.05d);
-        _friction = (float)(0.15d / (1d + configuration.Mass * 0.95d));
+        _motor.Configure(configuration);
     }
     private ShipInputState _input;
     public byte AppliedMovementFlags { get; private set; }
@@ -86,12 +102,11 @@ public partial class ShipController : CharacterBody2D
 
         var previousRotation = GlobalRotation;
         var s = MovementConfiguration;
-        if (s.Enabled && _input.HasAim) GlobalRotation = MovementPhysics.RotationStep(GlobalRotation, _input.AimAngle, s.RotationSpeed, _rotationInertia, (float)delta);
-        var acceleration = _input.Afterburner ? s.AfterBurnerAcceleration : s.Acceleration;
-        Velocity = MovementPhysics.MovementStep(Velocity, _input.Brake ? Vector2.Zero : _input.Direction,
-            GlobalTransform.X.Normalized(), GlobalTransform.Y.Normalized(), acceleration,
-            _input.Afterburner ? s.AfterBurnerSpeed : s.Speed, _friction,
-            (float)delta, _input.Brake || _input.AutomaticBraking, s.Enabled);
+        if (s.Enabled)
+        {
+            GlobalRotation = _motor.Rotate(GlobalRotation, _input, (float)delta);
+            Velocity = _motor.Drive(Velocity, GlobalTransform.X.Normalized(), GlobalTransform.Y.Normalized(), _input, (float)delta);
+        }
         bool thrust = s.Enabled && !_input.Brake && _input.Direction.LengthSquared() > .01f;
         AppliedMovementFlags = (byte)((thrust ? 1 : 0) |
             (GlobalRotation != previousRotation ? 2 : 0) | (thrust && _input.Afterburner ? 4 : 0));

@@ -2,7 +2,7 @@
 
 Status: implemented and verified on 2026-11-11. See implementation and validation record below. Gameplay decisions agreed on 2026-11-11.
 
-Planned follow-up: [gameplay architecture cleanup](gameplay-architecture-cleanup.md) covers player/ship ownership, effective stats, detachable systems, and their UI/network migration. It also records the current tested afterburner demand rule, which differs from the original no-extra-demand statement below. The cleanup is not yet implemented.
+Architecture follow-up: [gameplay architecture cleanup](gameplay-architecture-cleanup.md) covers player/ship ownership, effective stats, detachable systems, and their UI/network migration. Its implementation and verification status is recorded in that plan.
 
 Equipment supplies each installed system's baseline values. Ships add flat modifiers to those values. The host resolves the resulting stats, runs energy and shield simulation, and supplies authoritative movement parameters and resource state to clients.
 
@@ -34,7 +34,7 @@ Ship modifiers are flat contributions to the corresponding installed system. Omi
 Two explicit aggregation rules remain separate:
 
 - `Mass` is intrinsic ship mass plus the mass of every equipped item, including weapons. Inventory cargo does not contribute. Feed this total into the existing movement calculations: rotation inertia `1 + Mass * 1.05` and friction `0.15 / (1 + Mass * 0.95)`.
-- `EnergyConsumption` is the sum of equipped items' configured passive demand, including weapons and the battery's own demand. Categories without consumption contribute zero. Demand does not disappear when a system fails, is idle, or is waiting for shield downtime. Afterburner has no additional energy cost in this increment.
+- `EnergyConsumption` is the sum of equipped items' configured passive demand, including weapons and the battery's own demand. Categories without consumption contribute zero. Demand does not disappear when a system fails, is idle, or is waiting for shield downtime. Afterburner adds 25% of the installed engine demand while active; the configured passive demand remains unchanged.
 
 ### Energy
 

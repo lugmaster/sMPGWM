@@ -1,75 +1,81 @@
-using System.Reflection; // TEST-SUPPORT: GRANT-LIFECYCLE-001 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using Godot; // TEST-SUPPORT: GRANT-LIFECYCLE-002 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: GRANT-LIFECYCLE-003 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.Items; // TEST-SUPPORT: GRANT-LIFECYCLE-004 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: GRANT-LIFECYCLE-005 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.Items.Inventory; // TEST-SUPPORT: GRANT-LIFECYCLE-006 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: GRANT-LIFECYCLE-007 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-using sMPGWM.Scripts.World; // TEST-SUPPORT: GRANT-LIFECYCLE-008 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-
-namespace sMPGWM.Tests; // TEST-SUPPORT: GRANT-LIFECYCLE-009 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-
-[Category("Godot")] // TEST-SUPPORT: GRANT-LIFECYCLE-010 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-public sealed class EquipmentGrantLifecycleTests // TEST-SUPPORT: GRANT-LIFECYCLE-011 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.StatSystem; // TEST-SUPPORT: OWNERSHIP-TYPED-0 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using System.Reflection; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-0 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using Godot; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-1 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-2 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.Items; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-3 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-4 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.Items.Inventory; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-5 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-6 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.World; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-7 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+namespace sMPGWM.Tests; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-8 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+[Category("Godot")] // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-9 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+public sealed class EquipmentGrantLifecycleTests // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-10 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 {
-    [Test] // TEST-SUPPORT: GRANT-LIFECYCLE-012 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-    public void UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp() // TEST-SUPPORT: GRANT-LIFECYCLE-013 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+    [Test] // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-12 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+    public void UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp() // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-13 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
     {
-        var world = new GameWorld(); // TEST-SUPPORT: GRANT-LIFECYCLE-014 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-        ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world); // TEST-SUPPORT: GRANT-LIFECYCLE-015 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-        using var host = new PlayerItemState(); // TEST-SUPPORT: GRANT-LIFECYCLE-016 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-        using var client = new PlayerItemState(); // TEST-SUPPORT: GRANT-LIFECYCLE-017 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-        try // TEST-SUPPORT: GRANT-LIFECYCLE-018 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+        var world = new GameWorld { AuthoritativeItems = true }; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-15 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+        var clientWorld = new GameWorld(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-16 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+        var root = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests"); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-17 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+        root.AddChild(world); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-18 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+        root.AddChild(clientWorld); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-19 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+        try // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-20 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
         {
-            world.ApproveSpawn(1, new("fighter")); // TEST-SUPPORT: GRANT-LIFECYCLE-019 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var owner = world.Players[1]; // TEST-SUPPORT: GRANT-LIFECYCLE-020 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var ship = owner.ControlledShip!; // TEST-SUPPORT: GRANT-LIFECYCLE-021 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            client.Bind(owner); // TEST-SUPPORT: GRANT-LIFECYCLE-022 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            ship.Gameplay.Grants.SetSource("skill:pilot", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: GRANT-LIFECYCLE-023 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(host.Store.CreateItems(host.Inventory.Container, "mock_standard_shield_generator", 1), // TEST-SUPPORT: GRANT-LIFECYCLE-024 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-                Is.EqualTo(InventoryResult.Success)); // TEST-SUPPORT: GRANT-LIFECYCLE-025 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var generator = host.Inventory.Snapshot.Slots[0]!; // TEST-SUPPORT: GRANT-LIFECYCLE-026 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var slot = ItemCellAddress.Equipment("shield_generator"); // TEST-SUPPORT: GRANT-LIFECYCLE-027 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(host.Transfer(new(0, ItemCellAddress.Inventory(0), generator.Id, slot, null, // TEST-SUPPORT: GRANT-LIFECYCLE-028 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-                host.Inventory.Revision, host.Equipment.Revision)), Is.EqualTo(TransferResult.Success)); // TEST-SUPPORT: GRANT-LIFECYCLE-029 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(ItemSnapshotCodec.Apply(ItemSnapshotCodec.Encode(host), client), Is.True); // TEST-SUPPORT: GRANT-LIFECYCLE-030 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var source = "item:" + generator.Id; // TEST-SUPPORT: GRANT-LIFECYCLE-031 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var grants = (Dictionary<string, string[]>)typeof(AbilityGrants) // TEST-SUPPORT: GRANT-LIFECYCLE-032 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-                .GetField("_sources", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(ship.Gameplay.Grants)!; // TEST-SUPPORT: GRANT-LIFECYCLE-033 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var original = grants[source]; // TEST-SUPPORT: GRANT-LIFECYCLE-034 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(host.Store.CreateItems(host.Inventory.Container, "mock_standard_consumable", 7), // TEST-SUPPORT: GRANT-LIFECYCLE-035 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-                Is.EqualTo(InventoryResult.Success)); // TEST-SUPPORT: GRANT-LIFECYCLE-036 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(ItemSnapshotCodec.Apply(ItemSnapshotCodec.Encode(host), client), Is.True); // TEST-SUPPORT: GRANT-LIFECYCLE-037 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(grants[source], Is.SameAs(original)); // TEST-SUPPORT: GRANT-LIFECYCLE-038 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            client.Equipment.NotifyObservers(); // TEST-SUPPORT: GRANT-LIFECYCLE-039 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var allocated = GC.GetAllocatedBytesForCurrentThread(); // TEST-SUPPORT: GRANT-LIFECYCLE-040 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            for (var i = 0; i < 120; i++) client.Equipment.NotifyObservers(); // TEST-SUPPORT: GRANT-LIFECYCLE-041 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            var unchangedBytes = GC.GetAllocatedBytesForCurrentThread() - allocated; // TEST-SUPPORT: GRANT-LIFECYCLE-042 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(grants[source], Is.SameAs(original)); // TEST-SUPPORT: GRANT-LIFECYCLE-043 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(unchangedBytes, Is.Zero); // TEST-SUPPORT: GRANT-LIFECYCLE-044 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-
-            var replacement = world.SpawnEntity(new(Guid.NewGuid().ToString("N"), "fighter", Vector2.Zero, 0, Vector2.Zero)); // TEST-SUPPORT: GRANT-LIFECYCLE-045 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            owner.AssignShip(replacement); // TEST-SUPPORT: GRANT-LIFECYCLE-046 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(ship.Gameplay.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.False); // TEST-SUPPORT: GRANT-LIFECYCLE-047 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(ship.Gameplay.Grants.ContainsSource("skill:pilot", "shieldCapacityBoost"), Is.True); // TEST-SUPPORT: GRANT-LIFECYCLE-048 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(replacement.Gameplay.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.True); // TEST-SUPPORT: GRANT-LIFECYCLE-049 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(host.Transfer(new(0, slot, generator.Id, ItemCellAddress.Inventory(1), null, // TEST-SUPPORT: GRANT-LIFECYCLE-050 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-                host.Inventory.Revision, host.Equipment.Revision)), Is.EqualTo(TransferResult.Success)); // TEST-SUPPORT: GRANT-LIFECYCLE-051 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(ItemSnapshotCodec.Apply(ItemSnapshotCodec.Encode(host), client), Is.True); // TEST-SUPPORT: GRANT-LIFECYCLE-052 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(replacement.Gameplay.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.False); // TEST-SUPPORT: GRANT-LIFECYCLE-053 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(host.Transfer(new(0, ItemCellAddress.Inventory(1), generator.Id, slot, null, // TEST-SUPPORT: GRANT-LIFECYCLE-054 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-                host.Inventory.Revision, host.Equipment.Revision)), Is.EqualTo(TransferResult.Success)); // TEST-SUPPORT: GRANT-LIFECYCLE-055 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(ItemSnapshotCodec.Apply(ItemSnapshotCodec.Encode(host), client), Is.True); // TEST-SUPPORT: GRANT-LIFECYCLE-056 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            client.Dispose(); // TEST-SUPPORT: GRANT-LIFECYCLE-057 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(replacement.Gameplay.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.False); // TEST-SUPPORT: GRANT-LIFECYCLE-058 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            owner.AssignShip(ship); // TEST-SUPPORT: GRANT-LIFECYCLE-059 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            Assert.That(ship.Gameplay.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.False); // TEST-SUPPORT: GRANT-LIFECYCLE-060 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            world.ApproveSpawn(1, new("fighter")); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-22 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            world.ApproveSpawn(2, new("fighter")); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-23 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            clientWorld.ApplyTopology(world.CaptureTopology()); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-24 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var owner = world.Players[1]; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-25 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var other = world.Players[2]; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-26 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var ship = owner.ControlledShip!; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-27 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var replacement = other.ControlledShip!; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-28 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var client = clientWorld.Players[1]; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-29 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var clientShip = client.ControlledShip!; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-30 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            ship.Runtime.Grants.SetSource("skill:pilot", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-31 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(world.Items.CreateItems(owner.Inventory.Container, "mock_standard_shield_generator", 1), Is.EqualTo(InventoryResult.Success)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-32 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var generator = owner.Inventory.Snapshot.Slots[0]!; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-33 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var slot = ItemCellAddress.Equipment("shield_generator"); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-34 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(owner.Transfer(new(0, ItemCellAddress.Inventory(0), generator.Id, slot, null, // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-35 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+                owner.Inventory.Revision, ship.Equipment.Revision)), Is.EqualTo(TransferResult.Success)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-36 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            ship.Loadout.InitializeResources(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-37 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            ship.Runtime.SetShieldCurrent(17); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-38 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ItemSnapshotCodec.Apply(ItemSnapshotCodec.Encode(owner), client), Is.True); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-39 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var source = "item:" + generator.Id; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-40 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var grants = (Dictionary<StatContributionSource, string[]>)typeof(AbilityGrants) // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-41 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+                .GetField("_ownedSources", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(clientShip.Runtime.Grants)!; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-42 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var typedSource = new StatContributionSource(StatContributionKind.Equipment, (long)generator.Id.Value); // TEST-SUPPORT: OWNERSHIP-TYPED-44 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var original = grants[typedSource]; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-43 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            world.Items.CreateItems(owner.Inventory.Container, "mock_standard_consumable", 7); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-44 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ItemSnapshotCodec.Apply(ItemSnapshotCodec.Encode(owner), client), Is.True); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-45 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(grants[typedSource], Is.SameAs(original)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-46 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            clientShip.Equipment.NotifyObservers(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-47 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var allocated = GC.GetAllocatedBytesForCurrentThread(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-48 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            for (var i = 0; i < 120; i++) clientShip.Equipment.NotifyObservers(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-49 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(GC.GetAllocatedBytesForCurrentThread() - allocated, Is.Zero); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-50 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var personal = owner.Inventory.Snapshot; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-51 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            var stats = ship.Stats; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-52 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            owner.AssignShip(replacement); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-53 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            other.AssignShip(ship); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-54 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(owner.Inventory.Snapshot, Is.SameAs(personal)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-55 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("shield_generator")]!.Id, Is.EqualTo(generator.Id)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-56 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Runtime.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.True); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-57 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Runtime.Grants.ContainsSource("skill:pilot", "shieldCapacityBoost"), Is.True); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-58 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(replacement.Runtime.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.False); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-59 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Stats, Is.EqualTo(stats)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-60 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Resources.Shield.Current, Is.EqualTo(17)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-61 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            other.AssignShip(null); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-62 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            other.AssignShip(ship); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-63 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Resources.Shield.Current, Is.EqualTo(17)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-64 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            owner.Dispose(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-65 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Runtime.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.True); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-66 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            ship.Loadout.Dispose(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-67 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Runtime.Grants.ContainsSource(source, "shieldCapacityBoost"), Is.False); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-68 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.That(ship.Runtime.Grants.ContainsSource("skill:pilot", "shieldCapacityBoost"), Is.True); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-69 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            Assert.Throws<KeyNotFoundException>(() => world.Items.GetItem(generator.Id)); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-70 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
         }
-        finally // TEST-SUPPORT: GRANT-LIFECYCLE-061 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+        finally // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-72 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
         {
-            client.Dispose(); // TEST-SUPPORT: GRANT-LIFECYCLE-062 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
-            world.Free(); // TEST-SUPPORT: GRANT-LIFECYCLE-063 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            world.Free(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-74 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+            clientWorld.Free(); // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-75 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
         }
     }
 }
-

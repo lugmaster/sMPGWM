@@ -35,8 +35,10 @@ public sealed class InventoryController : IDisposable, IInventoryView
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _ = Snapshot;
+        Items.DestroyContainer(Container);
         Container.Unsubscribe(NotifyObservers);
-        Container.Disposed = true;
         _disposed = true;
         Changed = null;
     }

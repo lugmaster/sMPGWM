@@ -189,12 +189,14 @@ public partial class UiCanvas : CanvasLayer
     {
         _hotbar = controller;
         _playerHud.Hotbar.Bind(controller, actions);
+        InventoryEditAvailabilityChanged?.Invoke(_inventoryMenu != null && _hasApplicationFocus);
     }
 
     internal void BindHotbar(ItemHotbarController controller, IReadOnlyDictionary<string, IconDefinition> actions)
     {
         _hotbar = controller;
         _playerHud.Hotbar.Bind(controller, actions);
+        InventoryEditAvailabilityChanged?.Invoke(_inventoryMenu != null && _hasApplicationFocus);
     }
 
 

@@ -8,7 +8,7 @@ public sealed class ShieldBoostTests // TEST-SUPPORT: ABILITY-REGRESSION-002 | T
     [Test] // TEST-SUPPORT: ABILITY-REGRESSION-003 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
     public void TenShipTickCostAndCapacityClamp() // TEST-SUPPORT: ABILITY-REGRESSION-004 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
     {
-        var states = new ShipGameplayState[10]; // TEST-SUPPORT: ABILITY-REGRESSION-005 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
+        var states = new ShipRuntime[10]; // TEST-SUPPORT: ABILITY-REGRESSION-005 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
         using var runtime = new AbilityRuntime(GameplayTestData.Load(variants: true)); // TEST-SUPPORT: ABILITY-REGRESSION-006 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
         for (var i = 0; i < states.Length; i++) // TEST-SUPPORT: ABILITY-REGRESSION-007 | Tests: sMPGWM.Tests.ShieldBoostTests.TenShipTickCostAndCapacityClamp
         {
@@ -49,7 +49,7 @@ public sealed class ShieldBoostTests // TEST-SUPPORT: ABILITY-REGRESSION-002 | T
     public void RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline() // TEST-SUPPORT: ABILITY-REGRESSION-033 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
     {
         using var runtime = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: ABILITY-REGRESSION-034 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
-        var state = new ShipGameplayState(120, 40); // TEST-SUPPORT: ABILITY-REGRESSION-035 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
+        var state = new ShipRuntime(120, 40); // TEST-SUPPORT: ABILITY-REGRESSION-035 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
         state.Grants.SetSource("fixture", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: ABILITY-REGRESSION-037 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
         runtime.Activate("shieldCapacityBoost", new(state, state, 0), 100); // TEST-SUPPORT: ABILITY-REGRESSION-038 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
         Assert.That(state.Shield.Capacity, Is.EqualTo(170)); // TEST-SUPPORT: ABILITY-REGRESSION-039 | Tests: sMPGWM.Tests.ShieldBoostTests.RefreshPreservesInstanceAndExpiresOnlyAtNewDeadline
@@ -64,11 +64,11 @@ public sealed class ShieldBoostTests // TEST-SUPPORT: ABILITY-REGRESSION-002 | T
     [Test] // TEST-SUPPORT: ABILITY-REGRESSION-046 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
     public void ConfirmedRevisionsCannotBeReplayedOrRolledBack() // TEST-SUPPORT: ABILITY-REGRESSION-047 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
     {
-        var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: ABILITY-REGRESSION-048 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
-        Assert.That(state.Confirm(3, 150, 140, new[] { new BehaviourInstance("shieldCapacityBoost", 1, 1800) }), Is.True); // TEST-SUPPORT: ABILITY-REGRESSION-049 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
-        Assert.That(state.Confirm(2, 100, 40, Array.Empty<BehaviourInstance>()), Is.False); // TEST-SUPPORT: ABILITY-REGRESSION-050 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
-        Assert.That(state.Confirm(3, 100, 40, Array.Empty<BehaviourInstance>()), Is.False); // TEST-SUPPORT: ABILITY-REGRESSION-051 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
+        var state = new ShipRuntime(100, 40); // TEST-SUPPORT: ABILITY-REGRESSION-048 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
+        Assert.That(state.Confirm(3, 150, 140, new[] { new BehaviourInstance("shieldCapacityBoost", 1, 1800) }, 0, Array.Empty<string>(), state.Stats with { ShieldCapacity = 150 }, 0, false, true, 0, 0, 1, false), Is.True); // TEST-SUPPORT: ABILITY-REGRESSION-049 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
+        Assert.That(state.Confirm(2, 100, 40, Array.Empty<BehaviourInstance>(), 0, Array.Empty<string>(), state.Stats with { ShieldCapacity = 100 }, 0, false, true, 0, 0, 1, false), Is.False); // TEST-SUPPORT: ABILITY-REGRESSION-050 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
+        Assert.That(state.Confirm(3, 100, 40, Array.Empty<BehaviourInstance>(), 0, Array.Empty<string>(), state.Stats with { ShieldCapacity = 100 }, 0, false, true, 0, 0, 1, false), Is.False); // TEST-SUPPORT: ABILITY-REGRESSION-051 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
         Assert.That(state.Shield.Current, Is.EqualTo(140)); // TEST-SUPPORT: ABILITY-REGRESSION-052 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
-        Assert.That(state.Confirm(4, 100, 100, Array.Empty<BehaviourInstance>()), Is.True); // TEST-SUPPORT: ABILITY-REGRESSION-053 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
+        Assert.That(state.Confirm(4, 100, 100, Array.Empty<BehaviourInstance>(), 0, Array.Empty<string>(), state.Stats with { ShieldCapacity = 100 }, 0, false, true, 0, 0, 1, false), Is.True); // TEST-SUPPORT: ABILITY-REGRESSION-053 | Tests: sMPGWM.Tests.ShieldBoostTests.ConfirmedRevisionsCannotBeReplayedOrRolledBack
     }
 }

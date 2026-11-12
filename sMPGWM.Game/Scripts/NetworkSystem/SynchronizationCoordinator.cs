@@ -22,6 +22,8 @@ public partial class SynchronizationCoordinator : Node
     public int Lead => _clock.Lead;
     public double HostEstimate => _clock.HostEstimate;
     private bool _active;
+    private Func<int, bool>? _gameplayReady;
+    private Action<int, long, sMPGWM.Scripts.AbilitySystem.AbilityActivationResult>? _abilityCompleted;
     private readonly NetworkClock _clock = new(Time.GetTicksMsec);
     private readonly ClientSynchronizationState _client = new(Time.GetTicksMsec);
     private readonly LocalMovementPrediction _prediction = new();
@@ -99,8 +101,8 @@ public partial class SynchronizationCoordinator : Node
                 if (peer == 1) q.Accept(new(tick, ship.InputState), CompletedTick);
                 ship.SetInput(q.Consume(tick));
             }
-            Network.AdvanceGameplay(tick);
-            foreach (var owner in World.Players.Values) owner.ControlledShip?.Simulate(1.0 / 60);
+            Network.Simulation.Step(tick, _gameplayReady ??= Network.MovementReady,
+                _abilityCompleted ??= Network.CompleteAbility);
             CompletedTick = tick;
             Network.PublishGameplay(tick);
             if (tick % 2 == 0) Network.PublishMovement(Baseline());
@@ -189,6 +191,7 @@ public partial class SynchronizationCoordinator : Node
     }
     public void BindingChanged(int peer)
     {
+        Network.Simulation.RemovePeer(peer);
         ResetCommands(peer); _remote.Remove(peer);
         if (peer == Multiplayer.GetUniqueId())
         {

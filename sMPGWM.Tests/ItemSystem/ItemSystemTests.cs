@@ -9,6 +9,26 @@ namespace sMPGWM.Tests.ItemSystem;
 [Category("Godot")]
 public class ItemSystemTests
 {
+    [Test] // TEST-SUPPORT: CONTAINER-DESTROY-0 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+    public void DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent() // TEST-SUPPORT: CONTAINER-DESTROY-1 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+    {
+        var store = new ItemStore(); // TEST-SUPPORT: CONTAINER-DESTROY-3 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        using var inventory = new InventoryController(store); // TEST-SUPPORT: CONTAINER-DESTROY-4 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        using var retained = new InventoryController(store); // TEST-SUPPORT: CONTAINER-DESTROY-5 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        store.CreateItems(inventory.Container, Engine, 1); // TEST-SUPPORT: CONTAINER-DESTROY-6 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        store.CreateItems(retained.Container, Engine, 1); // TEST-SUPPORT: CONTAINER-DESTROY-7 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        var removedId = inventory.Snapshot.Slots[0]!.Id; // TEST-SUPPORT: CONTAINER-DESTROY-8 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        var retainedId = retained.Snapshot.Slots[0]!.Id; // TEST-SUPPORT: CONTAINER-DESTROY-9 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        inventory.Dispose(); // TEST-SUPPORT: CONTAINER-DESTROY-10 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        inventory.Dispose(); // TEST-SUPPORT: CONTAINER-DESTROY-11 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        Assert.Throws<KeyNotFoundException>(() => store.GetItem(removedId)); // TEST-SUPPORT: CONTAINER-DESTROY-12 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        Assert.Throws<KeyNotFoundException>(() => store.GetLocation(removedId)); // TEST-SUPPORT: CONTAINER-DESTROY-13 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        Assert.That(inventory.Container.Capacity, Is.Zero); // TEST-SUPPORT: CONTAINER-DESTROY-14 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        Assert.That(store.GetItem(retainedId).Id, Is.EqualTo(retainedId)); // TEST-SUPPORT: CONTAINER-DESTROY-15 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        Assert.That(store.GetLocation(retainedId).ContainerId, Is.EqualTo(retained.Container.Id)); // TEST-SUPPORT: CONTAINER-DESTROY-16 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+        Assert.That(store.CreateItems(inventory.Container, Engine, 1), Is.EqualTo(InventoryResult.Disposed)); // TEST-SUPPORT: CONTAINER-DESTROY-17 | Tests: sMPGWM.Tests.ItemSystem.ItemSystemTests.DestroyContainer_RemovesOnlyOwnedItemsAndIsIdempotent
+    }
+
     private const string Engine = "mock_standard_engine";
     private const string Consumable = "mock_standard_consumable";
 

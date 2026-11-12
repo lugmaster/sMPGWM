@@ -1,6 +1,31 @@
 # Gameplay architecture cleanup plan
 
-Status: planned; implementation tasks below are not complete.
+Status: implemented and verified with managed/in-engine tests, multi-process ENet, and local GodotSteam host lifecycle. Remote multi-account Steam verification remains outstanding as recorded below.
+
+Implementation (2026-11-12): `PlayerSession` owns personal inventory, `GameWorld.Items`
+is the session authority, and `ShipController.Loadout` owns installed equipment, grants,
+and loadout integration. Control changes preserve ship state. `PlayerItemState` is removed.
+`ShipRuntime` replaces `ShipGameplayState`; `ShipStatState` exposes effective values while
+`ResourcePool` only maintains current/capacity invariants. Explicit power, shield, movement,
+ability admission, and effect components are staged at the simulation boundary.
+`GameplaySimulation` executes authenticated queued transfers and abilities, resource phases,
+and controlled movement. Networking authenticates and replicates protocol 9 state.
+`LocalPlayerBindings` revokes edits/targeting and rebinds UI and hotbar without transferring
+ship ownership or losing hotbar assignments. Private item baselines carry player, generation,
+ship, container, and revision identity; old binding acknowledgements and snapshots are discarded.
+
+The initial baseline passed 267 outer tests and 182 in-engine tests. Two existing warnings
+were CS0108 (`UiIcon.Size`) and NUnit2009 (`AbilityArchitectureTests`). The initial startup
+smoke reached the menu and initialized Steam. Updated test/process evidence is recorded below;
+remote multi-account Steam verification is distinct from the local host lifecycle smoke.
+
+Lifetime map: `SessionScope` registers cleanup as resources are acquired, including failed
+construction. `GameWorld` composes player inventory and ship loadouts before spawn publication,
+freezes released ships, and destroys the controlled ship on disconnect. Destruction removes
+store indexes and runtime registrations synchronously before deferred Godot deletion. UI unbind
+only removes subscriptions/edit permissions. Intended changes are ship-owned equipment/grants,
+control-scoped item commands, and complete installed-state teardown; gameplay formulas,
+spawn-only initialization, host authority, and movement reconciliation are preserved.
 
 Date: 2026-11-12.
 
@@ -127,10 +152,10 @@ Keep configuration/stat revisions separate from current-resource revisions. Only
 
 ### 1 Establish the regression baseline and ownership boundaries
 
-- [ ] Record the current build/test baseline and existing failures without treating historical plan counts as current results.
-- [ ] Map creation, binding, unbinding, destruction, and disposal through `GameSessionFactory`, `GameWorld`, `PlayerSession`, `PlayerItemState`, and `SessionScope`.
-- [ ] Add focused regression cases for current resource arithmetic, spawn-only initialization, source lifetime, and the new ship-switch ownership contract in the increment that changes it. Avoid maintaining a permanently failing intermediate branch.
-- [ ] Record the intended behavior changes: equipment/grants stay on ships, item commands acquire control identity, and installed state has complete teardown. Preserve all other gameplay behavior.
+- [x] Record the current build/test baseline and existing failures without treating historical plan counts as current results.
+- [x] Map creation, binding, unbinding, destruction, and disposal through `GameSessionFactory`, `GameWorld`, `PlayerSession`, `PlayerItemState`, and `SessionScope`.
+- [x] Add focused regression cases for current resource arithmetic, spawn-only initialization, source lifetime, and the new ship-switch ownership contract in the increment that changes it. Avoid maintaining a permanently failing intermediate branch.
+- [x] Record the intended behavior changes: equipment/grants stay on ships, item commands acquire control identity, and installed state has complete teardown. Preserve all other gameplay behavior.
 
 Acceptance: the migration can distinguish intended ownership changes from regressions. Relevant existing suites include `EquipmentGrantLifecycleTests`, `EquipmentGrantSwapTests`, `EquipmentResourceTests`, `AfterburnerResourceTests`, `ResourcePoolTests`, `ShipSystem/PlayerSpawningTests`, and `NetworkSystem/WorldTopologyTests`.
 
@@ -138,17 +163,17 @@ Acceptance: the migration can distinguish intended ownership changes from regres
 
 This is one coordinated feature slice. Do not land ship-owned equipment with the old player-relative transfer protocol still enabled.
 
-- [ ] Construct one session `ItemStore`; inject it into player inventory and ship equipment. Add explicit container removal that removes associated item/location indexes under a defined destruction operation. A view unbind must never destroy an authoritative container.
-- [ ] Give `PlayerSession` its personal inventory and each ship its equipment. Extract ship-owned loadout integration from `PlayerItemState`; remove the old control-following stat/grant bridge when callers migrate.
-- [ ] Prepare candidate item, loadout, grant, stat, and resource changes before committing an equipment transaction. Currently loadout validation runs in an equipment-change subscriber after item commit; replace that ordering. A rejected combined loadout must leave item identities, both container revisions, grants, stats, and resources unchanged. Publish observers only after the coherent commit; an observer exception remains a programming error and must not be reported as a rejected or rolled-back transaction.
-- [ ] Let `EquipmentController` accept validated slot definitions. Pass existing defaults through ship composition initially; retain current slot keys and category multiplicity rules. Do not add a ship schema redesign just to inject the existing layout.
-- [ ] Move starter loadout creation from `NetworkManager.Items` to gameplay spawning/composition. Resolve and initialize it once before exposing the ship as ready. Creating an explicitly bare ship remains supported.
-- [ ] Rebind local inventory/equipment UI, transfer service, hotbar availability, and targeting through one disposable local binding scope. Revoke edit tokens and cancel drag/targeting first; preserve player hotbar assignments while resolving equipment slots against the new ship. Cache keys include ship/container identity or binding generation, not revisions alone.
-- [ ] Handle `UiCanvas.BindInventory` clearing hotbar bindings. Update fixed references in `PlayerController`, `ItemHotbarController`, `InventoryEquipmentTransferService`, and `AbilityTargetingController`; do not leave any subscriber on the previous ship.
-- [ ] Extend equipment-sensitive transfer commands with controlled ship identity and control generation. Resolve permitted containers on the host from the authenticated player; never grant access merely because a client supplied a valid container ID. Reject outdated commands at execution time.
-- [ ] Change item snapshots to carry explicit ownership/container scope and revision identity. Generalize `ItemStore.Confirm` to validate and atomically apply a bounded batch of affected containers. Duplicate identities across retained containers and equal-revision conflicting payloads must be rejected without partial mutation.
-- [ ] On client control loss, evict the old private equipment detail replica while retaining public confirmed ship gameplay. On new control, install a matching equipment baseline before enabling item edits or equipment abilities. Do not compare revisions from different containers. Discard delayed old-binding snapshots and acknowledgements.
-- [ ] Preserve owner-only personal inventory and controlled-ship equipment detail visibility. Update join/recovery barriers, protocol compatibility, and codecs with the ownership change. Remove `_playerItems` and `LocalItems` as gameplay owners; transport may retain publication/request bookkeeping keyed by identity.
+- [x] Construct one session `ItemStore`; inject it into player inventory and ship equipment. Add explicit container removal that removes associated item/location indexes under a defined destruction operation. A view unbind must never destroy an authoritative container.
+- [x] Give `PlayerSession` its personal inventory and each ship its equipment. Extract ship-owned loadout integration from `PlayerItemState`; remove the old control-following stat/grant bridge when callers migrate.
+- [x] Prepare candidate item, loadout, grant, stat, and resource changes before committing an equipment transaction. Currently loadout validation runs in an equipment-change subscriber after item commit; replace that ordering. A rejected combined loadout must leave item identities, both container revisions, grants, stats, and resources unchanged. Publish observers only after the coherent commit; an observer exception remains a programming error and must not be reported as a rejected or rolled-back transaction.
+- [x] Let `EquipmentController` accept validated slot definitions. Pass existing defaults through ship composition initially; retain current slot keys and category multiplicity rules. Do not add a ship schema redesign just to inject the existing layout.
+- [x] Move starter loadout creation from `NetworkManager.Items` to gameplay spawning/composition. Resolve and initialize it once before exposing the ship as ready. Creating an explicitly bare ship remains supported.
+- [x] Rebind local inventory/equipment UI, transfer service, hotbar availability, and targeting through one disposable local binding scope. Revoke edit tokens and cancel drag/targeting first; preserve player hotbar assignments while resolving equipment slots against the new ship. Cache keys include ship/container identity or binding generation, not revisions alone.
+- [x] Handle `UiCanvas.BindInventory` clearing hotbar bindings. Update fixed references in `PlayerController`, `ItemHotbarController`, `InventoryEquipmentTransferService`, and `AbilityTargetingController`; do not leave any subscriber on the previous ship.
+- [x] Extend equipment-sensitive transfer commands with controlled ship identity and control generation. Resolve permitted containers on the host from the authenticated player; never grant access merely because a client supplied a valid container ID. Reject outdated commands at execution time.
+- [x] Change item snapshots to carry explicit ownership/container scope and revision identity. Generalize `ItemStore.Confirm` to validate and atomically apply a bounded batch of affected containers. Duplicate identities across retained containers and equal-revision conflicting payloads must be rejected without partial mutation.
+- [x] On client control loss, evict the old private equipment detail replica while retaining public confirmed ship gameplay. On new control, install a matching equipment baseline before enabling item edits or equipment abilities. Do not compare revisions from different containers. Discard delayed old-binding snapshots and acknowledgements.
+- [x] Preserve owner-only personal inventory and controlled-ship equipment detail visibility. Update join/recovery barriers, protocol compatibility, and codecs with the ownership change. Remove `_playerItems` and `LocalItems` as gameplay owners; transport may retain publication/request bookkeeping keyed by identity.
 
 Primary files: `Items/ItemStore.cs`, `Items/PlayerItemState.cs`, inventory/equipment controllers, `World/PlayerSession.cs`, `World/GameWorld.cs`, `ShipSystem/ShipFactory.cs`, `GamePlaySystem/GameSessionFactory.cs`, `NetworkSystem/NetworkManager.Items.cs`, `NetworkSystem/ItemSnapshotCodec.cs`, transfer requests, hotbar, targeting, and UI bindings.
 
@@ -158,12 +183,12 @@ Acceptance: two players swap differently equipped ships without moving items, gr
 
 Depends on increment 2.
 
-- [ ] Extract `ShipStatState` and a typed effective stat view; distinguish equipment inputs from effective values. Keep `EquipmentStatCalculator` as a pure input/calculation helper if useful.
-- [ ] Move supported timed shield modifiers out of `ResourcePool` into the shared contribution store. Migrate equipment, ship flats, and effects without introducing an intermediate clamp or double-applying percentages.
-- [ ] Resolve and validate proposed stat changes before publishing them. Update resource capacities through production APIs preserving current amounts and continuity metadata.
-- [ ] Make the ship-facing stat view and resource capacity agree. Update HUD and gameplay consumers to use the intended effective or operational view rather than reconstructing values.
-- [ ] Remove the split `ShieldFlatModifier` transport interpretation when the effective snapshot contract replaces it. Update codec validation and compatibility in the same increment; clients install confirmed results without resolving modifiers again.
-- [ ] Resolve only when inputs change. Retain separate movement and gameplay revisions, and avoid allocating collections on unchanged per-step reads.
+- [x] Extract `ShipStatState` and a typed effective stat view; distinguish equipment inputs from effective values. Keep `EquipmentStatCalculator` as a pure input/calculation helper if useful.
+- [x] Move supported timed shield modifiers out of `ResourcePool` into the shared contribution store. Migrate equipment, ship flats, and effects without introducing an intermediate clamp or double-applying percentages.
+- [x] Resolve and validate proposed stat changes before publishing them. Update resource capacities through production APIs preserving current amounts and continuity metadata.
+- [x] Make the ship-facing stat view and resource capacity agree. Update HUD and gameplay consumers to use the intended effective or operational view rather than reconstructing values.
+- [x] Remove the split `ShieldFlatModifier` transport interpretation when the effective snapshot contract replaces it. Update codec validation and compatibility in the same increment; clients install confirmed results without resolving modifiers again.
+- [x] Resolve only when inputs change. Retain separate movement and gameplay revisions, and avoid allocating collections on unchanged per-step reads.
 
 Primary files: `StatSystem/EquipmentStatCalculator.cs`, `ResolvedShipStats.cs`, `StatValueCalculator.cs`, `GamePlaySystem/ResourcePool.cs`, `ShipGameplayState.cs`, `AbilitySystem/AbilityRuntime.cs`, `AbilityGrants.cs`, `NetworkSystem/GameplaySnapshotCodec.cs`, and `UiSystem/HudSystem/PlayerStatsPanel.cs`.
 
@@ -173,13 +198,13 @@ Acceptance: equipment and effect contributions produce the same effective result
 
 Depends on increment 3.
 
-- [ ] Introduce a ship runtime aggregate owning stats, resources, effect state, faction, and explicitly attached components. Migrate `ShipGameplayState` behind this aggregate, then remove its old implementation or retain only a single-state forwarding facade until its last consumer moves.
-- [ ] Extract power and shield stepping into cohesive systems. Keep ability definitions/execution session-owned and grants/effect instances ship-owned. Extract effect admission/expiry from the aggregate without broadening authored ability support.
-- [ ] Extract the movement motor from `ShipController` while retaining `CharacterBody2D` collision execution and `ShipPresentation` as Godot adapters. Preserve `MovementPhysics` formulas and typed movement configuration.
-- [ ] Implement validated attach, detach, failure rollback, and idempotent disposal. Track attachment-owned registrations explicitly. Empty/absent capability reads return a deliberate unavailable state; callers must not require an artificial engine or shield to exist.
-- [ ] Define each component's dependencies and phase in composition. A power availability change disables consumers; component removal unregisters its work. Preserve temporal metadata in ship state across component replacement.
-- [ ] Route gameplay mutations through the ship runtime's commit boundary. Snapshot application installs confirmed state without executing lifecycle side effects that grant resources or apply modifiers twice.
-- [ ] Extend versioned gameplay snapshots and validation to include runtime-component presence independently of installed equipment. Update effective availability and ability admission checks, join/recovery baselines, and movement sampling together. A detached power/shield component must have the same observable availability on the host and every client.
+- [x] Introduce a ship runtime aggregate owning stats, resources, effect state, faction, and explicitly attached components. Migrate `ShipGameplayState` behind this aggregate, then remove its old implementation or retain only a single-state forwarding facade until its last consumer moves.
+- [x] Extract power and shield stepping into cohesive systems. Keep ability definitions/execution session-owned and grants/effect instances ship-owned. Extract effect admission/expiry from the aggregate without broadening authored ability support.
+- [x] Extract the movement motor from `ShipController` while retaining `CharacterBody2D` collision execution and `ShipPresentation` as Godot adapters. Preserve `MovementPhysics` formulas and typed movement configuration.
+- [x] Implement validated attach, detach, failure rollback, and idempotent disposal. Track attachment-owned registrations explicitly. Empty/absent capability reads return a deliberate unavailable state; callers must not require an artificial engine or shield to exist.
+- [x] Define each component's dependencies and phase in composition. A power availability change disables consumers; component removal unregisters its work. Preserve temporal metadata in ship state across component replacement.
+- [x] Route gameplay mutations through the ship runtime's commit boundary. Snapshot application installs confirmed state without executing lifecycle side effects that grant resources or apply modifiers twice.
+- [x] Extend versioned gameplay snapshots and validation to include runtime-component presence independently of installed equipment. Update effective availability and ability admission checks, join/recovery baselines, and movement sampling together. A detached power/shield component must have the same observable availability on the host and every client.
 
 Acceptance: attach/remove/reinstall engine, power, shield, and ability components independently; verify disabled behavior and dependency handling. Failed attachment leaves state unchanged. Repeated removal does not throw, tick, publish phantom revisions, or retain listeners. Test detach through an effect deadline and reattach: no expired contribution returns. Confirm late-joining clients see detached capabilities correctly even with hardware and stored resources present. Ship destruction cleans every source and subscription. Battery/generator replacement and effect lifetime rules continue to pass.
 
@@ -187,11 +212,11 @@ Acceptance: attach/remove/reinstall engine, power, shield, and ability component
 
 Depends on increment 4. Move admission of configuration changes to the step boundary as part of this increment if not already required by increment 2.
 
-- [ ] Extract `GameplaySimulation` with the explicit phase order above and bounded command queues. Move `AdvanceGameplay` logic into it and inject it through `GameSessionFactory`.
-- [ ] Keep RPC/session authentication, sender rate limits, transport responses, readiness, and publication in networking. Domain validation and execution use the current player/ship aggregates; `AbilityCommandProcessor` no longer needs a second player-item dictionary.
-- [ ] Have `SynchronizationCoordinator` remain the sole fixed-clock caller. It supplies accepted input and calls gameplay phases exactly once, then invokes publication after the completed step. Avoid separate component `_PhysicsProcess` clocks.
-- [ ] Keep client prediction on the movement-only path. Update `MovementStateAdapter`, snapshot application, and prediction consumers to the new ship accessors without merging authoritative, predicted, and presented state.
-- [ ] Verify control-loss, despawn, and stop paths clear queued commands and binding-specific histories before disposing their targets.
+- [x] Extract `GameplaySimulation` with the explicit phase order above and bounded command queues. Move `AdvanceGameplay` logic into it and inject it through `GameSessionFactory`.
+- [x] Keep RPC/session authentication, sender rate limits, transport responses, readiness, and publication in networking. Domain validation and execution use the current player/ship aggregates; `AbilityCommandProcessor` no longer needs a second player-item dictionary.
+- [x] Have `SynchronizationCoordinator` remain the sole fixed-clock caller. It supplies accepted input and calls gameplay phases exactly once, then invokes publication after the completed step. Avoid separate component `_PhysicsProcess` clocks.
+- [x] Keep client prediction on the movement-only path. Update `MovementStateAdapter`, snapshot application, and prediction consumers to the new ship accessors without merging authoritative, predicted, and presented state.
+- [x] Verify control-loss, despawn, and stop paths clear queued commands and binding-specific histories before disposing their targets.
 
 Acceptance: offline/domain-driven gameplay checks execute without constructing `NetworkManager`; transport integration retains exactly-once resource advancement, expiry-before-activation, and power-before-movement. Configuration changes rebase prediction correctly. Uncontrolled ships do not begin moving as a side effect of iterating runtime components.
 
@@ -199,10 +224,10 @@ Acceptance: offline/domain-driven gameplay checks execute without constructing `
 
 Depends on increments 1 through 5.
 
-- [ ] Remove obsolete `PlayerItemState` ownership, old forwarding APIs, duplicate stat storage, and dead subscriptions after all callers have moved. Avoid retaining both old and new implementations as permanent alternatives.
-- [ ] Align namespaces and directories; split affected multi-type files where required by `AGENTS.md`. Use semantic IDE refactoring for declaration/reference changes. Keep comments useful, use straightforward loops, and preserve existing user changes.
-- [ ] Update architecture and gameplay documentation to describe the implemented boundaries and current afterburner demand. Mark this plan complete only with implementation and verification evidence.
-- [ ] Run integrated behavior, network, restart, and performance checks below. Update process fixtures that currently inject instrumentation by matching source text; a successful fixture launch alone must not count as evidence that the instrumentation still ran.
+- [x] Remove obsolete `PlayerItemState` ownership, old forwarding APIs, duplicate stat storage, and dead subscriptions after all callers have moved. Avoid retaining both old and new implementations as permanent alternatives.
+- [x] Align namespaces and directories; split affected multi-type files where required by `AGENTS.md`. Use semantic IDE refactoring for declaration/reference changes. Keep comments useful, use straightforward loops, and preserve existing user changes.
+- [x] Update architecture and gameplay documentation to describe the implemented boundaries and current afterburner demand. Mark this plan complete only with implementation and verification evidence.
+- [x] Run integrated behavior, network, restart, and performance checks below. Update process fixtures that currently inject instrumentation by matching source text; a successful fixture launch alone must not count as evidence that the instrumentation still ran.
 
 Acceptance: all consumers use the new ownership model, no old bridge remains, relevant regression suites pass, and lifecycle/network evidence demonstrates the required behavior. Any unavailable transport verification is explicitly recorded as outstanding rather than reported as passed.
 
@@ -241,3 +266,128 @@ Completion means a new ship capability can be added through explicit composition
 | Movement-affecting abilities | Stat contributions plus a proven effective-tick transition/replay contract; the current rebase policy is not a general effect-history implementation |
 
 These features are not completion requirements for the cleanup and must not be implemented merely to demonstrate abstraction.
+
+## Implementation verification evidence
+
+The integrated suite passes 272 outer tests and 199 in-engine tests with zero failures.
+The explicit game build and final test run after the last allocation adjustment pass.
+The fresh Godot XML reports 199 passed, zero failed. `git diff --check` passes.
+The new regression cases cover two-player ownership swaps, atomic invalid-loadout rejection,
+retained item identity collisions and equal-revision conflicts, private baseline scope, failed
+startup/restart, same-revision hotbar rebinding/edit revocation, queued command generation checks,
+component detach/reattach, expiry during processor absence, and effective snapshot validation.
+
+The controlled transfer microbenchmark uses 400 transfers and inventories with 128 items, with
+ordinary automatic GC enabled. It compares isolated versus shared store costs in the updated
+implementation; it is not a historical executable comparison:
+
+| Participants | Store | Total time (ms) | Allocated bytes | Gen 0 collections |
+| --- | --- | ---: | ---: | ---: |
+| 5 | Isolated | 14.059 | 8,195,712 | 1 |
+| 5 | Shared | 13.470 | 24,323,712 | 1 |
+| 10 | Isolated | 8.502 | 8,195,712 | 1 |
+| 10 | Shared | 16.119 | 38,813,312 | 2 |
+
+Shared dictionary copies increase transaction allocations. At ten participants this measured
+about 40 microseconds per committed transfer. The transaction implementation is retained;
+this is a measured cost, not a claim of allocation-free transfers.
+
+### Functional multiplayer runs
+
+Each run uses the normal game startup in separate Godot processes with held movement,
+equipment/resource transitions, all five runtime-component detach/reattach cycles, and a
+two-player ship swap and restoration. Assertions check that scenario and metric injection
+actually executes. Impairment uses the existing seeded delivery proxy. Every successful run
+below exited zero and converged. Source hashes and staging times are recorded in the logs.
+The host scenario lasts 89 seconds; late clients have shorter lifetimes.
+
+| Participants / delivery | Converged observations | Host mean / max step (ms) | Mean publication interval (ms) | Movement bytes | Host allocated MB | GC 0/1/2 | GC pauses (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| 3 normal | 617 | 0.1435 / 36.6498 | 33.2871 | 358 | 68.87 | 4/2/1 | 67.09 |
+| 5 normal | 1,675 | 0.1648 / 14.1164 | 33.2906 | 580 | 94.27 | 5/4/2 | 58.38 |
+| 5 impaired | 1,670 | 0.1512 / 13.0889 | 33.2942 | 580 | 93.74 | 5/4/2 | 61.77 |
+| 10 normal | 6,657 | 0.2490 / 16.0283 | 33.2878 | 1,135 | 149.77 | 8/7/2 | 84.61 |
+| 10 impaired | 6,635 | 0.2487 / 16.4173 | 33.2903 | 1,135 | 148.64 | 8/7/2 | 86.51 |
+
+Functional timing includes some concurrent managed build/test activity; use the separate
+uncontended common-workload comparison for before/after performance. Allocations include
+verification, logging, UI, and networking, not just domain simulation. Automatic GC is retained.
+The 1,400-byte movement packet limit is unchanged. Input was extended from 45 to 65 seconds
+in the later functional scenarios to cover component transitions as well as hardware changes.
+
+Evidence: [3 normal](evidence/cleanup-equipment-resources-enet-3-moving.txt),
+[5 normal](evidence/cleanup-equipment-resources-enet-5-moving.txt),
+[5 impaired](evidence/cleanup-equipment-resources-enet-5-impaired-moving.txt),
+[10 normal](evidence/cleanup-equipment-resources-enet-10-moving.txt),
+[10 impaired](evidence/cleanup-equipment-resources-enet-10-impaired-moving.txt).
+The first ten-player normal attempt found a fixture race: a target chosen near maximum range
+moved outside range before host admission. The host correctly rejected it. The fixture now
+uses an inner safety margin, applied equally to the common-workload comparison; production
+range validation was not relaxed. The [failed attempt](evidence/cleanup-equipment-resources-enet-10-moving-fixture-range-failure.txt)
+is retained separately from the successful rerun.
+
+### Same-workload before/after comparison
+
+The runner restores the original `HEAD` source into an isolated staging copy for the baseline,
+retaining materialized Git LFS native/assets rather than substituting archived pointer text.
+`--comparison-workload` uses the same original scenario, target safety margin, held input until
+45 seconds, participant count, and 89-second host duration on the updated implementation.
+New component/swap scenarios are disabled only in these comparison runs. Builds/tests were
+paused during the four measurements. Each run passed and executed 5,340 host steps.
+
+| Participants | Version | Host mean / max step (ms) | Publication interval (ms) | Movement / gameplay bytes | Host allocated MB | GC 0/1/2 | GC pauses (ms) |
+| --- | --- | ---: | ---: | --- | ---: | --- | ---: |
+| 5 | Before | 0.1344 / 11.6344 | 33.2884 | 580 / 1,828 | 81.56 | 4/3/2 | 54.626 |
+| 5 | After | 0.1443 / 15.6064 | 33.2863 | 580 / 1,828 | 92.48 | 5/4/2 | 53.874 |
+| 10 | Before | 0.2297 / 26.2633 | 33.2889 | 1,135 / 3,648 | 136.18 | 8/7/2 | 84.270 |
+| 10 | After | 0.2444 / 16.8356 | 33.2883 | 1,135 / 3,648 | 153.20 | 9/7/2 | 90.883 |
+
+These single-run measurements show modest mean-time and allocation increases, stable publication
+cadence, and unchanged packet sizes. Maxima vary with scheduling and automatic GC; the result
+is not a claim of zero pauses or a statistically established speedup.
+Evidence: [before 5](evidence/baseline-equipment-resources-enet-5-moving.txt),
+[after 5](evidence/comparison-equipment-resources-enet-5-moving.txt),
+[before 10](evidence/baseline-equipment-resources-enet-10-moving.txt),
+[after 10](evidence/comparison-equipment-resources-enet-10-moving.txt).
+
+### Steam lifecycle
+
+The [GodotSteam host smoke](evidence/cleanup-steam-host.txt) created a real lobby, entered the
+game, simulated 840 physics steps, and shut down cleanly with exit code 0. Shield was 100/100,
+energy 28/100, and the one-player movement packet was 136 bytes. This verifies the local
+single-account host lifecycle. Actual remote multi-account Steam peers were not exercised;
+that transport verification remains outstanding, distinct from the passing multi-process ENet runs.
+
+### Late join during detached power, downtime and drain
+
+The additional [three-player late-join run](evidence/cleanup-detached-latejoin-equipment-resources-enet-3-moving.txt)
+passed with all three processes exiting zero and 615 observations across 232 entity revisions
+converging. At 11 seconds the host detached power from existing ships, emptied one shield to
+start its absolute downtime, and left another shield draining without power. The late client
+joined at 12 seconds. Every process positively asserted detached power with future downtime,
+a decreasing positive shield on the other ship, and later restoration of the same entity.
+The late client observed detached state at tick 673 with deadline 840 and restoration at tick
+962. The run also completed the ordinary ability/resource checks, all ten component transition
+stages, and both ownership swaps. This is actual process evidence in addition to codec tests.
+
+Reproduction commands (using the configured Godot .NET/GodotSteam executable):
+
+```text
+dotnet build sMPGWM.Game/sMPGWM.csproj
+dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj
+python tools/run_shield_slice.py --players 3 --movement
+python tools/run_shield_slice.py --players 5 --movement
+python tools/run_shield_slice.py --players 5 --movement --impaired
+python tools/run_shield_slice.py --players 10 --movement
+python tools/run_shield_slice.py --players 10 --movement --impaired
+python tools/run_shield_slice.py --players 5 --movement --baseline
+python tools/run_shield_slice.py --players 5 --movement --comparison-workload
+python tools/run_shield_slice.py --players 10 --movement --baseline
+python tools/run_shield_slice.py --players 10 --movement --comparison-workload
+python tools/run_shield_slice.py --steam-smoke
+python tools/run_shield_slice.py --players 3 --movement --detached-latejoin
+```
+
+The baseline option restores `HEAD`; these recorded before measurements used the pre-cleanup
+HEAD (`1076f5c114e38473672b2c4e4250c9404e2807b0`). To reproduce that historical comparison after committing this work, preserve/use that
+original revision rather than treating a later HEAD as the same baseline.

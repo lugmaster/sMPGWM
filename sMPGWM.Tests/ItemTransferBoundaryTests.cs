@@ -10,7 +10,7 @@ public sealed class ItemTransferBoundaryTests // TEST-SUPPORT: TRANSFER-BOUNDARY
     [Test] // TEST-SUPPORT: TRANSFER-BOUNDARY-007 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
     public void SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries() // TEST-SUPPORT: TRANSFER-BOUNDARY-008 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
     {
-        using var items = new PlayerItemState(); // TEST-SUPPORT: TRANSFER-BOUNDARY-009 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
+        using var items = new ShipItemTestContext(); // TEST-SUPPORT: TRANSFER-BOUNDARY-009 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
         using var transfers = new InventoryEquipmentTransferService(items.Inventory, items.Equipment); // TEST-SUPPORT: TRANSFER-BOUNDARY-010 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
         Assert.That(items.Store.CreateItems(items.Inventory.Container, "mock_standard_shield_generator", 1), // TEST-SUPPORT: TRANSFER-BOUNDARY-011 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
             Is.EqualTo(InventoryResult.Success)); // TEST-SUPPORT: TRANSFER-BOUNDARY-012 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries

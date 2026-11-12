@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.Util.UiComponents;
+using sMPGWM.Scripts.StatSystem;
 
 namespace sMPGWM.Scripts.Items;
 
@@ -140,6 +141,7 @@ public static class ItemRegistry
                 BehaviourGrants = grants.AsReadOnly()
             };
             ValidateStacking(definition.CanStack, definition.StackLimit);
+            EquipmentStatCalculator.Precompile(definition);
             definitions.Add(definition.Id, definition);
         }
         return definitions;

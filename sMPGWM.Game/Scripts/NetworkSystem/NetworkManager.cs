@@ -128,7 +128,6 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             try
             {
                 World.ApproveSpawn(1, _startup.Player);
-                EnsurePlayerItems(1);
                 SessionReady?.Invoke();
             }
             catch (Exception error) { FailSession($"Host spawning failed: {error.Message}"); }
@@ -184,7 +183,6 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         try
         {
             World.ApproveSpawn(peer, data);
-            EnsurePlayerItems(peer);
             var snapshot = World.CaptureTopology().ToVariant();
             if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot, Synchronization!.Baseline(), GameplaySnapshot()) != Error.Ok)
             {
@@ -324,6 +322,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (Array.IndexOf(Multiplayer.GetPeers(), peer) >= 0)
             ((SceneMultiplayer)Multiplayer).DisconnectPeer(peer);
         _abilityResults.Remove(peer);
+        _simulation?.RemovePeer(peer);
         _baselineRequests.Remove(peer); _timingRequests.Remove(peer);
         RemovePlayerItems(peer);
         World.Despawn(peer);

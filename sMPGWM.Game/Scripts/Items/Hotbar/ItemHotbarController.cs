@@ -8,11 +8,13 @@ namespace sMPGWM.Scripts.Items.Hotbar;
 public sealed class ItemHotbarController : IDisposable
 {
     private readonly ItemHotbarState _state;
-    private readonly IInventoryView _inventory;
-    private readonly IEquipmentView _equipment;
+    private IInventoryView _inventory;
+    private IEquipmentView _equipment;
     private readonly IItemTransfers _transfers;
     private readonly Action<Exception>? _reportError;
     private bool _disposed;
+    public Func<bool>? EquipmentAbilitiesAvailable { get; set; }
+    private bool _cachedEquipmentAvailability;
     public Predicate<string>? SupportsAbility { private get; init; }
 
     public ItemHotbarController(IInventoryView inventory, IEquipmentView equipment, IItemTransfers transfers,
@@ -28,6 +30,31 @@ public sealed class ItemHotbarController : IDisposable
         this._equipment = equipment;
         this._transfers = transfers;
         this._reportError = reportError;
+    }
+
+    internal void InvalidateAvailability()
+    {
+        _cachedHotbarRevision = -1;
+        _availability.Clear();
+        NotifyChanged();
+    }
+
+    public void Rebind(IInventoryView inventory, IEquipmentView equipment)
+    {
+        _state.SetEditSession(0);
+        _inventory.Changed -= OnInventoryChanged;
+        _equipment.Changed -= OnEquipmentChanged;
+        _inventory = inventory;
+        _equipment = equipment;
+        if (_changed != null)
+        {
+            _inventory.Changed += OnInventoryChanged;
+            _equipment.Changed += OnEquipmentChanged;
+        }
+        _cachedInventoryRevision = -1;
+        _cachedEquipmentRevision = -1;
+        _availability.Clear();
+        NotifyChanged();
     }
 
     public void Dispose()
@@ -176,11 +203,13 @@ public sealed class ItemHotbarController : IDisposable
         if (position is < 0 or >= ItemHotbarState.PositionCount) return InvalidPosition;
         var inventorySnapshot = _inventory.Snapshot;
         var equipmentSnapshot = _equipment.Snapshot;
+        var equipmentAvailable = EquipmentAbilitiesAvailable?.Invoke() ?? true;
         // Resolve can be called without subscribers, so events alone cannot invalidate this cache.
-        if (_cachedHotbarRevision != _state.Revision || _cachedInventoryRevision != inventorySnapshot.Revision ||
+        if (_cachedEquipmentAvailability != equipmentAvailable || _cachedHotbarRevision != _state.Revision || _cachedInventoryRevision != inventorySnapshot.Revision ||
             _cachedEquipmentRevision != equipmentSnapshot.Revision)
         {
             _availability.Clear();
+            _cachedEquipmentAvailability = equipmentAvailable;
             _cachedHotbarRevision = _state.Revision;
             _cachedInventoryRevision = inventorySnapshot.Revision;
             _cachedEquipmentRevision = equipmentSnapshot.Revision;
@@ -206,7 +235,7 @@ public sealed class ItemHotbarController : IDisposable
                     foreach (var id in source.Definition.AbilityIds)
                         if (id == ability.AbilityId) { available = true; break; }
                 var definition = GameplayDefinitions.Current.Abilities.GetById(ability.AbilityId);
-                return new(source?.DefinitionId, null, definition.DisplayName, available && SupportsAbility?.Invoke(ability.AbilityId) != false);
+                return new(source?.DefinitionId, null, definition.DisplayName, available && _cachedEquipmentAvailability && SupportsAbility?.Invoke(ability.AbilityId) != false);
             case ConsumableHotbarBinding consumable:
                 long quantity = 0;
                 foreach (var entity in inventorySnapshot.Slots)

@@ -12,7 +12,7 @@ public sealed class ResourceSnapshotTests // TEST-SUPPORT: RESOURCE-SNAPSHOT-007
     public void DrainDowntimeAndMalformedStateRoundTrip() // TEST-SUPPORT: RESOURCE-SNAPSHOT-009 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
     {
         var definitions = GameplayTestData.Load(); // TEST-SUPPORT: RESOURCE-SNAPSHOT-010 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
-        var host = new ShipGameplayState(0, 0); // TEST-SUPPORT: RESOURCE-SNAPSHOT-011 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
+        var host = new ShipRuntime(0, 0); // TEST-SUPPORT: RESOURCE-SNAPSHOT-011 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
         var stats = new ResolvedShipStats(200, 300, 4, 100, 200, 10, 20, 100, 1000, 1000, 5, 10, 100, true, true, true, true, true); // TEST-SUPPORT: RESOURCE-SNAPSHOT-012 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
         host.ApplyEquipment(stats, 1); // TEST-SUPPORT: RESOURCE-SNAPSHOT-013 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
         host.InitializeResources(); // TEST-SUPPORT: RESOURCE-SNAPSHOT-014 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
@@ -23,7 +23,7 @@ public sealed class ResourceSnapshotTests // TEST-SUPPORT: RESOURCE-SNAPSHOT-007
         var rows = new Godot.Collections.Array { GameplaySnapshotCodec.Encode(entity, host) }; // TEST-SUPPORT: RESOURCE-SNAPSHOT-019 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
         Assert.That(GameplaySnapshotCodec.TryDecode(rows, definitions, out var decoded), Is.True); // TEST-SUPPORT: RESOURCE-SNAPSHOT-020 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
         var entry = decoded[0]; // TEST-SUPPORT: RESOURCE-SNAPSHOT-021 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
-        var client = new ShipGameplayState(0, 0); // TEST-SUPPORT: RESOURCE-SNAPSHOT-022 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
+        var client = new ShipRuntime(0, 0); // TEST-SUPPORT: RESOURCE-SNAPSHOT-022 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
         Assert.That(client.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions, // TEST-SUPPORT: RESOURCE-SNAPSHOT-023 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
             entry.Stats, entry.EnergyCurrent, entry.EnergyDepleted, entry.ShieldProtectionAvailable, entry.ShieldDowntimeDeadline, // TEST-SUPPORT: RESOURCE-SNAPSHOT-024 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
             entry.AuthoritativeTick, entry.ConfigurationRevision, entry.AfterburnerActive), Is.True); // TEST-SUPPORT: RESOURCE-SNAPSHOT-025 | Tests: sMPGWM.Tests.ResourceSnapshotTests.DrainDowntimeAndMalformedStateRoundTrip
@@ -60,7 +60,7 @@ public sealed class ResourceSnapshotTests // TEST-SUPPORT: RESOURCE-SNAPSHOT-007
     { // TEST-SUPPORT: AFTERBURN-SNAPSHOT-004 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         var definitions = GameplayTestData.Load(); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-005 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         var stats = new ResolvedShipStats(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 8.5, 8, 0, true, false, false, true, false) { EngineEnergyConsumption = 4 }; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-006 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-        var host = new ShipGameplayState(); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-007 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+        var host = new ShipRuntime(); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-007 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         host.ApplyEquipment(stats, 0); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-008 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         host.SetAfterburner(true); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-009 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         host.AdvanceResources(1); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-010 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
@@ -70,7 +70,7 @@ public sealed class ResourceSnapshotTests // TEST-SUPPORT: RESOURCE-SNAPSHOT-007
         Assert.That(entry.AfterburnerActive, Is.True); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-014 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         Assert.That(entry.Stats, Is.EqualTo(stats)); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-015 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         Assert.That(entry.EnergyDepleted, Is.True); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-016 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-        var client = new ShipGameplayState(); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-017 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+        var client = new ShipRuntime(); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-017 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         Assert.That(client.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions, // TEST-SUPPORT: AFTERBURN-SNAPSHOT-018 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             entry.Stats, entry.EnergyCurrent, entry.EnergyDepleted, entry.ShieldProtectionAvailable, entry.ShieldDowntimeDeadline, // TEST-SUPPORT: AFTERBURN-SNAPSHOT-019 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             entry.AuthoritativeTick, entry.ConfigurationRevision, entry.AfterburnerActive), Is.True); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-020 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
@@ -78,7 +78,7 @@ public sealed class ResourceSnapshotTests // TEST-SUPPORT: RESOURCE-SNAPSHOT-007
         Assert.That(client.EnergyConsumption, Is.EqualTo(9)); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-022 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         Assert.That(client.EnergyDepleted, Is.True); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-023 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         Assert.That(client.Stats, Is.EqualTo(stats)); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-024 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-        Assert.Throws<ArgumentException>(() => new ShipGameplayState().Confirm(entry.Revision, entry.Capacity, entry.Current, // TEST-SUPPORT: AFTERBURN-SNAPSHOT-025 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+        Assert.Throws<ArgumentException>(() => new ShipRuntime().Confirm(entry.Revision, entry.Capacity, entry.Current, // TEST-SUPPORT: AFTERBURN-SNAPSHOT-025 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             entry.Behaviours, entry.FactionId, entry.Conditions, entry.Stats, entry.EnergyCurrent, entry.EnergyDepleted, // TEST-SUPPORT: AFTERBURN-SNAPSHOT-026 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             entry.ShieldProtectionAvailable, entry.ShieldDowntimeDeadline, entry.AuthoritativeTick, entry.ConfigurationRevision, false)); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-027 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
         foreach (var mode in new[] { "flagType", "flagDemand", "demand", "negative", "nonfinite", "noEngine", "overflow", "statsLength", "rowLength" }) // TEST-SUPPORT: AFTERBURN-SNAPSHOT-028 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
@@ -87,12 +87,12 @@ public sealed class ResourceSnapshotTests // TEST-SUPPORT: RESOURCE-SNAPSHOT-007
             var values = row[7].AsFloat64Array(); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-031 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             if (mode == "flagType") row[15] = 1; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-032 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             else if (mode == "flagDemand") row[15] = false; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-033 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-            else if (mode == "demand") values[14] = 9; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-034 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-            else if (mode == "negative") values[14] = -1; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-035 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-            else if (mode == "nonfinite") values[14] = double.NaN; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-036 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-            else if (mode == "noEngine") { values[14] = 0; row[8] = 8; } // TEST-SUPPORT: AFTERBURN-SNAPSHOT-037 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-            else if (mode == "overflow") { values[11] = double.MaxValue; values[14] = double.MaxValue; } // TEST-SUPPORT: AFTERBURN-SNAPSHOT-038 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
-            else if (mode == "statsLength") values = values[..14]; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-039 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+            else if (mode == "demand") values[13] = 9; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-034 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+            else if (mode == "negative") values[13] = -1; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-035 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+            else if (mode == "nonfinite") values[13] = double.NaN; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-036 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+            else if (mode == "noEngine") { values[13] = 0; row[8] = 8; } // TEST-SUPPORT: AFTERBURN-SNAPSHOT-037 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+            else if (mode == "overflow") { values[11] = double.MaxValue; values[13] = double.MaxValue; } // TEST-SUPPORT: AFTERBURN-SNAPSHOT-038 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
+            else if (mode == "statsLength") values = values[..13]; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-039 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             else if (mode == "rowLength") row.RemoveAt(15); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-040 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             row[7] = values; // TEST-SUPPORT: AFTERBURN-SNAPSHOT-041 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues
             Assert.That(GameplaySnapshotCodec.TryDecode(new() { row }, definitions, out var rejected), Is.False, mode); // TEST-SUPPORT: AFTERBURN-SNAPSHOT-042 | Tests: sMPGWM.Tests.ResourceSnapshotTests.AfterburnerDemandAndStateRoundTripAndRejectMalformedValues

@@ -24,7 +24,7 @@ public sealed class PlayerStatsPanelTests // TEST-SUPPORT: STATS-HUD-014 | Tests
         root.AddChild(parent); // TEST-SUPPORT: STATS-HUD-020 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
         var canvas = GD.Load<PackedScene>("res://scenes/game/ui_canvas.tscn").Instantiate<UiCanvas>(); // TEST-SUPPORT: STATS-HUD-021 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
         parent.AddChild(canvas); // TEST-SUPPORT: STATS-HUD-022 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-        using var items = new PlayerItemState(); // TEST-SUPPORT: STATS-HUD-023 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+        using var items = new ShipItemTestContext(); // TEST-SUPPORT: STATS-HUD-023 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
         using var transfers = new InventoryEquipmentTransferService(items.Inventory, items.Equipment); // TEST-SUPPORT: STATS-HUD-024 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
         using var runtime = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: STATS-HUD-025 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
         var player = new PlayerController(); // TEST-SUPPORT: STATS-HUD-026 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
@@ -39,8 +39,8 @@ public sealed class PlayerStatsPanelTests // TEST-SUPPORT: STATS-HUD-014 | Tests
             world.ApproveSpawn(1, new("fighter")); // TEST-SUPPORT: STATS-HUD-034 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             var owner = world.Players[1]; // TEST-SUPPORT: STATS-HUD-035 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             var ship = owner.ControlledShip!; // TEST-SUPPORT: STATS-HUD-036 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            ship.Gameplay.ApplyEquipment(new(0, 0, 0, 0, 0, 0, 0, 100, 5000, 3000, 0, 0, 0, false, false, true, false, false), 0); // TEST-SUPPORT: STATS-HUD-EQUIP-001 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            ship.Gameplay.SetShieldCurrent(28); // TEST-SUPPORT: STATS-HUD-037 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            ship.Runtime.ApplyEquipment(new(0, 0, 0, 0, 0, 0, 0, 100, 5000, 3000, 0, 0, 0, false, false, true, false, false), 0); // TEST-SUPPORT: STATS-HUD-EQUIP-001 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            ship.Runtime.SetShieldCurrent(28); // TEST-SUPPORT: STATS-HUD-037 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             if (bindBeforeReady) panel.Bind(network); // TEST-SUPPORT: STATS-HUD-038 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             parent.AddChild(panel); // TEST-SUPPORT: STATS-HUD-039 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             if (!bindBeforeReady) panel.Bind(network); // TEST-SUPPORT: STATS-HUD-040 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
@@ -52,18 +52,18 @@ public sealed class PlayerStatsPanelTests // TEST-SUPPORT: STATS-HUD-014 | Tests
             Assert.That(progress.Value, Is.EqualTo(28)); // TEST-SUPPORT: STATS-HUD-046 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(progress.MaxValue, Is.EqualTo(100)); // TEST-SUPPORT: STATS-HUD-047 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 
-            ship.Gameplay.SetShieldCurrent(18); // TEST-SUPPORT: STATS-HUD-048 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            ship.Runtime.SetShieldCurrent(18); // TEST-SUPPORT: STATS-HUD-048 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel._Process(1d / 60); // TEST-SUPPORT: STATS-HUD-049 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(value.Text, Is.EqualTo("18/100")); // TEST-SUPPORT: STATS-HUD-050 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            ship.Gameplay.Grants.SetSource("skill:pilot", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: STATS-HUD-051 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            Assert.That(runtime.Activate("shieldCapacityBoost", new(ship.Gameplay, ship.Gameplay, 0), 1), // TEST-SUPPORT: STATS-HUD-052 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            ship.Runtime.Grants.SetSource("skill:pilot", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: STATS-HUD-051 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            Assert.That(runtime.Activate("shieldCapacityBoost", new(ship.Runtime, ship.Runtime, 0), 1), // TEST-SUPPORT: STATS-HUD-052 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
                 Is.EqualTo(AbilityActivationResult.Accepted)); // TEST-SUPPORT: STATS-HUD-053 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel._Process(1d / 60); // TEST-SUPPORT: STATS-HUD-054 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(value.Text, Is.EqualTo("18/150")); // TEST-SUPPORT: STATS-HUD-055 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(progress.MaxValue, Is.EqualTo(150)); // TEST-SUPPORT: STATS-HUD-056 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 
-            var authoritative = new ShipGameplayState(100, 40); // TEST-SUPPORT: STATS-HUD-057 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            authoritative.Confirm(20, 160, 125, Array.Empty<BehaviourInstance>()); // TEST-SUPPORT: STATS-HUD-058 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            var authoritative = new ShipRuntime(100, 40); // TEST-SUPPORT: STATS-HUD-057 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            authoritative.Confirm(20, 160, 125, Array.Empty<BehaviourInstance>(), 0, Array.Empty<string>(), authoritative.Stats with { ShieldCapacity = 160 }, 0, false, true, 0, 0, 1, false); // TEST-SUPPORT: STATS-HUD-058 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             var snapshot = new Godot.Collections.Array { GameplaySnapshotCodec.Encode(ship.EntityId, authoritative) }; // TEST-SUPPORT: STATS-HUD-059 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             var apply = typeof(NetworkManager).GetMethod("ApplyGameplay", BindingFlags.Instance | BindingFlags.NonPublic)!; // TEST-SUPPORT: STATS-HUD-060 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(apply.Invoke(network, new object[] { snapshot }), Is.True); // TEST-SUPPORT: STATS-HUD-061 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
@@ -80,12 +80,12 @@ public sealed class PlayerStatsPanelTests // TEST-SUPPORT: STATS-HUD-014 | Tests
             Assert.That(idleBytes, Is.Zero); // TEST-SUPPORT: STATS-HUD-072 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 
             var replacement = world.SpawnEntity(new(Guid.NewGuid().ToString("N"), "fighter", Vector2.Zero, 0, Vector2.Zero)); // TEST-SUPPORT: STATS-HUD-073 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            replacement.Gameplay.ApplyEquipment(new(0, 0, 0, 0, 0, 0, 0, 100, 5000, 3000, 0, 0, 0, false, false, true, false, false), 0); // TEST-SUPPORT: STATS-HUD-EQUIP-002 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            replacement.Gameplay.SetShieldCurrent(7); // TEST-SUPPORT: STATS-HUD-074 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            replacement.Runtime.ApplyEquipment(new(0, 0, 0, 0, 0, 0, 0, 100, 5000, 3000, 0, 0, 0, false, false, true, false, false), 0); // TEST-SUPPORT: STATS-HUD-EQUIP-002 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            replacement.Runtime.SetShieldCurrent(7); // TEST-SUPPORT: STATS-HUD-074 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             owner.AssignShip(replacement); // TEST-SUPPORT: STATS-HUD-075 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel._Process(1d / 60); // TEST-SUPPORT: STATS-HUD-076 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(value.Text, Is.EqualTo("7/100")); // TEST-SUPPORT: STATS-HUD-077 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            ship.Gameplay.SetShieldCurrent(3); // TEST-SUPPORT: STATS-HUD-078 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            ship.Runtime.SetShieldCurrent(3); // TEST-SUPPORT: STATS-HUD-078 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel._Process(1d / 60); // TEST-SUPPORT: STATS-HUD-079 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(value.Text, Is.EqualTo("7/100")); // TEST-SUPPORT: STATS-HUD-080 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
 
@@ -98,7 +98,7 @@ public sealed class PlayerStatsPanelTests // TEST-SUPPORT: STATS-HUD-014 | Tests
             panel._Process(1d / 60); // TEST-SUPPORT: STATS-HUD-087 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel.Bind(null); // TEST-SUPPORT: STATS-HUD-088 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(value.Text, Is.EqualTo("0/0")); // TEST-SUPPORT: STATS-HUD-089 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            replacement.Gameplay.SetShieldCurrent(9); // TEST-SUPPORT: STATS-HUD-090 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            replacement.Runtime.SetShieldCurrent(9); // TEST-SUPPORT: STATS-HUD-090 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel._Process(1d / 60); // TEST-SUPPORT: STATS-HUD-091 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             Assert.That(value.Text, Is.EqualTo("0/0")); // TEST-SUPPORT: STATS-HUD-092 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel.Bind(network); // TEST-SUPPORT: STATS-HUD-093 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
@@ -110,7 +110,7 @@ public sealed class PlayerStatsPanelTests // TEST-SUPPORT: STATS-HUD-014 | Tests
             Assert.That(value.Text, Is.EqualTo("0/0")); // TEST-SUPPORT: STATS-HUD-099 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel.Bind(network); // TEST-SUPPORT: STATS-HUD-100 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             panel.Free(); // TEST-SUPPORT: STATS-HUD-101 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
-            replacement.Gameplay.SetShieldCurrent(11); // TEST-SUPPORT: STATS-HUD-102 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
+            replacement.Runtime.SetShieldCurrent(11); // TEST-SUPPORT: STATS-HUD-102 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
             owner.AssignShip(ship); // TEST-SUPPORT: STATS-HUD-103 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal
         }
         finally // TEST-SUPPORT: STATS-HUD-104 | Tests: sMPGWM.Tests.UiSystem.PlayerStatsPanelTests.ShieldTracksBindingMutationReplicationReplacementAndDisposal

@@ -41,18 +41,19 @@ public partial class PlayerStatsPanel : PanelContainer
         if (_shield == null) return;
         var ship = _network?.World.LocalPlayer?.Participant?.ControlledShip;
         var entity = ship?.EntityId ?? "";
-        var current = ship?.Gameplay.Shield.Current ?? 0;
-        var capacity = ship?.Gameplay.Shield.Capacity ?? 0;
-        var revision = ship?.Gameplay.Revision ?? 0;
+        var current = ship?.Runtime.Shield.Current ?? 0;
+        var capacity = ship?.Stats.ShieldCapacity ?? 0;
+        var revision = ship?.Runtime.Revision ?? 0;
         if (entity == _entity && current == _current && capacity == _capacity && revision == _revision) return;
         _revision = revision;
         _entity = entity;
         _current = current;
         _capacity = capacity;
         _shield.Setup(current, capacity);
-        _energy.Setup(ship?.Gameplay.Energy.Current ?? 0, ship?.Gameplay.Energy.Capacity ?? 0);
-        var state = ship?.Gameplay;
-        _availability.Text = state?.EnergyDepleted == true ? "Power depleted — shield unprotected" :
+        _energy.Setup(ship?.Runtime.Energy.Current ?? 0, ship?.Runtime.Energy.Capacity ?? 0);
+        var state = ship?.Runtime;
+        _availability.Text = state?.Components.Power == null ? "Power unavailable - shield unprotected" :
+            state.EnergyDepleted ? "Power depleted — shield unprotected" :
             state?.ShieldProtectionAvailable == true ? "Powered — shield protective" :
             state != null && state.ShieldDowntimeDeadline > state.AuthoritativeTick ? "Powered — shield downtime" :
             "Powered — shield unavailable";

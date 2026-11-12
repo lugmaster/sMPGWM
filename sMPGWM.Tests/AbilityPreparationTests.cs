@@ -17,14 +17,14 @@ public sealed class AbilityPreparationTests // TEST-SUPPORT: PREPARATION-3 | Tes
         var separate = GameplayTestData.Load(); // TEST-SUPPORT: PREPARATION-16 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         Assert.That(separate.Abilities.TryGetPlan("shieldCapacityBoost", out var separatePlan), Is.True); // TEST-SUPPORT: PREPARATION-17 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         Assert.That(separatePlan, Is.Not.SameAs(plan)); // TEST-SUPPORT: PREPARATION-18 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
-        var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: PREPARATION-19 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
+        var state = new ShipRuntime(100, 40); // TEST-SUPPORT: PREPARATION-19 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         state.Grants.SetSource("skill", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: PREPARATION-20 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         var context = new AbilityActivationContext(state, state, 0); // TEST-SUPPORT: PREPARATION-21 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         Assert.That(first.Activate("shieldCapacityBoost", context, 100), Is.EqualTo(AbilityActivationResult.Accepted)); // TEST-SUPPORT: PREPARATION-22 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         var firstId = state.ActiveBehaviours[0].RuntimeId; // TEST-SUPPORT: PREPARATION-23 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         first.Dispose(); // TEST-SUPPORT: PREPARATION-24 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         Assert.That(first.Activate("shieldCapacityBoost", context, 100), Is.EqualTo(AbilityActivationResult.SessionEnded)); // TEST-SUPPORT: PREPARATION-25 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
-        var otherState = new ShipGameplayState(100, 40); // TEST-SUPPORT: PREPARATION-26 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
+        var otherState = new ShipRuntime(100, 40); // TEST-SUPPORT: PREPARATION-26 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         otherState.Grants.SetSource("skill", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: PREPARATION-27 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         var otherContext = new AbilityActivationContext(otherState, otherState, 0); // TEST-SUPPORT: PREPARATION-28 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent
         Assert.That(second.Activate("shieldCapacityBoost", otherContext, 200), Is.EqualTo(AbilityActivationResult.Accepted)); // TEST-SUPPORT: PREPARATION-29 | Tests: sMPGWM.Tests.AbilityPreparationTests.CataloguesOwnPlansAndSessionsRemainIndependent

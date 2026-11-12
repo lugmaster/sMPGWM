@@ -9,9 +9,12 @@ namespace sMPGWM.Scripts.NetworkSystem;
 public partial class NetworkManager
 {
     private readonly Dictionary<int, ActivationHistory> _abilityResults = new();
-    private readonly AbilityCommandProcessor _abilityQueue = new();
-    private Func<int, bool>? _abilityPeerReady;
-    private Action<int, long, AbilityActivationResult>? _abilityCompleted;
+    private GameplaySimulation? _simulation;
+    public GameplaySimulation Simulation
+    {
+        get => _simulation ??= new GameplaySimulation(World, Abilities);
+        init => _simulation = value;
+    }
     private readonly Dictionary<string, long> _publishedGameplayRevisions = new(StringComparer.Ordinal);
     private string _pendingCaster = "";
     private long _pendingGeneration;
@@ -27,7 +30,8 @@ public partial class NetworkManager
     {
         if (_stopped || Synchronization == null || !source.IsValid ||
             World.LocalPlayer?.Participant?.ControlledShip is not { } ship ||
-            (!IsHost() && _clientJoin.Phase != ClientJoinPhase.Ready)) return;
+            (!IsHost() && (_clientJoin.Phase != ClientJoinPhase.Ready ||
+                source.Kind == AbilitySourceKind.Equipment && !ItemBaselineReady))) return;
         var owner = World.LocalPlayer.Participant;
         _pendingCaster = ship.EntityId; _pendingGeneration = owner.ControlGeneration;
         var request = ++_nextRequest;
@@ -54,40 +58,24 @@ public partial class NetworkManager
         if (!_abilityResults.TryGetValue(peer, out var history)) _abilityResults.Add(peer, history = new());
         if (!history.Admit(request, Synchronization.CompletedTick, out var result))
         { ReplyAbility(peer, request, result); return; }
-        if (_abilityQueue.Count >= 32)
+        if (Simulation.AbilityCommands.Count >= 32)
         {
             history.Complete(request, AbilityActivationResult.Busy);
             ReplyAbility(peer, request, AbilityActivationResult.Busy); return;
         }
-        _abilityQueue.Enqueue((peer, request, caster, generation, target, ability, origin));
-    }
-
-    public void AdvanceGameplay(long tick)
-    {
-        if (!IsHost()) return;
-        foreach (var ship in World.Entities.Values) ship.Gameplay.Expire(tick);
-        if (_abilityQueue.Count != 0)
-            _abilityQueue.Step(tick, World, Abilities, _playerItems,
-                _abilityPeerReady ??= MovementReady, _abilityCompleted ??= CompleteAbility);
-        foreach (var ship in World.Entities.Values)
-        {
-            var input = ship.InputState;
-            ship.Gameplay.SetAfterburner(input.Afterburner && !input.Brake && input.Direction.LengthSquared() > .01f);
-            ship.Gameplay.AdvanceResources(tick);
-            ship.RefreshMovementConfiguration();
-        }
+        Simulation.AbilityCommands.Enqueue((peer, request, caster, generation, target, ability, origin));
     }
 
     public void PublishGameplay(long tick)
     {
         if (!IsHost() || tick % 2 != 0) return;
+        PublishWorldTopology();
         PublishItemChanges();
         foreach (var ship in World.Entities.Values)
-            if (!_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var revision) || revision != ship.Gameplay.Revision)
+            if (!_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var revision) || revision != ship.Runtime.Revision)
                 _gameplayDirty = true;
         if (_gameplayDirty)
         {
-            PublishWorldTopology();
             var state = GameplaySnapshot();
             foreach (var (peer, join) in _joins.Snapshot())
                 if (join.ReceivesWorld && RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"), state) != Error.Ok)
@@ -96,12 +84,12 @@ public partial class NetworkManager
                     return;
                 }
             _publishedGameplayRevisions.Clear();
-            foreach (var ship in World.Entities.Values) _publishedGameplayRevisions.Add(ship.EntityId, ship.Gameplay.Revision);
+            foreach (var ship in World.Entities.Values) _publishedGameplayRevisions.Add(ship.EntityId, ship.Runtime.Revision);
             _gameplayDirty = false;
         }
     }
 
-    private void CompleteAbility(int peer, long request, AbilityActivationResult result)
+    internal void CompleteAbility(int peer, long request, AbilityActivationResult result)
     {
         if (_abilityResults.TryGetValue(peer, out var history)) history.Complete(request, result);
         ReplyAbility(peer, request, result);
@@ -111,7 +99,7 @@ public partial class NetworkManager
     {
         var rows = new Godot.Collections.Array();
         foreach (var ship in World.Entities.Values)
-            rows.Add(GameplaySnapshotCodec.Encode(ship.EntityId, ship.Gameplay));
+            rows.Add(GameplaySnapshotCodec.Encode(ship.EntityId, ship.Runtime));
         return rows;
     }
 
@@ -120,9 +108,9 @@ public partial class NetworkManager
         if (!GameplaySnapshotCodec.TryDecode(rows, Abilities.Definitions, out var entries)) return false;
         foreach (var entry in entries)
             if (World.Entities.TryGetValue(entry.Entity, out var ship))
-                ship.Gameplay.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions,
+                ship.Runtime.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions,
                     entry.Stats, entry.EnergyCurrent, entry.EnergyDepleted, entry.ShieldProtectionAvailable,
-                    entry.ShieldDowntimeDeadline, entry.AuthoritativeTick, entry.ConfigurationRevision, entry.AfterburnerActive);
+                    entry.ShieldDowntimeDeadline, entry.AuthoritativeTick, entry.ConfigurationRevision, entry.AfterburnerActive, entry.Components);
         return true;
     }
 
@@ -152,7 +140,7 @@ public partial class NetworkManager
     }
     private void ClearGameplay()
     {
-        _abilityQueue.Clear(); _abilityResults.Clear(); AbilityFeedback = null;
+        _simulation?.Dispose(); _abilityResults.Clear(); AbilityFeedback = null;
         _publishedGameplayRevisions.Clear();
         Abilities?.Dispose();
     }

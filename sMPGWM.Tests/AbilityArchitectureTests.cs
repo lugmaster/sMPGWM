@@ -86,7 +86,7 @@ public sealed class AbilityArchitectureTests // TEST-SUPPORT: ABILITY-TEST-002 |
     {
         var data = GameplayTestData.Load(variants: true); // TEST-SUPPORT: ABILITY-TEST-063 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         using var runtime = new AbilityRuntime(data); // TEST-SUPPORT: ABILITY-TEST-064 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
-        var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: ABILITY-TEST-065 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
+        var state = new ShipRuntime(100, 40); // TEST-SUPPORT: ABILITY-TEST-065 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         state.Grants.SetSource("skill", new[] { "shieldCapacityBoost", "shieldAlias" }); // TEST-SUPPORT: ABILITY-TEST-066 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         state.Grants.SetSource("item:1", new[] { "shieldVariant" }); // TEST-SUPPORT: ABILITY-TEST-067 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         var context = new AbilityActivationContext(state, state, 0); // TEST-SUPPORT: ABILITY-TEST-068 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
@@ -115,7 +115,7 @@ public sealed class AbilityArchitectureTests // TEST-SUPPORT: ABILITY-TEST-002 |
         Assert.That(state.ActiveBehaviours[0].RuntimeId, Is.Not.EqualTo(first.RuntimeId)); // TEST-SUPPORT: ABILITY-TEST-091 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         Assert.That(state.ActiveBehaviours[0].Deadline, Is.EqualTo(3900)); // TEST-SUPPORT: ABILITY-TEST-092 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
 
-        var ally = new ShipGameplayState(100, 40); // TEST-SUPPORT: ABILITY-TEST-093 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
+        var ally = new ShipRuntime(100, 40); // TEST-SUPPORT: ABILITY-TEST-093 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         state.SetFaction(1); // TEST-SUPPORT: HARDEN-EXISTING-001 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         ally.SetFaction(1); // TEST-SUPPORT: HARDEN-EXISTING-002 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         Assert.That(runtime.Activate("shieldCapacityBoost", context with { Target = ally, DistanceSquared = 360000 }, 2200), Is.EqualTo(AbilityActivationResult.Accepted)); // TEST-SUPPORT: ABILITY-TEST-094 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
@@ -130,7 +130,7 @@ public sealed class AbilityArchitectureTests // TEST-SUPPORT: ABILITY-TEST-002 |
         runtime.Dispose(); // TEST-SUPPORT: ABILITY-TEST-103 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         Assert.That(runtime.Activate("shieldCapacityBoost", context, 2500), Is.EqualTo(AbilityActivationResult.SessionEnded)); // TEST-SUPPORT: ABILITY-TEST-104 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         using var nextSession = new AbilityRuntime(data); // TEST-SUPPORT: ABILITY-TEST-105 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
-        var nextState = new ShipGameplayState(100, 40); // TEST-SUPPORT: ABILITY-TEST-106 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
+        var nextState = new ShipRuntime(100, 40); // TEST-SUPPORT: ABILITY-TEST-106 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
         Assert.That(nextSession.Activate("shieldCapacityBoost", new(nextState, nextState, 0), 0), Is.EqualTo(AbilityActivationResult.AbilityNotGranted)); // TEST-SUPPORT: ABILITY-TEST-107 | Tests: sMPGWM.Tests.AbilityArchitectureTests.AbilitiesExecuteByDefinitionWithIndependentLifetime
     }
 
@@ -138,18 +138,18 @@ public sealed class AbilityArchitectureTests // TEST-SUPPORT: ABILITY-TEST-002 |
     public void UnsupportedAndUnauthorizedActivationsCannotMutateState() // TEST-SUPPORT: ABILITY-TEST-109 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
     {
         using var runtime = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: ABILITY-TEST-110 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
-        var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: ABILITY-TEST-111 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
+        var state = new ShipRuntime(100, 40); // TEST-SUPPORT: ABILITY-TEST-111 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         var context = new AbilityActivationContext(state, state, 0); // TEST-SUPPORT: ABILITY-TEST-112 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         Assert.That(runtime.Activate("shieldCapacityBoost", context, 0), Is.EqualTo(AbilityActivationResult.AbilityNotGranted)); // TEST-SUPPORT: ABILITY-TEST-113 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         Assert.That(runtime.Definitions.Abilities.IsSupported("delayedExplosion", out var reason), Is.False); // TEST-SUPPORT: ABILITY-TEST-114 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         Assert.That(reason, Does.Contain("delayedExplosion")); // TEST-SUPPORT: ABILITY-TEST-115 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         state.Grants.SetSource("fixture", new[] { "shieldCapacityBoost", "delayedExplosion" }); // TEST-SUPPORT: ABILITY-TEST-116 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         Assert.That(runtime.Activate("delayedExplosion", context, 0), Is.EqualTo(AbilityActivationResult.UnsupportedAbility)); // TEST-SUPPORT: ABILITY-TEST-117 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
-        var silenced = new ShipGameplayState(100, 40); // TEST-SUPPORT: HARDEN-EXISTING-003 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
+        var silenced = new ShipRuntime(100, 40); // TEST-SUPPORT: HARDEN-EXISTING-003 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         silenced.Grants.SetSource("fixture", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: HARDEN-EXISTING-004 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         silenced.SetCondition(runtime.Definitions.Conditions.GetById("silenced"), true); // TEST-SUPPORT: HARDEN-EXISTING-005 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         Assert.That(runtime.Activate("shieldCapacityBoost", context with { Caster = silenced }, 0), Is.EqualTo(AbilityActivationResult.BlockedByCondition)); // TEST-SUPPORT: ABILITY-TEST-118 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
-        Assert.That(runtime.Activate("shieldCapacityBoost", context with { Target = new ShipGameplayState(100, 40) }, 0), Is.EqualTo(AbilityActivationResult.TargetIsNotALivingAlly)); // TEST-SUPPORT: ABILITY-TEST-119 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
+        Assert.That(runtime.Activate("shieldCapacityBoost", context with { Target = new ShipRuntime(100, 40) }, 0), Is.EqualTo(AbilityActivationResult.TargetIsNotALivingAlly)); // TEST-SUPPORT: ABILITY-TEST-119 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         Assert.That(runtime.Activate("shieldCapacityBoost", context with { DistanceSquared = 360001 }, 0), Is.EqualTo(AbilityActivationResult.OutOfRange)); // TEST-SUPPORT: ABILITY-TEST-120 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         Assert.That(state.Revision, Is.EqualTo(1)); // TEST-SUPPORT: ABILITY-TEST-121 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState
         Assert.That(state.ActiveBehaviours, Is.Empty); // TEST-SUPPORT: ABILITY-TEST-122 | Tests: sMPGWM.Tests.AbilityArchitectureTests.UnsupportedAndUnauthorizedActivationsCannotMutateState

@@ -12,6 +12,7 @@ public partial class PlayerController : Node
 {
     public PlayerInputPolicy InputPolicy { get; } = new();
     public PlayerSession? Participant { get; private set; }
+    public event Action<PlayerSession?>? ParticipantChanged;
     public InputController Input { get; } = new() { Name = "InputController" };
     private UiCanvas _canvas = null!;
     private InventoryEquipmentTransferService _transfer = null!;
@@ -49,6 +50,7 @@ public partial class PlayerController : Node
         _camera.SetMultiplayerAuthority(participant.ControllingPeerId);
         _authorityReady = true;
         Participant = participant;
+        ParticipantChanged?.Invoke(participant);
         participant.ControlledShipChanged += ShipChanged;
         ShipChanged(null, participant.ControlledShip);
         ApplyAvailability(InputPolicy.CanControlPlayer);
@@ -59,6 +61,7 @@ public partial class PlayerController : Node
         if (Participant != null) Participant.ControlledShipChanged -= ShipChanged;
         ShipChanged(_ship, null);
         Participant = null;
+        ParticipantChanged?.Invoke(null);
         Input.SetGameplayInputEnabled(false);
         _authorityReady = false;
     }

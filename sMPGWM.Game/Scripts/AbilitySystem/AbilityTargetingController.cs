@@ -13,6 +13,7 @@ public partial class AbilityTargetingController : Node
     private readonly NetworkManager _network;
     private readonly PlayerController _player;
     private readonly UiCanvas _canvas;
+    private EquipmentController? _equipment;
     private EquipmentAbilityHotbarBinding? _binding;
     private long _source;
     private string _caster = "";
@@ -31,17 +32,26 @@ public partial class AbilityTargetingController : Node
     public override void _Ready()
     {
         _player.InputPolicy.CanControlPlayerChanged += AvailabilityChanged;
-        _network.LocalItems.Equipment.Changed += EquipmentChanged;
+
+    }
+
+    public void BindEquipment(EquipmentController? equipment)
+    {
+        Cancel();
+        if (_equipment != null) _equipment.Changed -= EquipmentChanged;
+        _equipment = equipment;
+        if (_equipment != null) _equipment.Changed += EquipmentChanged;
     }
 
     public void Begin(EquipmentAbilityHotbarBinding binding)
     {
         Cancel();
         if (!_player.Input.IsGameplayInputAvailable || _player.Participant?.ControlledShip is not { } ship) return;
-        var equipment = _network.LocalItems.Equipment;
+        var equipment = ship.Equipment;
+        if (!_network.ItemBaselineReady || !ship.Runtime.AbilityAdmissionAvailable) return;
         var slot = equipment.FindSlot(binding.SlotKey);
         if (slot < 0 || equipment.Snapshot.Slots[slot] is not { } item ||
-            !_network.LocalItems.Provides(binding.SlotKey, checked((long)item.Id.Value), binding.AbilityId) ||
+            !ship.Loadout.Provides(binding.SlotKey, checked((long)item.Id.Value), binding.AbilityId) ||
             !_network.Abilities.Definitions.Abilities.IsSupported(binding.AbilityId, out _)) return;
         _binding = binding;
         _source = checked((long)item.Id.Value);
@@ -64,7 +74,8 @@ public partial class AbilityTargetingController : Node
 
     private bool ContextValid() => _player.Input.IsGameplayInputAvailable &&
         _player.Participant?.ControlledShip?.EntityId == _caster && _player.Participant.ControlGeneration == _generation &&
-        _binding != null && _network.LocalItems.Provides(_binding.SlotKey, _source, _binding.AbilityId);
+        _binding != null && _network.ItemBaselineReady && _player.Participant.ControlledShip.Runtime.AbilityAdmissionAvailable &&
+        _player.Participant.ControlledShip.Loadout.Provides(_binding.SlotKey, _source, _binding.AbilityId);
 
     public override void _Process(double delta)
     {
@@ -95,7 +106,7 @@ public partial class AbilityTargetingController : Node
         if (target == null) { _canvas.ShowGameplayFeedback("Select a living allied ship."); return; }
         var ability = _network.Abilities.Definitions.Abilities.GetById(_binding!.AbilityId);
         var targeting = _network.Abilities.Definitions.Targeting.GetById(ability.TargetingId);
-        var context = new AbilityActivationContext(caster.Gameplay, target.Gameplay,
+        var context = new AbilityActivationContext(caster.Runtime, target.Runtime,
             caster.GlobalPosition.DistanceSquaredTo(target.GlobalPosition));
         if (AbilityEligibility.Rejection(ability, targeting, context) is { } rejection)
         { _canvas.ShowGameplayFeedback(AbilityActivationResultText.Format(rejection)); return; }
@@ -115,6 +126,6 @@ public partial class AbilityTargetingController : Node
     {
         Cancel();
         _player.InputPolicy.CanControlPlayerChanged -= AvailabilityChanged;
-        _network.LocalItems.Equipment.Changed -= EquipmentChanged;
+        BindEquipment(null);
     }
 }

@@ -2,7 +2,7 @@
 
 This is the authoring contract agreed during the effect-by-effect design review. It supersedes the active-effect shape in `Effects.md`, `EffectLayout.yml`, and `EffectDefinition_Field_Reference.md` for this increment. Those documents remain historical design input. Existing `PassiveDefinitions.yml` and `PassiveSchemas.yml` also remain legacy proposals; their old effect references are not part of this increment's executable catalogue. Migrating those passive examples requires a separate review.
 
-These files specify the next implementation increment. They do not implement ability activation, combat, projectiles, item grants, or network synchronization in C#. The existing item loader does not yet consume `AbilityIds` or `BehaviourGrants`.
+The catalogue describes both implemented and deferred mechanics. The current runtime executes only the validated shield-capacity behaviour subset; item AbilityIds, host-authoritative activation, and replication are implemented. Other authored mechanics remain unsupported.
 
 ## Files and responsibilities
 
@@ -73,7 +73,7 @@ Removal selectors combine different fields with AND; values within a classificat
 
 ## Arithmetic, blocking, and timing
 
-All percentages are fractions: 0.05 means 5%. Behaviour fractions add against the baseline before Behaviour contributions, avoiding recursive compounding. Five Infection stacks therefore contribute -25% to each affected stat. Equipment/passive stat foundations must be included in the baseline before temporary Behaviour fractions; source-bound fraction grants themselves must not recursively redefine their own baseline.
+All percentages are fractions: 0.05 means 5%. The implemented stat formula is `max(0, (baseline + sum(flats)) * (1 + sum(fractions)))`; the baseline-plus-flat stage is not clamped early. Fractions are summed, avoiding recursive compounding. Five Infection stacks therefore contribute -25% to each affected stat. Equipment/passive stat foundations must be included in the baseline before temporary Behaviour fractions; source-bound fraction grants themselves must not recursively redefine their own baseline.
 
 Resource restoration uses effective maximum at execution time. Capacity increases never fill current resources. Capacity decreases clamp current resources. Removing a capacity penalty restores capacity only. Health capacity cannot drop below 1. Fail Safe runs after mitigation and before death commits, preserves attribution, consumes only one eligible protection in stable instance order, and sets positive Health rather than briefly killing and reviving the ship. It responds to lethal damage, not explicit despawning or a scripted kill command.
 
@@ -99,24 +99,23 @@ Runtime tests remain for the implementation increment: host request deduplicatio
 ## Ability command ownership and presentation
 
 `NetworkManager` authenticates sender/session identity, deduplicates and rate-limits requests,
-delivers responses, and publishes revision changes every second physics step. Its bounded
-`AbilityCommandProcessor` queue executes commands against current control generation, equipment
+delivers responses, and publishes revision changes every second physics step. `GameplaySimulation`
+owns the bounded `AbilityCommandProcessor` queue and executes commands against current control generation, equipment
 or named grant source, target, and gameplay eligibility. Revoking a source after enqueueing
 invalidates that request even when another source still grants the same ability.
 
 `AbilityActivationResult` is retained in request history and sent as an explicitly numbered
 integer in reliable replies. Unknown values are ignored on receipt. Protocol compatibility
-is version 6. Only the UI formats outcomes as player-facing text.
+is version 9. Only the UI formats outcomes as player-facing text.
 
 Item transfer adapters share cell resolution while retaining their own session/authority checks.
 Equipment grants retain unchanged item sources, remove changed sources before slot swaps are
-installed, and clean up on ship replacement, unequip, and disposal. Full inventory snapshots
+installed, and clean up on unequip and ship destruction. Control switches preserve installed grants. Full inventory snapshots
 and transaction copies remain in place.
 
 The shield HUD compares current value and capacity each rendered frame, updates immediately
 when bound, and clears on unbind or loss of ship control. It has no gameplay event subscriptions.
-Additional resource bars are not part of this increment; a reusable binding can be introduced
-when there is a second bar to share it.
+The HUD shows shield and energy, effective capacities, and separate power/shield availability.
 
 ## Movement-affecting abilities: replay contract
 
@@ -149,3 +148,49 @@ and logging, were about 106.9 MB for the host and 66.0–70.9 MB per client; aut
 occurred normally. These measurements do not isolate snapshot/transaction cost. Steam transport
 was not exercised by this ENet check, and movement-affecting abilities still require the replay
 contract above before implementation.
+
+## Ship runtime composition (2026-11-12)
+
+`PlayerSession` owns personal inventory and references its controlled ship. Ship equipment,
+resources, grants and applied effects survive an ordinary control switch. All authoritative
+containers use the session item store; dropping a local binding does not destroy those containers.
+`ShipLoadout` validates candidate stats and prepares grants before a transfer commits.
+
+`ShipController.Runtime` is the ship-owned `ShipRuntime`. Its `EquipmentInputs` are separately
+named calculator inputs. `Stats` is the final effective view: its shield capacity is always the
+resource capacity. `ShipStatState` keeps bounded, source-owned contributions in stable order.
+The source key includes kind and runtime identity so an effect survives removal of its granting
+item. `ResourcePool` enforces current/capacity invariants and has no modifier calculation.
+Capacity increases preserve current amounts; capacity reductions clamp them.
+
+`ShipComponentCollection` explicitly composes power, shield, movement, ability admission and
+effect processing. Changes are requested with `StageComponentChange` and installed by
+`CommitConfiguration` at an authoritative step boundary. Repeated removal is harmless, unknown
+component flags are rejected, and proposed stat values are checked before staging. Component
+allocations are prepared before installation. No component has a separate Godot physics clock.
+
+Power is an optional dependency of shield and movement: those components can remain attached
+while power is absent, in a disabled operating state. Removing power stops energy advancement,
+including when energy remains stored. Removing shield stops regeneration/drain/protection,
+retaining charge and its absolute downtime deadline. Removing movement stops driven motion;
+the body adapter keeps passive collision integration and velocity. Hardware configuration and
+item grants remain installed throughout these runtime-component transitions.
+
+Ability admission and effect maintenance have separate lifetimes. Removing admission blocks
+new activations. Removing effect processing suppresses its stat contributions while preserving
+absolute effect deadlines. Maintenance expires overdue instances before reattachment can expose
+contributions. Reattachment never refills resources or reapplies spawn initialization.
+
+`GameplaySimulation` orders configuration commits and expiry, command execution, power,
+shield, then controlled-ship movement. `SynchronizationCoordinator` is the fixed clock caller;
+networking retains authentication and publication. Resources run at 60 Hz and publication at
+30 Hz. Afterburner adds 25% of configured engine demand; demand remains configured during power
+failure. Resource-only changes do not change movement configuration revisions.
+
+Gameplay snapshots contain effective values and independent runtime-component presence bits.
+Clients install these confirmed values directly. Movement samples still carry their own typed
+configuration, so prediction is independent of reliable gameplay arrival ordering.
+
+A new supported capability requires explicit composition, a defined simulation phase, its
+own contribution sources, attachment validation, removal cleanup, and snapshot validation if
+its availability affects clients. This does not enable unsupported authored ability mechanics.

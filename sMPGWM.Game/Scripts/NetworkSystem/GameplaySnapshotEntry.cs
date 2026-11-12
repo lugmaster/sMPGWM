@@ -1,4 +1,5 @@
 using sMPGWM.Scripts.AbilitySystem;
+using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.StatSystem;
 
 namespace sMPGWM.Scripts.NetworkSystem;
@@ -19,5 +20,6 @@ internal sealed record GameplaySnapshotEntry(
     long AuthoritativeTick,
     long ConfigurationRevision)
 {
+    public ShipComponentKind Components { get; init; } = ShipComponentKind.All;
     public bool AfterburnerActive { get; init; }
 }

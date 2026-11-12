@@ -4,8 +4,6 @@ using sMPGWM.Scripts.Util;
 
 namespace sMPGWM.Scripts.Items;
 
-public readonly record struct ItemContainerId(ulong Value);
-
 /// <summary>Storage shared by inventories, equipment and chests. Only ItemSystem may change it.</summary>
 public sealed class ItemContainer
 {
@@ -19,6 +17,8 @@ public sealed class ItemContainer
     internal Func<int, ItemDefinition, int, bool> Accepts { get; }
     internal bool Disposed { get; set; }
     public event Action? Changed;
+    internal Func<ItemEntity?[], Action?>? PrepareChange { get; set; }
+    internal Action? PublishDomainChange { get; set; }
 
     internal ItemContainer(int capacity, int growthChunk, Func<int, ItemDefinition, int, bool>? accepts)
     {
@@ -38,6 +38,16 @@ public sealed class ItemContainer
     }
 
     internal void Publish() => Changed?.Invoke();
+
+    internal void Destroy()
+    {
+        Disposed = true;
+        Entities = Array.Empty<ItemEntity?>();
+        Slots = Array.Empty<ItemEntityId?>();
+        Changed = null;
+        PrepareChange = null;
+        PublishDomainChange = null;
+    }
 
     internal void Subscribe(Action handler) => Changed += handler;
     internal void Unsubscribe(Action handler) => Changed -= handler;

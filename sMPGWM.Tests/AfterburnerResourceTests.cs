@@ -9,7 +9,7 @@ public sealed class AfterburnerResourceTests // TEST-SUPPORT: AFTERBURN-RESOURCE
     public void BatteryDrainAndRecoveryPreserveEquipmentStats() // TEST-SUPPORT: AFTERBURN-RESOURCE-007 | Tests: sMPGWM.Tests.AfterburnerResourceTests.BatteryDrainAndRecoveryPreserveEquipmentStats
     { // TEST-SUPPORT: AFTERBURN-RESOURCE-008 | Tests: sMPGWM.Tests.AfterburnerResourceTests.BatteryDrainAndRecoveryPreserveEquipmentStats
         var stats = new ResolvedShipStats(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 9, 8, 10, true, false, false, true, true) { EngineEnergyConsumption = 8 }; // TEST-SUPPORT: AFTERBURN-RESOURCE-009 | Tests: sMPGWM.Tests.AfterburnerResourceTests.BatteryDrainAndRecoveryPreserveEquipmentStats
-        var state = new ShipGameplayState(); // TEST-SUPPORT: AFTERBURN-RESOURCE-010 | Tests: sMPGWM.Tests.AfterburnerResourceTests.BatteryDrainAndRecoveryPreserveEquipmentStats
+        var state = new ShipRuntime(); // TEST-SUPPORT: AFTERBURN-RESOURCE-010 | Tests: sMPGWM.Tests.AfterburnerResourceTests.BatteryDrainAndRecoveryPreserveEquipmentStats
         state.ApplyEquipment(stats, 1); // TEST-SUPPORT: AFTERBURN-RESOURCE-011 | Tests: sMPGWM.Tests.AfterburnerResourceTests.BatteryDrainAndRecoveryPreserveEquipmentStats
         state.InitializeResources(); // TEST-SUPPORT: AFTERBURN-RESOURCE-012 | Tests: sMPGWM.Tests.AfterburnerResourceTests.BatteryDrainAndRecoveryPreserveEquipmentStats
         for (var tick = 1; tick <= 60; tick++) state.AdvanceResources(tick); // TEST-SUPPORT: AFTERBURN-RESOURCE-013 | Tests: sMPGWM.Tests.AfterburnerResourceTests.BatteryDrainAndRecoveryPreserveEquipmentStats
@@ -44,7 +44,7 @@ public sealed class AfterburnerResourceTests // TEST-SUPPORT: AFTERBURN-RESOURCE
     public void RemovingEngineClearsAfterburnerAndRejectsFurtherRequests() // TEST-SUPPORT: AFTERBURN-RESOURCE-041 | Tests: sMPGWM.Tests.AfterburnerResourceTests.RemovingEngineClearsAfterburnerAndRejectsFurtherRequests
     { // TEST-SUPPORT: AFTERBURN-RESOURCE-042 | Tests: sMPGWM.Tests.AfterburnerResourceTests.RemovingEngineClearsAfterburnerAndRejectsFurtherRequests
         var stats = new ResolvedShipStats(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 8.5, 8, 0, true, false, false, true, false) { EngineEnergyConsumption = 4 }; // TEST-SUPPORT: AFTERBURN-RESOURCE-043 | Tests: sMPGWM.Tests.AfterburnerResourceTests.RemovingEngineClearsAfterburnerAndRejectsFurtherRequests
-        var state = new ShipGameplayState(); // TEST-SUPPORT: AFTERBURN-RESOURCE-044 | Tests: sMPGWM.Tests.AfterburnerResourceTests.RemovingEngineClearsAfterburnerAndRejectsFurtherRequests
+        var state = new ShipRuntime(); // TEST-SUPPORT: AFTERBURN-RESOURCE-044 | Tests: sMPGWM.Tests.AfterburnerResourceTests.RemovingEngineClearsAfterburnerAndRejectsFurtherRequests
         state.ApplyEquipment(stats, 0); // TEST-SUPPORT: AFTERBURN-RESOURCE-045 | Tests: sMPGWM.Tests.AfterburnerResourceTests.RemovingEngineClearsAfterburnerAndRejectsFurtherRequests
         state.SetAfterburner(true); // TEST-SUPPORT: AFTERBURN-RESOURCE-046 | Tests: sMPGWM.Tests.AfterburnerResourceTests.RemovingEngineClearsAfterburnerAndRejectsFurtherRequests
         Assert.That(state.AfterburnerActive, Is.True); // TEST-SUPPORT: AFTERBURN-RESOURCE-047 | Tests: sMPGWM.Tests.AfterburnerResourceTests.RemovingEngineClearsAfterburnerAndRejectsFurtherRequests
@@ -68,7 +68,7 @@ public sealed class AfterburnerResourceTests // TEST-SUPPORT: AFTERBURN-RESOURCE
         { // TEST-SUPPORT: AFTERBURN-RESOURCE-064 | Tests: sMPGWM.Tests.AfterburnerResourceTests.InvalidEngineConsumptionIsRejected
             var invalid = baseline with { EngineEnergyConsumption = demand }; // TEST-SUPPORT: AFTERBURN-RESOURCE-065 | Tests: sMPGWM.Tests.AfterburnerResourceTests.InvalidEngineConsumptionIsRejected
             Assert.That(invalid.IsValid, Is.False); // TEST-SUPPORT: AFTERBURN-RESOURCE-066 | Tests: sMPGWM.Tests.AfterburnerResourceTests.InvalidEngineConsumptionIsRejected
-            Assert.Throws<ArgumentException>(() => new ShipGameplayState().ApplyEquipment(invalid, 0)); // TEST-SUPPORT: AFTERBURN-RESOURCE-067 | Tests: sMPGWM.Tests.AfterburnerResourceTests.InvalidEngineConsumptionIsRejected
+            Assert.Throws<ArgumentException>(() => new ShipRuntime().ApplyEquipment(invalid, 0)); // TEST-SUPPORT: AFTERBURN-RESOURCE-067 | Tests: sMPGWM.Tests.AfterburnerResourceTests.InvalidEngineConsumptionIsRejected
         } // TEST-SUPPORT: AFTERBURN-RESOURCE-068 | Tests: sMPGWM.Tests.AfterburnerResourceTests.InvalidEngineConsumptionIsRejected
         Assert.That((baseline with { HasEngine = false }).IsValid, Is.False); // TEST-SUPPORT: AFTERBURN-RESOURCE-069 | Tests: sMPGWM.Tests.AfterburnerResourceTests.InvalidEngineConsumptionIsRejected
         Assert.That((baseline with { EnergyConsumption = double.MaxValue, EngineEnergyConsumption = double.MaxValue }).IsValid, Is.False); // TEST-SUPPORT: AFTERBURN-RESOURCE-070 | Tests: sMPGWM.Tests.AfterburnerResourceTests.InvalidEngineConsumptionIsRejected
@@ -78,7 +78,7 @@ public sealed class AfterburnerResourceTests // TEST-SUPPORT: AFTERBURN-RESOURCE
     public void TogglingAtFullBatteryPublishesWithoutChangingStats() // TEST-SUPPORT: AFTERBURN-RESOURCE-073 | Tests: sMPGWM.Tests.AfterburnerResourceTests.TogglingAtFullBatteryPublishesWithoutChangingStats
     { // TEST-SUPPORT: AFTERBURN-RESOURCE-074 | Tests: sMPGWM.Tests.AfterburnerResourceTests.TogglingAtFullBatteryPublishesWithoutChangingStats
         var stats = new ResolvedShipStats(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 20, 8, 1, true, false, false, true, true) { EngineEnergyConsumption = 4 }; // TEST-SUPPORT: AFTERBURN-RESOURCE-075 | Tests: sMPGWM.Tests.AfterburnerResourceTests.TogglingAtFullBatteryPublishesWithoutChangingStats
-        var state = new ShipGameplayState(); // TEST-SUPPORT: AFTERBURN-RESOURCE-076 | Tests: sMPGWM.Tests.AfterburnerResourceTests.TogglingAtFullBatteryPublishesWithoutChangingStats
+        var state = new ShipRuntime(); // TEST-SUPPORT: AFTERBURN-RESOURCE-076 | Tests: sMPGWM.Tests.AfterburnerResourceTests.TogglingAtFullBatteryPublishesWithoutChangingStats
         state.ApplyEquipment(stats, 1); // TEST-SUPPORT: AFTERBURN-RESOURCE-077 | Tests: sMPGWM.Tests.AfterburnerResourceTests.TogglingAtFullBatteryPublishesWithoutChangingStats
         state.InitializeResources(); // TEST-SUPPORT: AFTERBURN-RESOURCE-078 | Tests: sMPGWM.Tests.AfterburnerResourceTests.TogglingAtFullBatteryPublishesWithoutChangingStats
         for (var tick = 1; tick <= 60; tick++) state.AdvanceResources(tick); // TEST-SUPPORT: AFTERBURN-RESOURCE-079 | Tests: sMPGWM.Tests.AfterburnerResourceTests.TogglingAtFullBatteryPublishesWithoutChangingStats

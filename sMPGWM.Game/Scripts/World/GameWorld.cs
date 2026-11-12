@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using sMPGWM.Scripts.Items;
+using sMPGWM.Scripts.Items.Inventory;
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.GamePlaySystem;
@@ -11,6 +13,26 @@ namespace sMPGWM.Scripts.World;
 
 public partial class GameWorld : Node
 {
+    public ItemStore Items { get; } = new();
+    public bool AuthoritativeItems { get; set; }
+    public InventorySnapshot? InitialInventory { get; set; }
+
+    public void InitializePlayerLoadout(int peer, InventorySnapshot initial)
+    {
+        var player = _controllers[peer];
+        if (player.InventoryInitialized) return;
+        foreach (var item in initial.Slots)
+            if (item != null && Items.CreateItems(player.Inventory.Container, item.DefinitionId, item.Count) != InventoryResult.Success)
+                throw new InvalidOperationException("Could not initialize personal inventory.");
+        if (player.ControlledShip is { } ship)
+        {
+            ship.Loadout.SetAuthoritative(true);
+            ship.Loadout.EquipStarterLoadout(player.Inventory);
+            ship.Loadout.InitializeResources();
+        }
+        player.InventoryInitialized = true;
+    }
+
     private readonly Dictionary<int, PlayerSession> _controllers = new();
     private readonly Dictionary<int, ShipSpawnRecord> _records = new();
     private int _spawnIndex;
@@ -26,7 +48,7 @@ public partial class GameWorld : Node
     private PlayerSession EnsureParticipant(int peer)
     {
         if (_controllers.TryGetValue(peer, out var existing)) return existing;
-        var participant = new PlayerSession { ControllingPeerId = peer };
+        var participant = new PlayerSession(Items) { ControllingPeerId = peer };
         participant.ControlledShipChanged += TrackBinding;
         _controllers.Add(peer, participant);
         if (IsInsideTree() && peer == Multiplayer.GetUniqueId()) LocalPlayer?.BindParticipant(participant);
@@ -64,14 +86,17 @@ public partial class GameWorld : Node
         ShipController? ship = null;
         try
         {
-            ship = SpawnEntity(EntitySpawnRecord.From(record));
-            ship.Gameplay.SetFaction(1);
-            participant = new PlayerSession { ControllingPeerId = record.PeerId };
+            ship = SpawnEntity(EntitySpawnRecord.From(record), announce: false);
+            ship.Runtime.SetFaction(1);
+            participant = new PlayerSession(Items) { ControllingPeerId = record.PeerId };
             participant.ControlledShipChanged += TrackBinding;
             participant.AssignShip(ship);
             ship.Restore(record.Position, record.Rotation, record.Velocity, default);
             _controllers.Add(record.PeerId, participant);
             _records.Add(record.PeerId, record);
+            if (AuthoritativeItems && InitialInventory is { } initial) InitializePlayerLoadout(record.PeerId, initial);
+            else if (AuthoritativeItems) ship.Loadout.InitializeResources();
+            EntitySpawned?.Invoke(ship);
             if (IsInsideTree() && record.PeerId == Multiplayer.GetUniqueId()) LocalPlayer?.BindParticipant(participant);
             Logger.Info($"NET spawn peer={record.PeerId} ship={record.ShipId} entity={record.EntityId}");
         }
@@ -82,8 +107,9 @@ public partial class GameWorld : Node
             {
                 participant.AssignShip(null);
                 participant.ControlledShipChanged -= TrackBinding;
+                participant.Dispose();
             }
-            if (ship != null && GodotObject.IsInstanceValid(ship)) { _entities.Remove(ship.EntityId); ship.Free(); }
+            if (ship != null && GodotObject.IsInstanceValid(ship)) { _entities.Remove(ship.EntityId); ship.Loadout.Dispose(); ship.Runtime.Dispose(); ship.Free(); }
             throw;
         }
     }
@@ -97,6 +123,7 @@ public partial class GameWorld : Node
             controller.AssignShip(null);
             if (ship != null) DestroyEntity(ship.EntityId);
             controller.ControlledShipChanged -= TrackBinding;
+            controller.Dispose();
         }
         _records.Remove(peerId);
     }
@@ -122,21 +149,27 @@ public partial class GameWorld : Node
     }
 
     /// <summary>Creates a world-owned ship without requiring a player connection.</summary>
-    public ShipController SpawnEntity(EntitySpawnRecord record)
+    public ShipController SpawnEntity(EntitySpawnRecord record) => SpawnEntity(record, announce: true);
+
+    private ShipController SpawnEntity(EntitySpawnRecord record, bool announce)
     {
         if (_entities.ContainsKey(record.EntityId))
             throw new InvalidOperationException("Duplicate entity ID.");
         var ship = ShipFactory.Create(ShipRegistry.GetById(record.ShipId), record.EntityId,
-            record.Position, record.Rotation, record.Velocity);
+            record.Position, record.Rotation, record.Velocity, Items, AuthoritativeItems);
         try
         {
             AddChild(ship);
             ship.Restore(record.Position, record.Rotation, record.Velocity, default);
             _entities.Add(record.EntityId, ship);
-            EntitySpawned?.Invoke(ship);
+            if (announce)
+            {
+                if (AuthoritativeItems) ship.Loadout.InitializeResources();
+                EntitySpawned?.Invoke(ship);
+            }
             return ship;
         }
-        catch { _entities.Remove(record.EntityId); ship.Free(); throw; }
+        catch { _entities.Remove(record.EntityId); ship.Loadout.Dispose(); ship.Runtime.Dispose(); ship.Free(); throw; }
     }
 
     public void DestroyEntity(string entity)
@@ -145,7 +178,7 @@ public partial class GameWorld : Node
         foreach (var owner in _controllers.Values)
             if (owner.ControlledShip == ship) { owner.AssignShip(null); _records.Remove(owner.ControllingPeerId); }
         _entities.Remove(entity);
-        if (GodotObject.IsInstanceValid(ship)) ship.QueueFree();
+        if (GodotObject.IsInstanceValid(ship)) { ship.Loadout.Dispose(); ship.Runtime.Dispose(); ship.QueueFree(); }
     }
 
     public WorldTopology CaptureTopology()

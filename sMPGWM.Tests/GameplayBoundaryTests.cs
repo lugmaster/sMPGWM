@@ -11,7 +11,7 @@ public sealed class GameplayBoundaryTests // TEST-SUPPORT: GAMEPLAY-BOUNDARY-006
     [Test] // TEST-SUPPORT: GAMEPLAY-BOUNDARY-007 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ResourceMutationsOwnRevisionAndPublishCommittedState
     public void ResourceMutationsOwnRevisionAndPublishCommittedState() // TEST-SUPPORT: GAMEPLAY-BOUNDARY-008 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ResourceMutationsOwnRevisionAndPublishCommittedState
     {
-        var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-009 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ResourceMutationsOwnRevisionAndPublishCommittedState
+        var state = new ShipRuntime(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-009 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ResourceMutationsOwnRevisionAndPublishCommittedState
         var initial = state.Shield; // TEST-SUPPORT: GAMEPLAY-BOUNDARY-010 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ResourceMutationsOwnRevisionAndPublishCommittedState
         var observedRevision = 0L; // TEST-SUPPORT: GAMEPLAY-BOUNDARY-011 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ResourceMutationsOwnRevisionAndPublishCommittedState
         var observedCurrent = 0d; // TEST-SUPPORT: GAMEPLAY-BOUNDARY-012 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ResourceMutationsOwnRevisionAndPublishCommittedState
@@ -34,8 +34,8 @@ public sealed class GameplayBoundaryTests // TEST-SUPPORT: GAMEPLAY-BOUNDARY-006
     public void EligibilityUsesLifeFactionAndConditions() // TEST-SUPPORT: GAMEPLAY-BOUNDARY-027 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
     {
         using var runtime = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-028 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
-        var caster = new ShipGameplayState(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-029 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
-        var target = new ShipGameplayState(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-030 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
+        var caster = new ShipRuntime(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-029 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
+        var target = new ShipRuntime(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-030 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         caster.Grants.SetSource("skill", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-031 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         caster.SetFaction(1); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-032 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
         target.SetFaction(1); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-033 | Tests: sMPGWM.Tests.GameplayBoundaryTests.EligibilityUsesLifeFactionAndConditions
@@ -65,7 +65,7 @@ public sealed class GameplayBoundaryTests // TEST-SUPPORT: GAMEPLAY-BOUNDARY-006
     public void ObserverFailureDoesNotBecomeActivationRejection() // TEST-SUPPORT: GAMEPLAY-BOUNDARY-055 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ObserverFailureDoesNotBecomeActivationRejection
     {
         using var runtime = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-056 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ObserverFailureDoesNotBecomeActivationRejection
-        var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-057 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ObserverFailureDoesNotBecomeActivationRejection
+        var state = new ShipRuntime(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-057 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ObserverFailureDoesNotBecomeActivationRejection
         state.Grants.SetSource("skill", new[] { "shieldCapacityBoost" }); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-058 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ObserverFailureDoesNotBecomeActivationRejection
         var context = new AbilityActivationContext(state, state, 0); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-059 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ObserverFailureDoesNotBecomeActivationRejection
         var failure = new InvalidOperationException("Observer failed"); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-060 | Tests: sMPGWM.Tests.GameplayBoundaryTests.ObserverFailureDoesNotBecomeActivationRejection
@@ -90,7 +90,7 @@ public sealed class GameplayBoundaryTests // TEST-SUPPORT: GAMEPLAY-BOUNDARY-006
         }); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-075 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         using var runtime = new AbilityRuntime(data); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-076 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         var ability = data.Abilities.GetById("shieldCapacityBoost"); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-077 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
-        var state = new ShipGameplayState(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-078 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
+        var state = new ShipRuntime(100, 40); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-078 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         Assert.That(AbilitySource.AllShips.IsAvailable(ability, state, null), Is.True); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-079 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         Assert.That(runtime.Activate(ability.Id, new(state, state, 0), 0), Is.EqualTo(AbilityActivationResult.Accepted)); // TEST-SUPPORT: GAMEPLAY-BOUNDARY-080 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
         var restricted = ability with { Availability = AbilityAvailability.ExampleLoadout }; // TEST-SUPPORT: GAMEPLAY-BOUNDARY-081 | Tests: sMPGWM.Tests.GameplayBoundaryTests.GrantAndGlobalSourcesDoNotRequireEquipment
