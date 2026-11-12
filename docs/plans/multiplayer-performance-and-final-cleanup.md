@@ -1,6 +1,22 @@
+## Paused at user request — 2026-11-12
+
+Bulk evidence is now in a verified local, Git-ignored ZIP. See [archive and extraction instructions](../measurements/README.md) before resuming analysis. Reports and measurement metadata remain readable; completed benchmarks do not need restarting.
+
+All benchmark processes were stopped and process inspection confirmed only the user's Godot editor remains. Do not resume automatically.
+
+- Main Release matrix: all six runs completed, all 45 peer exit codes zero. Existing summary/report still cover only the first five runs; final aggregation and validation remain open. Preserve these runs; do not repeat them merely to resume analysis.
+- Follow-ups: stopped during the first five-player restored scenario. Treat its artifacts as partial unless independently validated. Ten-player restoration, late join at both scales, moderate/stress impairment, observer on/off and Debug/development measurements remain deferred.
+- The original waiting queue had a Windows PowerShell array-count bug. Fixed its JSON array expression before replacing that waiting process; no main benchmark was restarted or duplicated.
+- Remaining analysis: aggregate the sixth main run, validate all peer artifacts/configuration/checksums/drop counts/logs, analyze the completed follow-ups when available, and finalize the report. The post-measurement test run and harness traceability/syntax checks were not performed on this resume.
+- Performance acceptance remains open: repeated equipment-burst GC-associated overruns and unexplained publication/accepted-snapshot timing gaps need attribution and later measured fixes.
+- The user subsequently authorized the audited cleanup. Implementation status and regression results are recorded in the cleanup audit; performance comparisons remain deferred. Archived measurements remain the pre-cleanup baseline.
+- Remote Steam remains deferred. Other verification work remains closed for this pass; do not reopen it.
+
 # Multiplayer performance measurements and final cleanup review
 
-Status: planned. No performance acceptance or cleanup completion is claimed by this document.
+Status: performance measurements remain paused. The user subsequently authorized implementing the audited cleanup; its changes and regression results are recorded in the [cleanup audit](../measurements/2026-11-12-full/cleanup-audit.md). Remote Steam and performance comparisons remain deferred. The other verification work remains closed for the measurement pass. See [initial evidence](../measurements/2026-11-12-final/report.md) and the archived local measurement artifacts in `docs/measurements/2026-11-12-full`.
+
+Resume instructions: [performance analysis handoff](multiplayer-performance-handoff.md). Its paused-state notice supersedes historical running-job instructions. No measurements are active; do not restart them without a new request.
 
 This is the standalone plan for the two remaining workstreams after session initialization and restored-state installation: measure multiplayer runtime behaviour, then simplify the implementation using the verified lifecycle guarantees. It includes the environment, contracts, workloads, evidence, and completion criteria needed to execute the work without another plan.
 

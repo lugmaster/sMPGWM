@@ -1,0 +1,173 @@
+using System; // TEST-SUPPORT: FPR-0001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using System.Diagnostics; // TEST-SUPPORT: FPR-0002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using System.Globalization; // TEST-SUPPORT: FPR-0003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using System.IO; // TEST-SUPPORT: FPR-0004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using System.Text.Json; // TEST-SUPPORT: FPR-0005 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using Godot; // TEST-SUPPORT: FPR-0006 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+namespace sMPGWM.Scripts.Verification; // TEST-SUPPORT: FPR-0007 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+internal static class PerformanceRecorder // TEST-SUPPORT: FPR-0008 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+{ // TEST-SUPPORT: FPR-0009 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private const int Capacity = 131072; // TEST-SUPPORT: FPR-0010 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly (long Start, long End, long Tick, long Bytes, bool Host)[] Steps = new (long, long, long, long, bool)[Capacity]; // TEST-SUPPORT: FPR-0011 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly (long Time, long Tick, int Bytes)[] Publications = new (long, long, int)[Capacity]; // TEST-SUPPORT: FPR-0012 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly (long Time, long Tick)[] Arrivals = new (long, long)[Capacity]; // TEST-SUPPORT: FPR-0013 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly (long Time, double Delta, double Process, double Physics)[] Frames = new (long, double, double, double)[Capacity]; // TEST-SUPPORT: FPR-0014 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly (long Time, long Allocated, int Gen0, int Gen1, int Gen2, double Pause, long Heap, long Committed, long Working, double Cpu, double Rtt, double Jitter)[] Samples = new (long, long, int, int, int, double, long, long, long, double, double, double)[2048]; // TEST-SUPPORT: FPR-0015 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly (long Time, string Name)[] Markers = new (long, string)[2048]; // TEST-SUPPORT: FPR-0016 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly Process CurrentProcess = Process.GetCurrentProcess(); // TEST-SUPPORT: FPR-0017 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly double InitialCpu = CurrentProcess.TotalProcessorTime.TotalMilliseconds; // TEST-SUPPORT: FPR-0201 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly long Origin = Stopwatch.GetTimestamp(); // TEST-SUPPORT: FPR-0018 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly long InitialAllocated = GC.GetTotalAllocatedBytes(false); // TEST-SUPPORT: FPR-0019 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly int InitialGen0 = GC.CollectionCount(0); // TEST-SUPPORT: FPR-0020 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly int InitialGen1 = GC.CollectionCount(1); // TEST-SUPPORT: FPR-0021 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly int InitialGen2 = GC.CollectionCount(2); // TEST-SUPPORT: FPR-0022 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly double InitialPause = GC.GetTotalPauseDuration().TotalMilliseconds; // TEST-SUPPORT: FPR-0023 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    public static readonly bool Enabled = System.Environment.GetEnvironmentVariable("PERF_COLLECT") != "0"; // TEST-SUPPORT: FPR-0024 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static int _steps, _publications, _arrivals, _frames, _samples, _markers; // TEST-SUPPORT: FPR-0025 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static long _stepAllocation, _lastSample; // TEST-SUPPORT: FPR-0026 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static double _rtt, _jitter; // TEST-SUPPORT: FPR-0027 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static int _droppedSteps, _droppedPublications, _droppedArrivals, _droppedFrames, _droppedSamples, _droppedMarkers; // TEST-SUPPORT: FPR-0028 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public static long BeginStep() // TEST-SUPPORT: FPR-0029 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0030 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (!Enabled) return 0; // TEST-SUPPORT: FPR-0031 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _stepAllocation = GC.GetAllocatedBytesForCurrentThread(); // TEST-SUPPORT: FPR-0032 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        return Stopwatch.GetTimestamp(); // TEST-SUPPORT: FPR-0033 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0034 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public static void EndStep(long start, long tick, bool host) // TEST-SUPPORT: FPR-0035 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0036 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (!Enabled) return; // TEST-SUPPORT: FPR-0037 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var end = Stopwatch.GetTimestamp(); // TEST-SUPPORT: FPR-0038 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - _stepAllocation; // TEST-SUPPORT: FPR-0039 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_steps == Capacity) { _droppedSteps++; return; } // TEST-SUPPORT: FPR-0040 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Steps[_steps++] = (start, end, tick, allocated, host); // TEST-SUPPORT: FPR-0041 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0042 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public static void Publication(long tick, int bytes) // TEST-SUPPORT: FPR-0043 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0044 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (!Enabled) return; // TEST-SUPPORT: FPR-0045 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_publications == Capacity) { _droppedPublications++; return; } // TEST-SUPPORT: FPR-0046 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Publications[_publications++] = (Stopwatch.GetTimestamp(), tick, bytes); // TEST-SUPPORT: FPR-0047 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0048 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public static void Arrival(long tick) // TEST-SUPPORT: FPR-0049 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0050 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (!Enabled) return; // TEST-SUPPORT: FPR-0051 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_arrivals == Capacity) { _droppedArrivals++; return; } // TEST-SUPPORT: FPR-0052 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Arrivals[_arrivals++] = (Stopwatch.GetTimestamp(), tick); // TEST-SUPPORT: FPR-0053 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0054 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public static void Network(double rtt, double jitter) // TEST-SUPPORT: FPR-0055 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0056 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _rtt = rtt; // TEST-SUPPORT: FPR-0057 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _jitter = jitter; // TEST-SUPPORT: FPR-0058 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0059 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public static void Mark(string name) // TEST-SUPPORT: FPR-0060 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0061 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_markers == Markers.Length) { _droppedMarkers++; return; } // TEST-SUPPORT: FPR-0062 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Markers[_markers++] = (Stopwatch.GetTimestamp(), name); // TEST-SUPPORT: FPR-0063 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0064 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public static void Frame(double delta) // TEST-SUPPORT: FPR-0065 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0066 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (!Enabled) return; // TEST-SUPPORT: FPR-0067 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var now = Stopwatch.GetTimestamp(); // TEST-SUPPORT: FPR-0068 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_frames < Capacity) // TEST-SUPPORT: FPR-0069 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            Frames[_frames++] = (now, delta, Performance.GetMonitor(Performance.Monitor.TimeProcess), Performance.GetMonitor(Performance.Monitor.TimePhysicsProcess)); // TEST-SUPPORT: FPR-0070 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        else _droppedFrames++; // TEST-SUPPORT: FPR-0071 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (now - _lastSample < Stopwatch.Frequency) return; // TEST-SUPPORT: FPR-0072 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _lastSample = now; // TEST-SUPPORT: FPR-0073 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Sample(now); // TEST-SUPPORT: FPR-0074 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0075 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private static void Sample(long now) // TEST-SUPPORT: FPR-0076 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0077 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_samples == Samples.Length) { _droppedSamples++; return; } // TEST-SUPPORT: FPR-0078 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var memory = GC.GetGCMemoryInfo(); // TEST-SUPPORT: FPR-0079 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        CurrentProcess.Refresh(); // TEST-SUPPORT: FPR-0080 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Samples[_samples++] = (now, GC.GetTotalAllocatedBytes(false), GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), // TEST-SUPPORT: FPR-0081 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            GC.GetTotalPauseDuration().TotalMilliseconds, memory.HeapSizeBytes, memory.TotalCommittedBytes, // TEST-SUPPORT: FPR-0082 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            CurrentProcess.WorkingSet64, CurrentProcess.TotalProcessorTime.TotalMilliseconds, _rtt, _jitter); // TEST-SUPPORT: FPR-0083 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0084 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private static double Seconds(long time) => (time - Origin) / (double)Stopwatch.Frequency; // TEST-SUPPORT: FPR-0085 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static double Milliseconds(long ticks) => ticks * 1000.0 / Stopwatch.Frequency; // TEST-SUPPORT: FPR-0086 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static void Row(StreamWriter writer, FormattableString row) => writer.WriteLine(row.ToString(CultureInfo.InvariantCulture)); // TEST-SUPPORT: FPR-0087 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public static void Flush(string output) // TEST-SUPPORT: FPR-0088 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: FPR-0089 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var finished = Stopwatch.GetTimestamp(); // TEST-SUPPORT: FPR-0090 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var allocated = GC.GetTotalAllocatedBytes(false) - InitialAllocated; // TEST-SUPPORT: FPR-0091 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var gen0 = GC.CollectionCount(0) - InitialGen0; // TEST-SUPPORT: FPR-0092 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var gen1 = GC.CollectionCount(1) - InitialGen1; // TEST-SUPPORT: FPR-0093 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var gen2 = GC.CollectionCount(2) - InitialGen2; // TEST-SUPPORT: FPR-0094 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var pause = GC.GetTotalPauseDuration().TotalMilliseconds - InitialPause; // TEST-SUPPORT: FPR-0095 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var cpu = CurrentProcess.TotalProcessorTime.TotalMilliseconds - InitialCpu; // TEST-SUPPORT: FPR-0202 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (Enabled) Sample(finished); // TEST-SUPPORT: FPR-0096 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Directory.CreateDirectory(output); // TEST-SUPPORT: FPR-0097 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        using (var writer = new StreamWriter(Path.Combine(output, "steps.csv"))) // TEST-SUPPORT: FPR-0098 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: FPR-0099 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            writer.WriteLine("start_s,end_s,tick,work_ms,allocated_bytes,host"); // TEST-SUPPORT: FPR-0100 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            for (var i = 0; i < _steps; i++) // TEST-SUPPORT: FPR-0101 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: FPR-0102 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                var row = Steps[i]; // TEST-SUPPORT: FPR-0103 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                Row(writer, $"{Seconds(row.Start):F9},{Seconds(row.End):F9},{row.Tick},{Milliseconds(row.End - row.Start):F6},{row.Bytes},{(row.Host ? 1 : 0)}"); // TEST-SUPPORT: FPR-0104 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: FPR-0105 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: FPR-0106 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        using (var writer = new StreamWriter(Path.Combine(output, "publications.csv"))) // TEST-SUPPORT: FPR-0107 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: FPR-0108 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            writer.WriteLine("time_s,tick,bytes,interval_ms"); // TEST-SUPPORT: FPR-0109 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            for (var i = 0; i < _publications; i++) // TEST-SUPPORT: FPR-0110 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: FPR-0111 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                var row = Publications[i]; // TEST-SUPPORT: FPR-0112 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                Row(writer, $"{Seconds(row.Time):F9},{row.Tick},{row.Bytes},{(i == 0 ? 0 : Milliseconds(row.Time - Publications[i - 1].Time)):F6}"); // TEST-SUPPORT: FPR-0113 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: FPR-0114 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: FPR-0115 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        using (var writer = new StreamWriter(Path.Combine(output, "arrivals.csv"))) // TEST-SUPPORT: FPR-0116 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: FPR-0117 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            writer.WriteLine("time_s,tick,interval_ms"); // TEST-SUPPORT: FPR-0118 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            for (var i = 0; i < _arrivals; i++) // TEST-SUPPORT: FPR-0119 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: FPR-0120 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                var row = Arrivals[i]; // TEST-SUPPORT: FPR-0121 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                Row(writer, $"{Seconds(row.Time):F9},{row.Tick},{(i == 0 ? 0 : Milliseconds(row.Time - Arrivals[i - 1].Time)):F6}"); // TEST-SUPPORT: FPR-0122 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: FPR-0123 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: FPR-0124 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        using (var writer = new StreamWriter(Path.Combine(output, "frames.csv"))) // TEST-SUPPORT: FPR-0125 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: FPR-0126 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            writer.WriteLine("time_s,delta_ms,process_work_ms,physics_work_ms"); // TEST-SUPPORT: FPR-0127 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            for (var i = 0; i < _frames; i++) // TEST-SUPPORT: FPR-0128 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: FPR-0129 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                var row = Frames[i]; // TEST-SUPPORT: FPR-0130 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                Row(writer, $"{Seconds(row.Time):F9},{row.Delta * 1000:F6},{row.Process * 1000:F6},{row.Physics * 1000:F6}"); // TEST-SUPPORT: FPR-0131 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: FPR-0132 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: FPR-0133 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        using (var writer = new StreamWriter(Path.Combine(output, "process.csv"))) // TEST-SUPPORT: FPR-0134 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: FPR-0135 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            writer.WriteLine("time_s,allocated_bytes,gen0,gen1,gen2,gc_pause_ms,heap_bytes,committed_bytes,working_set_bytes,cpu_ms,rtt_ms,jitter_ms"); // TEST-SUPPORT: FPR-0136 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            for (var i = 0; i < _samples; i++) // TEST-SUPPORT: FPR-0137 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: FPR-0138 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                var row = Samples[i]; // TEST-SUPPORT: FPR-0139 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                Row(writer, $"{Seconds(row.Time):F9},{row.Allocated},{row.Gen0},{row.Gen1},{row.Gen2},{row.Pause:F6},{row.Heap},{row.Committed},{row.Working},{row.Cpu:F6},{row.Rtt:F6},{row.Jitter:F6}"); // TEST-SUPPORT: FPR-0140 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: FPR-0141 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: FPR-0142 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        using (var writer = new StreamWriter(Path.Combine(output, "markers.csv"))) // TEST-SUPPORT: FPR-0143 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: FPR-0144 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            writer.WriteLine("time_s,name"); // TEST-SUPPORT: FPR-0145 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            for (var i = 0; i < _markers; i++) Row(writer, $"{Seconds(Markers[i].Time):F9},{Markers[i].Name}"); // TEST-SUPPORT: FPR-0146 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: FPR-0147 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        File.WriteAllText(Path.Combine(output, "recorder.json"), JsonSerializer.Serialize(new // TEST-SUPPORT: FPR-0148 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: FPR-0149 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            enabled = Enabled, durationSeconds = Seconds(finished), allocatedBytes = allocated, // TEST-SUPPORT: FPR-0150 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            cpuMs = cpu, // TEST-SUPPORT: FPR-0203 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            collections = new[] { gen0, gen1, gen2 }, totalGcPauseMs = pause, stopwatchFrequency = Stopwatch.Frequency, // TEST-SUPPORT: FPR-0151 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            steps = _steps, publications = _publications, arrivals = _arrivals, frames = _frames, samples = _samples, // TEST-SUPPORT: FPR-0152 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            dropped = new { steps = _droppedSteps, publications = _droppedPublications, arrivals = _droppedArrivals, frames = _droppedFrames, samples = _droppedSamples, markers = _droppedMarkers }, // TEST-SUPPORT: FPR-0153 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            note = "Bounded recorder; Godot work monitors may report the preceding engine frame. Heap figures update at collections. Process allocation totals include recorder 1 Hz sampling; CSV/JSON output occurs after cutoff. GC pause column is cumulative, not individual pause durations." // TEST-SUPPORT: FPR-0154 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        }, new JsonSerializerOptions { WriteIndented = true })); // TEST-SUPPORT: FPR-0155 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: FPR-0156 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+} // TEST-SUPPORT: FPR-0157 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+

@@ -15,7 +15,7 @@ public partial class ShipController : CharacterBody2D
     private ShipData _data = null!;
     private readonly MovementMotor _motor = new();
     private ShipLoadout? _loadout;
-    public ShipLoadout Loadout => _loadout ??= new ShipLoadout(this, new ItemStore(), false);
+    public ShipLoadout Loadout => _loadout ?? throw new InvalidOperationException("Ship loadout has not been configured.");
     public EquipmentController Equipment => Loadout.Equipment;
     public ResolvedShipStats Stats => Runtime.Stats;
     public ShipResources Resources => Runtime.Resources;

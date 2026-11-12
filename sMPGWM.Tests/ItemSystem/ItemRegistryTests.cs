@@ -11,7 +11,7 @@ public class ItemRegistryTests
     [Test]
     public void PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons()
     {
-        var categories = ItemRegistry.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!);
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: CLEANUP-CATEGORY-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
         var items = ItemRegistry.LoadItemDefinitions(Read("ItemDefinitions.yml", "ItemSchema.yml"), categories, _ => null!);
         Assert.That(items.Count, Is.EqualTo(19));
         Assert.That(items["mock_standard_engine"].CanStack, Is.False);
@@ -24,7 +24,7 @@ public class ItemRegistryTests
     [Test]
     public void MissingCategoryValuesAndMissingConsumableAbilitiesAreRejected()
     {
-        var categories = ItemRegistry.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!);
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: CLEANUP-CATEGORY-002 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.MissingCategoryValuesAndMissingConsumableAbilitiesAreRejected
         var items = Read("ItemDefinitions.yml", "ItemSchema.yml");
         ((JObject)items["Items"]![0]!["Values"]!).Remove("Speed");
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, categories, _ => null!));
@@ -39,7 +39,7 @@ public class ItemRegistryTests
     {
         var yaml = Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml");
         ((JArray)yaml["Categories"]!).Add(yaml["Categories"]![0]!.DeepClone());
-        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemCategoryDefinitions(yaml, _ => null!));
+        Assert.Throws<ArgumentException>(() => ItemDefinitionParser.LoadItemCategoryDefinitions(yaml, _ => null!)); // TEST-SUPPORT: CLEANUP-CATEGORY-003 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.DuplicateIdsAndUnknownCategoriesAreRejected
         var items = Read("ItemDefinitions.yml", "ItemSchema.yml");
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, new(), _ => null!)); // TEST-SUPPORT: INIT-ITEM-UNKNOWN-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.DuplicateIdsAndUnknownCategoriesAreRejected
     }
@@ -47,7 +47,7 @@ public class ItemRegistryTests
     [Test]
     public void NonstackableItemsCannotDeclareMultipleItemsPerStack()
     {
-        var categories = ItemRegistry.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!);
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: CLEANUP-CATEGORY-004 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.NonstackableItemsCannotDeclareMultipleItemsPerStack
         var yaml = Read("ItemDefinitions.yml", "ItemSchema.yml");
         yaml["Items"]![0]!["StackLimit"] = 1;
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!));
@@ -84,7 +84,7 @@ public class ItemRegistryTests
         foreach (var itemSetting in new[] { "", "CanStack: false", "CanStack: true", "StackLimit: 2" })
         {
             string? iconKey = null;
-            var categories = ItemRegistry.LoadItemCategoryDefinitions((JObject)YamlParser.ParseToken(
+            var categories = ItemDefinitionParser.LoadItemCategoryDefinitions((JObject)YamlParser.ParseToken( // TEST-SUPPORT: CLEANUP-CATEGORY-005 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.DefaultsAndOverridesResolveBeforeUse
                 "Categories:\n  - Id: test\n    DisplayName: Test\n    " + categorySetting, "test").Value!, key => { iconKey = key; return null!; });
             var items = ItemRegistry.LoadItemDefinitions((JObject)YamlParser.ParseToken(
                 "Items:\n  - Id: test\n    DisplayName: Test\n    CategoryId: test\n    " + itemSetting, "test").Value!, categories, _ => null!);

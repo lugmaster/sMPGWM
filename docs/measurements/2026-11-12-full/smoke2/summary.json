@@ -1,0 +1,1437 @@
+{
+  "method": "nearest-rank",
+  "stepBudgetMs": 16.666666666666668,
+  "publicationBudgetMs": 33.333333333333336,
+  "runs": [
+    {
+      "path": "5-players-run-1",
+      "players": 5,
+      "configuration": "Release",
+      "arguments": {
+        "output": "docs/measurements/2026-11-12-full/smoke2",
+        "players": [
+          5
+        ],
+        "repeats": 1,
+        "seconds": 20.0,
+        "scenario": "burst",
+        "configuration": "Release",
+        "diagnostic": false,
+        "uninstrumented": false,
+        "latejoin": false
+      },
+      "peers": [
+        {
+          "path": "5-players-run-1\\client-1",
+          "peer": "client-1",
+          "offsetSeconds": 3.0,
+          "workload": {
+            "success": true,
+            "role": "client",
+            "scenario": "burst",
+            "duration": 17.0068289,
+            "offset": 3.0,
+            "distanceTravelled": 6670.178244583309,
+            "expectedPeers": 5,
+            "assemblyConfiguration": "Release",
+            "jitOptimizerDisabled": false,
+            "firstActiveSeconds": 1.6098468,
+            "maxPeers": 5,
+            "acceptedAbilities": 16,
+            "rejectedAbilities": 0,
+            "transferAttempts": 77,
+            "staleAttempts": 16,
+            "itemRejections": 16,
+            "inventoryRevisionChanges": 62,
+            "restored": false,
+            "dataChecksum": "1812a5a23049d0e2b4fe28b1d37ebe7fd01ea405e00b86914d0358654692f3e0",
+            "configChecksum": "3952af8afc3642d2f2fb175533bf5818d759952ace161f09e98ef49e8db2bb98"
+          },
+          "recorder": {
+            "enabled": true,
+            "durationSeconds": 17.0072106,
+            "allocatedBytes": 35512952,
+            "cpuMs": 4531.25,
+            "collections": [
+              1,
+              1,
+              0
+            ],
+            "totalGcPauseMs": 16.269999999999996,
+            "stopwatchFrequency": 10000000,
+            "steps": 939,
+            "publications": 0,
+            "arrivals": 465,
+            "frames": 2373,
+            "samples": 18,
+            "dropped": {
+              "steps": 0,
+              "publications": 0,
+              "arrivals": 0,
+              "frames": 0,
+              "samples": 0,
+              "markers": 0
+            },
+            "note": "Bounded recorder; Godot work monitors may report the preceding engine frame. Heap figures update at collections. Process allocation totals include recorder 1 Hz sampling; CSV/JSON output occurs after cutoff. GC pause column is cumulative, not individual pause durations."
+          },
+          "loadingToActiveSeconds": 0.6079151,
+          "markers": [
+            {
+              "time_s": "0.000024700",
+              "name": "process_ready"
+            },
+            {
+              "time_s": "0.992518800",
+              "name": "loading_start"
+            },
+            {
+              "time_s": "1.600433900",
+              "name": "active"
+            },
+            {
+              "time_s": "1.600535900",
+              "name": "phase_burst"
+            },
+            {
+              "time_s": "16.997243300",
+              "name": "finished"
+            }
+          ],
+          "phases": [
+            {
+              "name": "startup_smoke",
+              "startSeconds": 0,
+              "endSeconds": 20.0,
+              "nominalComplete180Seconds": false,
+              "statistics": {
+                "stepMs": {
+                  "count": 939,
+                  "mean": 0.09905740149094781,
+                  "p50": 0.0848,
+                  "p95": 0.1757,
+                  "p99": 0.3028,
+                  "maximum": 6.9608,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "publicationStepMs": null,
+                "nonPublicationStepMs": null,
+                "stepAllocationBytes": {
+                  "count": 939,
+                  "mean": 1956.2683706070288,
+                  "p50": 2336.0,
+                  "p95": 2608.0,
+                  "p99": 2640.0,
+                  "maximum": 15960.0
+                },
+                "publicationIntervalMs": null,
+                "publicationIntervalsAbove40Ms": 0,
+                "publicationIntervalsAbove50Ms": 0,
+                "publicationDeviationMs": null,
+                "publicationBytes": null,
+                "arrivalIntervalMs": {
+                  "count": 465,
+                  "mean": 33.1452776344086,
+                  "p50": 34.4696,
+                  "p95": 34.8873,
+                  "p99": 35.5204,
+                  "maximum": 55.3165,
+                  "budget": 33.333333333333336,
+                  "overBudgetCount": 382,
+                  "overBudgetTimeMs": 13206.2047,
+                  "excessTimeMs": 472.8713666666657
+                },
+                "frameIntervalMs": {
+                  "count": 2373,
+                  "mean": 7.04253833544037,
+                  "p50": 6.896,
+                  "p95": 6.944444,
+                  "p99": 6.944444,
+                  "maximum": 145.657333,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 6,
+                  "overBudgetTimeMs": 407.617206,
+                  "excessTimeMs": 307.617206
+                },
+                "frameWorkMs": {
+                  "count": 2373,
+                  "mean": 32.693325747998315,
+                  "p50": 5.03,
+                  "p95": 438.851,
+                  "p99": 438.851,
+                  "maximum": 438.851,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 145,
+                  "overBudgetTimeMs": 63633.395,
+                  "excessTimeMs": 61216.72833333333
+                },
+                "physicsWorkMs": {
+                  "count": 2373,
+                  "mean": 0.8184230931310577,
+                  "p50": 0.389,
+                  "p95": 7.054,
+                  "p99": 7.054,
+                  "maximum": 7.054,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "process": {
+                  "sampleDurationSeconds": 16.2355468,
+                  "allocationBytesPerSecond": 2112244.7197158765,
+                  "allocatedBytes": 34293448,
+                  "collections": [
+                    1,
+                    1,
+                    0
+                  ],
+                  "gcPauseMs": 15.660999999999998,
+                  "cpuPercentOneCore": 26.658326038024164,
+                  "workingSetBytes": {
+                    "count": 17,
+                    "mean": 295933349.64705884,
+                    "p50": 299511808.0,
+                    "p95": 308371456.0,
+                    "p99": 308371456.0,
+                    "maximum": 308371456.0
+                  },
+                  "workingSetChangeBytes": 63344640,
+                  "heapBytes": {
+                    "count": 17,
+                    "mean": 22169590.588235293,
+                    "p50": 23551056.0,
+                    "p95": 23551056.0,
+                    "p99": 23551056.0,
+                    "maximum": 23551056.0
+                  },
+                  "committedBytes": {
+                    "count": 17,
+                    "mean": 33909579.294117644,
+                    "p50": 39313408.0,
+                    "p95": 39313408.0,
+                    "p99": 39313408.0,
+                    "maximum": 39313408.0
+                  },
+                  "rttMs": {
+                    "count": 17,
+                    "mean": 0.005709941176470589,
+                    "p50": 0.006934,
+                    "p95": 0.007,
+                    "p99": 0.007,
+                    "maximum": 0.007
+                  },
+                  "jitterMs": {
+                    "count": 17,
+                    "mean": 0.0004910588235294117,
+                    "p50": 0.000366,
+                    "p95": 0.0014,
+                    "p99": 0.0014,
+                    "maximum": 0.0014
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "path": "5-players-run-1\\client-2",
+          "peer": "client-2",
+          "offsetSeconds": 3.5,
+          "workload": {
+            "success": true,
+            "role": "client",
+            "scenario": "burst",
+            "duration": 16.5052561,
+            "offset": 3.5,
+            "distanceTravelled": 6513.618525072932,
+            "expectedPeers": 5,
+            "assemblyConfiguration": "Release",
+            "jitOptimizerDisabled": false,
+            "firstActiveSeconds": 1.6191988,
+            "maxPeers": 5,
+            "acceptedAbilities": 15,
+            "rejectedAbilities": 0,
+            "transferAttempts": 75,
+            "staleAttempts": 15,
+            "itemRejections": 15,
+            "inventoryRevisionChanges": 61,
+            "restored": false,
+            "dataChecksum": "1812a5a23049d0e2b4fe28b1d37ebe7fd01ea405e00b86914d0358654692f3e0",
+            "configChecksum": "3952af8afc3642d2f2fb175533bf5818d759952ace161f09e98ef49e8db2bb98"
+          },
+          "recorder": {
+            "enabled": true,
+            "durationSeconds": 16.5076249,
+            "allocatedBytes": 35162888,
+            "cpuMs": 4687.5,
+            "collections": [
+              1,
+              1,
+              0
+            ],
+            "totalGcPauseMs": 15.656,
+            "stopwatchFrequency": 10000000,
+            "steps": 908,
+            "publications": 0,
+            "arrivals": 450,
+            "frames": 2298,
+            "samples": 18,
+            "dropped": {
+              "steps": 0,
+              "publications": 0,
+              "arrivals": 0,
+              "frames": 0,
+              "samples": 0,
+              "markers": 0
+            },
+            "note": "Bounded recorder; Godot work monitors may report the preceding engine frame. Heap figures update at collections. Process allocation totals include recorder 1 Hz sampling; CSV/JSON output occurs after cutoff. GC pause column is cumulative, not individual pause durations."
+          },
+          "loadingToActiveSeconds": 0.6164858000000001,
+          "markers": [
+            {
+              "time_s": "0.000024000",
+              "name": "process_ready"
+            },
+            {
+              "time_s": "0.994509000",
+              "name": "loading_start"
+            },
+            {
+              "time_s": "1.610994800",
+              "name": "active"
+            },
+            {
+              "time_s": "1.611095800",
+              "name": "phase_burst"
+            },
+            {
+              "time_s": "16.496885700",
+              "name": "finished"
+            }
+          ],
+          "phases": [
+            {
+              "name": "startup_smoke",
+              "startSeconds": 0,
+              "endSeconds": 20.0,
+              "nominalComplete180Seconds": false,
+              "statistics": {
+                "stepMs": {
+                  "count": 908,
+                  "mean": 0.09771486784140969,
+                  "p50": 0.0826,
+                  "p95": 0.1692,
+                  "p99": 0.2405,
+                  "maximum": 7.8418,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "publicationStepMs": null,
+                "nonPublicationStepMs": null,
+                "stepAllocationBytes": {
+                  "count": 908,
+                  "mean": 1986.7929515418502,
+                  "p50": 2416.0,
+                  "p95": 2608.0,
+                  "p99": 2640.0,
+                  "maximum": 15960.0
+                },
+                "publicationIntervalMs": null,
+                "publicationIntervalsAbove40Ms": 0,
+                "publicationIntervalsAbove50Ms": 0,
+                "publicationDeviationMs": null,
+                "publicationBytes": null,
+                "arrivalIntervalMs": {
+                  "count": 450,
+                  "mean": 33.10096933333333,
+                  "p50": 34.4553,
+                  "p95": 41.0277,
+                  "p99": 41.7103,
+                  "maximum": 62.13,
+                  "budget": 33.333333333333336,
+                  "overBudgetCount": 349,
+                  "overBudgetTimeMs": 12235.0914,
+                  "excessTimeMs": 601.7580666666659
+                },
+                "frameIntervalMs": {
+                  "count": 2298,
+                  "mean": 7.056655587032202,
+                  "p50": 6.896,
+                  "p95": 6.944444,
+                  "p99": 6.944444,
+                  "maximum": 150.0,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 5,
+                  "overBudgetTimeMs": 408.65,
+                  "excessTimeMs": 325.31666666666666
+                },
+                "frameWorkMs": {
+                  "count": 2298,
+                  "mean": 34.56711009573542,
+                  "p50": 4.914,
+                  "p95": 453.986,
+                  "p99": 453.986,
+                  "maximum": 453.986,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 145,
+                  "overBudgetTimeMs": 65827.97,
+                  "excessTimeMs": 63411.30333333333
+                },
+                "physicsWorkMs": {
+                  "count": 2298,
+                  "mean": 0.8839138381201044,
+                  "p50": 0.349,
+                  "p95": 7.935,
+                  "p99": 7.935,
+                  "maximum": 7.935,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "process": {
+                  "sampleDurationSeconds": 16.2434705,
+                  "allocationBytesPerSecond": 2127784.6997044133,
+                  "allocatedBytes": 34562608,
+                  "collections": [
+                    1,
+                    1,
+                    0
+                  ],
+                  "gcPauseMs": 15.044,
+                  "cpuPercentOneCore": 27.799631858228818,
+                  "workingSetBytes": {
+                    "count": 17,
+                    "mean": 295537965.1764706,
+                    "p50": 298463232.0,
+                    "p95": 308051968.0,
+                    "p99": 308051968.0,
+                    "maximum": 308051968.0
+                  },
+                  "workingSetChangeBytes": 63557632,
+                  "heapBytes": {
+                    "count": 17,
+                    "mean": 22172515.29411765,
+                    "p50": 23555576.0,
+                    "p95": 23555576.0,
+                    "p99": 23555576.0,
+                    "maximum": 23555576.0
+                  },
+                  "committedBytes": {
+                    "count": 17,
+                    "mean": 33909579.294117644,
+                    "p50": 39313408.0,
+                    "p95": 39313408.0,
+                    "p99": 39313408.0,
+                    "maximum": 39313408.0
+                  },
+                  "rttMs": {
+                    "count": 17,
+                    "mean": 0.00599035294117647,
+                    "p50": 0.007126,
+                    "p95": 0.008,
+                    "p99": 0.008,
+                    "maximum": 0.008
+                  },
+                  "jitterMs": {
+                    "count": 17,
+                    "mean": 0.0006962941176470588,
+                    "p50": 0.000573,
+                    "p95": 0.00168,
+                    "p99": 0.00168,
+                    "maximum": 0.00168
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "path": "5-players-run-1\\client-3",
+          "peer": "client-3",
+          "offsetSeconds": 4.0,
+          "workload": {
+            "success": true,
+            "role": "client",
+            "scenario": "burst",
+            "duration": 16.0051956,
+            "offset": 4.0,
+            "distanceTravelled": 6058.552926599979,
+            "expectedPeers": 5,
+            "assemblyConfiguration": "Release",
+            "jitOptimizerDisabled": false,
+            "firstActiveSeconds": 1.5899367,
+            "maxPeers": 5,
+            "acceptedAbilities": 15,
+            "rejectedAbilities": 0,
+            "transferAttempts": 72,
+            "staleAttempts": 15,
+            "itemRejections": 15,
+            "inventoryRevisionChanges": 58,
+            "restored": false,
+            "dataChecksum": "1812a5a23049d0e2b4fe28b1d37ebe7fd01ea405e00b86914d0358654692f3e0",
+            "configChecksum": "3952af8afc3642d2f2fb175533bf5818d759952ace161f09e98ef49e8db2bb98"
+          },
+          "recorder": {
+            "enabled": true,
+            "durationSeconds": 16.0075746,
+            "allocatedBytes": 34779040,
+            "cpuMs": 4468.75,
+            "collections": [
+              1,
+              1,
+              0
+            ],
+            "totalGcPauseMs": 13.842,
+            "stopwatchFrequency": 10000000,
+            "steps": 879,
+            "publications": 0,
+            "arrivals": 436,
+            "frames": 2228,
+            "samples": 17,
+            "dropped": {
+              "steps": 0,
+              "publications": 0,
+              "arrivals": 0,
+              "frames": 0,
+              "samples": 0,
+              "markers": 0
+            },
+            "note": "Bounded recorder; Godot work monitors may report the preceding engine frame. Heap figures update at collections. Process allocation totals include recorder 1 Hz sampling; CSV/JSON output occurs after cutoff. GC pause column is cumulative, not individual pause durations."
+          },
+          "loadingToActiveSeconds": 0.5843596,
+          "markers": [
+            {
+              "time_s": "0.000039600",
+              "name": "process_ready"
+            },
+            {
+              "time_s": "0.996687600",
+              "name": "loading_start"
+            },
+            {
+              "time_s": "1.581047200",
+              "name": "active"
+            },
+            {
+              "time_s": "1.581144600",
+              "name": "phase_burst"
+            },
+            {
+              "time_s": "15.996135900",
+              "name": "finished"
+            }
+          ],
+          "phases": [
+            {
+              "name": "startup_smoke",
+              "startSeconds": 0,
+              "endSeconds": 20.0,
+              "nominalComplete180Seconds": false,
+              "statistics": {
+                "stepMs": {
+                  "count": 879,
+                  "mean": 0.09947554038680319,
+                  "p50": 0.0864,
+                  "p95": 0.172,
+                  "p99": 0.2738,
+                  "maximum": 6.5,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "publicationStepMs": null,
+                "nonPublicationStepMs": null,
+                "stepAllocationBytes": {
+                  "count": 879,
+                  "mean": 1966.598407281001,
+                  "p50": 2368.0,
+                  "p95": 2616.0,
+                  "p99": 2640.0,
+                  "maximum": 15960.0
+                },
+                "publicationIntervalMs": null,
+                "publicationIntervalsAbove40Ms": 0,
+                "publicationIntervalsAbove50Ms": 0,
+                "publicationDeviationMs": null,
+                "publicationBytes": null,
+                "arrivalIntervalMs": {
+                  "count": 436,
+                  "mean": 33.12597844036697,
+                  "p50": 34.4992,
+                  "p95": 34.9142,
+                  "p99": 35.498,
+                  "maximum": 54.9918,
+                  "budget": 33.333333333333336,
+                  "overBudgetCount": 358,
+                  "overBudgetTimeMs": 12393.8639,
+                  "excessTimeMs": 460.5305666666658
+                },
+                "frameIntervalMs": {
+                  "count": 2228,
+                  "mean": 7.06038339497307,
+                  "p50": 6.899,
+                  "p95": 6.944444,
+                  "p99": 6.944444,
+                  "maximum": 150.0,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 6,
+                  "overBudgetTimeMs": 428.501111,
+                  "excessTimeMs": 328.50111100000004
+                },
+                "frameWorkMs": {
+                  "count": 2228,
+                  "mean": 33.30775538599641,
+                  "p50": 4.729,
+                  "p95": 427.897,
+                  "p99": 427.897,
+                  "maximum": 427.897,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 145,
+                  "overBudgetTimeMs": 62045.065,
+                  "excessTimeMs": 59628.39833333333
+                },
+                "physicsWorkMs": {
+                  "count": 2228,
+                  "mean": 0.8015583482944345,
+                  "p50": 0.394,
+                  "p95": 6.555,
+                  "p99": 6.555,
+                  "maximum": 6.555,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "process": {
+                  "sampleDurationSeconds": 15.229676099999999,
+                  "allocationBytesPerSecond": 2196027.2681045397,
+                  "allocatedBytes": 33444784,
+                  "collections": [
+                    1,
+                    1,
+                    0
+                  ],
+                  "gcPauseMs": 13.253,
+                  "cpuPercentOneCore": 27.700851760071245,
+                  "workingSetBytes": {
+                    "count": 16,
+                    "mean": 295187968.0,
+                    "p50": 298369024.0,
+                    "p95": 306016256.0,
+                    "p99": 306016256.0,
+                    "maximum": 306016256.0
+                  },
+                  "workingSetChangeBytes": 60039168,
+                  "heapBytes": {
+                    "count": 16,
+                    "mean": 22078004.0,
+                    "p50": 23542664.0,
+                    "p95": 23542664.0,
+                    "p99": 23542664.0,
+                    "maximum": 23542664.0
+                  },
+                  "committedBytes": {
+                    "count": 16,
+                    "mean": 33571840.0,
+                    "p50": 39313408.0,
+                    "p95": 39313408.0,
+                    "p99": 39313408.0,
+                    "maximum": 39313408.0
+                  },
+                  "rttMs": {
+                    "count": 16,
+                    "mean": 0.0056875,
+                    "p50": 0.007,
+                    "p95": 0.007,
+                    "p99": 0.007,
+                    "maximum": 0.007
+                  },
+                  "jitterMs": {
+                    "count": 16,
+                    "mean": 0.0004134375,
+                    "p50": 0.000235,
+                    "p95": 0.0014,
+                    "p99": 0.0014,
+                    "maximum": 0.0014
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "path": "5-players-run-1\\client-4",
+          "peer": "client-4",
+          "offsetSeconds": 4.5,
+          "workload": {
+            "success": true,
+            "role": "client",
+            "scenario": "burst",
+            "duration": 15.5035325,
+            "offset": 4.5,
+            "distanceTravelled": 5908.75966078043,
+            "expectedPeers": 5,
+            "assemblyConfiguration": "Release",
+            "jitOptimizerDisabled": false,
+            "firstActiveSeconds": 1.5807545,
+            "maxPeers": 5,
+            "acceptedAbilities": 14,
+            "rejectedAbilities": 0,
+            "transferAttempts": 70,
+            "staleAttempts": 14,
+            "itemRejections": 14,
+            "inventoryRevisionChanges": 57,
+            "restored": false,
+            "dataChecksum": "1812a5a23049d0e2b4fe28b1d37ebe7fd01ea405e00b86914d0358654692f3e0",
+            "configChecksum": "3952af8afc3642d2f2fb175533bf5818d759952ace161f09e98ef49e8db2bb98"
+          },
+          "recorder": {
+            "enabled": true,
+            "durationSeconds": 15.5072513,
+            "allocatedBytes": 34110584,
+            "cpuMs": 4343.75,
+            "collections": [
+              1,
+              1,
+              0
+            ],
+            "totalGcPauseMs": 13.001999999999999,
+            "stopwatchFrequency": 10000000,
+            "steps": 850,
+            "publications": 0,
+            "arrivals": 421,
+            "frames": 2158,
+            "samples": 17,
+            "dropped": {
+              "steps": 0,
+              "publications": 0,
+              "arrivals": 0,
+              "frames": 0,
+              "samples": 0,
+              "markers": 0
+            },
+            "note": "Bounded recorder; Godot work monitors may report the preceding engine frame. Heap figures update at collections. Process allocation totals include recorder 1 Hz sampling; CSV/JSON output occurs after cutoff. GC pause column is cumulative, not individual pause durations."
+          },
+          "loadingToActiveSeconds": 0.5783446999999999,
+          "markers": [
+            {
+              "time_s": "0.000023500",
+              "name": "process_ready"
+            },
+            {
+              "time_s": "0.994652600",
+              "name": "loading_start"
+            },
+            {
+              "time_s": "1.572997300",
+              "name": "active"
+            },
+            {
+              "time_s": "1.573096500",
+              "name": "phase_burst"
+            },
+            {
+              "time_s": "15.495617500",
+              "name": "finished"
+            }
+          ],
+          "phases": [
+            {
+              "name": "startup_smoke",
+              "startSeconds": 0,
+              "endSeconds": 20.0,
+              "nominalComplete180Seconds": false,
+              "statistics": {
+                "stepMs": {
+                  "count": 850,
+                  "mean": 0.11603211764705883,
+                  "p50": 0.086,
+                  "p95": 0.1822,
+                  "p99": 0.2891,
+                  "maximum": 12.61,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "publicationStepMs": null,
+                "nonPublicationStepMs": null,
+                "stepAllocationBytes": {
+                  "count": 850,
+                  "mean": 1937.4870588235294,
+                  "p50": 2336.0,
+                  "p95": 2608.0,
+                  "p99": 2640.0,
+                  "maximum": 15960.0
+                },
+                "publicationIntervalMs": null,
+                "publicationIntervalsAbove40Ms": 0,
+                "publicationIntervalsAbove50Ms": 0,
+                "publicationDeviationMs": null,
+                "publicationBytes": null,
+                "arrivalIntervalMs": {
+                  "count": 421,
+                  "mean": 33.13918527315914,
+                  "p50": 34.483,
+                  "p95": 34.8575,
+                  "p99": 35.1324,
+                  "maximum": 55.1031,
+                  "budget": 33.333333333333336,
+                  "overBudgetCount": 344,
+                  "overBudgetTimeMs": 11902.8496,
+                  "excessTimeMs": 436.18293333333247
+                },
+                "frameIntervalMs": {
+                  "count": 2158,
+                  "mean": 7.064214954124189,
+                  "p50": 6.899,
+                  "p95": 6.944444,
+                  "p99": 6.944444,
+                  "maximum": 149.288333,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 5,
+                  "overBudgetTimeMs": 412.197999,
+                  "excessTimeMs": 328.86466566666667
+                },
+                "frameWorkMs": {
+                  "count": 2158,
+                  "mean": 33.559519462465246,
+                  "p50": 5.359,
+                  "p95": 424.806,
+                  "p99": 424.806,
+                  "maximum": 424.806,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 144,
+                  "overBudgetTimeMs": 61172.064,
+                  "excessTimeMs": 58772.064
+                },
+                "physicsWorkMs": {
+                  "count": 2158,
+                  "mean": 1.704575532900834,
+                  "p50": 0.434,
+                  "p95": 12.685,
+                  "p99": 12.685,
+                  "maximum": 12.685,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "process": {
+                  "sampleDurationSeconds": 15.220488999999999,
+                  "allocationBytesPerSecond": 2198518.0633815383,
+                  "allocatedBytes": 33462520,
+                  "collections": [
+                    1,
+                    1,
+                    0
+                  ],
+                  "gcPauseMs": 12.407999999999998,
+                  "cpuPercentOneCore": 27.820229691700447,
+                  "workingSetBytes": {
+                    "count": 16,
+                    "mean": 295100672.0,
+                    "p50": 298278912.0,
+                    "p95": 305631232.0,
+                    "p99": 305631232.0,
+                    "maximum": 305631232.0
+                  },
+                  "workingSetChangeBytes": 60588032,
+                  "heapBytes": {
+                    "count": 16,
+                    "mean": 22083569.0,
+                    "p50": 23551568.0,
+                    "p95": 23551568.0,
+                    "p99": 23551568.0,
+                    "maximum": 23551568.0
+                  },
+                  "committedBytes": {
+                    "count": 16,
+                    "mean": 33528320.0,
+                    "p50": 39243776.0,
+                    "p95": 39243776.0,
+                    "p99": 39243776.0,
+                    "maximum": 39243776.0
+                  },
+                  "rttMs": {
+                    "count": 16,
+                    "mean": 0.005733625,
+                    "p50": 0.007,
+                    "p95": 0.0072,
+                    "p99": 0.0072,
+                    "maximum": 0.0072
+                  },
+                  "jitterMs": {
+                    "count": 16,
+                    "mean": 0.0004811875,
+                    "p50": 0.00038,
+                    "p95": 0.0014,
+                    "p99": 0.0014,
+                    "maximum": 0.0014
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "path": "5-players-run-1\\host",
+          "peer": "host",
+          "offsetSeconds": 0.0,
+          "workload": {
+            "success": true,
+            "role": "host",
+            "scenario": "burst",
+            "duration": 23.0007996,
+            "offset": 0.0,
+            "distanceTravelled": 6324.763134967536,
+            "expectedPeers": 5,
+            "assemblyConfiguration": "Release",
+            "jitOptimizerDisabled": false,
+            "firstActiveSeconds": 1.6911935,
+            "maxPeers": 5,
+            "acceptedAbilities": 22,
+            "rejectedAbilities": 0,
+            "transferAttempts": 107,
+            "staleAttempts": 22,
+            "itemRejections": 22,
+            "inventoryRevisionChanges": 85,
+            "restored": false,
+            "dataChecksum": "1812a5a23049d0e2b4fe28b1d37ebe7fd01ea405e00b86914d0358654692f3e0",
+            "configChecksum": "3952af8afc3642d2f2fb175533bf5818d759952ace161f09e98ef49e8db2bb98"
+          },
+          "recorder": {
+            "enabled": true,
+            "durationSeconds": 23.0028852,
+            "allocatedBytes": 47604552,
+            "cpuMs": 6171.875,
+            "collections": [
+              3,
+              3,
+              1
+            ],
+            "totalGcPauseMs": 33.535999999999994,
+            "stopwatchFrequency": 10000000,
+            "steps": 1287,
+            "publications": 643,
+            "arrivals": 0,
+            "frames": 3220,
+            "samples": 24,
+            "dropped": {
+              "steps": 0,
+              "publications": 0,
+              "arrivals": 0,
+              "frames": 0,
+              "samples": 0,
+              "markers": 0
+            },
+            "note": "Bounded recorder; Godot work monitors may report the preceding engine frame. Heap figures update at collections. Process allocation totals include recorder 1 Hz sampling; CSV/JSON output occurs after cutoff. GC pause column is cumulative, not individual pause durations."
+          },
+          "loadingToActiveSeconds": 0.6866166,
+          "markers": [
+            {
+              "time_s": "0.000019200",
+              "name": "process_ready"
+            },
+            {
+              "time_s": "0.996928300",
+              "name": "loading_start"
+            },
+            {
+              "time_s": "1.683544900",
+              "name": "active"
+            },
+            {
+              "time_s": "1.683612800",
+              "name": "phase_burst"
+            },
+            {
+              "time_s": "22.992990500",
+              "name": "finished"
+            }
+          ],
+          "phases": [
+            {
+              "name": "startup_smoke",
+              "startSeconds": 0,
+              "endSeconds": 20.0,
+              "nominalComplete180Seconds": false,
+              "statistics": {
+                "stepMs": {
+                  "count": 1108,
+                  "mean": 0.35257175090252707,
+                  "p50": 0.2849,
+                  "p95": 0.7431,
+                  "p99": 1.1354,
+                  "maximum": 22.1581,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 1,
+                  "overBudgetTimeMs": 22.1581,
+                  "excessTimeMs": 5.491433333333333
+                },
+                "publicationStepMs": {
+                  "count": 554,
+                  "mean": 0.4989185920577617,
+                  "p50": 0.3844,
+                  "p95": 0.8553,
+                  "p99": 1.2062,
+                  "maximum": 22.1581,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 1,
+                  "overBudgetTimeMs": 22.1581,
+                  "excessTimeMs": 5.491433333333333
+                },
+                "nonPublicationStepMs": {
+                  "count": 554,
+                  "mean": 0.2062249097472924,
+                  "p50": 0.1187,
+                  "p95": 0.4907,
+                  "p99": 0.7246,
+                  "maximum": 11.0411,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 0,
+                  "overBudgetTimeMs": 0,
+                  "excessTimeMs": 0
+                },
+                "stepAllocationBytes": {
+                  "count": 1108,
+                  "mean": 27164.310469314078,
+                  "p50": 16296.0,
+                  "p95": 65408.0,
+                  "p99": 107456.0,
+                  "maximum": 3250104.0
+                },
+                "publicationIntervalMs": {
+                  "count": 554,
+                  "mean": 33.05980487364621,
+                  "p50": 34.434,
+                  "p95": 34.9826,
+                  "p99": 35.472,
+                  "maximum": 56.275,
+                  "budget": 33.333333333333336,
+                  "overBudgetCount": 454,
+                  "overBudgetTimeMs": 15691.3776,
+                  "excessTimeMs": 558.0442666666656
+                },
+                "publicationIntervalsAbove40Ms": 2,
+                "publicationIntervalsAbove50Ms": 1,
+                "publicationDeviationMs": {
+                  "count": 554,
+                  "mean": 2.288128700361009,
+                  "p50": 1.195366666666665,
+                  "p95": 5.848133333333337,
+                  "p99": 25.554633333333335,
+                  "maximum": 33.333333333333336
+                },
+                "publicationBytes": {
+                  "count": 554,
+                  "mean": 491.84115523465704,
+                  "p50": 580.0,
+                  "p95": 580.0,
+                  "p99": 580.0,
+                  "maximum": 580.0
+                },
+                "arrivalIntervalMs": null,
+                "frameIntervalMs": {
+                  "count": 2786,
+                  "mean": 7.011767458722182,
+                  "p50": 6.896,
+                  "p95": 6.944444,
+                  "p99": 6.944444,
+                  "maximum": 148.147333,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 5,
+                  "overBudgetTimeMs": 366.894761,
+                  "excessTimeMs": 283.5614276666667
+                },
+                "frameWorkMs": {
+                  "count": 2786,
+                  "mean": 39.10898743718593,
+                  "p50": 8.186,
+                  "p95": 620.469,
+                  "p99": 620.469,
+                  "maximum": 620.469,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 145,
+                  "overBudgetTimeMs": 89968.005,
+                  "excessTimeMs": 87551.33833333335
+                },
+                "physicsWorkMs": {
+                  "count": 2786,
+                  "mean": 3.129981694185212,
+                  "p50": 1.23,
+                  "p95": 22.255,
+                  "p99": 22.255,
+                  "maximum": 22.255,
+                  "budget": 16.666666666666668,
+                  "overBudgetCount": 145,
+                  "overBudgetTimeMs": 3226.975,
+                  "excessTimeMs": 810.308333333333
+                },
+                "process": {
+                  "sampleDurationSeconds": 19.403254099999998,
+                  "allocationBytesPerSecond": 2367115.1118924944,
+                  "allocatedBytes": 45929736,
+                  "collections": [
+                    3,
+                    3,
+                    1
+                  ],
+                  "gcPauseMs": 32.965999999999994,
+                  "cpuPercentOneCore": 27.701538990823195,
+                  "workingSetBytes": {
+                    "count": 20,
+                    "mean": 293473075.2,
+                    "p50": 295854080.0,
+                    "p95": 302178304.0,
+                    "p99": 305319936.0,
+                    "maximum": 305319936.0
+                  },
+                  "workingSetChangeBytes": 50962432,
+                  "heapBytes": {
+                    "count": 20,
+                    "mean": 23875404.8,
+                    "p50": 22520360.0,
+                    "p95": 29920656.0,
+                    "p99": 29920656.0,
+                    "maximum": 29920656.0
+                  },
+                  "committedBytes": {
+                    "count": 20,
+                    "mean": 36639948.8,
+                    "p50": 39243776.0,
+                    "p95": 45805568.0,
+                    "p99": 45805568.0,
+                    "maximum": 45805568.0
+                  },
+                  "rttMs": {
+                    "count": 20,
+                    "mean": 0.0,
+                    "p50": 0.0,
+                    "p95": 0.0,
+                    "p99": 0.0,
+                    "maximum": 0.0
+                  },
+                  "jitterMs": {
+                    "count": 20,
+                    "mean": 0.0,
+                    "p50": 0.0,
+                    "p95": 0.0,
+                    "p99": 0.0,
+                    "maximum": 0.0
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "clientAggregates": [
+        {
+          "name": "startup_smoke",
+          "statistics": {
+            "stepMs": {
+              "count": 3576,
+              "mean": 0.10285411073825504,
+              "p50": 0.0847,
+              "p95": 0.1741,
+              "p99": 0.279,
+              "maximum": 12.61,
+              "budget": 16.666666666666668,
+              "overBudgetCount": 0,
+              "overBudgetTimeMs": 0,
+              "excessTimeMs": 0
+            },
+            "publicationStepMs": null,
+            "nonPublicationStepMs": null,
+            "stepAllocationBytes": {
+              "count": 3576,
+              "mean": 1962.0939597315437,
+              "p50": 2368.0,
+              "p95": 2608.0,
+              "p99": 2640.0,
+              "maximum": 15960.0
+            },
+            "publicationIntervalMs": null,
+            "publicationIntervalsAbove40Ms": 0,
+            "publicationIntervalsAbove50Ms": 0,
+            "publicationDeviationMs": null,
+            "publicationBytes": null,
+            "arrivalIntervalMs": {
+              "count": 1772,
+              "mean": 33.12782951467268,
+              "p50": 34.4794,
+              "p95": 34.9285,
+              "p99": 41.3183,
+              "maximum": 62.13,
+              "budget": 33.333333333333336,
+              "overBudgetCount": 1433,
+              "overBudgetTimeMs": 49738.0096,
+              "excessTimeMs": 1971.34293333333
+            },
+            "frameIntervalMs": {
+              "count": 9057,
+              "mean": 7.055674956828972,
+              "p50": 6.899,
+              "p95": 6.944444,
+              "p99": 6.944444,
+              "maximum": 150.0,
+              "budget": 16.666666666666668,
+              "overBudgetCount": 22,
+              "overBudgetTimeMs": 1656.966316,
+              "excessTimeMs": 1290.2996493333333
+            },
+            "frameWorkMs": {
+              "count": 9057,
+              "mean": 33.526289389422544,
+              "p50": 4.945,
+              "p95": 424.806,
+              "p99": 453.986,
+              "maximum": 453.986,
+              "budget": 16.666666666666668,
+              "overBudgetCount": 579,
+              "overBudgetTimeMs": 252678.494,
+              "excessTimeMs": 243028.49399999998
+            },
+            "physicsWorkMs": {
+              "count": 9057,
+              "mean": 1.0420335651981893,
+              "p50": 0.383,
+              "p95": 7.054,
+              "p99": 12.685,
+              "maximum": 12.685,
+              "budget": 16.666666666666668,
+              "overBudgetCount": 0,
+              "overBudgetTimeMs": 0,
+              "excessTimeMs": 0
+            },
+            "process": null
+          },
+          "allocationBytesPerSecondSum": 8634574.750906367,
+          "maximumRttP99Ms": 0.008,
+          "processSummaries": [
+            {
+              "sampleDurationSeconds": 16.2355468,
+              "allocationBytesPerSecond": 2112244.7197158765,
+              "allocatedBytes": 34293448,
+              "collections": [
+                1,
+                1,
+                0
+              ],
+              "gcPauseMs": 15.660999999999998,
+              "cpuPercentOneCore": 26.658326038024164,
+              "workingSetBytes": {
+                "count": 17,
+                "mean": 295933349.64705884,
+                "p50": 299511808.0,
+                "p95": 308371456.0,
+                "p99": 308371456.0,
+                "maximum": 308371456.0
+              },
+              "workingSetChangeBytes": 63344640,
+              "heapBytes": {
+                "count": 17,
+                "mean": 22169590.588235293,
+                "p50": 23551056.0,
+                "p95": 23551056.0,
+                "p99": 23551056.0,
+                "maximum": 23551056.0
+              },
+              "committedBytes": {
+                "count": 17,
+                "mean": 33909579.294117644,
+                "p50": 39313408.0,
+                "p95": 39313408.0,
+                "p99": 39313408.0,
+                "maximum": 39313408.0
+              },
+              "rttMs": {
+                "count": 17,
+                "mean": 0.005709941176470589,
+                "p50": 0.006934,
+                "p95": 0.007,
+                "p99": 0.007,
+                "maximum": 0.007
+              },
+              "jitterMs": {
+                "count": 17,
+                "mean": 0.0004910588235294117,
+                "p50": 0.000366,
+                "p95": 0.0014,
+                "p99": 0.0014,
+                "maximum": 0.0014
+              }
+            },
+            {
+              "sampleDurationSeconds": 16.2434705,
+              "allocationBytesPerSecond": 2127784.6997044133,
+              "allocatedBytes": 34562608,
+              "collections": [
+                1,
+                1,
+                0
+              ],
+              "gcPauseMs": 15.044,
+              "cpuPercentOneCore": 27.799631858228818,
+              "workingSetBytes": {
+                "count": 17,
+                "mean": 295537965.1764706,
+                "p50": 298463232.0,
+                "p95": 308051968.0,
+                "p99": 308051968.0,
+                "maximum": 308051968.0
+              },
+              "workingSetChangeBytes": 63557632,
+              "heapBytes": {
+                "count": 17,
+                "mean": 22172515.29411765,
+                "p50": 23555576.0,
+                "p95": 23555576.0,
+                "p99": 23555576.0,
+                "maximum": 23555576.0
+              },
+              "committedBytes": {
+                "count": 17,
+                "mean": 33909579.294117644,
+                "p50": 39313408.0,
+                "p95": 39313408.0,
+                "p99": 39313408.0,
+                "maximum": 39313408.0
+              },
+              "rttMs": {
+                "count": 17,
+                "mean": 0.00599035294117647,
+                "p50": 0.007126,
+                "p95": 0.008,
+                "p99": 0.008,
+                "maximum": 0.008
+              },
+              "jitterMs": {
+                "count": 17,
+                "mean": 0.0006962941176470588,
+                "p50": 0.000573,
+                "p95": 0.00168,
+                "p99": 0.00168,
+                "maximum": 0.00168
+              }
+            },
+            {
+              "sampleDurationSeconds": 15.229676099999999,
+              "allocationBytesPerSecond": 2196027.2681045397,
+              "allocatedBytes": 33444784,
+              "collections": [
+                1,
+                1,
+                0
+              ],
+              "gcPauseMs": 13.253,
+              "cpuPercentOneCore": 27.700851760071245,
+              "workingSetBytes": {
+                "count": 16,
+                "mean": 295187968.0,
+                "p50": 298369024.0,
+                "p95": 306016256.0,
+                "p99": 306016256.0,
+                "maximum": 306016256.0
+              },
+              "workingSetChangeBytes": 60039168,
+              "heapBytes": {
+                "count": 16,
+                "mean": 22078004.0,
+                "p50": 23542664.0,
+                "p95": 23542664.0,
+                "p99": 23542664.0,
+                "maximum": 23542664.0
+              },
+              "committedBytes": {
+                "count": 16,
+                "mean": 33571840.0,
+                "p50": 39313408.0,
+                "p95": 39313408.0,
+                "p99": 39313408.0,
+                "maximum": 39313408.0
+              },
+              "rttMs": {
+                "count": 16,
+                "mean": 0.0056875,
+                "p50": 0.007,
+                "p95": 0.007,
+                "p99": 0.007,
+                "maximum": 0.007
+              },
+              "jitterMs": {
+                "count": 16,
+                "mean": 0.0004134375,
+                "p50": 0.000235,
+                "p95": 0.0014,
+                "p99": 0.0014,
+                "maximum": 0.0014
+              }
+            },
+            {
+              "sampleDurationSeconds": 15.220488999999999,
+              "allocationBytesPerSecond": 2198518.0633815383,
+              "allocatedBytes": 33462520,
+              "collections": [
+                1,
+                1,
+                0
+              ],
+              "gcPauseMs": 12.407999999999998,
+              "cpuPercentOneCore": 27.820229691700447,
+              "workingSetBytes": {
+                "count": 16,
+                "mean": 295100672.0,
+                "p50": 298278912.0,
+                "p95": 305631232.0,
+                "p99": 305631232.0,
+                "maximum": 305631232.0
+              },
+              "workingSetChangeBytes": 60588032,
+              "heapBytes": {
+                "count": 16,
+                "mean": 22083569.0,
+                "p50": 23551568.0,
+                "p95": 23551568.0,
+                "p99": 23551568.0,
+                "maximum": 23551568.0
+              },
+              "committedBytes": {
+                "count": 16,
+                "mean": 33528320.0,
+                "p50": 39243776.0,
+                "p95": 39243776.0,
+                "p99": 39243776.0,
+                "maximum": 39243776.0
+              },
+              "rttMs": {
+                "count": 16,
+                "mean": 0.005733625,
+                "p50": 0.007,
+                "p95": 0.0072,
+                "p99": 0.0072,
+                "maximum": 0.0072
+              },
+              "jitterMs": {
+                "count": 16,
+                "mean": 0.0004811875,
+                "p50": 0.00038,
+                "p95": 0.0014,
+                "p99": 0.0014,
+                "maximum": 0.0014
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

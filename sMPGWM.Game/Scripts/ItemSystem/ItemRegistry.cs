@@ -35,7 +35,7 @@ public static class ItemRegistry
     {
         var categoryYaml = FileLoader.LoadYaml(FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYaml,
             FilePaths.ItemCategoryDataYamlSchema);
-        var categoryResult = CatalogueParser.Load(() => LoadItemCategoryDefinitions(categoryYaml, Icons.Get),
+        var categoryResult = CatalogueParser.Load(() => ItemDefinitionParser.LoadItemCategoryDefinitions(categoryYaml, Icons.Get),
             FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYamlSchema);
         if (!categoryResult.IsSuccess) throw new InvalidOperationException(categoryResult.Error!.ToDisplayString());
         var categories = categoryResult.Value!;
@@ -46,10 +46,6 @@ public static class ItemRegistry
         if (!itemResult.IsSuccess) throw new InvalidOperationException(itemResult.Error!.ToDisplayString());
         return new RegistryData(new ItemDefinitions(itemResult.Value!.Values), new CategoryDefinitions(categories.Values));
     }
-
-    internal static Dictionary<string, ItemCategoryDefinition> LoadItemCategoryDefinitions(
-        JObject yaml, Func<string, IconDefinition> resolveIcon) =>
-        ItemDefinitionParser.LoadItemCategoryDefinitions(yaml, resolveIcon);
 
     internal static Dictionary<string, ItemDefinition> LoadItemDefinitions(JObject yaml,
         Dictionary<string, ItemCategoryDefinition> categories, Func<string, IconDefinition> resolveIcon)

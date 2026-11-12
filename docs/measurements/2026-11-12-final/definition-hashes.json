@@ -1,0 +1,106 @@
+[
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\AbilityDefinitions.yml",
+        "Hash":  "A8E6DA013CDE3F82E9F7BD31919BAE88239C01727CE81C35010701EA2037939B"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\AbilitySchema.yml",
+        "Hash":  "E0657458798C779929759FA1F4281361A8C8DB3B5F963204ADEADB7DA0AE0E5F"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\Attributes.yml",
+        "Hash":  "C956AA028E370427164640FE0D450FA3FE8467F734897CCFA0D96074FA739890"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\AttributeSchema.yml",
+        "Hash":  "19FED87F48113F3C7E9B7E2121BB464AEABE29E6F04CAEC93E12A6DE4E61136D"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\BehaviourClassificationDefinitions.yml",
+        "Hash":  "59EFCF7D8797603ADF9015B93E9A3F9CAD44DB77A94C7E51F6B61D94553837FB"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\BehaviourClassificationSchema.yml",
+        "Hash":  "04E37370E7B269B3D3A45192E6A505E98DE14EC2C8A7F4CEAEF1E136AFEA1DA4"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\BehaviourDefinitions.yml",
+        "Hash":  "502CFAD49F71AB76ABCC58515550E3855F9B424548B9067507A430EE885B09F0"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\BehaviourSchema.yml",
+        "Hash":  "ECC492A372F5F9FBF28C06A778BE306F243C36A278C1F7F0D4DA3F393783025D"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\Conditions.yml",
+        "Hash":  "57169CC1B6D90BED78598B4EC5D50E67376AD377E62D6846DCDC89492DB900CE"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\ConditionSchema.yml",
+        "Hash":  "5E26E21136C99B0AE919E9253E19E59F6A9FF2A7B9451CAC693AD49F58754F1F"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\DamageSources.yml",
+        "Hash":  "962AC396B1150DFE74E0391CB2DF34CB448A8A3112A88EDB726B48E503230898"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\DamageSourceSchema.yml",
+        "Hash":  "E420E4A5F6BE87DA0341302C5C23BE79D2EC4A75AC7C7C8BB7DC7F0202E4EEEE"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\EffectDefinitions.yml",
+        "Hash":  "304CF89058E02BA45C2AB2B5198CC54537A4D1A5CF243CF4ED623E2A57CE1652"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\EffectDefinitionSchema.yml",
+        "Hash":  "038300597E1141F1D4205D9B13F659A0C1F603510F4EBA5E5148E328B4BC91A4"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\ItemCategoryDefinitions.yml",
+        "Hash":  "512AD2A73E6162EFBD6D6E7C4DC86CFEB2FBD1185888551ED052FCE84A9946BA"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\ItemCategorySchema.yml",
+        "Hash":  "3CB15544C7D72FF60AB806BE1902EA40E2DDCDD96146C2196CECA47A7E4E8516"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\ItemDefinitions.yml",
+        "Hash":  "0A02817AD2E807EA570D56635F22BC726DE2ABCF65318FECA4BCB08F5337FDE9"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\ItemSchema.yml",
+        "Hash":  "2CE948B7CFFABCC99F2A1ACB0091C734EBBA9FD77E750E03D34B5E8C88669A9A"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\PassiveDefinitions.yml",
+        "Hash":  "2272F29154C29870A39F74313354F7996D700ABCB5D63F74C85BC762B6DC916E"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\PassiveSchemas.yml",
+        "Hash":  "63BF27AC4E98E6CE196685F17CAECBED20AE6CE34642FCDE3281C9731DDC8EDE"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\ProjectileDefinitions.yml",
+        "Hash":  "3E41D29EF9FC035E79FD2FAD1E021B64D9B7D63BEEFC885E657816BF4DE20AAD"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\ProjectileSchema.yml",
+        "Hash":  "E824828E9555E5CFEDC573CAA7563E60F679516EEB25E0BAA28366E2EE967592"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\Ships.yml",
+        "Hash":  "0B18D9AE3232515E618ECC9F9354402C40C40336F55C1AC3156CAE0AC3B5D0C1"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\ShipsSchema.yml",
+        "Hash":  "9129931D5A4859C224BD091EFA6461FC8BFDA58137C148C503582CD654B8EE14"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\TargetingDefinitions.yml",
+        "Hash":  "A70D7F19609F24083DCB28BD6FB90AE77468B362C8A02A28AF5845909A344F1A"
+    },
+    {
+        "Path":  "C:\\Users\\lober\\Documents\\Godot\\sMPGWM\\sMPGWM.Game\\assets\\game_data\\TargetingSchema.yml",
+        "Hash":  "966505F12C32830930EB527807004A9A1B0904CC067E036AC2C14205286BE8CC"
+    }
+]

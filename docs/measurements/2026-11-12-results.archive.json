@@ -1,0 +1,17 @@
+{
+    "archive":  "2026-11-12-results.zip",
+    "createdUtc":  "2026-11-12T22:32:51.1997717Z",
+    "sha256":  "a22ed71728ea06c586d6882802d61676b3b29ff384edad3e1546e7d47709babe",
+    "archiveBytes":  47282953,
+    "sourceFiles":  1382,
+    "sourceBytes":  207017908,
+    "removedLooseFiles":  1198,
+    "removedLooseBytes":  203071889,
+    "verified":  "Every ZIP entry decompressed and SHA-256 matched against its original; sources checked again before removal.",
+    "roots":  [
+                  "docs/measurements/2026-11-12-final",
+                  "docs/measurements/2026-11-12-full",
+                  "docs/plans/evidence"
+              ],
+    "state":  "Paused; six main runs complete; summaries cover five; restored follow-up partial."
+}

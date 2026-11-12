@@ -1,0 +1,83 @@
+[
+  {
+    "run": "5-players-run-1",
+    "exitCodes": {
+      "host": 0,
+      "client-1": 0,
+      "client-2": 0,
+      "client-3": 0,
+      "client-4": 0
+    },
+    "seconds": 634.7006298000015
+  },
+  {
+    "run": "5-players-run-2",
+    "exitCodes": {
+      "host": 0,
+      "client-1": 0,
+      "client-2": 0,
+      "client-3": 0,
+      "client-4": 0
+    },
+    "seconds": 633.7075593000009
+  },
+  {
+    "run": "5-players-run-3",
+    "exitCodes": {
+      "host": 0,
+      "client-1": 0,
+      "client-2": 0,
+      "client-3": 0,
+      "client-4": 0
+    },
+    "seconds": 633.7035193999982
+  },
+  {
+    "run": "10-players-run-1",
+    "exitCodes": {
+      "host": 0,
+      "client-1": 0,
+      "client-2": 0,
+      "client-3": 0,
+      "client-4": 0,
+      "client-5": 0,
+      "client-6": 0,
+      "client-7": 0,
+      "client-8": 0,
+      "client-9": 0
+    },
+    "seconds": 634.207735
+  },
+  {
+    "run": "10-players-run-2",
+    "exitCodes": {
+      "host": 0,
+      "client-1": 0,
+      "client-2": 0,
+      "client-3": 0,
+      "client-4": 0,
+      "client-5": 0,
+      "client-6": 0,
+      "client-7": 0,
+      "client-8": 0,
+      "client-9": 0
+    },
+    "seconds": 634.2158653000006
+  },
+  {
+    "run": "10-players-run-3",
+    "exitCodes": {
+      "host": 0,
+      "client-1": 0,
+      "client-2": 0,
+      "client-3": 0,
+      "client-4": 0,
+      "client-5": 0,
+      "client-6": 0,
+      "client-7": 0,
+      "client-8": 0,
+      "client-9": 0
+    },
+    "seconds": 634.2068683999969
+  }
+]

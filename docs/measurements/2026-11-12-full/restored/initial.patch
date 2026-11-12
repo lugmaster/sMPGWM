@@ -1,0 +1,40 @@
+diff --git a/docs/plans/multiplayer-performance-and-final-cleanup.md b/docs/plans/multiplayer-performance-and-final-cleanup.md
+index 200ddad..1a1f3da 100644
+--- a/docs/plans/multiplayer-performance-and-final-cleanup.md
++++ b/docs/plans/multiplayer-performance-and-final-cleanup.md
+@@ -1,6 +1,8 @@
+ # Multiplayer performance measurements and final cleanup review
+ 
+-Status: planned. No performance acceptance or cleanup completion is claimed by this document.
++Status: local performance measurement and cleanup recommendation pass in progress. The user closed the other verification work for this pass and deferred another full remote Steam test until after upcoming features. The current pass does not require Steam setup or reopening those checks. See [initial evidence](../measurements/2026-11-12-final/report.md), [cleanup audit](../measurements/2026-11-12-full/cleanup-audit.md), and the local measurement artifacts in `docs/measurements/2026-11-12-full`. Cleanup changes are suggestions for review, not authorization to apply them in this pass.
++
++Resume instructions: [performance analysis handoff](multiplayer-performance-handoff.md). It records the running monitor IDs, completed results, queued checks, caveats, and remaining final-analysis steps. Do not restart the active measurements.
+ 
+ This is the standalone plan for the two remaining workstreams after session initialization and restored-state installation: measure multiplayer runtime behaviour, then simplify the implementation using the verified lifecycle guarantees. It includes the environment, contracts, workloads, evidence, and completion criteria needed to execute the work without another plan.
+ 
+diff --git a/sMPGWM.Game/Scripts/FileLoadingSystem/FileLoader.cs b/sMPGWM.Game/Scripts/FileLoadingSystem/FileLoader.cs
+index 580f3a9..0be5b28 100644
+--- a/sMPGWM.Game/Scripts/FileLoadingSystem/FileLoader.cs
++++ b/sMPGWM.Game/Scripts/FileLoadingSystem/FileLoader.cs
+@@ -2,7 +2,6 @@ using Godot;
+ using Newtonsoft.Json.Linq;
+ using System;
+ using sMPGWM.Scripts.GameConfigSystem;
+-using sMPGWM.Scripts.GameFlowSystem;
+ using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+ 
+ namespace sMPGWM.Scripts.FileLoadingSystem;
+@@ -11,13 +10,6 @@ public static class FileLoader
+ {
+     internal static readonly System.Collections.Generic.Dictionary<string, string> CapturedInputs = new();
+ 
+-    public static void AbortLoad(DataLoadError error)
+-    {
+-        var message = error.ToDisplayString();
+-        Logger.Info(message);
+-        GameFlowManager.Instance.QuitToStartMenuBlocking(message);
+-    }
+-    
+     private static LoadResult<JToken> LoadYamlAndValidate(
+         string userPath,
+         string defaultPath,

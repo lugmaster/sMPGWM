@@ -1,0 +1,249 @@
+using System; // TEST-SUPPORT: PERF-WORKLOAD-0001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using System.Diagnostics; // TEST-SUPPORT: PERF-WORKLOAD-0002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using System.IO; // TEST-SUPPORT: PERF-WORKLOAD-0003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using System.Reflection; // TEST-SUPPORT: PERF-WORKLOAD-0004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using Godot; // TEST-SUPPORT: PERF-WORKLOAD-0005 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using Newtonsoft.Json; // TEST-SUPPORT: PERF-WORKLOAD-0006 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: PERF-WORKLOAD-0007 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: PERF-WORKLOAD-0008 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.GameConfigSystem; // TEST-SUPPORT: PERF-WORKLOAD-0009 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.GameFlowSystem; // TEST-SUPPORT: PERF-WORKLOAD-0010 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: PERF-WORKLOAD-0011 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.InputSystem; // TEST-SUPPORT: PERF-WORKLOAD-0012 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: PERF-WORKLOAD-0013 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: PERF-WORKLOAD-0014 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+using sMPGWM.Scripts.WorldSystem; // TEST-SUPPORT: PERF-WORKLOAD-0015 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+namespace sMPGWM.Scripts.Verification; // TEST-SUPPORT: PERF-WORKLOAD-0016 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLOAD-0017 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+{ // TEST-SUPPORT: PERF-WORKLOAD-0018 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private readonly Stopwatch _clock = new(); // TEST-SUPPORT: PERF-WORKLOAD-0019 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private static readonly object FocusedValue = true; // TEST-SUPPORT: PERF-WORKLOAD-FOCUS-CACHE | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private readonly PropertyInfo _focus = typeof(InputController).GetProperty(nameof(InputController.IsWindowFocused))!; // TEST-SUPPORT: PERF-WORKLOAD-0020 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private string _scenario = ""; // TEST-SUPPORT: PERF-WORKLOAD-0021 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private string _phase = ""; // TEST-SUPPORT: PERF-WORKLOAD-0022 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private string _output = ""; // TEST-SUPPORT: PERF-WORKLOAD-0023 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private bool _host; // TEST-SUPPORT: PERF-WORKLOAD-0024 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private bool _started; // TEST-SUPPORT: PERF-WORKLOAD-0025 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private bool _finished; // TEST-SUPPORT: PERF-WORKLOAD-0026 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private bool _activeSeen; // TEST-SUPPORT: PERF-WORKLOAD-0027 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private bool _restoreStarted; // TEST-SUPPORT: PERF-WORKLOAD-0028 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private bool _restoreVerified; // TEST-SUPPORT: PERF-WORKLOAD-0029 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private double _seconds; // TEST-SUPPORT: PERF-WORKLOAD-0030 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private double _offset; // TEST-SUPPORT: PERF-WORKLOAD-OFFSET-1 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private double _firstActive = -1; // TEST-SUPPORT: PERF-WORKLOAD-0031 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private double _nextAbility; // TEST-SUPPORT: PERF-WORKLOAD-0032 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private double _nextTransfer; // TEST-SUPPORT: PERF-WORKLOAD-0033 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private double _nextRejectedTransfer; // TEST-SUPPORT: PERF-WORKLOAD-0034 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private double _nextFocus; // TEST-SUPPORT: PERF-WORKLOAD-0035 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _port; // TEST-SUPPORT: PERF-WORKLOAD-0036 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _accepted; // TEST-SUPPORT: PERF-WORKLOAD-0037 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _rejected; // TEST-SUPPORT: PERF-WORKLOAD-0038 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _transferAttempts; // TEST-SUPPORT: PERF-WORKLOAD-0039 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _staleAttempts; // TEST-SUPPORT: PERF-WORKLOAD-0040 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _itemRejections; // TEST-SUPPORT: PERF-WORKLOAD-0041 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _maxPeers; // TEST-SUPPORT: PERF-WORKLOAD-0042 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _expectedPeers; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-1 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private Vector2 _lastPosition; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-2 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private double _distance; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-3 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private long _lastInventoryRevision; // TEST-SUPPORT: PERF-WORKLOAD-0043 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private long _inventoryChanges; // TEST-SUPPORT: PERF-WORKLOAD-0044 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private string _restoreEntity = ""; // TEST-SUPPORT: PERF-WORKLOAD-0045 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private RestoredWorldState? _restored; // TEST-SUPPORT: PERF-WORKLOAD-0046 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private NetworkManager? _boundNetwork; // TEST-SUPPORT: PERF-WORKLOAD-0047 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public override void _Ready() // TEST-SUPPORT: PERF-WORKLOAD-0048 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: PERF-WORKLOAD-0049 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _host = System.Environment.GetEnvironmentVariable("PERF_ROLE") == "host"; // TEST-SUPPORT: PERF-WORKLOAD-0050 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _scenario = System.Environment.GetEnvironmentVariable("PERF_SCENARIO") ?? "matrix"; // TEST-SUPPORT: PERF-WORKLOAD-0051 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _output = System.Environment.GetEnvironmentVariable("PERF_OUTPUT") ?? throw new InvalidOperationException("PERF_OUTPUT is required."); // TEST-SUPPORT: PERF-WORKLOAD-0052 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _port = int.Parse(System.Environment.GetEnvironmentVariable("PERF_PORT") ?? "55671"); // TEST-SUPPORT: PERF-WORKLOAD-0053 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _seconds = double.Parse(System.Environment.GetEnvironmentVariable("PERF_SECONDS") ?? "630", System.Globalization.CultureInfo.InvariantCulture); // TEST-SUPPORT: PERF-WORKLOAD-0054 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _offset = double.Parse(System.Environment.GetEnvironmentVariable("PERF_OFFSET") ?? "0", System.Globalization.CultureInfo.InvariantCulture); // TEST-SUPPORT: PERF-WORKLOAD-OFFSET-2 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _expectedPeers = int.Parse(System.Environment.GetEnvironmentVariable("PERF_PLAYERS") ?? "1"); // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-4 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Directory.CreateDirectory(_output); // TEST-SUPPORT: PERF-WORKLOAD-0055 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _clock.Start(); // TEST-SUPPORT: PERF-WORKLOAD-0056 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        PerformanceRecorder.Mark("process_ready"); // TEST-SUPPORT: PERF-WORKLOAD-0057 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: PERF-WORKLOAD-0058 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    public override void _Process(double delta) // TEST-SUPPORT: PERF-WORKLOAD-0059 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: PERF-WORKLOAD-0060 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_finished) return; // TEST-SUPPORT: PERF-WORKLOAD-0061 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        PerformanceRecorder.Frame(delta); // TEST-SUPPORT: PERF-WORKLOAD-0062 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var elapsed = _clock.Elapsed.TotalSeconds; // TEST-SUPPORT: PERF-WORKLOAD-0063 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (!_started && elapsed >= 1) // TEST-SUPPORT: PERF-WORKLOAD-0064 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: PERF-WORKLOAD-0065 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            _started = true; // TEST-SUPPORT: PERF-WORKLOAD-0066 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            PerformanceRecorder.Mark("loading_start"); // TEST-SUPPORT: PERF-WORKLOAD-0067 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            Start(null); // TEST-SUPPORT: PERF-WORKLOAD-0068 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: PERF-WORKLOAD-0069 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var flow = GameFlowManager.Instance; // TEST-SUPPORT: PERF-WORKLOAD-0070 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_restored != null && flow.GameFlowState == GameFlowState.StartMenu) // TEST-SUPPORT: PERF-WORKLOAD-0071 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: PERF-WORKLOAD-0072 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            PerformanceRecorder.Mark("restored_loading_start"); // TEST-SUPPORT: PERF-WORKLOAD-0073 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            var state = _restored; // TEST-SUPPORT: PERF-WORKLOAD-0074 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            _restored = null; // TEST-SUPPORT: PERF-WORKLOAD-0075 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            Start(state); // TEST-SUPPORT: PERF-WORKLOAD-0076 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: PERF-WORKLOAD-0077 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (flow.GameFlowState == GameFlowState.InGame) // TEST-SUPPORT: PERF-WORKLOAD-0078 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: PERF-WORKLOAD-0079 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            var network = NetworkManager.Instance; // TEST-SUPPORT: PERF-WORKLOAD-0080 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            var owner = network.World.LocalPlayer!.Participant!; // TEST-SUPPORT: PERF-WORKLOAD-0081 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            var ship = owner.ControlledShip!; // TEST-SUPPORT: PERF-WORKLOAD-0082 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (!ReferenceEquals(network, _boundNetwork)) // TEST-SUPPORT: PERF-WORKLOAD-0083 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: PERF-WORKLOAD-0084 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _boundNetwork = network; // TEST-SUPPORT: PERF-WORKLOAD-0085 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _lastPosition = ship.GlobalPosition; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-5 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                network.AbilityFeedback += AbilityResult; // TEST-SUPPORT: PERF-WORKLOAD-0086 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                network.ItemFeedback += ItemResult; // TEST-SUPPORT: PERF-WORKLOAD-0087 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _focus.SetValue(null, FocusedValue); // TEST-SUPPORT: PERF-WORKLOAD-0088 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _activeSeen = true; // TEST-SUPPORT: PERF-WORKLOAD-0089 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                if (_firstActive < 0) _firstActive = elapsed; // TEST-SUPPORT: PERF-WORKLOAD-0090 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                PerformanceRecorder.Mark(_restoreStarted ? "restored_active" : "active"); // TEST-SUPPORT: PERF-WORKLOAD-0091 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                if (_restoreStarted) // TEST-SUPPORT: PERF-WORKLOAD-0092 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                { // TEST-SUPPORT: PERF-WORKLOAD-0093 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    _restoreVerified = ship.EntityId == _restoreEntity; // TEST-SUPPORT: PERF-WORKLOAD-0094 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    if (!_restoreVerified) throw new InvalidOperationException("Restoration changed the controlled entity identity."); // TEST-SUPPORT: PERF-WORKLOAD-0095 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                } // TEST-SUPPORT: PERF-WORKLOAD-0096 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: PERF-WORKLOAD-0097 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            PerformanceRecorder.Network(network.Synchronization!.Rtt, network.Synchronization.Jitter); // TEST-SUPPORT: PERF-WORKLOAD-0098 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            _distance += ship.GlobalPosition.DistanceTo(_lastPosition); // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-6 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            _lastPosition = ship.GlobalPosition; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-7 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            _maxPeers = Math.Max(_maxPeers, network.World.Players.Count); // TEST-SUPPORT: PERF-WORKLOAD-0099 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (owner.Inventory.Revision != _lastInventoryRevision) // TEST-SUPPORT: PERF-WORKLOAD-0100 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: PERF-WORKLOAD-0101 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _inventoryChanges++; // TEST-SUPPORT: PERF-WORKLOAD-0102 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _lastInventoryRevision = owner.Inventory.Revision; // TEST-SUPPORT: PERF-WORKLOAD-0103 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: PERF-WORKLOAD-0104 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (_scenario == "restored" && _host && !_restoreStarted && elapsed - _firstActive >= 2) // TEST-SUPPORT: PERF-WORKLOAD-0105 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: PERF-WORKLOAD-0106 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                ship.Runtime.SetShieldCurrent(Math.Min(17, ship.Runtime.Shield.Capacity)); // TEST-SUPPORT: PERF-WORKLOAD-0107 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _restoreEntity = ship.EntityId; // TEST-SUPPORT: PERF-WORKLOAD-0108 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                PerformanceRecorder.Mark("restore_capture_start"); // TEST-SUPPORT: PERF-WORKLOAD-0109 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _restored = GamePlayManager.Instance.CaptureState(); // TEST-SUPPORT: PERF-WORKLOAD-0110 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                PerformanceRecorder.Mark("restore_capture_end"); // TEST-SUPPORT: PERF-WORKLOAD-0111 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _restoreStarted = true; // TEST-SUPPORT: PERF-WORKLOAD-0112 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                flow.QuitToStartMenu(); // TEST-SUPPORT: PERF-WORKLOAD-0113 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                return; // TEST-SUPPORT: PERF-WORKLOAD-0114 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: PERF-WORKLOAD-0115 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            var phaseTime = elapsed + _offset; // TEST-SUPPORT: PERF-WORKLOAD-OFFSET-3 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            var phase = _scenario == "matrix" ? phaseTime < 210 ? "idle" : phaseTime < 420 ? "active" : "burst" : _scenario; // TEST-SUPPORT: PERF-WORKLOAD-0116 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (phase != _phase) // TEST-SUPPORT: PERF-WORKLOAD-0117 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: PERF-WORKLOAD-0118 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _phase = phase; // TEST-SUPPORT: PERF-WORKLOAD-0119 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                PerformanceRecorder.Mark("phase_" + phase); // TEST-SUPPORT: PERF-WORKLOAD-0120 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                Input.ActionRelease("Forwards"); // TEST-SUPPORT: PERF-WORKLOAD-0121 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                Input.ActionRelease("Backwards"); // TEST-SUPPORT: PERF-WORKLOAD-0122 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: PERF-WORKLOAD-0123 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (phase != "idle") // TEST-SUPPORT: PERF-WORKLOAD-0124 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: PERF-WORKLOAD-0125 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                if (elapsed >= _nextFocus) // TEST-SUPPORT: PERF-WORKLOAD-0126 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                { // TEST-SUPPORT: PERF-WORKLOAD-0127 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    _nextFocus = elapsed + 1; // TEST-SUPPORT: PERF-WORKLOAD-0128 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    _focus.SetValue(null, FocusedValue); // TEST-SUPPORT: PERF-WORKLOAD-0129 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    if ((int)(elapsed / 10) % 2 == 0) // TEST-SUPPORT: PERF-WORKLOAD-0130 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    { // TEST-SUPPORT: PERF-WORKLOAD-0131 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                        Input.ActionRelease("Backwards"); // TEST-SUPPORT: PERF-WORKLOAD-0132 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                        Input.ActionPress("Forwards"); // TEST-SUPPORT: PERF-WORKLOAD-0133 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    } // TEST-SUPPORT: PERF-WORKLOAD-0134 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    else // TEST-SUPPORT: PERF-WORKLOAD-0135 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    { // TEST-SUPPORT: PERF-WORKLOAD-0136 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                        Input.ActionRelease("Forwards"); // TEST-SUPPORT: PERF-WORKLOAD-0137 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                        Input.ActionPress("Backwards"); // TEST-SUPPORT: PERF-WORKLOAD-0138 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    } // TEST-SUPPORT: PERF-WORKLOAD-0139 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                } // TEST-SUPPORT: PERF-WORKLOAD-0140 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                if (elapsed >= _nextAbility) // TEST-SUPPORT: PERF-WORKLOAD-0141 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                { // TEST-SUPPORT: PERF-WORKLOAD-0142 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    _nextAbility = elapsed + 1; // TEST-SUPPORT: PERF-WORKLOAD-0143 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    var equipped = ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("shield_generator")]; // TEST-SUPPORT: PERF-WORKLOAD-0144 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    if (equipped != null) // TEST-SUPPORT: PERF-WORKLOAD-0145 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    { // TEST-SUPPORT: PERF-WORKLOAD-0146 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                        foreach (var ability in equipped.Definition.AbilityIds) // TEST-SUPPORT: PERF-WORKLOAD-0147 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                        { // TEST-SUPPORT: PERF-WORKLOAD-0148 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                            if (!network.Abilities.Definitions.Abilities.IsSupported(ability, out _)) continue; // TEST-SUPPORT: PERF-WORKLOAD-0149 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                            network.ActivateAbility(ability, ship.EntityId, "shield_generator", checked((long)equipped.Id.Value)); // TEST-SUPPORT: PERF-WORKLOAD-0150 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                            break; // TEST-SUPPORT: PERF-WORKLOAD-0151 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                        } // TEST-SUPPORT: PERF-WORKLOAD-0152 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    } // TEST-SUPPORT: PERF-WORKLOAD-0153 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                } // TEST-SUPPORT: PERF-WORKLOAD-0154 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                if (phase == "burst" && elapsed >= _nextTransfer) // TEST-SUPPORT: PERF-WORKLOAD-0155 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                { // TEST-SUPPORT: PERF-WORKLOAD-0156 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    _nextTransfer = elapsed + .2; // TEST-SUPPORT: PERF-WORKLOAD-0157 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    Transfer(network, elapsed); // TEST-SUPPORT: PERF-WORKLOAD-0158 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                } // TEST-SUPPORT: PERF-WORKLOAD-0159 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: PERF-WORKLOAD-0160 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: PERF-WORKLOAD-0161 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (elapsed >= _seconds) Finish(); // TEST-SUPPORT: PERF-WORKLOAD-0162 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: PERF-WORKLOAD-0163 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private void Start(RestoredWorldState? state) // TEST-SUPPORT: PERF-WORKLOAD-0164 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: PERF-WORKLOAD-0165 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        GameFlowManager.Instance.StartNetworkGame(new NetworkStartupData(_host ? NetworkRole.Host : NetworkRole.Client, // TEST-SUPPORT: PERF-WORKLOAD-0166 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            NetworkType.Lan, 10, 60000, "127.0.0.1", _port) { RestoredWorld = state }); // TEST-SUPPORT: PERF-WORKLOAD-0167 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: PERF-WORKLOAD-0168 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private void AbilityResult(AbilityActivationResult result) // TEST-SUPPORT: PERF-WORKLOAD-0169 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: PERF-WORKLOAD-0170 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (result == AbilityActivationResult.Accepted) _accepted++; // TEST-SUPPORT: PERF-WORKLOAD-0171 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        else if (result != AbilityActivationResult.Pending) _rejected++; // TEST-SUPPORT: PERF-WORKLOAD-0172 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: PERF-WORKLOAD-0173 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private void ItemResult(string message) => _itemRejections++; // TEST-SUPPORT: PERF-WORKLOAD-0174 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private void Transfer(NetworkManager network, double elapsed) // TEST-SUPPORT: PERF-WORKLOAD-0175 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: PERF-WORKLOAD-0176 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var owner = network.World.LocalPlayer!.Participant!; // TEST-SUPPORT: PERF-WORKLOAD-0177 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var equipment = owner.ControlledShip!.Equipment; // TEST-SUPPORT: PERF-WORKLOAD-0178 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var inventory = owner.Inventory; // TEST-SUPPORT: PERF-WORKLOAD-0179 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var equipped = equipment.Snapshot.Slots[equipment.FindSlot("shield_generator")]; // TEST-SUPPORT: PERF-WORKLOAD-0180 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        for (var i = 0; i < inventory.Capacity; i++) // TEST-SUPPORT: PERF-WORKLOAD-0181 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: PERF-WORKLOAD-0182 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            var item = inventory.Snapshot.Slots[i]; // TEST-SUPPORT: PERF-WORKLOAD-0183 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            TransferRequest? request = null; // TEST-SUPPORT: PERF-WORKLOAD-0184 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (equipped != null && item == null) // TEST-SUPPORT: PERF-WORKLOAD-0185 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                request = new(0, ItemCellAddress.Equipment("shield_generator"), equipped.Id, ItemCellAddress.Inventory(i), null, inventory.Revision, equipment.Revision); // TEST-SUPPORT: PERF-WORKLOAD-0186 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            else if (equipped == null && item?.Definition.CategoryId == "shield_generator") // TEST-SUPPORT: PERF-WORKLOAD-0187 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                request = new(0, ItemCellAddress.Inventory(i), item.Id, ItemCellAddress.Equipment("shield_generator"), null, inventory.Revision, equipment.Revision); // TEST-SUPPORT: PERF-WORKLOAD-0188 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (request == null) continue; // TEST-SUPPORT: PERF-WORKLOAD-0189 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            _transferAttempts++; // TEST-SUPPORT: PERF-WORKLOAD-0191 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (elapsed >= _nextRejectedTransfer && request.InventoryRevision > 0) // TEST-SUPPORT: PERF-WORKLOAD-0192 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: PERF-WORKLOAD-0193 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _nextRejectedTransfer = elapsed + 1; // TEST-SUPPORT: PERF-WORKLOAD-0194 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                network.RequestItemTransfer(request with { InventoryRevision = request.InventoryRevision - 1 }); // TEST-SUPPORT: PERF-WORKLOAD-0195 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _staleAttempts++; // TEST-SUPPORT: PERF-WORKLOAD-0196 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: PERF-WORKLOAD-0197 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            else network.RequestItemTransfer(request); // TEST-SUPPORT: PERF-WORKLOAD-0190 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            return; // TEST-SUPPORT: PERF-WORKLOAD-0198 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: PERF-WORKLOAD-0199 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: PERF-WORKLOAD-0200 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private void Finish() // TEST-SUPPORT: PERF-WORKLOAD-0201 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: PERF-WORKLOAD-0202 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _finished = true; // TEST-SUPPORT: PERF-WORKLOAD-0203 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Input.ActionRelease("Forwards"); // TEST-SUPPORT: PERF-WORKLOAD-0204 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Input.ActionRelease("Backwards"); // TEST-SUPPORT: PERF-WORKLOAD-0205 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        PerformanceRecorder.Mark("finished"); // TEST-SUPPORT: PERF-WORKLOAD-0206 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var activeStart = Math.Max(_firstActive, _scenario == "matrix" ? 210 - _offset : 0); // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-ACTIVE-START | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var verifyActivity = _scenario != "idle" && _seconds - activeStart >= 20; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-ACTIVITY | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var success = _activeSeen && _maxPeers == _expectedPeers && GameFlowManager.Instance.GameFlowState == GameFlowState.InGame && // TEST-SUPPORT: PERF-WORKLOAD-0207 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            (!verifyActivity || _distance > 1 && _accepted > 0) && // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-MOVEMENT-ABILITIES | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            (!_host || _scenario != "restored" || _restoreVerified); // TEST-SUPPORT: PERF-WORKLOAD-0208 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        File.WriteAllText(Path.Combine(_output, "workload.json"), JsonConvert.SerializeObject(new // TEST-SUPPORT: PERF-WORKLOAD-0209 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: PERF-WORKLOAD-0210 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            success, role = _host ? "host" : "client", scenario = _scenario, duration = _clock.Elapsed.TotalSeconds, // TEST-SUPPORT: PERF-WORKLOAD-0211 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            offset = _offset, distanceTravelled = _distance, expectedPeers = _expectedPeers, // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-8 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            assemblyConfiguration = typeof(PerformanceVerification).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration, // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-9 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            jitOptimizerDisabled = typeof(PerformanceVerification).Assembly.GetCustomAttribute<DebuggableAttribute>()?.IsJITOptimizerDisabled, // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-10 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            firstActiveSeconds = _firstActive, maxPeers = _maxPeers, acceptedAbilities = _accepted, // TEST-SUPPORT: PERF-WORKLOAD-0212 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            rejectedAbilities = _rejected, transferAttempts = _transferAttempts, staleAttempts = _staleAttempts, // TEST-SUPPORT: PERF-WORKLOAD-0213 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            itemRejections = _itemRejections, inventoryRevisionChanges = _inventoryChanges, // TEST-SUPPORT: PERF-WORKLOAD-0214 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            restored = _restoreVerified, dataChecksum = GameConfig.GameDataChecksum, configChecksum = GameConfig.ConfigDataChecksum // TEST-SUPPORT: PERF-WORKLOAD-0215 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        }, Formatting.Indented)); // TEST-SUPPORT: PERF-WORKLOAD-0216 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        PerformanceRecorder.Flush(_output); // TEST-SUPPORT: PERF-WORKLOAD-0217 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        GD.Print("PERFORMANCE_COMPLETE success=" + success); // TEST-SUPPORT: PERF-WORKLOAD-0218 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        GameFlowManager.Instance.QuitToStartMenu(); // TEST-SUPPORT: PERF-WORKLOAD-0219 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        GetTree().Quit(success ? 0 : 2); // TEST-SUPPORT: PERF-WORKLOAD-0220 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: PERF-WORKLOAD-0221 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+} // TEST-SUPPORT: PERF-WORKLOAD-0222 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+

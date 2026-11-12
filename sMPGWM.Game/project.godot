@@ -13,6 +13,7 @@ config_version=5
 config/name="sMPGWM"
 run/main_scene="uid://bwppb4jr80bw0"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+run/max_fps=60
 
 [autoload]
 

@@ -2,7 +2,6 @@ using Godot;
 using Newtonsoft.Json.Linq;
 using System;
 using sMPGWM.Scripts.GameConfigSystem;
-using sMPGWM.Scripts.GameFlowSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.FileLoadingSystem;
@@ -11,13 +10,6 @@ public static class FileLoader
 {
     internal static readonly System.Collections.Generic.Dictionary<string, string> CapturedInputs = new();
 
-    public static void AbortLoad(DataLoadError error)
-    {
-        var message = error.ToDisplayString();
-        Logger.Info(message);
-        GameFlowManager.Instance.QuitToStartMenuBlocking(message);
-    }
-    
     private static LoadResult<JToken> LoadYamlAndValidate(
         string userPath,
         string defaultPath,

@@ -1,0 +1,38 @@
+diff --git a/docs/plans/multiplayer-performance-and-final-cleanup.md b/docs/plans/multiplayer-performance-and-final-cleanup.md
+index 200ddad..bcff36a 100644
+--- a/docs/plans/multiplayer-performance-and-final-cleanup.md
++++ b/docs/plans/multiplayer-performance-and-final-cleanup.md
+@@ -1,6 +1,6 @@
+ # Multiplayer performance measurements and final cleanup review
+ 
+-Status: planned. No performance acceptance or cleanup completion is claimed by this document.
++Status: partially executed. See [2026-11-12 evidence and cleanup ledger](../measurements/2026-11-12-final/report.md). No performance acceptance or full cleanup completion is claimed.
+ 
+ This is the standalone plan for the two remaining workstreams after session initialization and restored-state installation: measure multiplayer runtime behaviour, then simplify the implementation using the verified lifecycle guarantees. It includes the environment, contracts, workloads, evidence, and completion criteria needed to execute the work without another plan.
+ 
+diff --git a/sMPGWM.Game/Scripts/FileLoadingSystem/FileLoader.cs b/sMPGWM.Game/Scripts/FileLoadingSystem/FileLoader.cs
+index 580f3a9..0be5b28 100644
+--- a/sMPGWM.Game/Scripts/FileLoadingSystem/FileLoader.cs
++++ b/sMPGWM.Game/Scripts/FileLoadingSystem/FileLoader.cs
+@@ -2,7 +2,6 @@ using Godot;
+ using Newtonsoft.Json.Linq;
+ using System;
+ using sMPGWM.Scripts.GameConfigSystem;
+-using sMPGWM.Scripts.GameFlowSystem;
+ using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
+ 
+ namespace sMPGWM.Scripts.FileLoadingSystem;
+@@ -11,13 +10,6 @@ public static class FileLoader
+ {
+     internal static readonly System.Collections.Generic.Dictionary<string, string> CapturedInputs = new();
+ 
+-    public static void AbortLoad(DataLoadError error)
+-    {
+-        var message = error.ToDisplayString();
+-        Logger.Info(message);
+-        GameFlowManager.Instance.QuitToStartMenuBlocking(message);
+-    }
+-    
+     private static LoadResult<JToken> LoadYamlAndValidate(
+         string userPath,
+         string defaultPath,

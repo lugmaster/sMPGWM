@@ -1,0 +1,27 @@
+{
+  "enabled": true,
+  "durationSeconds": 15.5072513,
+  "allocatedBytes": 34110584,
+  "cpuMs": 4343.75,
+  "collections": [
+    1,
+    1,
+    0
+  ],
+  "totalGcPauseMs": 13.001999999999999,
+  "stopwatchFrequency": 10000000,
+  "steps": 850,
+  "publications": 0,
+  "arrivals": 421,
+  "frames": 2158,
+  "samples": 17,
+  "dropped": {
+    "steps": 0,
+    "publications": 0,
+    "arrivals": 0,
+    "frames": 0,
+    "samples": 0,
+    "markers": 0
+  },
+  "note": "Bounded recorder; Godot work monitors may report the preceding engine frame. Heap figures update at collections. Process allocation totals include recorder 1 Hz sampling; CSV/JSON output occurs after cutoff. GC pause column is cumulative, not individual pause durations."
+}

@@ -20,7 +20,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public PlayerController LocalPlayer => _session?.Player!;
     public MessageController MessageController => _session?.Messages!;
     public MainGameState GameState => _gameState;
-    public event Action<MainGameState>? OnGameStateChanged;
     [Export] public bool PopulateMockInventory { get; set; } = true;
 
     public RestoredWorldState CaptureState()
@@ -72,11 +71,11 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     }
 
     protected override void OnExitTree() => _coordinator?.Stop();
-    public void StopSession() => SetGameState(MainGameState.Inactive);
+    private void StopSession() => SetGameState(MainGameState.Inactive);
     private void NetworkStateChanged(GameFlowState state) =>
         SetGameState(state == GameFlowState.InGame ? MainGameState.Active : MainGameState.Inactive);
 
-    public void SetGameState(MainGameState newGameState)
+    private void SetGameState(MainGameState newGameState)
     {
         if (!Enum.IsDefined(newGameState))
             throw new ArgumentOutOfRangeException(nameof(newGameState), newGameState, null);
@@ -85,6 +84,5 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
         if (_session != null && GodotObject.IsInstanceValid(_session.Player) && _session.Player.IsInsideTree())
             _session.Player.SetSessionActive(newGameState == MainGameState.Active);
         _session?.Messages.SetActive(newGameState == MainGameState.Active);
-        OnGameStateChanged?.Invoke(newGameState);
     }
 }

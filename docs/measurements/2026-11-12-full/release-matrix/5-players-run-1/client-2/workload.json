@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "role": "client",
+  "scenario": "matrix",
+  "duration": 626.5257959,
+  "offset": 3.5,
+  "distanceTravelled": 160177.68491271138,
+  "expectedPeers": 5,
+  "assemblyConfiguration": "Release",
+  "jitOptimizerDisabled": false,
+  "firstActiveSeconds": 1.6685907,
+  "maxPeers": 5,
+  "acceptedAbilities": 320,
+  "rejectedAbilities": 13,
+  "transferAttempts": 1008,
+  "staleAttempts": 202,
+  "itemRejections": 202,
+  "inventoryRevisionChanges": 807,
+  "restored": false,
+  "dataChecksum": "1812a5a23049d0e2b4fe28b1d37ebe7fd01ea405e00b86914d0358654692f3e0",
+  "configChecksum": "3952af8afc3642d2f2fb175533bf5818d759952ace161f09e98ef49e8db2bb98"
+}

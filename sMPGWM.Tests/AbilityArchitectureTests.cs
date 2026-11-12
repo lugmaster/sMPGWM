@@ -35,7 +35,7 @@ public sealed class AbilityArchitectureTests // TEST-SUPPORT: ABILITY-TEST-002 |
         Assert.That(ability.DisplayName, Is.EqualTo("Shield Capacity Boost")); // TEST-SUPPORT: ABILITY-TEST-024 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         Assert.Throws<NotSupportedException>(() => ((IList<string>)ability.BlockedByConditions).Add("dead")); // TEST-SUPPORT: ABILITY-TEST-025 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
 
-        var categories = ItemRegistry.LoadItemCategoryDefinitions(GameplayTestData.Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: ABILITY-TEST-026 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(GameplayTestData.Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: ABILITY-TEST-026 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         var items = ItemRegistry.LoadItemDefinitions(GameplayTestData.Read("ItemDefinitions.yml", "ItemSchema.yml"), categories, _ => null!); // TEST-SUPPORT: ABILITY-TEST-027 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         var all = new List<ItemDefinition>(items.Values); // TEST-SUPPORT: ABILITY-TEST-028 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         GameplayCatalogueValidator.ValidateItems(data, all); // TEST-SUPPORT: ABILITY-TEST-029 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable

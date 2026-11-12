@@ -67,7 +67,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
         StateChanged?.Invoke(state);
     }
 
-    public void CompleteLoading()
+    private void CompleteLoading()
     {
         if (_gameFlowState == GameFlowState.Loading && Session?.State == SessionState.Active)
             SetState(GameFlowState.InGame);

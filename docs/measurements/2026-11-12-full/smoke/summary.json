@@ -1,0 +1,6 @@
+{
+  "method": "nearest-rank",
+  "stepBudgetMs": 16.666666666666668,
+  "publicationBudgetMs": 33.333333333333336,
+  "runs": []
+}

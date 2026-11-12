@@ -13,11 +13,13 @@ public static class ShipFactory
         ItemStore store, bool authoritative)
     {
         ShipController? ship = null;
+        ShipLoadout? loadout = null;
         try
         {
             ship = GamePlayProvider.CreateShip();
             ship.EntityId = entityId; ship.Data = data;
             ship.ConfigureLoadout(store, authoritative);
+            loadout = ship.Loadout;
             ship.Position = position; ship.Rotation = rotation; ship.Velocity = velocity;
             var collider = new Vector2[data.ColliderPoints.Count];
             for (var i = 0; i < collider.Length; i++) collider[i] = data.ColliderPoints[i];
@@ -29,8 +31,24 @@ public static class ShipFactory
         }
         catch (Exception e)
         {
-            if (ship != null) { ship.Loadout.Dispose(); ship.Runtime.Dispose(); ship.Free(); }
-            throw new InvalidOperationException($"Constructing ship '{data.Name}' entity '{entityId}' failed: {e.Message}", e);
+            var failure = e;
+            try
+            {
+                try { loadout?.Dispose(); }
+                finally
+                {
+                    if (ship != null)
+                    {
+                        try { ship.Runtime?.Dispose(); }
+                        finally { ship.Free(); }
+                    }
+                }
+            }
+            catch (Exception cleanupError)
+            {
+                failure = new AggregateException("Ship construction and cleanup failed.", e, cleanupError);
+            }
+            throw new InvalidOperationException($"Constructing ship '{data.Name}' entity '{entityId}' failed: {e.Message}", failure);
         }
     }
 }

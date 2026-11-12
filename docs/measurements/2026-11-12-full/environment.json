@@ -1,0 +1,25 @@
+{
+    "sdk":  "10.0.100",
+    "gpu":  [
+                {
+                    "Name":  "NVIDIA GeForce RTX 4060 Ti",
+                    "CurrentRefreshRate":  59
+                },
+                {
+                    "Name":  "AMD Radeon(TM) Graphics",
+                    "CurrentRefreshRate":  59
+                }
+            ],
+    "cpu":  {
+                "Name":  "AMD Ryzen 7 7700 8-Core Processor              ",
+                "NumberOfCores":  8,
+                "NumberOfLogicalProcessors":  16
+            },
+    "ram":  67737919488,
+    "power":  "GUID des Energieschemas: 381b4222-f694-41f0-9685-ff5bb260df2e  (Ausbalanciert)",
+    "revision":  "a57352656b8ca7179bc81730772b6d477ea64022",
+    "os":  {
+               "Caption":  "Microsoft Windows 11 Pro",
+               "Version":  "10.0.26200"
+           }
+}

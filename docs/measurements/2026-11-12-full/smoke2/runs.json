@@ -1,0 +1,13 @@
+[
+  {
+    "run": "5-players-run-1",
+    "exitCodes": {
+      "host": 0,
+      "client-1": 0,
+      "client-2": 0,
+      "client-3": 0,
+      "client-4": 0
+    },
+    "seconds": 24.510303600000043
+  }
+]

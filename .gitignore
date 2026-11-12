@@ -85,3 +85,13 @@ desktop.ini
 /sMPGWM.Game/addons/**/bin/
 /sMPGWM.Game/addons/**/obj/
 /sMPGWM.Game/addons/**/.godot/
+
+# Local performance evidence is archived outside Git; keep reports and metadata.
+/docs/measurements/2026-11-12-results.zip
+/docs/measurements/2026-11-12-results.zip.partial
+/docs/measurements/2026-11-12-*/**/*.csv
+!/docs/measurements/2026-11-12-*/**/markers.csv
+/docs/measurements/2026-11-12-*/**/*.trx
+/docs/measurements/2026-11-12-*/**/*.xml
+/docs/measurements/2026-11-12-*/**/*.yml
+/docs/measurements/2026-11-12-*/**/userdata/
