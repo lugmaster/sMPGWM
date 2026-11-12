@@ -115,7 +115,7 @@ public partial class PlayerController : Node
         if (Input.IsGameplayInputAvailable)
         {
             var aim = _ship.GetGlobalMousePosition() - _ship.GlobalPosition;
-            _ship.SetInput(new(Input.Direction, aim.Angle(), !_canvas.IsPointerOverInteractiveUi() && aim.LengthSquared() > 0,
+            _ship.SetInput(new(Input.Direction, aim.Angle(), Input.AlternateActionPressed && aim.LengthSquared() > 0,
                 Input.AfterBurnerPressed, Input.BreakPressed, Input.AutoBreakingEnabled));
         }
         else
