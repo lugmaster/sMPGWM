@@ -4,7 +4,7 @@ Items:
     DisplayName: Standard Engine
     CategoryId: engine
     Values:
-      EnergyConsumption: 1
+      EnergyConsumption: 16
       Speed: 300
       AfterBurnerSpeed: 400
       RotationSpeed: 30
@@ -16,7 +16,7 @@ Items:
     DisplayName: Advanced Engine
     CategoryId: engine
     Values:
-      EnergyConsumption: 1
+      EnergyConsumption: 16
       Speed: 300
       AfterBurnerSpeed: 400
       RotationSpeed: 30
@@ -65,14 +65,14 @@ Items:
     CategoryId: reactor
     Values:
       Mass: 1
-      EnergyProduction: 15
+      EnergyProduction: 24
     Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
   - Id: mock_advanced_reactor
     DisplayName: Advanced Reactor
     CategoryId: reactor
     Values:
       Mass: 1
-      EnergyProduction: 15
+      EnergyProduction: 24
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
   - Id: mock_standard_light_weapon
     DisplayName: Standard Light Weapon

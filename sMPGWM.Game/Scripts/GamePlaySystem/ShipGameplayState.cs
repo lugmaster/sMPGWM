@@ -25,6 +25,8 @@ public sealed class ShipGameplayState
     public ResourceState Energy => new(_energy.BaseCapacity, _energy.Capacity, _energy.Current);
     public ResolvedShipStats Stats { get; private set; }
     public bool EnergyDepleted { get; private set; }
+    public bool AfterburnerActive { get; private set; }
+    public double EnergyConsumption => Stats.GetEnergyConsumption(AfterburnerActive);
     public bool PoweredSystemsAvailable => !EnergyDepleted;
     public bool MovementAvailable => Stats.HasEngine && PoweredSystemsAvailable;
     public bool ShieldProtectionAvailable => Stats.HasShieldGenerator && PoweredSystemsAvailable &&
@@ -65,6 +67,7 @@ public sealed class ShipGameplayState
         _energy.SetBaseline(stats.EnergyStorage, stats.HasBattery);
         if (_batteryIdentity != batteryIdentity) _energy.SetCurrent(0);
         Stats = stats;
+        if (!stats.HasEngine) AfterburnerActive = false;
         _batteryIdentity = batteryIdentity;
         RefreshPower();
         if (movementChanged || beforeMovement != MovementAvailable) ConfigurationRevision = checked(ConfigurationRevision + 1);
@@ -85,6 +88,19 @@ public sealed class ShipGameplayState
         PublishChanges();
     }
 
+    public void SetAfterburner(bool active)
+    {
+        active &= Stats.HasEngine;
+        if (AfterburnerActive == active) return;
+        var beforeMovement = MovementAvailable;
+        // Keep demand while depleted so holding afterburner cannot oscillate the power state.
+        AfterburnerActive = active;
+        RefreshPower();
+        if (beforeMovement != MovementAvailable) ConfigurationRevision = checked(ConfigurationRevision + 1);
+        Revision = checked(Revision + 1);
+        PublishChanges();
+    }
+
     public bool AdvanceResources(long tick)
     {
         if (tick < 0) throw new ArgumentOutOfRangeException(nameof(tick));
@@ -96,7 +112,7 @@ public sealed class ShipGameplayState
         var beforeDepleted = EnergyDepleted;
         var beforeMovement = MovementAvailable;
         var previousDeadline = ShieldDowntimeDeadline;
-        var net = Stats.EnergyProduction - Stats.EnergyConsumption;
+        var net = Stats.EnergyProduction - EnergyConsumption;
         var delta = net / PhysicsStepsPerSecond;
         _energy.SetCurrent(delta >= 0 ? _energy.Current + Math.Min(delta, _energy.Capacity - _energy.Current) : Math.Max(0, _energy.Current + delta));
         RefreshPower();
@@ -117,7 +133,7 @@ public sealed class ShipGameplayState
 
     private void RefreshPower()
     {
-        EnergyDepleted = Stats.EnergyProduction < Stats.EnergyConsumption && _energy.Current == 0;
+        EnergyDepleted = Stats.EnergyProduction < EnergyConsumption && _energy.Current == 0;
         var index = _conditions.IndexOf("energyDepleted");
         if (EnergyDepleted && index < 0) _conditions.Add("energyDepleted");
         else if (!EnergyDepleted && index >= 0) _conditions.RemoveAt(index);
@@ -241,7 +257,7 @@ public sealed class ShipGameplayState
     public bool Confirm(long revision, double capacity, double current, IReadOnlyList<BehaviourInstance> behaviours,
         int factionId, IReadOnlyList<string> conditions, ResolvedShipStats stats, double energyCurrent,
         bool energyDepleted, bool shieldProtectionAvailable, long shieldDowntimeDeadline, long authoritativeTick,
-        long configurationRevision)
+        long configurationRevision, bool afterburnerActive)
     {
         if (revision <= Revision || authoritativeTick < AuthoritativeTick || configurationRevision < ConfigurationRevision) return false;
         if (!stats.IsValid || !double.IsFinite(capacity) || capacity < 0 || !double.IsFinite(current) || current < 0 || current > capacity ||
@@ -249,7 +265,8 @@ public sealed class ShipGameplayState
             shieldDowntimeDeadline < 0 || authoritativeTick < 0 || configurationRevision < 1 ||
             behaviours.Count > MaxBehaviours || factionId < 0 || conditions.Count > MaxConditions ||
             (!stats.HasShieldGenerator && (capacity != 0 || current != 0)) ||
-            energyDepleted != (stats.EnergyProduction < stats.EnergyConsumption && energyCurrent == 0) ||
+            afterburnerActive && !stats.HasEngine ||
+            energyDepleted != (stats.EnergyProduction < stats.GetEnergyConsumption(afterburnerActive) && energyCurrent == 0) ||
             shieldProtectionAvailable != (stats.HasShieldGenerator && !energyDepleted && current > 0 && authoritativeTick >= shieldDowntimeDeadline))
             throw new ArgumentException("Invalid confirmed gameplay state.");
         var hasDepleted = false;
@@ -259,6 +276,7 @@ public sealed class ShipGameplayState
         _shield.Confirm(stats.ShieldCapacity, capacity, current, stats.HasShieldGenerator, stats.ShieldFlatModifier);
         _energy.Confirm(stats.EnergyStorage, stats.EnergyStorage, energyCurrent, stats.HasBattery);
         Stats = stats;
+        AfterburnerActive = afterburnerActive;
         EnergyDepleted = energyDepleted;
         ShieldDowntimeDeadline = shieldDowntimeDeadline;
         AuthoritativeTick = authoritativeTick;

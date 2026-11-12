@@ -35,6 +35,7 @@ public static class EquipmentStatCalculator
         Values? engine = null, hull = null, shield = null, reactor = null, battery = null;
         var mass = intrinsicMass;
         var demand = 0d;
+        var engineDemand = 0d;
         for (var i = 0; i < slots.Count; i++)
         {
             if (equipment.Slots[i] is not { } item) continue;
@@ -43,7 +44,7 @@ public static class EquipmentStatCalculator
             demand += value.EnergyConsumption;
             switch (slots[i].AcceptedCategory)
             {
-                case "engine": engine = value; break;
+                case "engine": engine = value; engineDemand += value.EnergyConsumption; break;
                 case "hull": hull = value; break;
                 case "shield_generator": shield = value; break;
                 case "reactor": reactor = value; break;
@@ -64,6 +65,7 @@ public static class EquipmentStatCalculator
             Resolve(battery, battery?.EnergyStorage ?? 0, modifiers.EnergyStorage),
             engine != null, hull != null, shield != null, reactor != null, battery != null)
         {
+            EngineEnergyConsumption = engineDemand,
             ShieldFlatModifier = shield == null ? 0 : modifiers.ShieldCapacity
         };
         if (!result.IsValid) throw new ArgumentException("Equipment resolves to invalid stats, recharge duration, or overflowing movement values.");

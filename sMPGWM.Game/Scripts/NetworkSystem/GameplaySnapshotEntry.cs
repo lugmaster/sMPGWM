@@ -17,4 +17,7 @@ internal sealed record GameplaySnapshotEntry(
     bool ShieldProtectionAvailable,
     long ShieldDowntimeDeadline,
     long AuthoritativeTick,
-    long ConfigurationRevision);
+    long ConfigurationRevision)
+{
+    public bool AfterburnerActive { get; init; }
+}

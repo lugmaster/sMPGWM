@@ -71,6 +71,8 @@ public partial class NetworkManager
                 _abilityPeerReady ??= MovementReady, _abilityCompleted ??= CompleteAbility);
         foreach (var ship in World.Entities.Values)
         {
+            var input = ship.InputState;
+            ship.Gameplay.SetAfterburner(input.Afterburner && !input.Brake && input.Direction.LengthSquared() > .01f);
             ship.Gameplay.AdvanceResources(tick);
             ship.RefreshMovementConfiguration();
         }
@@ -120,7 +122,7 @@ public partial class NetworkManager
             if (World.Entities.TryGetValue(entry.Entity, out var ship))
                 ship.Gameplay.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions,
                     entry.Stats, entry.EnergyCurrent, entry.EnergyDepleted, entry.ShieldProtectionAvailable,
-                    entry.ShieldDowntimeDeadline, entry.AuthoritativeTick, entry.ConfigurationRevision);
+                    entry.ShieldDowntimeDeadline, entry.AuthoritativeTick, entry.ConfigurationRevision, entry.AfterburnerActive);
         return true;
     }
 

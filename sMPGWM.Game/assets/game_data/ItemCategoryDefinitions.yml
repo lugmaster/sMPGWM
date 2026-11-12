@@ -4,7 +4,7 @@ Categories:
     DisplayName: Engines
     Icon: Travel.CarVeichleEngine
     Values: EnergyConsumption, Speed, AfterBurnerSpeed, RotationSpeed, Acceleration, AfterBurnerAcceleration, Mass
-    Description: "Engines let ships moves. The better the Engine, the faster the ship"
+    Description: "Engines move ships. Afterburner thrust increases engine energy consumption by 25%."
   - Id: hull
     DisplayName: Hulls
     Icon: Travel.SpaceshipJetShooter

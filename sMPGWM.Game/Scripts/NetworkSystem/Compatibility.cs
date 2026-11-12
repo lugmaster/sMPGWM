@@ -14,7 +14,7 @@ internal static class Compatibility
         return new()
         {
             ["handshake"] = "2",
-            ["protocol"] = "7",
+            ["protocol"] = "8",
             ["game_id"] = GameConfig.LobbyGameId,
             ["mode"] = GameConfig.LobbyMode,
             ["version"] = GameConfig.Version,

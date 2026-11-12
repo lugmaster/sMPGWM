@@ -92,14 +92,15 @@ public partial class SynchronizationCoordinator : Node
             Network.PublishWorldTopology();
             Player.SampleMovementInput();
             long tick = CompletedTick + 1;
-            Network.AdvanceGameplay(tick);
             foreach (var (peer, owner) in World.Players)
             {
                 var ship = owner.ControlledShip; if (ship == null) continue;
                 var q = Queue(peer, owner);
                 if (peer == 1) q.Accept(new(tick, ship.InputState), CompletedTick);
-                ship.SetInput(q.Consume(tick)); ship.Simulate(1.0 / 60);
+                ship.SetInput(q.Consume(tick));
             }
+            Network.AdvanceGameplay(tick);
+            foreach (var owner in World.Players.Values) owner.ControlledShip?.Simulate(1.0 / 60);
             CompletedTick = tick;
             Network.PublishGameplay(tick);
             if (tick % 2 == 0) Network.PublishMovement(Baseline());

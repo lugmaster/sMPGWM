@@ -10,6 +10,10 @@ public readonly record struct ResolvedShipStats(
     bool HasReactor, bool HasBattery)
 {
     public double ShieldFlatModifier { get; init; }
+    public double EngineEnergyConsumption { get; init; }
+
+    public double GetEnergyConsumption(bool afterburnerActive) =>
+        EnergyConsumption + (afterburnerActive ? EngineEnergyConsumption * 0.25 : 0);
 
     public bool IsValid =>
         float.IsFinite(Speed) && Speed >= 0 && float.IsFinite(AfterBurnerSpeed) && AfterBurnerSpeed >= 0 &&
@@ -23,6 +27,9 @@ public readonly record struct ResolvedShipStats(
         double.IsFinite(DownTime) && DownTime >= 0 && DownTime <= long.MaxValue / 60d &&
         double.IsFinite(EnergyProduction) && EnergyProduction >= 0 &&
         double.IsFinite(EnergyConsumption) && EnergyConsumption >= 0 &&
+        double.IsFinite(EngineEnergyConsumption) && EngineEnergyConsumption >= 0 &&
+        EngineEnergyConsumption <= EnergyConsumption && (HasEngine || EngineEnergyConsumption == 0) &&
+        double.IsFinite(GetEnergyConsumption(true)) &&
         double.IsFinite(EnergyStorage) && EnergyStorage >= 0 &&
         (HasEngine || Speed == 0 && AfterBurnerSpeed == 0 && RotationSpeed == 0 && Acceleration == 0 && AfterBurnerAcceleration == 0) &&
         (HasHull || Armor == 0) && (HasShieldGenerator || ShieldCapacity == 0 && ShieldFlatModifier == 0 && RechargeTime == 0 && DownTime == 0) &&
