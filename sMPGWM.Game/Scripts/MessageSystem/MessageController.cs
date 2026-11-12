@@ -1,9 +1,6 @@
 
 using System;
 using System.Collections.Generic;
-using sMPGWM.Scripts.GamePlaySystem;
-using sMPGWM.Scripts.PlayerControllerSystem;
-using sMPGWM.Scripts.UiSystem;
 
 namespace sMPGWM.Scripts.MessageSystem;
 
@@ -15,9 +12,8 @@ public sealed class MessageController : IDisposable
     private bool _publishing;
     private bool _disposed;
     private long _sequence;
-    private UiCanvas? _canvas;
-    private PlayerInputPolicy? _inputPolicy;
-    private bool _active;
+    internal bool Active { get; private set; }
+    internal event Action? AcknowledgementChanged;
 
     public PlayerMessage? PendingAcknowledgement
     {
@@ -31,32 +27,11 @@ public sealed class MessageController : IDisposable
         }
     }
 
-    internal MessageController(UiCanvas canvas, PlayerInputPolicy inputPolicy, Action<Exception> reportObserverError)
-        : this(reportObserverError)
-    {
-        _canvas = canvas;
-        _inputPolicy = inputPolicy;
-        canvas.MessageAcknowledged += AcknowledgeCurrent;
-        try { canvas.BindMessages(this); }
-        catch
-        {
-            Dispose();
-            throw;
-        }
-    }
-
     public void SetActive(bool active)
     {
         if (_disposed) return;
-        _active = active;
-        if (active) RefreshAcknowledgement();
-    }
-
-    private void RefreshAcknowledgement()
-    {
-        var required = PendingAcknowledgement;
-        _inputPolicy?.SetHasPendingAcknowledgement(required != null);
-        if (_active) _canvas?.PresentRequiredMessage(required);
+        Active = active;
+        if (active) AcknowledgementChanged?.Invoke();
     }
 
     internal void AcknowledgeCurrent()
@@ -110,7 +85,7 @@ public sealed class MessageController : IDisposable
         _publishing = true;
         try
         {
-            if (acknowledgementChanged) RefreshAcknowledgement();
+            if (acknowledgementChanged) AcknowledgementChanged?.Invoke();
             if (Changed == null) return;
             foreach (Action<MessageSnapshot> observer in Changed.GetInvocationList())
                 try { observer(Snapshot); }
@@ -127,20 +102,8 @@ public sealed class MessageController : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        try
-        {
-            if (_canvas != null && Godot.GodotObject.IsInstanceValid(_canvas))
-            {
-                _canvas.MessageAcknowledged -= AcknowledgeCurrent;
-                _canvas.EndMessageSession();
-            }
-        }
-        finally
-        {
-            _inputPolicy?.SetHasPendingAcknowledgement(false);
-            _canvas = null;
-            _inputPolicy = null;
-            Changed = null;
-        }
+        Active = false;
+        AcknowledgementChanged = null;
+        Changed = null;
     }
 }

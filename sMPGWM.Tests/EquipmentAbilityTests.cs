@@ -1,5 +1,6 @@
 using Godot;
-using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: EQUIP-VERIFY-001 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: EQUIP-VERIFY-001 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
 // TEST-SUPPORT: EQUIP-VERIFY-002 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
 // TEST-SUPPORT: EQUIP-VERIFY-003 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
 using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: EQUIP-VERIFY-004 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha

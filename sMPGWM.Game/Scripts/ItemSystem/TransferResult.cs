@@ -1,4 +1,4 @@
-namespace sMPGWM.Scripts.EquipmentSystem;
+namespace sMPGWM.Scripts.ItemSystem;
 
 public enum TransferResult
 {

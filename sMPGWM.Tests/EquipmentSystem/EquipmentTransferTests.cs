@@ -93,6 +93,22 @@ public class EquipmentTransferTests
         Assert.Throws<NotSupportedException>(() => ((IList<ItemEntity?>)_equipmentImpl.Snapshot.Slots)[0] = null);
     }
 
+    [Test] // TEST-SUPPORT: EQUIP-CATEGORY-ID-001 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+    public void CategoryIdentityDoesNotDependOnDisplayNames() // TEST-SUPPORT: EQUIP-CATEGORY-ID-002 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+    {
+        var categories = sMPGWM.Scripts.GameplayDataSystem.GameplayCatalogueLoader.LoadItemCategoryDefinitions( // TEST-SUPPORT: EQUIP-CATEGORY-ID-003 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+            Newtonsoft.Json.Linq.JObject.Parse("{Categories:[{Id:'engine',DisplayName:'Component'},{Id:'hull',DisplayName:'Component'}]}"), _ => null!); // TEST-SUPPORT: EQUIP-CATEGORY-ID-004 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        var items = sMPGWM.Scripts.GameplayDataSystem.GameplayCatalogueLoader.LoadItemDefinitions( // TEST-SUPPORT: EQUIP-CATEGORY-ID-005 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+            Newtonsoft.Json.Linq.JObject.Parse("{Items:[{Id:'custom_engine',DisplayName:'Engine',CategoryId:'engine'},{Id:'custom_hull',DisplayName:'Hull',CategoryId:'hull'}]}"), categories, _ => null!); // TEST-SUPPORT: EQUIP-CATEGORY-ID-006 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        var slot = _equipmentImpl.FindSlot("engine"); // TEST-SUPPORT: EQUIP-CATEGORY-ID-007 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        Assert.That(items["custom_engine"].CategoryName, Is.EqualTo(items["custom_hull"].CategoryName)); // TEST-SUPPORT: EQUIP-CATEGORY-ID-008 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        Assert.That(items["custom_engine"].CategoryId, Is.EqualTo("engine")); // TEST-SUPPORT: EQUIP-CATEGORY-ID-009 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_engine"], 1), Is.True); // TEST-SUPPORT: EQUIP-CATEGORY-ID-010 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_hull"], 1), Is.False); // TEST-SUPPORT: EQUIP-CATEGORY-ID-011 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_engine"], 2), Is.False); // TEST-SUPPORT: EQUIP-CATEGORY-ID-012 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        Assert.That(_equipmentImpl.Definitions, Is.SameAs(EquipmentSlotDefinition.Defaults)); // TEST-SUPPORT: EQUIP-CATEGORY-ID-013 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+    }
+
     [Test]
     public void EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity()
     {

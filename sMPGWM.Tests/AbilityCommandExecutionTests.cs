@@ -1,7 +1,8 @@
 using Godot; // TEST-SUPPORT: ABILITY-EXECUTION-001 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.InventorySystem; // TEST-SUPPORT: ABILITY-EXECUTION-002 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: ABILITY-EXECUTION-002 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
 // TEST-SUPPORT: ABILITY-EXECUTION-003 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
 // TEST-SUPPORT: ABILITY-EXECUTION-004 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands
 // TEST-SUPPORT: ABILITY-EXECUTION-005 | Tests: sMPGWM.Tests.AbilityCommandExecutionTests.ExecutionRevalidatesQueuedCommands

@@ -1,5 +1,6 @@
 using System;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.UtilitySystem;
 

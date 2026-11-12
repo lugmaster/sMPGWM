@@ -17,6 +17,7 @@ public sealed class ItemContainer
     internal Func<int, ItemDefinition, int, bool> Accepts { get; }
     internal bool Disposed { get; set; }
     public event Action? Changed;
+    // Preparation must not mutate the store; the returned install must not fail or publish.
     internal Func<ItemEntity?[], Action?>? PrepareChange { get; set; }
     internal Action? PublishDomainChange { get; set; }
 
@@ -28,13 +29,25 @@ public sealed class ItemContainer
         Accepts = accepts ?? ((_, _, _) => true);
     }
 
-    internal Action Prepare(ItemEntity?[] entities)
+    internal PreparedState Prepare(ItemEntity?[] entities)
     {
         var ids = new ItemEntityId?[entities.Length];
         for (var i = 0; i < entities.Length; i++) ids[i] = entities[i]?.Id;
         var slots = Array.AsReadOnly(ids);
         var revision = checked(Revision + 1);
-        return () => { Entities = entities; Slots = slots; Revision = revision; };
+        return new PreparedState(this, entities, slots, revision);
+    }
+
+    internal readonly struct PreparedState(ItemContainer container, ItemEntity?[] entities,
+        IReadOnlyList<ItemEntityId?> slots, long revision)
+    {
+        internal ItemContainer Container => container;
+        internal void Install()
+        {
+            container.Entities = entities;
+            container.Slots = slots;
+            container.Revision = revision;
+        }
     }
 
     internal void Publish() => Changed?.Invoke();

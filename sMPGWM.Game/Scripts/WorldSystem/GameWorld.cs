@@ -16,6 +16,7 @@ public partial class GameWorld : Node
     public ItemStore Items { get; } = new();
     public bool AuthoritativeItems { get; set; }
     public InventorySnapshot? InitialInventory { get; set; }
+    public Action<ShipLoadout, InventoryController>? InitializeLoadout { get; set; }
 
     public void InitializePlayerLoadout(int peer, InventorySnapshot initial)
     {
@@ -27,7 +28,7 @@ public partial class GameWorld : Node
         if (player.ControlledShip is { } ship)
         {
             ship.Loadout.SetAuthoritative(true);
-            ship.Loadout.EquipStarterLoadout(player.Inventory);
+            InitializeLoadout?.Invoke(ship.Loadout, player.Inventory);
             ship.Loadout.InitializeResources();
         }
         player.InventoryInitialized = true;

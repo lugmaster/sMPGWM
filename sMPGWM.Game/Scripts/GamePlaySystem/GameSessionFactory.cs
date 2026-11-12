@@ -24,7 +24,11 @@ internal static class GameSessionFactory
         NetworkStartupData startup, SessionCoordinator coordinator, IGameFixture fixture)
     {
         var abilities = scope.Own(new AbilityRuntime(GameplayDefinitions.Current));
-        var participants = new GameWorld { Name = nameof(GameWorld), AuthoritativeItems = startup.Role == NetworkRole.Host };
+        var participants = new GameWorld
+        {
+            Name = nameof(GameWorld), AuthoritativeItems = startup.Role == NetworkRole.Host,
+            InitializeLoadout = StarterLoadout.Equip
+        };
         scope.Defer(() => ReleaseNode(participants));
         scope.Defer(participants.Clear);
         var inventory = scope.Own(new InventoryController(participants.Items));
@@ -35,8 +39,8 @@ internal static class GameSessionFactory
         var player = new PlayerController { Name = "PlayerController" };
         scope.Defer(() => ReleaseNode(player));
         scope.Defer(player.Shutdown);
-        var messages = scope.Own(new MessageController(canvas, player.InputPolicy,
-            error => Logger.Error($"Message observer failed: {error}")));
+        var messages = scope.Own(new MessageController(error => Logger.Error($"Message observer failed: {error}")));
+        scope.Own(new MessagePresentationBinding(messages, canvas, player.InputPolicy));
         fixture.Populate(inventory, messages, startup.Role == NetworkRole.Host);
         participants.InitialInventory = inventory.Snapshot;
         participants.Items.EvictReplica(inventory.Container);

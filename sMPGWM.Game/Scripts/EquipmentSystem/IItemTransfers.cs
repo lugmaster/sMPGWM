@@ -1,5 +1,7 @@
 
 
+using sMPGWM.Scripts.ItemSystem;
+
 namespace sMPGWM.Scripts.EquipmentSystem;
 
 public interface IItemTransfers

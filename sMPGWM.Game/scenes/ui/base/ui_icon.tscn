@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://btk3yarpyc71x"]
 
-[ext_resource type="Script" uid="uid://gedcd5pgiki8" path="res://Scripts/Ui/Base/UiIcon.cs" id="1_ecffo"]
+[ext_resource type="Script" uid="uid://gedcd5pgiki8" path="res://Scripts/UtilitySystem/UiComponents/UiIcon.cs" id="1_ecffo"]
 
 [node name="UiIcon" type="Control" unique_id=1254339249]
 custom_minimum_size = Vector2(48, 48)

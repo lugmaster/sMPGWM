@@ -1,4 +1,4 @@
-namespace sMPGWM.Scripts.InventorySystem;
+namespace sMPGWM.Scripts.ItemSystem;
 
 public enum InventoryResult
 {

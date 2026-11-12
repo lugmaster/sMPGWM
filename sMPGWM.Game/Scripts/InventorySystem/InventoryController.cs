@@ -15,8 +15,8 @@ public sealed class InventoryController : IDisposable, IInventoryView
     private InventorySnapshot? _snapshot;
     public InventorySnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
         ? snapshot : _snapshot = new InventorySnapshot(Container.Revision, Container.Entities);
-    public int Capacity => Snapshot.Capacity;
-    public long Revision => Snapshot.Revision;
+    public int Capacity => _disposed ? Snapshot.Capacity : Container.Capacity;
+    public long Revision => _disposed ? Snapshot.Revision : Container.Revision;
     public event Action<InventorySnapshot>? Changed;
     internal InventoryResult Availability => _disposed ? InventoryResult.Disposed :
         Items.Publishing ? InventoryResult.PublicationInProgress : InventoryResult.Success;

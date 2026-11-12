@@ -4,6 +4,7 @@ using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-2 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-3 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 using sMPGWM.Scripts.InputSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar; // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-4 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-5 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments
 // TEST-SUPPORT: LOCAL-SWAP-INTEGRATION-6 | Tests: sMPGWM.Tests.LocalBindingIntegrationTests.SessionShipSwitchCancelsTargetingRevokesEditsAndPreservesAssignments

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.WorldSystem;
 using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 

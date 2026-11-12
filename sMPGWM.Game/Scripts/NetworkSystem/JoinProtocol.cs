@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace sMPGWM.Scripts.NetworkSystem;
 
@@ -41,9 +40,25 @@ internal sealed class HostJoinProtocol
 {
     private readonly Dictionary<int, PeerJoin> _peers = new();
     private readonly ulong _timeout;
+    private KeyValuePair<int, PeerJoin>[]? _snapshot;
     public HostJoinProtocol(int timeoutMs) => _timeout = (ulong)Math.Max(1, timeoutMs);
-    public KeyValuePair<int, PeerJoin>[] Snapshot() => _peers.ToArray();
-    public bool Begin(int peer, ulong now) => peer > 1 && _peers.TryAdd(peer, new PeerJoin(now + _timeout));
+    // Membership is stable during iteration; PeerJoin objects retain their live phase state.
+    public KeyValuePair<int, PeerJoin>[] Snapshot()
+    {
+        if (_snapshot != null) return _snapshot;
+        if (_peers.Count == 0) return _snapshot = Array.Empty<KeyValuePair<int, PeerJoin>>();
+        var snapshot = new KeyValuePair<int, PeerJoin>[_peers.Count];
+        var index = 0;
+        foreach (var peer in _peers) snapshot[index++] = peer;
+        return _snapshot = snapshot;
+    }
+    public bool Begin(int peer, ulong now)
+    {
+        if (peer <= 1 || _peers.ContainsKey(peer)) return false;
+        _peers.Add(peer, new PeerJoin(now + _timeout));
+        _snapshot = null;
+        return true;
+    }
     public bool Is(int peer, PeerJoinPhase phase) => _peers.TryGetValue(peer, out var join) && join.Phase == phase;
     public bool Expired(int peer, ulong now) => _peers.TryGetValue(peer, out var join) && join.Expired(now);
     public bool Advance(int peer, PeerJoinPhase expected, PeerJoinPhase next, ulong now) =>
@@ -53,10 +68,15 @@ internal sealed class HostJoinProtocol
     {
         wasReady = false;
         if (!_peers.Remove(peer, out var join)) return false;
+        _snapshot = null;
         wasReady = join.WasReady;
         return true;
     }
-    public void Clear() => _peers.Clear();
+    public void Clear()
+    {
+        _peers.Clear();
+        _snapshot = null;
+    }
 }
 
 internal enum ClientJoinPhase { AwaitingTransport, AwaitingHello, AwaitingSnapshot, AwaitingCompletion, Ready, Stopped }

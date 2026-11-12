@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
-using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.InventorySystem;
 
 namespace sMPGWM.Scripts.ItemSystem;
 
 /// <summary>Item identity, storage and movement. Commands run on the game thread.</summary>
 public sealed class ItemStore
 {
-    private Dictionary<ItemEntityId, ItemEntity> _items = new();
-    private Dictionary<ItemEntityId, ItemLocation> _locations = new();
+    private readonly Dictionary<ItemEntityId, ItemEntity> _items = new();
+    private readonly Dictionary<ItemEntityId, ItemLocation> _locations = new();
     private readonly Dictionary<ItemContainerId, ItemContainer> _containers = new();
     internal bool Publishing { get; private set; }
 
@@ -64,7 +62,7 @@ public sealed class ItemStore
         if (chunks > (ItemContainer.MaxCapacity - destination.Capacity) / Math.Max(1, destination.GrowthChunk))
             return InventoryResult.CapacityExceeded;
         Dictionary<ItemContainer, ItemEntity?[]> changes;
-        Action install;
+        PreparedTransaction transaction;
         try
         {
             var slots = new ItemEntity?[checked(destination.Capacity + (int)chunks * destination.GrowthChunk)];
@@ -87,13 +85,13 @@ public sealed class ItemStore
             }
             if (!Valid(destination, slots)) return InventoryResult.CapacityExceeded;
             changes = new Dictionary<ItemContainer, ItemEntity?[]> { [destination] = slots };
-            install = Prepare(changes);
+            transaction = Prepare(changes);
         }
         catch (OutOfMemoryException) { return InventoryResult.CapacityExceeded; }
         catch (OverflowException) { return InventoryResult.CapacityExceeded; }
         catch (ArgumentException) { return InventoryResult.CapacityExceeded; }
         catch (InvalidOperationException) { return InventoryResult.CapacityExceeded; }
-        install();
+        transaction.Commit();
         Publish(changes.Keys);
         return InventoryResult.Success;
     }
@@ -135,7 +133,7 @@ public sealed class ItemStore
         if (!commit && sourceContainer.PrepareChange == null && targetContainer.PrepareChange == null)
             return TransferResult.Success;
         Dictionary<ItemContainer, ItemEntity?[]> changes;
-        Action install;
+        PreparedTransaction transaction;
         try
         {
             if (nextSource is not null && nextSource.Count != sourceCount)
@@ -147,14 +145,14 @@ public sealed class ItemStore
             sourceSlots[expectedSource.SlotIndex] = nextSource;
             targetSlots[destination.SlotIndex] = nextTarget;
             changes = new Dictionary<ItemContainer, ItemEntity?[]> { [sourceContainer] = sourceSlots, [targetContainer] = targetSlots };
-            install = Prepare(changes);
+            transaction = Prepare(changes);
         }
         catch (OutOfMemoryException) { return TransferResult.CapacityExceeded; }
         catch (OverflowException) { return TransferResult.CapacityExceeded; }
         catch (ArgumentException) { return TransferResult.IncompatiblePlacement; }
         catch (InvalidOperationException) { return TransferResult.IncompatiblePlacement; }
         if (!commit) return TransferResult.Success;
-        install();
+        transaction.Commit();
         Publish(changes.Keys);
         return TransferResult.Success;
     }
@@ -170,28 +168,19 @@ public sealed class ItemStore
     {
         if (Publishing || batch.Count == 0 || batch.Count > 32) return false;
         var changes = new Dictionary<ItemContainer, ItemEntity?[]>();
-        var identities = new HashSet<ItemEntityId>();
         foreach (var entry in batch)
         {
             var container = entry.Container;
             if (!Owns(container) || container.Disposed || entry.Revision < container.Revision ||
                 entry.Revision < 0 || !Valid(container, entry.Slots) || !changes.TryAdd(container, entry.Slots)) return false;
             if (entry.Revision == container.Revision && !SameItems(container.Entities, entry.Slots)) return false;
-            foreach (var item in entry.Slots)
-                if (item != null && !identities.Add(item.Id)) return false;
         }
-        foreach (var container in _containers.Values)
-        {
-            if (changes.ContainsKey(container)) continue;
-            foreach (var item in container.Entities)
-                if (item != null && !identities.Add(item.Id)) return false;
-        }
-        Action install;
-        try { install = Prepare(changes); }
+        PreparedTransaction transaction;
+        try { transaction = Prepare(changes); }
         catch (ArgumentException) { return false; }
         catch (InvalidOperationException) { return false; }
         catch (OverflowException) { return false; }
-        install();
+        transaction.Commit();
         foreach (var entry in batch) entry.Container.Revision = entry.Revision;
         Publish(changes.Keys);
         return true;
@@ -214,7 +203,7 @@ public sealed class ItemStore
         if (!Owns(container) || container.Disposed) return;
         if (Publishing) throw new InvalidOperationException("Cannot evict a replica during publication.");
         var changes = new Dictionary<ItemContainer, ItemEntity?[]> { [container] = new ItemEntity?[container.Capacity] };
-        Prepare(changes)();
+        Prepare(changes).Commit();
         container.Revision = 0;
         Publish(changes.Keys);
     }
@@ -228,34 +217,58 @@ public sealed class ItemStore
         return true;
     }
 
-    private Action Prepare(Dictionary<ItemContainer, ItemEntity?[]> changes)
+    private PreparedTransaction Prepare(Dictionary<ItemContainer, ItemEntity?[]> changes)
     {
-        // Prepare every allocation and index before installing state. No observers run until all locations agree.
-        var items = new Dictionary<ItemEntityId, ItemEntity>(_items);
-        var locations = new Dictionary<ItemEntityId, ItemLocation>(_locations);
-        foreach (var container in changes.Keys)
-            foreach (var item in container.Entities)
-                if (item is not null) { items.Remove(item.Id); locations.Remove(item.Id); }
-        var installs = new List<Action>();
-        var domainInstalls = new List<Action>();
+        var identities = new HashSet<ItemEntityId>();
+        var finalCount = _items.Count;
         foreach (var (container, slots) in changes)
         {
-            for (var index = 0; index < slots.Length; index++)
-                if (slots[index] is { } item)
-                {
-                    if (!items.TryAdd(item.Id, item)) throw new ArgumentException("Duplicate item identity across containers.");
-                    locations.Add(item.Id, new ItemLocation(container.Id, index));
-                }
-            installs.Add(container.Prepare(slots));
-            if (container.PrepareChange?.Invoke(slots) is { } domainInstall) domainInstalls.Add(domainInstall);
+            foreach (var item in container.Entities)
+                if (item != null) finalCount--;
+            foreach (var item in slots)
+            {
+                if (item == null) continue;
+                if (!identities.Add(item.Id) || _locations.TryGetValue(item.Id, out var location) &&
+                    !changes.ContainsKey(_containers[location.ContainerId]))
+                    throw new ArgumentException("Duplicate item identity across containers.");
+                finalCount = checked(finalCount + 1);
+            }
         }
-        return () =>
+        var states = new ItemContainer.PreparedState[changes.Count];
+        var domainInstalls = new Action?[changes.Count];
+        var index = 0;
+        foreach (var (container, slots) in changes)
         {
-            foreach (var install in installs) install();
-            _items = items;
-            _locations = locations;
-            foreach (var install in domainInstalls) install();
-        };
+            states[index] = container.Prepare(slots);
+            domainInstalls[index] = container.PrepareChange?.Invoke(slots);
+            index++;
+        }
+        // Reserve before committing so index updates cannot allocate midway through a transfer.
+        _items.EnsureCapacity(finalCount);
+        _locations.EnsureCapacity(finalCount);
+        return new PreparedTransaction(this, states, domainInstalls);
+    }
+
+    private sealed class PreparedTransaction(ItemStore store, ItemContainer.PreparedState[] states, Action?[] domainInstalls)
+    {
+        internal void Commit()
+        {
+            foreach (var state in states)
+                foreach (var item in state.Container.Entities)
+                    if (item != null) { store._items.Remove(item.Id); store._locations.Remove(item.Id); }
+            foreach (var state in states)
+            {
+                state.Install();
+                var entities = state.Container.Entities;
+                for (var index = 0; index < entities.Length; index++)
+                {
+                    if (entities[index] is not { } item) continue;
+                    store._items.Add(item.Id, item);
+                    store._locations.Add(item.Id, new ItemLocation(state.Container.Id, index));
+                }
+            }
+            foreach (var install in domainInstalls) install?.Invoke();
+        }
     }
 
     private void Publish(IEnumerable<ItemContainer> containers)

@@ -5,6 +5,7 @@ using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GameplayDataSystem; // TEST-SUPPORT: EQUIPPED-INTEGRATION-003 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: EQUIPPED-INTEGRATION-004 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 using sMPGWM.Scripts.InputSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar; // TEST-SUPPORT: EQUIPPED-INTEGRATION-005 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 // TEST-SUPPORT: EQUIPPED-INTEGRATION-006 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession
 // TEST-SUPPORT: EQUIPPED-INTEGRATION-007 | Tests: sMPGWM.Tests.ShieldGameplayIntegrationTests.HostAdmissionRefreshDuplicateAndExpiryUseNormalSession

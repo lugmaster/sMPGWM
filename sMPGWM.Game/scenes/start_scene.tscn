@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bwppb4jr80bw0"]
 
-[ext_resource type="Script" uid="uid://cktdqbevfghsf" path="res://Scripts/Autoload/StartMenuManager.cs" id="1_3tgnh"]
+[ext_resource type="Script" uid="uid://cktdqbevfghsf" path="res://Scripts/StartMenuSystem/StartMenuManager.cs" id="1_3tgnh"]
 [ext_resource type="PackedScene" uid="uid://6ov4wdhkeic1" path="res://scenes/ui/menu/start_menu/start_menu.tscn" id="1_cokmr"]
 
 [node name="StartScene" type="Control" unique_id=1214553999]

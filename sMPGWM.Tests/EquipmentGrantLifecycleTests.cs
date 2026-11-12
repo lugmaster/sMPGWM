@@ -3,7 +3,8 @@ using System.Reflection; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-0 | Tests: sM
 using Godot; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-1 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.InventorySystem; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-2 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
+using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-2 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-3 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-4 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp
 // TEST-SUPPORT: SHIP-OWNERSHIP-LIFECYCLE-5 | Tests: sMPGWM.Tests.EquipmentGrantLifecycleTests.UnchangedSnapshotsPreserveGrantsAndOwnershipChangesCleanUp

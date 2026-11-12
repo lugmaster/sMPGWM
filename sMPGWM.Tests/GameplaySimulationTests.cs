@@ -2,6 +2,7 @@ using Godot; // TEST-SUPPORT: SIMULATION-PHASE-1 | Tests: sMPGWM.Tests.GameplayS
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: SIMULATION-PHASE-2 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
 using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: SIMULATION-PHASE-3 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
 // TEST-SUPPORT: SIMULATION-PHASE-4 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
 // TEST-SUPPORT: SIMULATION-PHASE-5 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands

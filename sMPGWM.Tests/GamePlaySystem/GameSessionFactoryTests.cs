@@ -1,6 +1,7 @@
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.MovementSystem;
 using sMPGWM.Scripts.NetworkSystem;

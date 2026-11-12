@@ -1,5 +1,7 @@
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
+
 // TEST-SUPPORT: TRANSFER-BOUNDARY-001 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
 // TEST-SUPPORT: TRANSFER-BOUNDARY-002 | Tests: sMPGWM.Tests.ItemTransferBoundaryTests.SharedCellResolutionPreservesEditSessionAndAuthorityBoundaries
 

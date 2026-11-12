@@ -13,7 +13,7 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     private EquipmentSnapshot? _snapshot;
     public EquipmentSnapshot Snapshot => _snapshot is { } snapshot && snapshot.Revision == Container.Revision
         ? snapshot : _snapshot = new EquipmentSnapshot(Container.Revision, Container.Entities);
-    public long Revision => Snapshot.Revision;
+    public long Revision => _disposed ? Snapshot.Revision : Container.Revision;
     public event Action<EquipmentSnapshot>? Changed;
     internal TransferResult Availability => _disposed ? TransferResult.Disposed :
         Items.Publishing ? TransferResult.PublicationInProgress : TransferResult.Success;
@@ -29,23 +29,31 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
         ArgumentNullException.ThrowIfNull(definitions);
         if (definitions.Count == 0 || definitions.Count > ItemContainer.MaxCapacity)
             throw new ArgumentException("Invalid equipment layout.", nameof(definitions));
-        var copy = new EquipmentSlotDefinition[definitions.Count];
-        var keys = new HashSet<string>(StringComparer.Ordinal);
-        var singletonCategories = new HashSet<string>(StringComparer.Ordinal);
-        for (var i = 0; i < copy.Length; i++)
+        if (ReferenceEquals(definitions, EquipmentSlotDefinition.Defaults))
         {
-            var definition = definitions[i];
-            if (definition == null || string.IsNullOrWhiteSpace(definition.Key) || definition.Key.Length > 64 || !keys.Add(definition.Key))
-                throw new ArgumentException("Invalid or duplicate equipment slot key.", nameof(definitions));
-            ItemRegistry.GetCategoryById(definition.AcceptedCategory);
-            if (definition.AcceptedCategory is "engine" or "hull" or "shield_generator" or "reactor" or "battery" &&
-                !singletonCategories.Add(definition.AcceptedCategory))
-                throw new ArgumentException("Duplicate singleton component category.", nameof(definitions));
-            copy[i] = definition;
+            for (var i = 0; i < definitions.Count; i++) ItemRegistry.GetCategoryById(definitions[i].AcceptedCategory);
+            Definitions = definitions;
         }
-        Definitions = Array.AsReadOnly(copy);
+        else
+        {
+            var copy = new EquipmentSlotDefinition[definitions.Count];
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            var singletonCategories = new HashSet<string>(StringComparer.Ordinal);
+            for (var i = 0; i < copy.Length; i++)
+            {
+                var definition = definitions[i];
+                if (definition == null || string.IsNullOrWhiteSpace(definition.Key) || definition.Key.Length > 64 || !keys.Add(definition.Key))
+                    throw new ArgumentException("Invalid or duplicate equipment slot key.", nameof(definitions));
+                ItemRegistry.GetCategoryById(definition.AcceptedCategory);
+                if (definition.AcceptedCategory is "engine" or "hull" or "shield_generator" or "reactor" or "battery" &&
+                    !singletonCategories.Add(definition.AcceptedCategory))
+                    throw new ArgumentException("Duplicate singleton component category.", nameof(definitions));
+                copy[i] = definition;
+            }
+            Definitions = Array.AsReadOnly(copy);
+        }
         Container = itemRequestService.CreateContainer(Definitions.Count, accepts: (index, definition, count) =>
-            index >= 0 && index < Definitions.Count && count == 1 && CanPlace(Definitions[index].Key, definition.Id));
+            index >= 0 && index < Definitions.Count && count == 1 && definition.CategoryId == Definitions[index].AcceptedCategory);
         Container.Subscribe(NotifyObservers);
     }
 
@@ -59,7 +67,7 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     public bool CanPlace(string key, string definitionId)
     {
         var index = FindSlot(key);
-        return index >= 0 && ItemRegistry.GetById(definitionId).CategoryName == ItemRegistry.GetCategoryById(Definitions[index].AcceptedCategory).DisplayName;
+        return index >= 0 && ItemRegistry.GetById(definitionId).CategoryId == Definitions[index].AcceptedCategory;
     }
 
     // Subscriber failures are programming errors: propagate them immediately.

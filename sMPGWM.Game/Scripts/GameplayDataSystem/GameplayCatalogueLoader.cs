@@ -15,44 +15,59 @@ namespace sMPGWM.Scripts.GameplayDataSystem;
 
 public static class GameplayCatalogueLoader
 {
+    private readonly record struct Catalogue<T>(CatalogueSource Source, Func<JToken, T> ParseDefinition);
+
+    private static T[] Load<T>(Catalogue<T> catalogue, Func<CatalogueSource, JObject> read) =>
+        Parse(read(catalogue.Source), catalogue.Source, catalogue.ParseDefinition);
+
+    private static readonly Catalogue<AbilityDefinition> Abilities = new(
+        new("AbilityDefinitions.yml", "AbilitySchema.yml", "AbilityDefinitions"), Ability);
+    private static readonly Catalogue<EffectDefinition> Effects = new(
+        new("EffectDefinitions.yml", "EffectDefinitionSchema.yml", "EffectDefinitions"), Effect);
+    private static readonly Catalogue<BehaviourDefinition> Behaviours = new(
+        new("BehaviourDefinitions.yml", "BehaviourSchema.yml", "BehaviourDefinitions"), Behaviour);
+    private static readonly Catalogue<TargetingDefinition> Targeting = new(
+        new("TargetingDefinitions.yml", "TargetingSchema.yml", "TargetingDefinitions"), r => new(
+            Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"),
+            EnumValue<TargetRelation>(r, "Relation"), EnumValue<TargetLifeState>(r, "LifeState"),
+            (bool)r["MechanicalOnly"]!, OptionalNumber(r, "MaxRange"), OptionalNumber(r, "Radius")));
+    private static readonly Catalogue<BehaviourClassificationDefinition> Classifications = new(
+        new("BehaviourClassificationDefinitions.yml", "BehaviourClassificationSchema.yml", "BehaviourClassifications"),
+        r => new(Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description")));
+    private static readonly Catalogue<StatDefinition> Stats = new(
+        new("Attributes.yml", "AttributeSchema.yml", "Stats"), r => new(
+            Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"), IsResource(Text(r, "Id"))));
+    private static readonly Catalogue<ConditionDefinition> Conditions = new(
+        new("Conditions.yml", "ConditionSchema.yml", "Conditions"),
+        r => new(Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description")));
+    private static readonly Catalogue<ProjectileDefinition> Projectiles = new(
+        new("ProjectileDefinitions.yml", "ProjectileSchema.yml", "ProjectileDefinitions"), r => new(
+            Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"),
+            Number(r, "Speed"), Number(r, "MaxLifetimeMs"),
+            EnumValue<ProjectileCollision>(r, "Collision"), EnumValue<ProjectileExpiration>(r, "ExpireWithoutImpact")));
+    private static readonly Catalogue<DamageSourceDefinition> DamageSources = new(
+        new("DamageSources.yml", "DamageSourceSchema.yml", "DamageSources"),
+        r => new(Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description")));
+
     public static IReadOnlyList<CatalogueSource> Sources { get; } = Array.AsReadOnly(new[]
     {
-        new CatalogueSource("AbilityDefinitions.yml", "AbilitySchema.yml", "AbilityDefinitions"),
-        new CatalogueSource("EffectDefinitions.yml", "EffectDefinitionSchema.yml", "EffectDefinitions"),
-        new CatalogueSource("BehaviourDefinitions.yml", "BehaviourSchema.yml", "BehaviourDefinitions"),
-        new CatalogueSource("TargetingDefinitions.yml", "TargetingSchema.yml", "TargetingDefinitions"),
-        new CatalogueSource("BehaviourClassificationDefinitions.yml", "BehaviourClassificationSchema.yml", "BehaviourClassifications"),
-        new CatalogueSource("Attributes.yml", "AttributeSchema.yml", "Stats"),
-        new CatalogueSource("Conditions.yml", "ConditionSchema.yml", "Conditions"),
-        new CatalogueSource("ProjectileDefinitions.yml", "ProjectileSchema.yml", "ProjectileDefinitions"),
-        new CatalogueSource("DamageSources.yml", "DamageSourceSchema.yml", "DamageSources"),
+        Abilities.Source, Effects.Source, Behaviours.Source, Targeting.Source, Classifications.Source,
+        Stats.Source, Conditions.Source, Projectiles.Source, DamageSources.Source
     });
 
     // The reader validates each document against its schema before returning it.
     public static GameplayCatalogues Load(Func<CatalogueSource, JObject> read)
     {
-        var documents = new JObject[Sources.Count];
-        for (var i = 0; i < documents.Length; i++) documents[i] = read(Sources[i]);
         return new GameplayCatalogues(
-            new AbilityRegistry(Parse(documents[0], Sources[0], Ability)),
-            new EffectRegistry(Parse(documents[1], Sources[1], Effect)),
-            new BehaviourRegistry(Parse(documents[2], Sources[2], Behaviour)),
-            new TargetingRegistry(Parse(documents[3], Sources[3], r => new TargetingDefinition(
-                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"),
-                EnumValue<TargetRelation>(r, "Relation"), EnumValue<TargetLifeState>(r, "LifeState"),
-                (bool)r["MechanicalOnly"]!, OptionalNumber(r, "MaxRange"), OptionalNumber(r, "Radius")))),
-            new BehaviourClassificationRegistry(Parse(documents[4], Sources[4], r => new BehaviourClassificationDefinition(
-                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description")))),
-            new StatRegistry(Parse(documents[5], Sources[5], r => new StatDefinition(
-                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"), IsResource(Text(r, "Id"))))),
-            new ConditionRegistry(Parse(documents[6], Sources[6], r => new ConditionDefinition(
-                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description")))),
-            new ProjectileRegistry(Parse(documents[7], Sources[7], r => new ProjectileDefinition(
-                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description"),
-                Number(r, "Speed"), Number(r, "MaxLifetimeMs"),
-                EnumValue<ProjectileCollision>(r, "Collision"), EnumValue<ProjectileExpiration>(r, "ExpireWithoutImpact")))),
-            new DamageSourceRegistry(Parse(documents[8], Sources[8], r => new DamageSourceDefinition(
-                Text(r, "Id"), Text(r, "DisplayName"), Text(r, "Description")))));
+            new AbilityRegistry(Load(Abilities, read)),
+            new EffectRegistry(Load(Effects, read)),
+            new BehaviourRegistry(Load(Behaviours, read)),
+            new TargetingRegistry(Load(Targeting, read)),
+            new BehaviourClassificationRegistry(Load(Classifications, read)),
+            new StatRegistry(Load(Stats, read)),
+            new ConditionRegistry(Load(Conditions, read)),
+            new ProjectileRegistry(Load(Projectiles, read)),
+            new DamageSourceRegistry(Load(DamageSources, read)));
     }
 
     private static readonly CatalogueSource ItemCategorySource =
@@ -152,6 +167,7 @@ public static class GameplayCatalogueLoader
                 (string?)row["Description"] ?? "", canStack, limit,
                 row["Icon"]?.Type == JTokenType.String ? resolveIcon((string)row["Icon"]!) : category.Icon!)
             {
+                CategoryId = category.Id,
                 Values = new System.Collections.ObjectModel.ReadOnlyDictionary<string, object>(values),
                 AbilityIds = abilities.AsReadOnly(),
                 BehaviourGrants = grants.AsReadOnly()

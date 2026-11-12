@@ -3,6 +3,7 @@ using sMPGWM.Scripts.UtilitySystem;
 using sMPGWM.Scripts.UtilitySystem.Mocks;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;

@@ -4,6 +4,39 @@ namespace sMPGWM.Tests.NetworkSystem;
 
 internal class JoinProtocolTests
 {
+
+    [Test] // TEST-SUPPORT: JOIN-SNAPSHOT-001 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+    public void MembershipSnapshotIsReusedUntilMembershipChanges() // TEST-SUPPORT: JOIN-SNAPSHOT-002 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+    {
+        var host = new HostJoinProtocol(100); // TEST-SUPPORT: JOIN-SNAPSHOT-003 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        var empty = host.Snapshot(); // TEST-SUPPORT: JOIN-SNAPSHOT-004 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(empty, Is.Empty); // TEST-SUPPORT: JOIN-SNAPSHOT-005 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Begin(2, 0), Is.True); // TEST-SUPPORT: JOIN-SNAPSHOT-006 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        var first = host.Snapshot(); // TEST-SUPPORT: JOIN-SNAPSHOT-007 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(first.Length, Is.EqualTo(1)); // TEST-SUPPORT: JOIN-SNAPSHOT-008 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Snapshot(), Is.SameAs(first)); // TEST-SUPPORT: JOIN-SNAPSHOT-009 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Begin(2, 1), Is.False); // TEST-SUPPORT: JOIN-SNAPSHOT-010 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Remove(3, out _), Is.False); // TEST-SUPPORT: JOIN-SNAPSHOT-011 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Snapshot(), Is.SameAs(first)); // TEST-SUPPORT: JOIN-SNAPSHOT-012 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Advance(2, PeerJoinPhase.Connected, PeerJoinPhase.Verified, 1), Is.True); // TEST-SUPPORT: JOIN-SNAPSHOT-013 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(first[0].Value.Phase, Is.EqualTo(PeerJoinPhase.Verified)); // TEST-SUPPORT: JOIN-SNAPSHOT-014 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Snapshot(), Is.SameAs(first)); // TEST-SUPPORT: JOIN-SNAPSHOT-015 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Begin(3, 1), Is.True); // TEST-SUPPORT: JOIN-SNAPSHOT-016 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        var both = host.Snapshot(); // TEST-SUPPORT: JOIN-SNAPSHOT-017 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(both.Length, Is.EqualTo(2)); // TEST-SUPPORT: JOIN-SNAPSHOT-018 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(first.Length, Is.EqualTo(1)); // TEST-SUPPORT: JOIN-SNAPSHOT-019 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Reject(2, 2), Is.True); // TEST-SUPPORT: JOIN-SNAPSHOT-020 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Snapshot(), Is.SameAs(both)); // TEST-SUPPORT: JOIN-SNAPSHOT-021 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Remove(2, out _), Is.True); // TEST-SUPPORT: JOIN-SNAPSHOT-022 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        var remaining = host.Snapshot(); // TEST-SUPPORT: JOIN-SNAPSHOT-023 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(remaining.Length, Is.EqualTo(1)); // TEST-SUPPORT: JOIN-SNAPSHOT-024 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(remaining[0].Key, Is.EqualTo(3)); // TEST-SUPPORT: JOIN-SNAPSHOT-025 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(both.Length, Is.EqualTo(2)); // TEST-SUPPORT: JOIN-SNAPSHOT-026 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        host.Clear(); // TEST-SUPPORT: JOIN-SNAPSHOT-027 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(host.Snapshot(), Is.Empty); // TEST-SUPPORT: JOIN-SNAPSHOT-028 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+        Assert.That(remaining[0].Key, Is.EqualTo(3)); // TEST-SUPPORT: JOIN-SNAPSHOT-029 | Tests: sMPGWM.Tests.NetworkSystem.JoinProtocolTests.MembershipSnapshotIsReusedUntilMembershipChanges
+    }
+
     [Test]
     public void HostRejectsOutOfOrderAndDuplicateMessagesWithoutExtendingDeadline()
     {

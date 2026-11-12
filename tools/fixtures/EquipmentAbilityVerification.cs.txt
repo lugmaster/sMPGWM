@@ -5,8 +5,11 @@ using sMPGWM.Scripts.AbilitySystem; // TEST-SUPPORT: EQUIP-PROCESS-004 | Tests: 
 using sMPGWM.Scripts.GameFlowSystem; // TEST-SUPPORT: EQUIP-PROCESS-005 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 using sMPGWM.Scripts.GamePlaySystem; // TEST-SUPPORT: EQUIP-PROCESS-006 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 using sMPGWM.Scripts.InputSystem; // TEST-SUPPORT: EQUIP-PROCESS-007 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-using sMPGWM.Scripts.Items.Equipment; // TEST-SUPPORT: EQUIP-PROCESS-008 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-using sMPGWM.Scripts.Items.Hotbar; // TEST-SUPPORT: EQUIP-PROCESS-009 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: EQUIP-PROCESS-008 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.ItemSystem.Hotbar; // TEST-SUPPORT: EQUIP-PROCESS-009 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: EQUIP-PROCESS-ITEM-IMPORT | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: EQUIP-PROCESS-SHIP-IMPORT | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+using sMPGWM.Scripts.PlayerControllerSystem; // TEST-SUPPORT: EQUIP-PROCESS-PLAYER-IMPORT | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: EQUIP-PROCESS-010 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 using sMPGWM.Scripts.UiSystem; // TEST-SUPPORT: EQUIP-PROCESS-011 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 using sMPGWM.Scripts.UiSystem.HudSystem; // TEST-SUPPORT: EQUIP-PROCESS-012 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
@@ -103,8 +106,8 @@ public partial class EquipmentAbilityVerification : Node // TEST-SUPPORT: EQUIP-
 
     private int _componentStage; // TEST-SUPPORT: LIFECYCLE-PROCESS-0 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     private int _ownershipStage; // TEST-SUPPORT: LIFECYCLE-PROCESS-1 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-    private sMPGWM.Scripts.World.PlayerSession? _firstOwner; // TEST-SUPPORT: LIFECYCLE-PROCESS-2 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-    private sMPGWM.Scripts.World.PlayerSession? _secondOwner; // TEST-SUPPORT: LIFECYCLE-PROCESS-3 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private sMPGWM.Scripts.WorldSystem.PlayerSession? _firstOwner; // TEST-SUPPORT: LIFECYCLE-PROCESS-2 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    private sMPGWM.Scripts.WorldSystem.PlayerSession? _secondOwner; // TEST-SUPPORT: LIFECYCLE-PROCESS-3 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     private sMPGWM.Scripts.ShipSystem.ShipController? _firstShip; // TEST-SUPPORT: LIFECYCLE-PROCESS-4 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     private sMPGWM.Scripts.ShipSystem.ShipController? _secondShip; // TEST-SUPPORT: LIFECYCLE-PROCESS-5 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
 
@@ -207,7 +210,7 @@ public partial class EquipmentAbilityVerification : Node // TEST-SUPPORT: EQUIP-
             var owners = network.World.Players; // TEST-SUPPORT: AUTHORITY-PROCESS-011 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
             foreach (var (peer, items) in owners) // TEST-SUPPORT: AUTHORITY-PROCESS-013 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
             {
-                if (items.Inventory.Items.CreateItems(items.Inventory.Container, "mock_standard_consumable", 7) != sMPGWM.Scripts.Items.Inventory.InventoryResult.Success) // TEST-SUPPORT: AUTHORITY-PROCESS-014 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+                if (items.Inventory.Items.CreateItems(items.Inventory.Container, "mock_standard_consumable", 7) != InventoryResult.Success) // TEST-SUPPORT: AUTHORITY-PROCESS-014 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
                     throw new InvalidOperationException("Reward creation failed."); // TEST-SUPPORT: AUTHORITY-PROCESS-015 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
                 var gameplay = network.World.Players[peer].ControlledShip!.Runtime; // TEST-SUPPORT: AUTHORITY-PROCESS-016 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
                 gameplay.SetShieldCurrent(Math.Min(17, gameplay.Shield.Capacity)); // TEST-SUPPORT: AUTHORITY-PROCESS-017 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge

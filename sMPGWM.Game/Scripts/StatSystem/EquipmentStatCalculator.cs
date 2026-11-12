@@ -31,16 +31,20 @@ public static class EquipmentStatCalculator
 
     public static ResolvedShipStats Calculate(ShipStatModifiersDefinition modifiers, double intrinsicMass,
         EquipmentSnapshot equipment, IReadOnlyList<EquipmentSlotDefinition> slots)
+        => Calculate(modifiers, intrinsicMass, equipment.Slots, slots);
+
+    public static ResolvedShipStats Calculate(ShipStatModifiersDefinition modifiers, double intrinsicMass,
+        IReadOnlyList<ItemEntity?> equipment, IReadOnlyList<EquipmentSlotDefinition> slots)
     {
         if (!double.IsFinite(intrinsicMass) || intrinsicMass < 0) throw new ArgumentOutOfRangeException(nameof(intrinsicMass));
-        if (equipment.Slots.Count != slots.Count) throw new ArgumentException("Equipment slot count mismatch.");
+        if (equipment.Count != slots.Count) throw new ArgumentException("Equipment slot count mismatch.");
         Values? engine = null, hull = null, shield = null, reactor = null, battery = null;
         var mass = intrinsicMass;
         var demand = 0d;
         var engineDemand = 0d;
         for (var i = 0; i < slots.Count; i++)
         {
-            if (equipment.Slots[i] is not { } item) continue;
+            if (equipment[i] is not { } item) continue;
             var value = Cache.GetValue(item.Definition, static item => new Values(item));
             mass += value.Mass;
             demand += value.EnergyConsumption;
