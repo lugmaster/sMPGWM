@@ -73,6 +73,7 @@ public static class ShipRegistry
             Number(s.EnergyProduction, "EnergyProduction");
             Number(s.EnergyStorage, "EnergyStorage");
             Require(definition.Mass >= 0, "mass");
+            Require(double.IsFinite(definition.Health) && definition.Health > 0, "health");
             var stats = new ShipStats(Number(s.Speed, "Speed"), Number(s.AfterBurnerSpeed, "AfterBurnerSpeed"),
                 Number(s.RotationSpeed, "RotationSpeed"), Number(s.Acceleration, "Acceleration"),
                 Number(s.AfterBurnerAcceleration, "AfterBurnerAcceleration"), Number(definition.Mass, "mass"));

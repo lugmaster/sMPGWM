@@ -15,6 +15,9 @@ public static class HudProvider
     internal static ClickableIconWithLabel CreateClickableIconWithLabel() =>
         SceneLoader.LoadAndInstantiate<ClickableIconWithLabel>(ClickableIconWithLabelPath);
     
+    internal static Godot.HBoxContainer CreateIconWithLabel() =>
+        SceneLoader.LoadAndInstantiate<Godot.HBoxContainer>("res://scenes/ui/base/icon_with_label.tscn");
+
     public static StatBar CreateStatBar()
     {
         return SceneLoader.LoadAndInstantiate<StatBar>(StatBarPath);
@@ -25,3 +28,4 @@ public static class HudProvider
         return SceneLoader.LoadAndInstantiate<ClickableIcon>(ClickableIconPath);
     }
 }
+

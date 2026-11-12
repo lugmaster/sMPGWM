@@ -26,7 +26,8 @@ internal static class GameplaySnapshotCodec
             (s.HasReactor ? 8 : 0) | (s.HasBattery ? 16 : 0);
         return new() { entity, state.Revision, state.Shield.Capacity, state.Shield.Current, behaviours,
             state.FactionId, conditions, values, systems, state.Energy.Current, state.ConfigurationRevision,
-            state.AuthoritativeTick, state.ShieldDowntimeDeadline, state.EnergyDepleted, state.ShieldProtectionAvailable, state.AfterburnerActive, (int)state.Components.Presence };
+            state.AuthoritativeTick, state.ShieldDowntimeDeadline, state.EnergyDepleted, state.ShieldProtectionAvailable, state.AfterburnerActive,
+            (int)state.Components.Presence, state.Health.Capacity, state.Health.Current };
     }
 
     internal static bool TryDecode(Godot.Collections.Array rows, GameplayCatalogues definitions, out GameplaySnapshotEntry[] entries)
@@ -40,14 +41,15 @@ internal static class GameplaySnapshotCodec
         {
             if (rows[i].VariantType != Variant.Type.Array) return false;
             var row = rows[i].AsGodotArray();
-            if (row.Count != 17 || row[0].VariantType != Variant.Type.String || row[1].VariantType != Variant.Type.Int ||
+            if (row.Count != 19 || row[0].VariantType != Variant.Type.String || row[1].VariantType != Variant.Type.Int ||
                 row[2].VariantType != Variant.Type.Float || row[3].VariantType != Variant.Type.Float ||
                 row[4].VariantType != Variant.Type.Array || row[5].VariantType != Variant.Type.Int ||
                 row[6].VariantType != Variant.Type.Array || row[7].VariantType != Variant.Type.PackedFloat64Array ||
                 row[8].VariantType != Variant.Type.Int || row[9].VariantType != Variant.Type.Float ||
                 row[10].VariantType != Variant.Type.Int || row[11].VariantType != Variant.Type.Int ||
                 row[12].VariantType != Variant.Type.Int || row[13].VariantType != Variant.Type.Bool ||
-                row[14].VariantType != Variant.Type.Bool || row[15].VariantType != Variant.Type.Bool || row[16].VariantType != Variant.Type.Int) return false;
+                row[14].VariantType != Variant.Type.Bool || row[15].VariantType != Variant.Type.Bool || row[16].VariantType != Variant.Type.Int ||
+                row[17].VariantType != Variant.Type.Float || row[18].VariantType != Variant.Type.Float) return false;
             var entity = row[0].AsString();
             var revision = row[1].AsInt64();
             var capacity = row[2].AsDouble(); var current = row[3].AsDouble();
@@ -70,6 +72,10 @@ internal static class GameplaySnapshotCodec
             var protection = row[14].AsBool();
             var afterburnerActive = row[15].AsBool();
             var componentBits = row[16].AsInt64();
+            var healthCapacity = row[17].AsDouble();
+            var healthCurrent = row[18].AsDouble();
+            if (!double.IsFinite(healthCapacity) || healthCapacity < 0 || !double.IsFinite(healthCurrent) ||
+                healthCurrent < 0 || healthCurrent > healthCapacity) return false;
             if (componentBits < 0 || componentBits > (long)ShipComponentKind.All) return false;
             var components = (ShipComponentKind)componentBits;
             if (!stats.IsValid || capacity != stats.ShieldCapacity || !double.IsFinite(energy) || energy < 0 || energy > stats.EnergyStorage ||
@@ -115,7 +121,7 @@ internal static class GameplaySnapshotCodec
             }
             decoded[i] = new(entity, revision, capacity, current, behaviours, (int)faction, conditions,
                 stats, energy, depleted, protection, shieldDeadline, tick, configurationRevision)
-                { AfterburnerActive = afterburnerActive, Components = components };
+                { AfterburnerActive = afterburnerActive, Components = components, HealthCapacity = healthCapacity, HealthCurrent = healthCurrent };
         }
         entries = decoded;
         return true;

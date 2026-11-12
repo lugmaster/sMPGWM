@@ -13,6 +13,7 @@ public sealed record ShipData : GameplayDefinition
     public ShipStats Stats { get; }
     public ShipStatModifiersDefinition StatModifiers { get; }
     public double Mass { get; }
+    public double Health { get; }
     public int LightWeaponSlots { get; }
     public int HeavyWeaponSlots { get; }
 
@@ -25,6 +26,7 @@ public sealed record ShipData : GameplayDefinition
         Stats = stats;
         StatModifiers = definition.Stats with { };
         Mass = definition.Mass;
+        Health = definition.Health;
         LightWeaponSlots = definition.WeaponSlots.Light;
         HeavyWeaponSlots = definition.WeaponSlots.Heavy;
     }

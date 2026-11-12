@@ -21,4 +21,8 @@ public sealed record ShipRuntimeState(
     ShipComponentKind? PendingComponents,
     IReadOnlyList<BehaviourInstance> Behaviours,
     IReadOnlyList<string> Conditions,
-    IReadOnlyList<AbilityGrantState> Grants);
+    IReadOnlyList<AbilityGrantState> Grants)
+{
+    public double HealthCapacity { get; init; }
+    public double HealthCurrent { get; init; }
+}

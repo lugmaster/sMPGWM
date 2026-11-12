@@ -43,7 +43,7 @@ public partial class ShipController : CharacterBody2D
         internal set
         {
             _data = value;
-            Runtime ??= new();
+            Runtime ??= new(value.Health);
             DefinitionChanged?.Invoke();
         }
     }

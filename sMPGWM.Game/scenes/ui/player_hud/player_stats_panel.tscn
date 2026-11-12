@@ -33,17 +33,11 @@ theme_override_constants/separation = 12
 [node name="StatBar" parent="MarginContainer/MainContainer/BarContainer" unique_id=1063959680 instance=ExtResource("2_lh4dq")]
 layout_mode = 2
 
-[node name="EnergyBar" parent="MarginContainer/MainContainer/BarContainer" unique_id=208467708 instance=ExtResource("2_lh4dq")]
-layout_mode = 2
-
-[node name="Availability" type="Label" parent="MarginContainer/MainContainer/BarContainer" unique_id=742321719]
-layout_mode = 2
-text = "Shield unavailable"
-
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/MainContainer" unique_id=50968852]
 layout_mode = 2
 
 [node name="GridContainer" type="GridContainer" parent="MarginContainer/MainContainer" unique_id=624109534]
+unique_name_in_owner = true
 layout_mode = 2
 columns = 3
 
@@ -70,3 +64,4 @@ layout_mode = 2
 
 [node name="IconWithLabel8" parent="MarginContainer/MainContainer/GridContainer" unique_id=2016912611 instance=ExtResource("3_eiokr")]
 layout_mode = 2
+

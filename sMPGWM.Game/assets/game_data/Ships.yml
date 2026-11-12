@@ -24,6 +24,7 @@ ships:
       - [22, 7]
       - [27, 1]
     mass: 1.0
+    health: 150
     stat_modifiers:
       Speed: 50.0
       AfterBurnerSpeed: 50.0

@@ -23,4 +23,6 @@ internal sealed record GameplaySnapshotEntry(
 {
     public ShipComponentKind Components { get; init; } = ShipComponentKind.All;
     public bool AfterburnerActive { get; init; }
+    public double HealthCapacity { get; init; }
+    public double HealthCurrent { get; init; }
 }

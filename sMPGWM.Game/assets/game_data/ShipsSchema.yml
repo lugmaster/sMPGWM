@@ -19,6 +19,7 @@ properties:
         - texture_path
         - collider_points
         - mass
+        - health
         - stat_modifiers
         - weapon_slots
       properties:
@@ -41,6 +42,10 @@ properties:
           type: number
           minimum: 0
           maximum: 3.4028234663852886e+38
+        health:
+          description: Ship-defined maximum health, independent of installed equipment.
+          type: number
+          exclusiveMinimum: 0
         stat_modifiers:
           description: Flat adjustments to installed equipment; omitted fields are zero. Legacy ship_stats and ShieldCurrent are no longer supported.
           type: object

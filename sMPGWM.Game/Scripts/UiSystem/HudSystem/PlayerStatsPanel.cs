@@ -1,7 +1,7 @@
+using System;
 using Godot;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.UtilitySystem.UiComponents;
-using StatBar = sMPGWM.Scripts.UtilitySystem.UiComponents.StatBar;
 
 namespace sMPGWM.Scripts.UiSystem.HudSystem;
 
@@ -10,28 +10,62 @@ public partial class PlayerStatsPanel : PanelContainer
     private NetworkManager? _network;
     private StatBar _shield = null!;
     private StatBar _energy = null!;
-    private Label _availability = null!;
-    private long _revision = -1;
-    private string _entity = "";
-    private double _current = double.NaN;
-    private double _capacity = double.NaN;
+    private StatBar _health = null!;
+    private readonly Label[] _values = new Label[4];
+    private readonly double[] _displayed = { double.NaN, double.NaN, double.NaN, double.NaN };
+    private double _shieldCurrent = double.NaN;
+    private double _shieldCapacity = double.NaN;
+    private double _energyCurrent = double.NaN;
+    private double _energyCapacity = double.NaN;
+    private double _healthCurrent = double.NaN;
+    private double _healthCapacity = double.NaN;
 
     public override void _Ready()
     {
-        _shield = GetNode<StatBar>("%BarContainer/StatBar");
-        _shield.SetTitle("Shield");
-        _energy = GetNode<StatBar>("%BarContainer/EnergyBar");
-        _energy.SetTitle("Energy");
-        _availability = GetNode<Label>("%BarContainer/Availability");
+        var bars = GetNode<Container>("%BarContainer");
+        var grid = GetNode<Container>("%GridContainer");
+        RemovePlaceholders(bars);
+        RemovePlaceholders(grid);
+        _health = AddBar(bars, "Health");
+        _energy = AddBar(bars, "Energy");
+        _shield = AddBar(bars, "Shield");
+        AddValue(grid, 0, "Current velocity", Icons.Arrows.MediaControlsFastForward);
+        AddValue(grid, 1, "Hull", Icons.Travel.SpaceshipJetShooter);
+        AddValue(grid, 2, "Net energy production per second", Icons.Software.BatteryPowerLevelCharging);
+        AddValue(grid, 3, "Mass", Icons.Sports.FitnessKettlebellWeight);
         Refresh();
+    }
+
+    private static void RemovePlaceholders(Node container)
+    {
+        foreach (var child in container.GetChildren())
+        {
+            container.RemoveChild(child);
+            child.QueueFree();
+        }
+    }
+
+    private static StatBar AddBar(Node container, string title)
+    {
+        var bar = HudProvider.CreateStatBar();
+        bar.Name = title + "Bar";
+        container.AddChild(bar);
+        bar.SetTitle(title);
+        return bar;
+    }
+
+    private void AddValue(Node container, int index, string title, IconDefinition icon)
+    {
+        var entry = HudProvider.CreateIconWithLabel();
+        container.AddChild(entry);
+        entry.TooltipText = title;
+        entry.GetNode<TextureRect>("Icon").Texture = icon.IconTexture;
+        _values[index] = entry.GetNode<Label>("Value");
     }
 
     public void Bind(NetworkManager? network)
     {
         _network = network;
-        _entity = "";
-        _revision = -1;
-        _current = _capacity = double.NaN;
         Refresh();
     }
 
@@ -41,24 +75,34 @@ public partial class PlayerStatsPanel : PanelContainer
     {
         if (_shield == null) return;
         var ship = _network?.World.LocalPlayer?.Participant?.ControlledShip;
-        var entity = ship?.EntityId ?? "";
-        var current = ship?.Runtime.Shield.Current ?? 0;
-        var capacity = ship?.Stats.ShieldCapacity ?? 0;
-        var revision = ship?.Runtime.Revision ?? 0;
-        if (entity == _entity && current == _current && capacity == _capacity && revision == _revision) return;
-        _revision = revision;
-        _entity = entity;
-        _current = current;
-        _capacity = capacity;
-        _shield.Setup(current, capacity);
-        _energy.Setup(ship?.Runtime.Energy.Current ?? 0, ship?.Runtime.Energy.Capacity ?? 0);
         var state = ship?.Runtime;
-        _availability.Text = state?.Components.Power == null ? "Power unavailable - shield unprotected" :
-            state.EnergyDepleted ? "Power depleted — shield unprotected" :
-            state?.ShieldProtectionAvailable == true ? "Powered — shield protective" :
-            state != null && state.ShieldDowntimeDeadline > state.AuthoritativeTick ? "Powered — shield downtime" :
-            "Powered — shield unavailable";
+        UpdateBar(_health, state?.Health.Current ?? 0, state?.Health.Capacity ?? 0,
+            ref _healthCurrent, ref _healthCapacity);
+        UpdateBar(_shield, state?.Shield.Current ?? 0, state?.Shield.Capacity ?? 0,
+            ref _shieldCurrent, ref _shieldCapacity);
+        UpdateBar(_energy, state?.Energy.Current ?? 0, state?.Energy.Capacity ?? 0,
+            ref _energyCurrent, ref _energyCapacity);
+        SetValue(0, ship?.State.Velocity.Length() ?? 0);
+        SetValue(1, ship?.Stats.Armor ?? 0);
+        SetValue(2, state == null ? 0 : state.Stats.EnergyProduction - state.EnergyConsumption);
+        SetValue(3, ship?.Stats.Mass ?? 0);
         _shield.Modulate = state?.ShieldProtectionAvailable == true ? Colors.White : new Color(0.65f, 0.65f, 0.65f);
+    }
+
+    private static void UpdateBar(StatBar bar, double current, double capacity, ref double previousCurrent, ref double previousCapacity)
+    {
+        if (current == previousCurrent && capacity == previousCapacity) return;
+        bar.Setup(current, capacity);
+        previousCurrent = current;
+        previousCapacity = capacity;
+    }
+
+    private void SetValue(int index, double value)
+    {
+        value = Math.Round(value, 1);
+        if (_displayed[index] == value) return;
+        _displayed[index] = value;
+        _values[index].Text = index == 2 ? $"{value:+0.#;-0.#;0} /s" : $"{value:0.#}";
     }
 
     public override void _ExitTree() => Bind(null);

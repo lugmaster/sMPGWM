@@ -16,6 +16,7 @@ public sealed class ShipRuntime : IDisposable
     private readonly List<string> _conditions = new(MaxConditions);
     private ResourcePool _shield => Resources.ShieldPool;
     private ResourcePool _energy => Resources.EnergyPool;
+    private ResourcePool _health => Resources.HealthPool;
     private readonly ShipStatState _stats = new();
     private ShipComponentKind? _pendingComponents;
     private bool _disposed;
@@ -31,6 +32,7 @@ public sealed class ShipRuntime : IDisposable
     public AbilityGrants Grants { get; } = new();
     public ResourceState Shield => new(EquipmentInputs.ShieldCapacity, _shield.Capacity, _shield.Current);
     public ResourceState Energy => new(EquipmentInputs.EnergyStorage, _energy.Capacity, _energy.Current);
+    public ResourceState Health => Resources.Health;
     public ResolvedShipStats Stats => _stats.Effective;
     public bool EnergyDepleted { get; private set; }
     public bool AfterburnerActive { get; private set; }
@@ -53,6 +55,13 @@ public sealed class ShipRuntime : IDisposable
         _shield.SetCapacity(0);
     }
 
+    public ShipRuntime(double healthCapacity) : this()
+    {
+        if (!double.IsFinite(healthCapacity) || healthCapacity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(healthCapacity));
+        _health.SetCapacity(healthCapacity);
+    }
+
     public ShipRuntime(double capacity, double current)
     {
         Resources = new(capacity, current);
@@ -70,7 +79,8 @@ public sealed class ShipRuntime : IDisposable
         return new(EquipmentInputs, _batteryIdentity, _shield.Current, _energy.Current,
             Revision, ConfigurationRevision, AuthoritativeTick, _lastResourceTick, ShieldDowntimeDeadline,
             FactionId, AfterburnerActive, _initialized, Components.Presence, _pendingComponents,
-            Array.AsReadOnly(behaviours), Array.AsReadOnly(_conditions.ToArray()), Grants.CaptureState());
+            Array.AsReadOnly(behaviours), Array.AsReadOnly(_conditions.ToArray()), Grants.CaptureState())
+            { HealthCapacity = _health.Capacity, HealthCurrent = _health.Current };
     }
 
     public void RestoreState(ShipRuntimeState state, GameplayCatalogues definitions)
@@ -80,6 +90,7 @@ public sealed class ShipRuntime : IDisposable
         ArgumentNullException.ThrowIfNull(definitions);
         if (_initialized || _committing) throw new InvalidOperationException("Restore requires an uninitialized authoritative runtime.");
         if (!state.Initialized || state.EquipmentInputs != EquipmentInputs || state.BatteryIdentity != _batteryIdentity ||
+            state.HealthCapacity != _health.Capacity ||
             state.Revision < 1 || state.Revision == long.MaxValue || state.ConfigurationRevision < 1 || state.ConfigurationRevision == long.MaxValue ||
             state.AuthoritativeTick < 0 || state.LastResourceTick < -1 || state.LastResourceTick > state.AuthoritativeTick ||
             state.ShieldDowntimeDeadline < 0 || state.FactionId < 0 || (state.Components & ~ShipComponentKind.All) != 0 ||
@@ -113,7 +124,8 @@ public sealed class ShipRuntime : IDisposable
         }
         var stats = prepared.Effective;
         ValidateShieldRate(stats.ShieldCapacity, stats);
-        if (!double.IsFinite(state.ShieldCurrent) || state.ShieldCurrent < 0 || state.ShieldCurrent > stats.ShieldCapacity ||
+        if (!double.IsFinite(state.HealthCurrent) || state.HealthCurrent < 0 || state.HealthCurrent > _health.Capacity ||
+            !double.IsFinite(state.ShieldCurrent) || state.ShieldCurrent < 0 || state.ShieldCurrent > stats.ShieldCapacity ||
             !double.IsFinite(state.EnergyCurrent) || state.EnergyCurrent < 0 || state.EnergyCurrent > stats.EnergyStorage)
             throw new ArgumentException("Invalid restored resource values.");
         var depleted = stats.EnergyProduction < stats.GetEnergyConsumption(state.AfterburnerActive) && state.EnergyCurrent == 0;
@@ -141,6 +153,7 @@ public sealed class ShipRuntime : IDisposable
         _conditions.AddRange(conditions);
         _shield.Confirm(stats.ShieldCapacity, state.ShieldCurrent);
         _energy.Confirm(stats.EnergyStorage, state.EnergyCurrent);
+        _health.SetCurrent(state.HealthCurrent);
         _pendingComponents = state.PendingComponents;
         _lastResourceTick = state.LastResourceTick;
         ShieldDowntimeDeadline = state.ShieldDowntimeDeadline;
@@ -189,6 +202,7 @@ public sealed class ShipRuntime : IDisposable
         if (_disposed || _initialized) return;
         _initialized = true;
         _shield.SetCurrent(_shield.Capacity);
+        _health.SetCurrent(_health.Capacity);
         _energy.SetCurrent(0);
         var beforeMovement = MovementAvailable;
         RefreshPower();
@@ -291,6 +305,16 @@ public sealed class ShipRuntime : IDisposable
         return true;
     }
 
+    public bool SetHealthCurrent(double current)
+    {
+        if (_disposed || current == _health.Current) return false;
+        var revision = checked(Revision + 1);
+        _health.SetCurrent(current);
+        Revision = revision;
+        PublishChanges();
+        return true;
+    }
+
     public bool SetShieldCurrent(double current)
     {
         if (_disposed) return false;
@@ -329,10 +353,12 @@ public sealed class ShipRuntime : IDisposable
     public bool Confirm(long revision, double capacity, double current, IReadOnlyList<BehaviourInstance> behaviours,
         int factionId, IReadOnlyList<string> conditions, ResolvedShipStats stats, double energyCurrent,
         bool energyDepleted, bool shieldProtectionAvailable, long shieldDowntimeDeadline, long authoritativeTick,
-        long configurationRevision, bool afterburnerActive, ShipComponentKind components = ShipComponentKind.All)
+        long configurationRevision, bool afterburnerActive, double healthCapacity, double healthCurrent,
+        ShipComponentKind components = ShipComponentKind.All)
     {
         if (_disposed || revision <= Revision || authoritativeTick < AuthoritativeTick || configurationRevision < ConfigurationRevision) return false;
         if ((components & ~ShipComponentKind.All) != 0 || !stats.IsValid || stats.ShieldFlatModifier != 0 || capacity != stats.ShieldCapacity || !double.IsFinite(capacity) || capacity < 0 || !double.IsFinite(current) || current < 0 || current > capacity ||
+            !double.IsFinite(healthCapacity) || healthCapacity < 0 || !double.IsFinite(healthCurrent) || healthCurrent < 0 || healthCurrent > healthCapacity ||
             !double.IsFinite(energyCurrent) || energyCurrent < 0 || energyCurrent > stats.EnergyStorage ||
             shieldDowntimeDeadline < 0 || authoritativeTick < 0 || configurationRevision < 1 ||
             behaviours.Count > MaxBehaviours || factionId < 0 || conditions.Count > MaxConditions ||
@@ -350,6 +376,7 @@ public sealed class ShipRuntime : IDisposable
         _pendingComponents = null;
         _shield.Confirm(capacity, current);
         _energy.Confirm(stats.EnergyStorage, energyCurrent);
+        _health.Confirm(healthCapacity, healthCurrent);
         AfterburnerActive = afterburnerActive;
         EnergyDepleted = energyDepleted;
         ShieldDowntimeDeadline = shieldDowntimeDeadline;
@@ -414,6 +441,7 @@ public sealed class ShipRuntime : IDisposable
         _stats.Confirm(default);
         _shield.SetCapacity(0);
         _energy.SetCapacity(0);
+        _health.SetCapacity(0);
         Effects.Clear();
         _conditions.Clear();
         Grants.Clear();

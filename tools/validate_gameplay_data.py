@@ -66,6 +66,8 @@ def validate(documents, schemas):
         return errors
 
     for name, ship in indices['ships'].items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-68 | Tests: tools.validate_gameplay_data.main
+        if not math.isfinite(ship['health']) or ship['health'] <= 0: # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-001 | Tests: tools.validate_gameplay_data.main
+            errors.append(f'ships:{name}: health must be positive and finite') # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-002 | Tests: tools.validate_gameplay_data.main
         for field, value in {'mass': ship['mass'], **ship['stat_modifiers']}.items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-69 | Tests: tools.validate_gameplay_data.main
             if not math.isfinite(value) or abs(value) > 3.4028234663852886e38: # TEST-SUPPORT: DATA-VALIDATOR-V2-70 | Tests: tools.validate_gameplay_data.main
                 errors.append(f'ships:{name}: {field} must be a finite float-representable value') # TEST-SUPPORT: DATA-VALIDATOR-V2-71 | Tests: tools.validate_gameplay_data.main
@@ -199,6 +201,11 @@ def validate(documents, schemas):
 
 def negative_checks(documents, schemas):
     cases = [
+        ('missing ship health', lambda d: d['ships']['ships'][0].pop('health')), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-003 | Tests: tools.validate_gameplay_data.main
+        ('zero ship health', lambda d: d['ships']['ships'][0].update(health=0)), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-004 | Tests: tools.validate_gameplay_data.main
+        ('negative ship health', lambda d: d['ships']['ships'][0].update(health=-1)), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-005 | Tests: tools.validate_gameplay_data.main
+        ('infinite ship health', lambda d: d['ships']['ships'][0].update(health=float('inf'))), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-006 | Tests: tools.validate_gameplay_data.main
+        ('NaN ship health', lambda d: d['ships']['ships'][0].update(health=float('nan'))), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-007 | Tests: tools.validate_gameplay_data.main
         ('legacy ship_stats', lambda d: d['ships']['ships'][0].update(ship_stats={})), # TEST-SUPPORT: DATA-VALIDATOR-V2-202 | Tests: tools.validate_gameplay_data.main
         ('legacy ShieldCurrent', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(ShieldCurrent=10)), # TEST-SUPPORT: DATA-VALIDATOR-V2-203 | Tests: tools.validate_gameplay_data.main
         ('invalid intrinsic mass', lambda d: d['ships']['ships'][0].update(mass=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-204 | Tests: tools.validate_gameplay_data.main
