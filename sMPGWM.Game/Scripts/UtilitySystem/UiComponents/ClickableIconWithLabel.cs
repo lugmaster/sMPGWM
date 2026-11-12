@@ -2,7 +2,7 @@ using Godot;
 
 namespace sMPGWM.Scripts.UtilitySystem.UiComponents;
 
-public partial class IconWithLabel: VBoxContainer
+public partial class ClickableIconWithLabel: VBoxContainer
 {
     private string _labelText = "";
 

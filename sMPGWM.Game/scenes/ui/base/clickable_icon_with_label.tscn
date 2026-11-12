@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://cokvgygk3eysc"]
 
 [ext_resource type="PackedScene" uid="uid://bxfy1glfrrw6a" path="res://scenes/ui/base/clickable_icon.tscn" id="1_dpxf3"]
-[ext_resource type="Script" uid="uid://b2hk26enwvab1" path="res://Scripts/UtilitySystem/UiComponents/IconWithLabel.cs" id="1_i0le5"]
+[ext_resource type="Script" uid="uid://b2hk26enwvab1" path="res://Scripts/UtilitySystem/UiComponents/ClickableIconWithLabel.cs" id="1_i0le5"]
 
-[node name="IconWithLabel" type="VBoxContainer" unique_id=1956222726]
+[node name="ClickableIconWithLabel" type="VBoxContainer" unique_id=1956222726]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

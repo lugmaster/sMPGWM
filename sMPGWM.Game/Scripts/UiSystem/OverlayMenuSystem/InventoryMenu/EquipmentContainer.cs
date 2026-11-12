@@ -33,7 +33,7 @@ public partial class EquipmentContainer : GridContainer
             var definition = definitions[index];
             if (index == _cells.Count)
             {
-                var cell = HudProvider.CreateIconWithLabel();
+                var cell = HudProvider.CreateClickableIconWithLabel();
                 cell.LabelText = definition.DisplayName;
                 _cells.Add(cell.Cell);
                 AddChild(cell);
