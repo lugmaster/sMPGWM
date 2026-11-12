@@ -1,5 +1,0 @@
-Godot Engine v4.6.2.stable.mono.custom_build.001aa128b (2026-03-31 20:42:38 UTC) - https://godotengine.org
-[2026-10-31 16:42:25] [Info] Network session stopped role=Host tick=0
-[2026-10-31 16:42:25] [Debug] GameFlowManager.QuitToStartMenuBlocking graceful quit triggered with reason=Invalid LAN endpoint..
-ERROR: [2026-10-31 16:42:25] [Error] Error: Invalid LAN endpoint.
-[2026-10-31 16:42:25] [Debug] GameFlowManager.QuitToStartMenuInternal returning to start menu.

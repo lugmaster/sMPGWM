@@ -1,6 +1,0 @@
-Godot Engine v4.6.2.stable.mono.custom_build.001aa128b (2026-03-31 20:42:38 UTC) - https://godotengine.org
-[2026-10-31 16:42:19] [Info] Network Client: Connected
-[2026-10-31 16:42:19] [Info] Network session stopped role=Client tick=8
-[2026-10-31 16:42:19] [Debug] GameFlowManager.QuitToStartMenuBlocking graceful quit triggered with reason=Server disconnected..
-ERROR: [2026-10-31 16:42:19] [Error] Error: Server disconnected.
-[2026-10-31 16:42:20] [Debug] GameFlowManager.QuitToStartMenuInternal returning to start menu.

@@ -1,5 +1,0 @@
-Godot Engine v4.6.2.stable.mono.custom_build.001aa128b (2026-03-31 20:42:38 UTC) - https://godotengine.org
-[2026-10-31 16:41:56] [Info] Network Host: Listening
-[2026-10-31 16:41:56] [Info] Listening session=f6a0134edb43438f97519a98fb52b94e port=57534 maxPlayers=10
-[2026-10-31 16:42:02] [Info] Network session stopped role=Host tick=397
-[2026-10-31 16:42:02] [Debug] GameFlowManager.QuitGame completed Steam shutdown.
