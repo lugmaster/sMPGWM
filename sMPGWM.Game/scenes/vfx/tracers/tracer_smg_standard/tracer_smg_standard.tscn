@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/vfx/tracers/projectile_tracer_S_standard_00.png" id="1_tracer"]
+[ext_resource type="Texture2D" path="res://assets/vfx/tracers/tracer_smg_standard/tracer_smg_standard.png" id="1_tracer"]
 
 [node name="Tracer" type="Node2D"]
 texture_filter = 1

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://k3t6m8uh7hof"
-path="res://.godot/imported/projectile_tracer_S_standard_00.png-2f9d8d1edd6531f47402413a25e9029a.ctex"
+uid="uid://dyfi3uqf2wul6"
+path="res://.godot/imported/laser_impact_burst.png-1a403e12a95ae8d747dc858fb752313b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/vfx/tracers/projectile_tracer_S_standard_00.png"
-dest_files=["res://.godot/imported/projectile_tracer_S_standard_00.png-2f9d8d1edd6531f47402413a25e9029a.ctex"]
+source_file="res://assets/vfx/impacts/laser_impact_burst/laser_impact_burst.png"
+dest_files=["res://.godot/imported/laser_impact_burst.png-1a403e12a95ae8d747dc858fb752313b.ctex"]
 
 [params]
 

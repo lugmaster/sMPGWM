@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b3ly2xem4an3k"
-path="res://.godot/imported/muzzle_smg_S_standard.png-9fe34507716cc5e4aedf0bd657c2ce5a.ctex"
+uid="uid://cfed38icss20y"
+path="res://.godot/imported/muzzle_energy_S_blue.png-9c77d0bfd9a3cd3895ae77a262644cab.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/vfx/muzzle_flashes/muzzle_smg_S_standard.png"
-dest_files=["res://.godot/imported/muzzle_smg_S_standard.png-9fe34507716cc5e4aedf0bd657c2ce5a.ctex"]
+source_file="res://assets/vfx/muzzle_flashes/muzzle_energy_S_blue.png"
+dest_files=["res://.godot/imported/muzzle_energy_S_blue.png-9c77d0bfd9a3cd3895ae77a262644cab.ctex"]
 
 [params]
 

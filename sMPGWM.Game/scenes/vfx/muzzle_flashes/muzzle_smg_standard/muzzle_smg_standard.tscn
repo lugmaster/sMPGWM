@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/vfx/muzzle_flashes/muzzle_smg_S_standard.png" id="1_muzzle"]
+[ext_resource type="Texture2D" path="res://assets/vfx/muzzle_flashes/muzzle_smg_standard/muzzle_smg_standard.png" id="1_muzzle"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_flash_1"]
 atlas = ExtResource("1_muzzle")

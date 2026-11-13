@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/vfx/impacts/metall_impact/metal_impact.png" id="1_impact"]
+[ext_resource type="Texture2D" path="res://assets/vfx/impacts/metal_impact_smg_standard/metal_impact_smg_standard.png" id="1_impact"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_impact_1"]
 atlas = ExtResource("1_impact")
