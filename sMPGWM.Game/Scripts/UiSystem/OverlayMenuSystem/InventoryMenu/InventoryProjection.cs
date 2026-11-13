@@ -9,14 +9,16 @@ internal static class InventoryProjection
 {
     internal static IReadOnlyList<ItemCellBinding> Create(InventorySnapshot snapshot, InventoryViewState state)
     {
-        string? category = state.SelectedTab > 0 && state.SelectedTab <= ItemRegistry.GetAllCategories().Count
-            ? ItemRegistry.GetAllCategories()[state.SelectedTab - 1].DisplayName : null;
+        var category = state.SelectedCategoryId;
         var search = state.SearchText.Trim();
         var matches = new List<InventoryEntry>();
         foreach (var entry in snapshot.Occupied)
         {
             var definition = entry.Entity.Definition;
-            if ((category == null || definition.CategoryName == category) &&
+            if ((category == null || (category == "light_weapon"
+                    ? (definition.CategoryId == "light_weapon" && state.WeaponFilter != 2) ||
+                      (definition.CategoryId == "heavy_weapon" && state.WeaponFilter != 1)
+                    : definition.CategoryId == category)) &&
                 definition.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)) matches.Add(entry);
         }
         state.Reconcile(snapshot);

@@ -17,6 +17,7 @@ public partial class InventoryContainer : VBoxContainer
     private LineEdit _search = null!;
     private TabBar _tabs = null!;
     private OptionButton _sort = null!;
+    private OptionButton _weaponFilter = null!;
     private Label _emptyResult = null!;
     private ItemGrid _grid = null!;
     internal System.Collections.Generic.IReadOnlyList<ClickableIcon> Cells => _grid.Cells;
@@ -41,12 +42,26 @@ public partial class InventoryContainer : VBoxContainer
         _tabs.AddTab("All");
         foreach (var category in ItemRegistry.GetAllCategories())
         {
-            _tabs.AddTab(category.DisplayName, ItemIconResolver.Category(category));
+            if (category.Id == "heavy_weapon") continue;
+            _tabs.AddTab("", ItemIconResolver.Category(category));
             var index = _tabs.TabCount - 1;
             _tabs.SetTabMetadata(index, category.Id);
+            _tabs.SetTabTooltip(index, category.Id == "light_weapon" ? "Weapons" : category.DisplayName);
             _tabs.SetTabIconMaxWidth(index, 14);
         }
         state.SelectedTab = Math.Clamp(state.SelectedTab, 0, _tabs.TabCount - 1);
+        _weaponFilter = GetNodeOrNull<OptionButton>("FilterToolbar/WeaponFilter");
+        if (_weaponFilter == null)
+        {
+            _weaponFilter = new OptionButton { Name = "WeaponFilter", TooltipText = "Weapon type" };
+            _weaponFilter.AddItem("All weapons");
+            _weaponFilter.AddItem("Light weapons");
+            _weaponFilter.AddItem("Heavy weapons");
+            GetNode<Control>("FilterToolbar").AddChild(_weaponFilter);
+        }
+        _weaponFilter.Select(state.WeaponFilter);
+        _weaponFilter.Visible = state.SelectedCategoryId == "light_weapon";
+        _weaponFilter.ItemSelected += OnWeaponFilterChanged;
         _sort.Clear();
         _sort.AddItem("Name ascending");
         _sort.AddItem("Name descending");
@@ -74,11 +89,13 @@ public partial class InventoryContainer : VBoxContainer
         _search.TextChanged -= OnSearchChanged;
         _tabs.TabChanged -= OnTabChanged;
         _sort.ItemSelected -= OnSortChanged;
+        _weaponFilter.ItemSelected -= OnWeaponFilterChanged;
         _viewState = null!;
     }
 
     internal void Render(InventorySnapshot snapshot, ItemVisuals visuals)
     {
+        _weaponFilter.Visible = _viewState.SelectedCategoryId == "light_weapon";
         var cells = InventoryProjection.Create(snapshot, _viewState);
         _sort.SetItemDisabled(2, _viewState.SelectedTab != 0);
         _sort.Disabled = !string.IsNullOrWhiteSpace(_viewState.SearchText);
@@ -94,5 +111,6 @@ public partial class InventoryContainer : VBoxContainer
 
     private void OnSearchChanged(string text) { ViewChanging?.Invoke(); _viewState.SearchText = text; ViewChanged?.Invoke(); }
     private void OnTabChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedTab = (int)index; ViewChanged?.Invoke(); }
+    private void OnWeaponFilterChanged(long index) { ViewChanging?.Invoke(); _viewState.WeaponFilter = (int)index; ViewChanged?.Invoke(); }
     private void OnSortChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedSort = (int)index; _viewState.SortRequested = _viewState.SelectedTab == 0; ViewChanged?.Invoke(); }
 }
