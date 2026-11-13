@@ -184,7 +184,7 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
     public void QuitWithOsError(string reason)
     {
         Logger.Error($"Error: {reason}");
-        OS.Alert($"Error: {reason}");
+        if (DisplayServer.GetName() != "headless") OS.Alert($"Error: {reason}");
         if (!Engine.IsEditorHint())
         {
             var tree = Engine.GetMainLoop() as SceneTree;

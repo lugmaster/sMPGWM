@@ -1,5 +1,5 @@
 using System.Reflection;
-using System.Text.RegularExpressions;
+using Godot;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 
@@ -32,17 +32,12 @@ public class UiBoundaryTests
         Assert.That(typeof(GameOverlayProvider).IsNotPublic, Is.True);
     }
 
-    [Test]
-    public void EveryWindowId_HasAnIdenticallyNamedInputMapAction()
+    [Test] // TEST-SUPPORT: KEYBIND-BOUNDARY-001 | Tests: sMPGWM.Tests.UiSystem.UiBoundaryTests.EveryWindowId_HasAnIdenticallyNamedInputMapAction
+    [Category("Godot")] // TEST-SUPPORT: KEYBIND-BOUNDARY-002 | Tests: sMPGWM.Tests.UiSystem.UiBoundaryTests.EveryWindowId_HasAnIdenticallyNamedInputMapAction
+    public void EveryWindowId_HasAnIdenticallyNamedInputMapAction() // TEST-SUPPORT: KEYBIND-BOUNDARY-003 | Tests: sMPGWM.Tests.UiSystem.UiBoundaryTests.EveryWindowId_HasAnIdenticallyNamedInputMapAction
     {
-        var projectPath = Path.GetFullPath(Path.Combine(
-            TestContext.CurrentContext.TestDirectory, "../../../../sMPGWM.Game/project.godot"));
-        var projectText = File.ReadAllText(projectPath);
-        var inputSection = Regex.Match(projectText, @"(?ms)^\[input\]\s*(.*?)(?=^\[|\z)").Groups[1].Value;
-        var actionNames = Regex.Matches(inputSection, @"(?m)^(\w+)=\{")
-            .Select(match => match.Groups[1].Value);
-
-        Assert.That(actionNames, Is.SupersetOf(Enum.GetNames<UiWindowId>()));
+        foreach (var action in Enum.GetNames<UiWindowId>()) // TEST-SUPPORT: KEYBIND-BOUNDARY-004 | Tests: sMPGWM.Tests.UiSystem.UiBoundaryTests.EveryWindowId_HasAnIdenticallyNamedInputMapAction
+            Assert.That(InputMap.HasAction(action), Is.True, action); // TEST-SUPPORT: KEYBIND-BOUNDARY-005 | Tests: sMPGWM.Tests.UiSystem.UiBoundaryTests.EveryWindowId_HasAnIdenticallyNamedInputMapAction
     }
 
     private static IEnumerable<string> GetPublicOperations(Type type) =>

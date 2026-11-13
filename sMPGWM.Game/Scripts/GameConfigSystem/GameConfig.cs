@@ -5,6 +5,7 @@ using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.InputSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
 namespace sMPGWM.Scripts.GameConfigSystem;
@@ -43,6 +44,10 @@ public static class GameConfig
             Development = GetConfigValue("general", "development").AsBool();
             LobbyGameId = GetConfigValue("general", "lobby_game_id").AsString();
             MaxPlayers = GetConfigValue("general", "max_players").AsInt32();
+            KeyBindingSettings.LoadConfiguration(
+                ConfigLoader.Instance.GetDefaultValue(KeyBindingSettings.ConfigSection, KeyBindingSettings.ConfigKey),
+                GetConfigValue(KeyBindingSettings.ConfigSection, KeyBindingSettings.ConfigKey),
+                ConfigLoader.Instance.GetValueSource(KeyBindingSettings.ConfigSection, KeyBindingSettings.ConfigKey));
             ConfigDataChecksum = ChecksumGenerator.Compute(ConfigLoader.Instance.CaptureValues());
             Logger.Info("Successfully loaded config values.");
         }
@@ -78,6 +83,15 @@ public static class GameConfig
             FileLoader.CapturedInputs.Clear();
             throw;
         }
+    }
+
+    public static Error SaveKeyBindings(InputEvent?[,] bindings)
+    {
+        if (!KeyBindingSettings.IsValid(bindings)) return Error.InvalidData;
+        var error = ConfigLoader.Instance.SaveValue(KeyBindingSettings.ConfigSection,
+            KeyBindingSettings.ConfigKey, KeyBindingSettings.Serialize(bindings));
+        if (error == Error.Ok) KeyBindingSettings.Apply(bindings);
+        return error;
     }
 
     private static Variant GetConfigValue(string section, string key)

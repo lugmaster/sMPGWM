@@ -2,6 +2,7 @@ using System;
 using Godot;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.GameFlowSystem;
+using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.UtilitySystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -117,11 +118,15 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
         var values = new System.Collections.Generic.Dictionary<string, string>();
         foreach (var config in new[] { _defaultConfig, _userConfig })
             foreach (var section in config.GetSections())
+            {
+                // Local controls do not affect multiplayer compatibility.
+                if (section == KeyBindingSettings.ConfigSection) continue;
                 foreach (var key in config.GetSectionKeys(section))
                 {
                     var value = GetValue(section, key);
                     values[$"{section.Length}:{section}{key}"] = $"{value.VariantType}:{GD.VarToStr(value)}";
                 }
+            }
         return values;
     }
 
@@ -142,12 +147,43 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
         throw new Exception($"Missing required configuration key: [{section}] {key}");
     }
 
+    public Variant GetDefaultValue(string section, string key)
+    {
+        if (!_defaultConfig.HasSectionKey(section, key))
+            throw new InvalidOperationException($"{FilePaths.SystemConfigPath}: missing required configuration key [{section}] {key}.");
+        return _defaultConfig.GetValue(section, key);
+    }
+
+    public string GetValueSource(string section, string key)
+    {
+        return _userConfig.HasSectionKey(section, key) ? FilePaths.UserConfigPath : FilePaths.SystemConfigPath;
+    }
+
     public void SetValue(string section, string key, Variant value)
     {
         _userConfig.SetValue(section, key, value);
     }
 
     public void Save()
+    {
+        TrySave();
+    }
+
+    public Error SaveValue(string section, string key, Variant value)
+    {
+        var existed = _userConfig.HasSectionKey(section, key);
+        var previous = existed ? _userConfig.GetValue(section, key) : default;
+        _userConfig.SetValue(section, key, value);
+        var error = TrySave();
+        if (error != Error.Ok)
+        {
+            if (existed) _userConfig.SetValue(section, key, previous);
+            else _userConfig.EraseSectionKey(section, key);
+        }
+        return error;
+    }
+
+    public Error TrySave()
     {
         var error = _userConfig.Save(FilePaths.UserConfigPath);
         if (error != Error.Ok)
@@ -158,6 +194,7 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
         {
             Logger.Info($"Config saved to {FilePaths.UserConfigPath}");
         }
+        return error;
     }
 
     private void ValidateUserKeys()

@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://dqur7345s206c"]
 
+[ext_resource type="Script" uid="uid://cblgcjy1ssfid" path="res://Scripts/UiSystem/SharedUiSystems/SettingsMenuSystem/SettingsMenuController.cs" id="1_o5ocb"]
 [ext_resource type="PackedScene" uid="uid://dg15dcucnepua" path="res://scenes/ui/menu/shared_menu/keybinding/keybinding_menu_container.tscn" id="1_yp6bo"]
 
 [node name="SettingsTabMenu" type="TabContainer" unique_id=810493122]
@@ -9,6 +10,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 current_tab = 0
+script = ExtResource("1_o5ocb")
 
 [node name="KeybindingMenuContainer" parent="." unique_id=1820696206 instance=ExtResource("1_yp6bo")]
 layout_mode = 2
