@@ -17,7 +17,7 @@ public partial class InventoryContainer : VBoxContainer
     private LineEdit _search = null!;
     private TabBar _tabs = null!;
     private OptionButton _sort = null!;
-    private OptionButton _weaponFilter = null!;
+    private MenuButton _weaponFilter = null!;
     private Label _emptyResult = null!;
     private ItemGrid _grid = null!;
     internal System.Collections.Generic.IReadOnlyList<ClickableIcon> Cells => _grid.Cells;
@@ -50,19 +50,22 @@ public partial class InventoryContainer : VBoxContainer
             _tabs.SetTabIconMaxWidth(index, 14);
         }
         state.SelectedTab = Math.Clamp(state.SelectedTab, 0, _tabs.TabCount - 1);
-        _weaponFilter = GetNodeOrNull<OptionButton>("FilterToolbar/WeaponFilter");
+        _weaponFilter = GetNodeOrNull<MenuButton>("FilterToolbar/WeaponFilter");
         if (_weaponFilter == null)
         {
-            _weaponFilter = new OptionButton { Name = "WeaponFilter", TooltipText = "Weapon type" };
-            _weaponFilter.AddItem("All weapons");
-            _weaponFilter.AddItem("Light weapons");
-            _weaponFilter.AddItem("Medium weapons");
-            _weaponFilter.AddItem("Heavy weapons");
+            _weaponFilter = new MenuButton { Name = "WeaponFilter", Text = "Filter", Flat = false };
+            var popup = _weaponFilter.GetPopup();
+            popup.AddSeparator("Weapon type", 100);
+            popup.AddRadioCheckItem("All weapons", 0);
+            popup.AddRadioCheckItem("Light weapons", 1);
+            popup.AddRadioCheckItem("Medium weapons", 2);
+            popup.AddRadioCheckItem("Heavy weapons", 3);
+            popup.AddSeparator("Sort by name", 101);
+            popup.AddRadioCheckItem("Ascending", 4);
+            popup.AddRadioCheckItem("Descending", 5);
             GetNode<Control>("FilterToolbar").AddChild(_weaponFilter);
         }
-        _weaponFilter.Select(state.WeaponFilter);
-        _weaponFilter.Visible = state.SelectedCategoryId == "light_weapon";
-        _weaponFilter.ItemSelected += OnWeaponFilterChanged;
+        _weaponFilter.GetPopup().IdPressed += OnWeaponFilterChanged;
         _sort.Clear();
         _sort.AddItem("Name ascending");
         _sort.AddItem("Name descending");
@@ -77,7 +80,7 @@ public partial class InventoryContainer : VBoxContainer
         }
         _search.Text = state.SearchText;
         _tabs.CurrentTab = state.SelectedTab;
-        _sort.Select(state.SelectedSort);
+        RefreshFilterControls();
         _search.TextChanged += OnSearchChanged;
         _tabs.TabChanged += OnTabChanged;
         _sort.ItemSelected += OnSortChanged;
@@ -90,17 +93,14 @@ public partial class InventoryContainer : VBoxContainer
         _search.TextChanged -= OnSearchChanged;
         _tabs.TabChanged -= OnTabChanged;
         _sort.ItemSelected -= OnSortChanged;
-        _weaponFilter.ItemSelected -= OnWeaponFilterChanged;
+        _weaponFilter.GetPopup().IdPressed -= OnWeaponFilterChanged;
         _viewState = null!;
     }
 
     internal void Render(InventorySnapshot snapshot, ItemVisuals visuals)
     {
-        _weaponFilter.Visible = _viewState.SelectedCategoryId == "light_weapon";
+        RefreshFilterControls();
         var cells = InventoryProjection.Create(snapshot, _viewState);
-        _sort.SetItemDisabled(2, _viewState.SelectedTab != 0);
-        _sort.Disabled = !string.IsNullOrWhiteSpace(_viewState.SearchText);
-        _sort.Select(_viewState.SelectedSort);
         _emptyResult.Visible = cells.Count == snapshot.EmptyAddresses.Count;
         _grid.Render(cells,
             (icon, binding) => visuals.Apply(icon, binding.Entity));
@@ -108,10 +108,39 @@ public partial class InventoryContainer : VBoxContainer
 
     private void OnCellCreated(ClickableIcon cell) => CellCreated?.Invoke(cell);
 
+    private void RefreshFilterControls()
+    {
+        var weapons = _viewState.SelectedCategoryId == "light_weapon";
+        var searching = !string.IsNullOrWhiteSpace(_viewState.SearchText);
+        _sort.Visible = !weapons;
+        _sort.SetItemDisabled(2, _viewState.SelectedTab != 0);
+        _sort.Disabled = searching;
+        _sort.Select(_viewState.SelectedSort);
+        _weaponFilter.Visible = weapons;
+        var popup = _weaponFilter.GetPopup();
+        for (var type = 0; type < 4; type++)
+            popup.SetItemChecked(popup.GetItemIndex(type), _viewState.WeaponFilter == type);
+        for (var sort = 0; sort < 2; sort++)
+        {
+            var index = popup.GetItemIndex(sort + 4);
+            popup.SetItemChecked(index, _viewState.CategorySort == sort);
+            popup.SetItemDisabled(index, searching);
+        }
+        _weaponFilter.TooltipText = popup.GetItemText(popup.GetItemIndex(_viewState.WeaponFilter)) +
+            (_viewState.CategorySort == 1 ? "; name descending" : "; name ascending");
+    }
+
     public override void _ExitTree() => Unbind();
 
     private void OnSearchChanged(string text) { ViewChanging?.Invoke(); _viewState.SearchText = text; ViewChanged?.Invoke(); }
     private void OnTabChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedTab = (int)index; ViewChanged?.Invoke(); }
-    private void OnWeaponFilterChanged(long index) { ViewChanging?.Invoke(); _viewState.WeaponFilter = (int)index; ViewChanged?.Invoke(); }
+    private void OnWeaponFilterChanged(long id)
+    {
+        if (id is < 0 or > 5) return;
+        ViewChanging?.Invoke();
+        if (id < 4) _viewState.WeaponFilter = (int)id;
+        else _viewState.CategorySort = (int)id - 4;
+        ViewChanged?.Invoke();
+    }
     private void OnSortChanged(long index) { ViewChanging?.Invoke(); _viewState.SelectedSort = (int)index; _viewState.SortRequested = _viewState.SelectedTab == 0; ViewChanged?.Invoke(); }
 }
