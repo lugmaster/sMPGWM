@@ -1,0 +1,91 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/vfx/impacts/metall_impact/metal_impact.png" id="1_impact"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_1"]
+atlas = ExtResource("1_impact")
+region = Rect2(0, 0, 72, 64)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_2"]
+atlas = ExtResource("1_impact")
+region = Rect2(72, 0, 72, 64)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_3"]
+atlas = ExtResource("1_impact")
+region = Rect2(144, 0, 72, 64)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_4"]
+atlas = ExtResource("1_impact")
+region = Rect2(0, 64, 72, 64)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_5"]
+atlas = ExtResource("1_impact")
+region = Rect2(72, 64, 72, 64)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_6"]
+atlas = ExtResource("1_impact")
+region = Rect2(144, 64, 72, 64)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_7"]
+atlas = ExtResource("1_impact")
+region = Rect2(0, 128, 72, 64)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_8"]
+atlas = ExtResource("1_impact")
+region = Rect2(72, 128, 72, 64)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_9"]
+atlas = ExtResource("1_impact")
+region = Rect2(144, 128, 72, 64)
+filter_clip = true
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_impact"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_9")
+}],
+"loop": false,
+"name": &"impact",
+"speed": 40.0
+}]
+
+[node name="MetalImpact" type="Node2D"]
+texture_filter = 1
+
+[node name="Visual" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_impact")
+animation = &"impact"
+offset = Vector2(-4, 0)

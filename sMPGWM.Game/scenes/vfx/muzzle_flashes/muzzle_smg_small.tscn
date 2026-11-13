@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/vfx/muzzle_flashes/muzzle_smg_S_standard.png" id="1_muzzle"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_flash_1"]
+atlas = ExtResource("1_muzzle")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_flash_2"]
+atlas = ExtResource("1_muzzle")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_flash"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_flash_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_flash_2")
+}],
+"loop": false,
+"name": &"flash",
+"speed": 40.0
+}]
+
+[node name="MuzzleFlash" type="Node2D"]
+texture_filter = 1
+
+[node name="Visual" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_flash")
+animation = &"flash"
+offset = Vector2(8, 0)
