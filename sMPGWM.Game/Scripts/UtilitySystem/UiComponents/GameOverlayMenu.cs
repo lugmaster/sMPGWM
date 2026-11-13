@@ -22,7 +22,7 @@ public partial class GameOverlayMenu : BaseMenu
     protected override void OnReady()
     {
         base.OnReady();
-        _closeButton.Text = "Close";
+        _closeButton.Text = "X";
         _closeButton.Pressed += RequestClose;
         MouseFilter = MouseFilterEnum.Stop;
         SetAnchorsAndOffsetsPreset(LayoutPreset.TopLeft);

@@ -62,9 +62,10 @@ func run() -> void:
             await settle() # TEST-SUPPORT: EQUIP-TABS-SIZING-005 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
             var equipment_cells: Array = [] # TEST-SUPPORT: EQUIP-TABS-SIZING-006 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
             var page := equipment.get_tab_control(tab_index) # TEST-SUPPORT: WEAPON-GRID-SIZING-001 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
-            var slots := page.get_node("Slots") if tab_index == 1 else page # TEST-SUPPORT: WEAPON-GRID-SIZING-002 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+            var slots := page.get_node("Slots/SlotGrid") if tab_index == 1 else page # TEST-SUPPORT: WEAPON-GRID-SIZING-002 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
             for slot in slots.get_children(): # TEST-SUPPORT: EQUIP-TABS-SIZING-007 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
-                equipment_cells.append(slot.get_node("%ClickableIcon")) # TEST-SUPPORT: EQUIP-TABS-SIZING-008 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+                if not slot.visible: continue # TEST-SUPPORT: WEAPON-DYNAMIC-SIZING-001 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+                equipment_cells.append(slot if tab_index == 1 else slot.get_node("%ClickableIcon")) # TEST-SUPPORT: EQUIP-TABS-SIZING-008 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
             await verify_sizes(equipment_cells, Vector2(48, 48), equipment.get_tab_title(tab_index)) # TEST-SUPPORT: EQUIP-TABS-SIZING-009 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
         equipment.current_tab = 0 # TEST-SUPPORT: EQUIP-TABS-SIZING-010 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
         await settle() # TEST-SUPPORT: EQUIP-TABS-SIZING-011 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run

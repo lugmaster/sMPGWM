@@ -35,7 +35,7 @@ func verify_cells(menu: Node, pointer_overlay: Control) -> void:
     expect(grid.columns == 8, "Bag must retain eight columns")
     var tabs := menu.get_node("%InventoryContainer").get_node("%CategoryTabs") as TabBar
     expect(tabs.tab_count == 10 and tabs.get_tab_icon(0) == null, "Categories must use native tabs with a text-only All tab") # TEST-SUPPORT: WEAPON-GRID-SMOKE-006 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-    expect(equipment.get_node("Weapons/Slots").columns == 3, "Weapons must use three columns for nine UI cells") # TEST-SUPPORT: WEAPON-GRID-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    expect(equipment.get_node("Weapons/Slots/SlotGrid").columns == 3, "Weapons must use three columns for nine UI cells") # TEST-SUPPORT: WEAPON-GRID-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
     expect(equipment.get_node("Weapons/Capacity/Value").text == "0/0", "Missing fixture must show zero free and maximum capacity") # TEST-SUPPORT: WEAPON-GRID-SMOKE-002 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
     for index in range(1, tabs.tab_count):
         expect(tabs.get_tab_metadata(index) is String and not tabs.get_tab_metadata(index).is_empty(), "Tabs must retain stable category IDs")
@@ -54,12 +54,15 @@ func verify_cells(menu: Node, pointer_overlay: Control) -> void:
         expect(equipment.size == equipment_size, "Switching equipment tabs must preserve panel size") # TEST-SUPPORT: EQUIP-TABS-SMOKE-010 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
         var page := equipment.get_tab_control(tab_index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-011 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
         expect(page.visible, "Selected equipment page must be visible") # TEST-SUPPORT: EQUIP-TABS-SMOKE-012 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        var slots := page.get_node("Slots") if tab_index == 1 else page # TEST-SUPPORT: WEAPON-GRID-SMOKE-003 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        var slots := page.get_node("Slots/SlotGrid") if tab_index == 1 else page # TEST-SUPPORT: WEAPON-GRID-SMOKE-003 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
         expect(slots.get_child_count() == SLOT_LABELS[tab_index].size(), "Equipment slots must be grouped by tab, leaving Crew empty") # TEST-SUPPORT: EQUIP-TABS-SMOKE-013 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
         for other_index in range(3): # TEST-SUPPORT: EQUIP-TABS-SMOKE-014 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             expect(equipment.get_tab_control(other_index).visible == (other_index == tab_index), "Only the selected equipment page must be visible") # TEST-SUPPORT: EQUIP-TABS-SMOKE-015 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
         for index in range(slots.get_child_count()): # TEST-SUPPORT: EQUIP-TABS-SMOKE-016 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             var cell := slots.get_child(index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-017 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+            if tab_index == 1: # TEST-SUPPORT: WEAPON-DYNAMIC-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+                expect(not cell.visible and cell.icon == null, "Without a fixture, all retained weapon cells must be hidden") # TEST-SUPPORT: WEAPON-DYNAMIC-SMOKE-002 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+                continue # TEST-SUPPORT: WEAPON-DYNAMIC-SMOKE-003 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             var label := cell.get_node("%Label") as Label # TEST-SUPPORT: EQUIP-TABS-SMOKE-018 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             expect(label.text == SLOT_LABELS[tab_index][index], "Equipment labels must follow domain order within their tab") # TEST-SUPPORT: EQUIP-TABS-SMOKE-019 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             expect(label.size.y >= label.get_minimum_size().y, "Equipment labels must fit their cells") # TEST-SUPPORT: EQUIP-TABS-SMOKE-020 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells

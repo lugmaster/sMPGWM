@@ -19,6 +19,9 @@ tab_0/title = "All"
 [node name="FilterToolbar" parent="." unique_id=307463620 instance=ExtResource("3_0bofs")]
 layout_mode = 2
 
+[node name="HSeparator" type="HSeparator" parent="." unique_id=895578290]
+layout_mode = 2
+
 [node name="ItemGrid" parent="." unique_id=931566361 instance=ExtResource("4_otley")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(337, 333)

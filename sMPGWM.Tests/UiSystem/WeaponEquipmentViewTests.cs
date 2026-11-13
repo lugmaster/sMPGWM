@@ -1,41 +1,117 @@
-using Godot;
-using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.UiSystem.Items;
-using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
-using sMPGWM.Scripts.UtilitySystem.Mocks;
+using Godot; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-001 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-002 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-003 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+using sMPGWM.Scripts.UiSystem.Items; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-004 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-005 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
 
-namespace sMPGWM.Tests.UiSystem; // TEST-SUPPORT: WEAPON-UI-GRID-001 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
+namespace sMPGWM.Tests.UiSystem; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-006 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
 
-[TestFixture] // TEST-SUPPORT: WEAPON-UI-GRID-002 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-[Category("Godot")] // TEST-SUPPORT: WEAPON-UI-GRID-003 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-public sealed class WeaponEquipmentViewTests // TEST-SUPPORT: WEAPON-UI-GRID-004 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-{
-    [Test] // TEST-SUPPORT: WEAPON-UI-GRID-005 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-    public void WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot() // TEST-SUPPORT: WEAPON-UI-GRID-006 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-    {
-        using var equipment = new EquipmentController(); // TEST-SUPPORT: WEAPON-UI-GRID-007 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-        var view = GD.Load<PackedScene>("res://scenes/ui/base/equipment_container.tscn").Instantiate<EquipmentContainer>(); // TEST-SUPPORT: WEAPON-UI-GRID-008 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-        var root = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests"); // TEST-SUPPORT: WEAPON-UI-GRID-009 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-        root.AddChild(view); // TEST-SUPPORT: WEAPON-UI-GRID-010 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-        try // TEST-SUPPORT: WEAPON-UI-GRID-011 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-        {
-            view.Render(equipment.Definitions, equipment.Snapshot, new ItemVisuals()); // TEST-SUPPORT: WEAPON-UI-GRID-012 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            var grid = view.GetNode<GridContainer>("Weapons/Slots"); // TEST-SUPPORT: WEAPON-UI-GRID-013 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            var counter = view.GetNode<Label>("Weapons/Capacity/Value"); // TEST-SUPPORT: WEAPON-UI-GRID-014 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            Assert.That(grid.Columns, Is.EqualTo(3)); // TEST-SUPPORT: WEAPON-UI-GRID-015 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            Assert.That(grid.GetChildCount(), Is.EqualTo(9)); // TEST-SUPPORT: WEAPON-UI-GRID-016 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            Assert.That(view.GetNode("Ship").GetChildCount(), Is.EqualTo(6)); // TEST-SUPPORT: WEAPON-UI-GRID-017 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            Assert.That(counter.Text, Is.EqualTo("0/0")); // TEST-SUPPORT: WEAPON-UI-GRID-018 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            ItemFixture.Place(equipment.Items, equipment.Container, equipment.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture"); // TEST-SUPPORT: WEAPON-UI-GRID-019 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            ItemFixture.Place(equipment.Items, equipment.Container, equipment.FindSlot("weapon_1"), "mock_standard_heavy_weapon"); // TEST-SUPPORT: WEAPON-UI-GRID-020 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            view.Render(equipment.Definitions, equipment.Snapshot, new ItemVisuals()); // TEST-SUPPORT: WEAPON-UI-GRID-021 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            Assert.That(grid.GetChildCount(), Is.EqualTo(9)); // TEST-SUPPORT: WEAPON-UI-GRID-022 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            Assert.That(view.Cells[equipment.FindSlot("weapon_1")].Icon, Is.Not.Null); // TEST-SUPPORT: WEAPON-UI-GRID-023 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-            Assert.That(counter.Text, Is.EqualTo($"{equipment.Snapshot.MaxWeaponSlots - 3}/{equipment.Snapshot.MaxWeaponSlots}")); // TEST-SUPPORT: WEAPON-UI-GRID-024 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-        }
-        finally // TEST-SUPPORT: WEAPON-UI-GRID-025 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-        {
-            view.Free(); // TEST-SUPPORT: WEAPON-UI-GRID-026 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeaponsUseNineCellsAndCapacityCounterFromEquipmentSnapshot
-        }
-    }
-}
+[TestFixture] // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-007 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+[Category("Godot")] // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-008 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+public sealed class WeaponEquipmentViewTests // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-009 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+{ // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-010 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+    [TestCase(1)] // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-011 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+    [TestCase(9)] // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-012 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+    public void AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows(int capacity) // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-013 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+    { // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-014 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        using var equipment = new EquipmentController(); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-015 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        var view = GD.Load<PackedScene>("res://scenes/ui/base/equipment_container.tscn").Instantiate<EquipmentContainer>(); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-016 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        var root = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests"); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-017 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        root.AddChild(view); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-018 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        try // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-019 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        { // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-020 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            var slots = new ItemEntity?[equipment.Definitions.Count]; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-021 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            view.Render(equipment.Definitions, new EquipmentSnapshot(0, slots), new ItemVisuals()); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-022 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            var grid = view.GetNode<GridContainer>("Weapons/Slots/SlotGrid"); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-023 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            var scroller = view.GetNode<ScrollContainer>("Weapons/Slots"); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-024 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            var counter = view.GetNode<Label>("Weapons/Capacity/Value"); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-025 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(grid.Columns, Is.EqualTo(3)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-026 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(grid.GetChildCount(), Is.EqualTo(9)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-027 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(VisibleCount(grid), Is.Zero); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-028 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(view.GetNode("Ship").GetChildCount(), Is.EqualTo(6)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-029 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(counter.Text, Is.EqualTo("0/0")); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-030 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(grid.GetCombinedMinimumSize().Y, Is.Zero); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-031 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(view.GetNode<Control>("Weapons/Capacity").SizeFlagsHorizontal, Is.EqualTo(Control.SizeFlags.ShrinkCenter)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-032 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            var fixture = ItemRegistry.GetById("mock_standard_weapon_fixture") with { Values = new Dictionary<string, object> { ["WeaponSlots"] = capacity } }; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-033 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            slots[equipment.FindSlot("weapon_fixture")] = new ItemEntity(ItemEntityId.Create(), fixture, 1); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-034 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            view.Render(equipment.Definitions, new EquipmentSnapshot(1, slots), new ItemVisuals()); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-035 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(VisibleCount(grid), Is.EqualTo(1)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-036 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(counter.Text, Is.EqualTo($"{capacity}/{capacity}")); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-037 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(scroller.VerticalScrollMode, Is.EqualTo(ScrollContainer.ScrollMode.Disabled)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-EXTRA-001 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            var firstRowHeight = grid.GetCombinedMinimumSize().Y; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-038 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(firstRowHeight, Is.GreaterThan(0)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-039 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            for (var index = 1; index <= capacity; index++) // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-040 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            { // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-041 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+                var key = $"weapon_{index}"; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-042 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+                slots[equipment.FindSlot(key)] = new ItemEntity(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_light_weapon"), 1); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-043 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+                view.Render(equipment.Definitions, new EquipmentSnapshot(index + 1, slots), new ItemVisuals()); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-044 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+                Assert.That(VisibleCount(grid), Is.EqualTo(index < capacity ? index + 1 : index)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-045 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+                Assert.That(counter.Text, Is.EqualTo($"{capacity - index}/{capacity}")); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-046 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+                Assert.That(view.Cells[equipment.FindSlot(key)].Visible, Is.True); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-047 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            } // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-048 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            Assert.That(grid.GetChildCount(), Is.EqualTo(9)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-049 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            if (capacity == 9) Assert.That(grid.GetCombinedMinimumSize().Y, Is.GreaterThan(firstRowHeight * 2)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-050 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            else Assert.That(grid.GetCombinedMinimumSize().Y, Is.EqualTo(firstRowHeight)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-051 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        } // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-052 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        finally // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-053 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        { // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-054 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+            view.Free(); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-055 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+        } // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-056 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+    } // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-057 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows
+
+    [Test] // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-058 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+    public void WeightedCapacityAndHolesPreserveSlotBindings() // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-059 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+    { // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-060 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        using var equipment = new EquipmentController(); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-061 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        var view = GD.Load<PackedScene>("res://scenes/ui/base/equipment_container.tscn").Instantiate<EquipmentContainer>(); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-062 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        var root = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests"); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-063 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        root.AddChild(view); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-064 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        try // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-065 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        { // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-066 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            var slots = new ItemEntity?[equipment.Definitions.Count]; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-067 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            slots[equipment.FindSlot("weapon_fixture")] = new ItemEntity(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_weapon_fixture"), 1); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-068 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            foreach (var key in new[] { "weapon_1", "weapon_2", "weapon_9" }) // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-069 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+                slots[equipment.FindSlot(key)] = new ItemEntity(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_heavy_weapon"), 1); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-070 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            view.Render(equipment.Definitions, new EquipmentSnapshot(1, slots), new ItemVisuals()); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-071 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            var grid = view.GetNode<GridContainer>("Weapons/Slots/SlotGrid"); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-072 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            var counter = view.GetNode<Label>("Weapons/Capacity/Value"); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-073 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(VisibleCount(grid), Is.EqualTo(3)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-074 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(counter.Text, Is.EqualTo("0/9")); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-075 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(view.Cells[equipment.FindSlot("weapon_3")].Visible, Is.False); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-076 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            var lastWeaponCell = view.Cells[equipment.FindSlot("weapon_9")]; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-077 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            var lastWeapon = slots[equipment.FindSlot("weapon_9")]; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-078 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            slots[equipment.FindSlot("weapon_1")] = null; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-079 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            view.Render(equipment.Definitions, new EquipmentSnapshot(2, slots), new ItemVisuals()); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-080 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(VisibleCount(grid), Is.EqualTo(3)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-081 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(counter.Text, Is.EqualTo("3/9")); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-082 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(view.Cells[equipment.FindSlot("weapon_9")], Is.SameAs(lastWeaponCell)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-083 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(lastWeaponCell.Visible, Is.True); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-084 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            var occupiedBinding = (ItemCellBinding)lastWeaponCell.Binding!; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-085 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(occupiedBinding.SlotKey, Is.EqualTo("weapon_9")); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-086 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(occupiedBinding.Entity, Is.SameAs(lastWeapon)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-087 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(occupiedBinding.Revision, Is.EqualTo(2)); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-088 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            var emptyCell = view.Cells[equipment.FindSlot("weapon_1")]; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-089 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(emptyCell.Visible, Is.True); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-090 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(((ItemCellBinding)emptyCell.Binding!).SlotKey, Is.EqualTo("weapon_1")); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-091 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(((ItemCellBinding)emptyCell.Binding!).Entity, Is.Null); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-092 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(view.Cells[equipment.FindSlot("weapon_3")].Visible, Is.False); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-093 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Array.Clear(slots); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-094 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            view.Render(equipment.Definitions, new EquipmentSnapshot(3, slots), new ItemVisuals()); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-095 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(VisibleCount(grid), Is.Zero); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-096 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(counter.Text, Is.EqualTo("0/0")); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-097 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            Assert.That(grid.GetCombinedMinimumSize().Y, Is.Zero); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-098 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        } // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-099 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        finally // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-100 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        { // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-101 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            view.Free(); // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-102 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        } // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-103 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+    } // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-104 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+
+    private static int VisibleCount(Node grid) // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-105 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+    { // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-106 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        var count = 0; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-107 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        foreach (var child in grid.GetChildren()) // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-108 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+            if (((Control)child).Visible) count++; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-109 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+        return count; // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-110 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+    } // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-111 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
+} // TEST-SUPPORT: WEAPON-DYNAMIC-GRID-112 | Tests: sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.AvailableCapacityShowsOneEmptyCellAndGrowsToThreeRows, sMPGWM.Tests.UiSystem.WeaponEquipmentViewTests.WeightedCapacityAndHolesPreserveSlotBindings
