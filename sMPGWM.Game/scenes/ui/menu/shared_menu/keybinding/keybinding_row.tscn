@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://tghsntuv11lt"]
+
+[node name="KeybindingRow" type="HBoxContainer" unique_id=232406362]
+custom_minimum_size = Vector2(0, 36)
+offset_right = 650.0
+offset_bottom = 36.0
+size_flags_horizontal = 3
+theme_override_constants/separation = 9
+
+[node name="ActionLabel" type="Label" parent="." unique_id=537832943]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+text = "Accelerate"
+vertical_alignment = 1
+
+[node name="PrimaryBindingButton" type="Button" parent="." unique_id=491817091]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "W"
+
+[node name="SecondaryBindingButton" type="Button" parent="." unique_id=1612400297]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Up"

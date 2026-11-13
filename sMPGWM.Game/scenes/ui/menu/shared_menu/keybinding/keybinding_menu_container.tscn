@@ -1,0 +1,76 @@
+
+[gd_scene format=3 uid="uid://dg15dcucnepua"]
+
+[ext_resource type="PackedScene" uid="uid://coew7b8mfitr5" path="res://scenes/ui/menu/shared_menu/base_settings_menu.tscn" id="1_base"]
+
+[ext_resource type="PackedScene" uid="uid://c8vwq4w4k8r1h" path="res://scenes/ui/menu/shared_menu/keybinding/keybinding_section.tscn" id="1_pq2wy"]
+
+[node name="KeybindingMenuContainer" unique_id=1820696206 instance=ExtResource("1_base")]
+custom_minimum_size = Vector2(650, 400)
+
+[node name="MenuContainer" parent="." index="0"]
+theme_override_constants/separation = 12
+
+[node name="ColumnHeader" type="HBoxContainer" parent="MenuContainer" unique_id=1809216107]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 9
+
+[node name="ActionColumnLabel" type="Label" parent="MenuContainer/ColumnHeader" unique_id=1474958815]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+text = "Action"
+
+[node name="PrimaryColumnLabel" type="Label" parent="MenuContainer/ColumnHeader" unique_id=101110032]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "Primary"
+horizontal_alignment = 1
+
+[node name="SecondaryColumnLabel" type="Label" parent="MenuContainer/ColumnHeader" unique_id=1751321759]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "Secondary"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MenuContainer" unique_id=1537437596]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MenuContainer" unique_id=244378417]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="MenuContainer/ScrollContainer" unique_id=1590897094]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_top = 12
+
+[node name="SectionsContainer" type="VBoxContainer" parent="MenuContainer/ScrollContainer/MarginContainer" unique_id=907398595]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 32
+
+[node name="KeybindingSection" parent="MenuContainer/ScrollContainer/MarginContainer/SectionsContainer" unique_id=588214144 instance=ExtResource("1_pq2wy")]
+layout_mode = 2
+
+[node name="KeybindingSection2" parent="MenuContainer/ScrollContainer/MarginContainer/SectionsContainer" unique_id=1992951528 instance=ExtResource("1_pq2wy")]
+layout_mode = 2
+
+[node name="ActionsContainer" type="HBoxContainer" parent="MenuContainer" unique_id=709078884]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 9
+alignment = 2
+
+[node name="ResetDefaultsButton" type="Button" parent="MenuContainer/ActionsContainer" unique_id=1750285943]
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+text = "Reset Defaults"
+
+[node name="ApplyButton" type="Button" parent="MenuContainer/ActionsContainer" unique_id=1805927526]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Apply"

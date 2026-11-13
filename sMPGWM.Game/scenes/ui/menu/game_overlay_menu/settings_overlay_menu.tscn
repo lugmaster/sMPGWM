@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://bl3o2lkuxhwhk"]
+
+[ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_nhf1b"]
+[ext_resource type="PackedScene" uid="uid://dqur7345s206c" path="res://scenes/ui/menu/shared_menu/settings/settings_menu_container.tscn" id="2_d1uqu"]
+
+[node name="SettingsOverlayMenu" unique_id=1431156458 instance=ExtResource("1_nhf1b")]
+
+[node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
+text = "Settings"
+
+[node name="SettingsTabMenu" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=810493122 instance=ExtResource("2_d1uqu")]
+layout_mode = 2

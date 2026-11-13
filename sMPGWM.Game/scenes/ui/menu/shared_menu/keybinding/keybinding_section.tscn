@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://c8vwq4w4k8r1h"]
+
+[ext_resource type="PackedScene" uid="uid://tghsntuv11lt" path="res://scenes/ui/menu/shared_menu/keybinding/keybinding_row.tscn" id="1_amx3l"]
+
+[node name="KeybindingSection" type="VBoxContainer" unique_id=588214144]
+offset_right = 650.0
+offset_bottom = 110.0
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="SectionHeader" type="HBoxContainer" parent="." unique_id=1729891223]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SectionLabel" type="Label" parent="SectionHeader" unique_id=1654172639]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Movement"
+
+[node name="HSeparator" type="HSeparator" parent="." unique_id=354829399]
+layout_mode = 2
+
+[node name="RowsContainer" type="VBoxContainer" parent="." unique_id=103712958]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="KeybindingRow" parent="RowsContainer" unique_id=232406362 instance=ExtResource("1_amx3l")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="KeybindingRow2" parent="RowsContainer" unique_id=1995197640 instance=ExtResource("1_amx3l")]
+layout_mode = 2
+size_flags_horizontal = 3

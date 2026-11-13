@@ -2,9 +2,13 @@
 
 [ext_resource type="PackedScene" uid="uid://csfidmr8pe45n" path="res://scenes/ui/base/base_start_menu.tscn" id="1_qeqwo"]
 [ext_resource type="Script" uid="uid://bkp7ciwlk35m7" path="res://Scripts/StartMenuSystem/SettingsMenu.cs" id="2_djs21"]
+[ext_resource type="PackedScene" uid="uid://dqur7345s206c" path="res://scenes/ui/menu/shared_menu/settings/settings_menu_container.tscn" id="3_2d7bc"]
 
 [node name="SettingsMenu" unique_id=1431156458 instance=ExtResource("1_qeqwo")]
 script = ExtResource("2_djs21")
 
 [node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
 text = "Settings"
+
+[node name="SettingsTabMenu" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer" parent_id_path=PackedInt32Array(2135748070) index="0" unique_id=810493122 instance=ExtResource("3_2d7bc")]
+layout_mode = 2
