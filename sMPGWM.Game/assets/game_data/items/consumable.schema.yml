@@ -1,0 +1,78 @@
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+required:
+- Version
+- Items
+properties:
+  Version:
+    type: string
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+  Items:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+      - Id
+      - DisplayName
+      - CategoryId
+      - AbilityIds
+      not:
+        required:
+        - CanStack
+        - StackLimit
+      properties:
+        Id:
+          type: string
+          pattern: \S
+        DisplayName:
+          type: string
+          pattern: \S
+        CategoryId:
+          const: consumable
+        Description:
+          type: string
+        CanStack:
+          type: boolean
+        Icon:
+          type:
+          - string
+          - 'null'
+        StackLimit:
+          type: integer
+          minimum: 2
+          maximum: 2147483646
+        Values:
+          type: object
+          additionalProperties: false
+          properties: {}
+        AbilityIds:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][A-Za-z0-9_]*$
+          minItems: 1
+        BehaviourGrants:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - BehaviourId
+            - While
+            - Lifetime
+            properties:
+              BehaviourId:
+                type: string
+                pattern: ^[a-z][A-Za-z0-9_]*$
+              While:
+                type: string
+                enum:
+                - Carried
+                - Equipped
+              Lifetime:
+                type: string
+                enum:
+                - WhileSourceActive
+          minItems: 1

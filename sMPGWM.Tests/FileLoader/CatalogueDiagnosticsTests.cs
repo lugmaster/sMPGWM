@@ -12,8 +12,8 @@ public class CatalogueDiagnosticsTests // TEST-SUPPORT: INIT-CATALOGUE-007 | Tes
     [TestCase("stacking", "StackLimit", "inconsistent")] // TEST-SUPPORT: INIT-CATALOGUE-012 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
     public void ItemFailuresPreserveSourceDefinitionAndField(string mutation, string field, string detail) // TEST-SUPPORT: INIT-CATALOGUE-013 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
     { // TEST-SUPPORT: INIT-CATALOGUE-014 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(GameplayTestData.Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: INIT-CATALOGUE-015 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
-        var document = GameplayTestData.Read("ItemDefinitions.yml", "ItemSchema.yml"); // TEST-SUPPORT: INIT-CATALOGUE-016 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: INIT-CATALOGUE-015 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
+        var document = GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"); // TEST-SUPPORT: INIT-CATALOGUE-016 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
         var row = document["Items"]![0]!; // TEST-SUPPORT: INIT-CATALOGUE-017 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
         var id = (string)row["Id"]!; // TEST-SUPPORT: INIT-CATALOGUE-018 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
         switch (mutation) // TEST-SUPPORT: INIT-CATALOGUE-019 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
@@ -24,21 +24,21 @@ public class CatalogueDiagnosticsTests // TEST-SUPPORT: INIT-CATALOGUE-007 | Tes
             case "stacking": ((JObject)row).Remove("CanStack"); row["StackLimit"] = 1; break; // TEST-SUPPORT: INIT-CATALOGUE-024 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
         } // TEST-SUPPORT: INIT-CATALOGUE-025 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
         var result = CatalogueParser.Load(() => ItemDefinitionParser.LoadItemDefinitions(document, categories, _ => null!), // TEST-SUPPORT: INIT-CATALOGUE-026 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
-            "user://custom/ItemDefinitions.yml", "res://assets/game_data/ItemSchema.yml"); // TEST-SUPPORT: INIT-CATALOGUE-027 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
+            "user://custom/ItemDefinitions.yml", "res://assets/game_data/items/ItemSchema.yml"); // TEST-SUPPORT: INIT-CATALOGUE-027 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
         Assert.That(result.IsSuccess, Is.False); // TEST-SUPPORT: INIT-CATALOGUE-028 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
         Assert.That(result.Error!.SourcePath, Is.EqualTo("user://custom/ItemDefinitions.yml")); // TEST-SUPPORT: INIT-CATALOGUE-029 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
-        Assert.That(result.Error.SchemaPath, Is.EqualTo("res://assets/game_data/ItemSchema.yml")); // TEST-SUPPORT: INIT-CATALOGUE-030 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
+        Assert.That(result.Error.SchemaPath, Is.EqualTo("res://assets/game_data/items/ItemSchema.yml")); // TEST-SUPPORT: INIT-CATALOGUE-030 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
         Assert.That(result.Error.Message, Does.Contain(id).And.Contain(field).And.Contain(detail)); // TEST-SUPPORT: INIT-CATALOGUE-031 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
     } // TEST-SUPPORT: INIT-CATALOGUE-032 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.ItemFailuresPreserveSourceDefinitionAndField
 
     [Test] // TEST-SUPPORT: INIT-CATALOGUE-034 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
     public void CategoryDuplicatesHaveContext() // TEST-SUPPORT: INIT-CATALOGUE-035 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
     { // TEST-SUPPORT: INIT-CATALOGUE-036 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
-        var document = GameplayTestData.Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"); // TEST-SUPPORT: INIT-CATALOGUE-037 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
+        var document = GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"); // TEST-SUPPORT: INIT-CATALOGUE-037 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
         var row = document["Categories"]![0]!; // TEST-SUPPORT: INIT-CATALOGUE-038 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
         ((JArray)document["Categories"]!).Add(row.DeepClone()); // TEST-SUPPORT: INIT-CATALOGUE-039 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
         var error = Assert.Throws<ArgumentException>(() => ItemDefinitionParser.LoadItemCategoryDefinitions(document, _ => null!)); // TEST-SUPPORT: INIT-CATALOGUE-040 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
-        Assert.That(error!.Message, Does.Contain("ItemCategoryDefinitions.yml").And.Contain("ItemCategorySchema.yml").And.Contain((string)row["Id"]!).And.Contain("duplicate")); // TEST-SUPPORT: INIT-CATALOGUE-041 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
+        Assert.That(error!.Message, Does.Contain("items/ItemCategoryDefinitions.yml").And.Contain("items/ItemCategorySchema.yml").And.Contain((string)row["Id"]!).And.Contain("duplicate")); // TEST-SUPPORT: INIT-CATALOGUE-041 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
     } // TEST-SUPPORT: INIT-CATALOGUE-042 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.CategoryDuplicatesHaveContext
 
     [Test] // TEST-SUPPORT: INIT-CATALOGUE-044 | Tests: sMPGWM.Tests.FileLoader.CatalogueDiagnosticsTests.GameplayReferencesIdentifySourceAndField

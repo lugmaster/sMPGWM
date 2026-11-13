@@ -21,8 +21,8 @@ CATALOGUES = {
     'classifications': ('BehaviourClassificationDefinitions.yml', 'BehaviourClassificationSchema.yml', 'BehaviourClassifications'),
     'stats': ('Attributes.yml', 'AttributeSchema.yml', 'Stats'),
     'conditions': ('Conditions.yml', 'ConditionSchema.yml', 'Conditions'),
-    'categories': ('ItemCategoryDefinitions.yml', 'ItemCategorySchema.yml', 'Categories'),
-    'items': ('ItemDefinitions.yml', 'ItemSchema.yml', 'Items'),
+    'categories': ('items/ItemCategoryDefinitions.yml', 'items/ItemCategorySchema.yml', 'Categories'),
+    'items': ('ItemDefinitions.yml', 'items/ItemSchema.yml', 'Items'),
     'ships': ('Ships.yml', 'ShipsSchema.yml', 'ships'), # TEST-SUPPORT: DATA-VALIDATOR-V2-26 | Tests: tools.validate_gameplay_data.main
     'damage': ('DamageSources.yml', 'DamageSourceSchema.yml', 'DamageSources'),
 }
@@ -49,7 +49,10 @@ def read(name):
     if name == 'ItemDefinitions.yml': # TEST-SUPPORT: ITEM-SPLIT-PY-001 | Tests: tools.validate_gameplay_data.main
         parts = [read('items/' + category + '.yml') for category in ['engine', 'hull', 'shield_generator', 'reactor', 'light_weapon', 'medium_weapon', 'heavy_weapon', 'consumable', 'resource', 'battery', 'weapon_fixture']] # TEST-SUPPORT: ITEM-SPLIT-PY-002 | Tests: tools.validate_gameplay_data.main
         return {'Version': parts[0]['Version'], 'Items': [item for part in parts for item in part['Items']]} # TEST-SUPPORT: ITEM-SPLIT-PY-003 | Tests: tools.validate_gameplay_data.main
-    return yaml.load((ROOT / name).read_text(encoding='utf-8'), Loader=UniqueKeyLoader)
+    document = yaml.load((ROOT / name).read_text(encoding='utf-8'), Loader=UniqueKeyLoader) # TEST-SUPPORT: ITEM-SCHEMA-PY-001 | Tests: tools.validate_gameplay_data.main
+    if name.startswith('items/') and not name.endswith('.schema.yml') and 'Items' in document: # TEST-SUPPORT: ITEM-SCHEMA-PY-002 | Tests: tools.validate_gameplay_data.main
+        Draft7Validator(read(name.replace('.yml', '.schema.yml'))).validate(document) # TEST-SUPPORT: ITEM-SCHEMA-PY-003 | Tests: tools.validate_gameplay_data.main
+    return document # TEST-SUPPORT: ITEM-SCHEMA-PY-004 | Tests: tools.validate_gameplay_data.main
 
 
 def validate(documents, schemas):

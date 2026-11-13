@@ -42,7 +42,7 @@ public static class ItemRegistry
         var categories = categoryResult.Value!;
         var itemYaml = ItemDefinitionDocuments.Load(file => FileLoader.LoadYaml(
             FilePaths.UserConfigDirectory + file, "res://assets/game_data/" + file,
-            FilePaths.ItemDataYamlSchema));
+            "res://assets/game_data/" + file.Replace(".yml", ".schema.yml")));
         var itemResult = CatalogueParser.Load(() => LoadItemDefinitions(itemYaml, categories, Icons.Get),
             FilePaths.UserItemDataYaml, FilePaths.ItemDataYamlSchema);
         if (!itemResult.IsSuccess) throw new InvalidOperationException(itemResult.Error!.ToDisplayString());

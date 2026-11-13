@@ -9,9 +9,9 @@ namespace sMPGWM.Scripts.ItemSystem;
 public static class ItemDefinitionParser
 {
     private static readonly CatalogueSource ItemCategorySource =
-        new("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml", "Categories");
+        new("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml", "Categories");
     private static readonly CatalogueSource ItemSource =
-        new("ItemDefinitions.yml", "ItemSchema.yml", "Items");
+        new("ItemDefinitions.yml", "items/ItemSchema.yml", "Items");
 
     public static Dictionary<string, ItemCategoryDefinition> LoadItemCategoryDefinitions(
         JObject yaml, Func<string, IconDefinition> resolveIcon)
