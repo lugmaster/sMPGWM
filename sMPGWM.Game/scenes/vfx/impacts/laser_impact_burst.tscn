@@ -1,0 +1,154 @@
+[gd_scene load_steps=20 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/vfx/impacts/laser_impact_burst/laser_impact_burst.png" id="1_impact"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_1"]
+atlas = ExtResource("1_impact")
+region = Rect2(0, 0, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_2"]
+atlas = ExtResource("1_impact")
+region = Rect2(96, 0, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_3"]
+atlas = ExtResource("1_impact")
+region = Rect2(192, 0, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_4"]
+atlas = ExtResource("1_impact")
+region = Rect2(288, 0, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_5"]
+atlas = ExtResource("1_impact")
+region = Rect2(384, 0, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_6"]
+atlas = ExtResource("1_impact")
+region = Rect2(480, 0, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_7"]
+atlas = ExtResource("1_impact")
+region = Rect2(0, 96, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_8"]
+atlas = ExtResource("1_impact")
+region = Rect2(96, 96, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_9"]
+atlas = ExtResource("1_impact")
+region = Rect2(192, 96, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_10"]
+atlas = ExtResource("1_impact")
+region = Rect2(288, 96, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_11"]
+atlas = ExtResource("1_impact")
+region = Rect2(384, 96, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_12"]
+atlas = ExtResource("1_impact")
+region = Rect2(480, 96, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_13"]
+atlas = ExtResource("1_impact")
+region = Rect2(0, 192, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_14"]
+atlas = ExtResource("1_impact")
+region = Rect2(96, 192, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_15"]
+atlas = ExtResource("1_impact")
+region = Rect2(192, 192, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_16"]
+atlas = ExtResource("1_impact")
+region = Rect2(288, 192, 96, 96)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_impact_17"]
+atlas = ExtResource("1_impact")
+region = Rect2(384, 192, 96, 96)
+filter_clip = true
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_impact"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_11")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_12")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_13")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_14")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_15")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_16")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_impact_17")
+}],
+"loop": false,
+"name": &"impact",
+"speed": 40.0
+}]
+
+[node name="LaserImpactBurst" type="Node2D"]
+texture_filter = 1
+
+[node name="Visual" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_impact")
+animation = &"impact"
