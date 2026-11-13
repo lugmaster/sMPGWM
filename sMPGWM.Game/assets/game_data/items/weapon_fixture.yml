@@ -1,0 +1,8 @@
+Version: 2.0.0
+Items:
+  - Id: mock_standard_weapon_fixture
+    DisplayName: Standard Weapon Fixture
+    CategoryId: weapon_fixture
+    Values:
+      WeaponSlots: 9
+      Mass: 1

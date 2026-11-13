@@ -1,0 +1,21 @@
+Version: 2.0.0
+Items:
+  - Id: mock_standard_resource
+    DisplayName: Standard Resource
+    CategoryId: resource
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+    StackLimit: 10
+  - Id: mock_advanced_resource
+    DisplayName: Advanced Resource
+    CategoryId: resource
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+    StackLimit: 1000
+  - Id: infectedCargo
+    DisplayName: Infected Cargo
+    Description: While carried, grants one source-bound Infection contribution. Remove the item to remove it.
+    CategoryId: resource
+    CanStack: false
+    BehaviourGrants:
+      - BehaviourId: infection
+        While: Carried
+        Lifetime: WhileSourceActive

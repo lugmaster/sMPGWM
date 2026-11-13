@@ -93,7 +93,7 @@ if options.variants: # TEST-SUPPORT: ABILITY-PROCESS-005 | Tests: sMPGWM.Tests.A
             variant['Modifiers'][0]['Value'] = 25 # TEST-SUPPORT: ABILITY-PROCESS-021 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         rows.append(variant) # TEST-SUPPORT: ABILITY-PROCESS-022 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         file.write_text(yaml.safe_dump(document, sort_keys=False), encoding='utf-8') # TEST-SUPPORT: ABILITY-PROCESS-023 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
-    item_file = project / 'assets/game_data/ItemDefinitions.yml' # TEST-SUPPORT: EQUIP-STAGE-009 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
+    item_file = project / 'assets/game_data/items/shield_generator.yml' # TEST-SUPPORT: EQUIP-STAGE-009 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     item_data = yaml.safe_load(item_file.read_text()) # TEST-SUPPORT: EQUIP-STAGE-010 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
     for item in item_data['Items']: # TEST-SUPPORT: EQUIP-STAGE-011 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge
         if item['Id'] == 'mock_advanced_shield_generator': item['AbilityIds'] = ['shieldVariant'] # TEST-SUPPORT: EQUIP-STAGE-012 | Tests: sMPGWM.Tests.AbilityGameplayProcessTests.TenPlayersWithTwoAuthoredBehavioursConverge

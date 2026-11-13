@@ -1,0 +1,14 @@
+Version: 2.0.0
+Items:
+  - Id: mock_standard_consumable
+    DisplayName: Standard Consumable
+    CategoryId: consumable
+    AbilityIds: [shieldRecharge]
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+    StackLimit: 10
+  - Id: mock_advanced_consumable
+    DisplayName: Advanced Consumable
+    CategoryId: consumable
+    AbilityIds: [shieldRecharge]
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+    StackLimit: 1000

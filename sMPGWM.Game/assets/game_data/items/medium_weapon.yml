@@ -1,0 +1,28 @@
+Version: 2.0.0
+Items:
+  - Id: mock_standard_medium_weapon
+    DisplayName: Standard Medium Weapon
+    CategoryId: medium_weapon
+    Values:
+      DamageSource: physical
+      Damage: 1
+      AttackSpeed: 1
+      EnergyConsumption: 1
+      EnergyPerShot: 1
+      MagazinSize: 1
+      ReloadDuration: 1
+      Mass: 1
+    Description: "PlayerMock example. Uses 2 weapon slots."
+  - Id: mock_advanced_medium_weapon
+    DisplayName: Advanced Medium Weapon
+    CategoryId: medium_weapon
+    Values:
+      DamageSource: physical
+      Damage: 1
+      AttackSpeed: 1
+      EnergyConsumption: 1
+      EnergyPerShot: 1
+      MagazinSize: 1
+      ReloadDuration: 1
+      Mass: 1
+    Description: "PlayerMock alternate example. Uses 2 weapon slots."

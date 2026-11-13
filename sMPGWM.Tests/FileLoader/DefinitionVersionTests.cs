@@ -5,7 +5,17 @@ namespace sMPGWM.Tests.FileLoader;
 public class DefinitionVersionTests
 {
     [TestCase("Ships.yml", "ShipsSchema.yml")]
-    [TestCase("ItemDefinitions.yml", "ItemSchema.yml")]
+    [TestCase("items/engine.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-000 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/hull.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-001 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/shield_generator.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-002 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/reactor.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-003 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/light_weapon.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-004 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/medium_weapon.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-005 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/heavy_weapon.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-006 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/consumable.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-007 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/resource.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-008 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/battery.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-009 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/weapon_fixture.yml", "ItemSchema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-010 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
     [TestCase("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml")]
     public void VersionMetadataIsRequiredAndValidated(string file, string schema)
     {

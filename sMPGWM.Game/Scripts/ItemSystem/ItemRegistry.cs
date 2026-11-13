@@ -40,8 +40,9 @@ public static class ItemRegistry
             FilePaths.UserItemCategoryDataYaml, FilePaths.ItemCategoryDataYamlSchema);
         if (!categoryResult.IsSuccess) throw new InvalidOperationException(categoryResult.Error!.ToDisplayString());
         var categories = categoryResult.Value!;
-        var itemYaml = FileLoader.LoadYaml(FilePaths.UserItemDataYaml, FilePaths.ItemDataYaml,
-            FilePaths.ItemDataYamlSchema);
+        var itemYaml = ItemDefinitionDocuments.Load(file => FileLoader.LoadYaml(
+            FilePaths.UserConfigDirectory + file, "res://assets/game_data/" + file,
+            FilePaths.ItemDataYamlSchema));
         var itemResult = CatalogueParser.Load(() => LoadItemDefinitions(itemYaml, categories, Icons.Get),
             FilePaths.UserItemDataYaml, FilePaths.ItemDataYamlSchema);
         if (!itemResult.IsSuccess) throw new InvalidOperationException(itemResult.Error!.ToDisplayString());

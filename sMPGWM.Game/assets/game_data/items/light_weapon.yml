@@ -1,0 +1,28 @@
+Version: 2.0.0
+Items:
+  - Id: mock_standard_light_weapon
+    DisplayName: Standard Light Weapon
+    CategoryId: light_weapon
+    Values:
+      DamageSource: physical
+      Damage: 1
+      AttackSpeed: 1
+      EnergyConsumption: 1
+      EnergyPerShot: 1
+      MagazinSize: 1
+      ReloadDuration: 1
+      Mass: 1
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_light_weapon
+    DisplayName: Advanced Light Weapon
+    CategoryId: light_weapon
+    Values:
+      DamageSource: physical
+      Damage: 1
+      AttackSpeed: 1
+      EnergyConsumption: 1
+      EnergyPerShot: 1
+      MagazinSize: 1
+      ReloadDuration: 1
+      Mass: 1
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."

@@ -1,0 +1,26 @@
+Version: 2.0.0
+Items:
+  - Id: mock_standard_engine
+    DisplayName: Standard Engine
+    CategoryId: engine
+    Values:
+      EnergyConsumption: 16
+      Speed: 300
+      AfterBurnerSpeed: 400
+      RotationSpeed: 30
+      Acceleration: 1.2
+      AfterBurnerAcceleration: 1.7
+      Mass: 1
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_engine
+    DisplayName: Advanced Engine
+    CategoryId: engine
+    Values:
+      EnergyConsumption: 16
+      Speed: 300
+      AfterBurnerSpeed: 400
+      RotationSpeed: 30
+      Acceleration: 1.2
+      AfterBurnerAcceleration: 1.7
+      Mass: 1
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."

@@ -1,0 +1,24 @@
+Version: 2.0.0
+Items:
+  - Id: mock_standard_shield_generator
+    DisplayName: Standard Shield Generator
+    CategoryId: shield_generator
+    AbilityIds: [shieldCapacityBoost]
+    Values:
+      ShieldCapacity: 100
+      RechargeTime: 5000
+      DownTime: 3000
+      EnergyConsumption: 1
+      Mass: 1
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_shield_generator
+    DisplayName: Advanced Shield Generator
+    CategoryId: shield_generator
+    AbilityIds: [shieldCapacityBoost]
+    Values:
+      ShieldCapacity: 100
+      RechargeTime: 5000
+      DownTime: 3000
+      EnergyConsumption: 1
+      Mass: 1
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."

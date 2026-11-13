@@ -46,6 +46,9 @@ UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, 
 
 
 def read(name):
+    if name == 'ItemDefinitions.yml': # TEST-SUPPORT: ITEM-SPLIT-PY-001 | Tests: tools.validate_gameplay_data.main
+        parts = [read('items/' + category + '.yml') for category in ['engine', 'hull', 'shield_generator', 'reactor', 'light_weapon', 'medium_weapon', 'heavy_weapon', 'consumable', 'resource', 'battery', 'weapon_fixture']] # TEST-SUPPORT: ITEM-SPLIT-PY-002 | Tests: tools.validate_gameplay_data.main
+        return {'Version': parts[0]['Version'], 'Items': [item for part in parts for item in part['Items']]} # TEST-SUPPORT: ITEM-SPLIT-PY-003 | Tests: tools.validate_gameplay_data.main
     return yaml.load((ROOT / name).read_text(encoding='utf-8'), Loader=UniqueKeyLoader)
 
 

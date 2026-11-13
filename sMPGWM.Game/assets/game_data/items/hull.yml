@@ -1,0 +1,16 @@
+Version: 2.0.0
+Items:
+  - Id: mock_standard_hull
+    DisplayName: Standard Hull
+    CategoryId: hull
+    Values:
+      Armor: 1
+      Mass: 1
+    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
+  - Id: mock_advanced_hull
+    DisplayName: Advanced Hull
+    CategoryId: hull
+    Values:
+      Armor: 1
+      Mass: 1
+    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."

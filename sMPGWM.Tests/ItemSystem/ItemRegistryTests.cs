@@ -120,6 +120,7 @@ public class ItemRegistryTests
 
     private static JObject Read(string file, string schema)
     {
+        if (file == "ItemDefinitions.yml") return sMPGWM.Scripts.ItemSystem.ItemDefinitionDocuments.Load(part => Read(part, schema)); // TEST-SUPPORT: ITEM-SPLIT-ItemRegistryTests-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons, sMPGWM.Tests.ItemSystem.ItemRegistryTests.MissingCategoryValuesAndMissingConsumableAbilitiesAreRejected, sMPGWM.Tests.ItemSystem.ItemRegistryTests.DuplicateIdsAndUnknownCategoriesAreRejected, sMPGWM.Tests.ItemSystem.ItemRegistryTests.NonstackableItemsCannotDeclareMultipleItemsPerStack, sMPGWM.Tests.ItemSystem.ItemRegistryTests.StackingSchemas, sMPGWM.Tests.ItemSystem.ItemRegistryTests.DefaultsAndOverridesResolveBeforeUse, sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
         var directory = Path.GetFullPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../sMPGWM.Game/assets/game_data"));
         var result = YamlParser.ValidateAndReturn(File.ReadAllText(Path.Combine(directory, file)),
             File.ReadAllText(Path.Combine(directory, schema)), file, schema);
