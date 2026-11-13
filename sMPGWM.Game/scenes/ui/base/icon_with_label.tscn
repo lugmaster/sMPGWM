@@ -5,6 +5,7 @@
 [node name="IconWithLabel" type="HBoxContainer" unique_id=1048780216]
 offset_right = 58.0
 offset_bottom = 23.0
+size_flags_horizontal = 3
 size_flags_vertical = 4
 mouse_filter = 2
 theme_override_constants/separation = 6
@@ -20,5 +21,8 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="Value" type="Label" parent="." unique_id=1919213793]
+custom_minimum_size = Vector2(78, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 text = "112397.7"
+clip_text = true

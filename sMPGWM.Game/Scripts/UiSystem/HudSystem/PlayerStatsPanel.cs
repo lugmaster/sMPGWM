@@ -27,8 +27,8 @@ public partial class PlayerStatsPanel : PanelContainer
         RemovePlaceholders(bars);
         RemovePlaceholders(grid);
         _health = AddBar(bars, "Health");
-        _energy = AddBar(bars, "Energy");
         _shield = AddBar(bars, "Shield");
+        _energy = AddBar(bars, "Energy");
         AddValue(grid, 0, "Current velocity", Icons.Arrows.MediaControlsFastForward);
         AddValue(grid, 1, "Hull", Icons.Travel.SpaceshipJetShooter);
         AddValue(grid, 2, "Net energy production per second", Icons.Software.BatteryPowerLevelCharging);
