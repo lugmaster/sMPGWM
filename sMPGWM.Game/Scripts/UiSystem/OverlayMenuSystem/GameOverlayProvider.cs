@@ -12,6 +12,7 @@ internal static class GameOverlayProvider
     private const string InventoryMenuPath = GameOverlayMenuPath + "inventory_menu.tscn";
     private const string MapMenuPath = GameOverlayMenuPath + "map_menu.tscn";
     private const string MessageChildrenPath = GameOverlayMenuPath + "message_menu/";
+    public static SettingsOverlayMenu CreateSettingsMenu() => SceneLoader.LoadAndInstantiate<SettingsOverlayMenu>(GameOverlayMenuPath + "settings_overlay_menu.tscn");
     public static GameOverlayMenu CreateMainMenu() => SceneLoader.LoadAndInstantiate<GameOverlayMenu>(MainMenuPath);
     public static GameOverlayMenu CreateInventoryMenu() => SceneLoader.LoadAndInstantiate<GameOverlayMenu>(InventoryMenuPath);
     public static GameOverlayMenu CreateMapMenu() => SceneLoader.LoadAndInstantiate<GameOverlayMenu>(MapMenuPath);

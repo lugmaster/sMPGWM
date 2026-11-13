@@ -7,6 +7,8 @@ namespace sMPGWM.Scripts.UiSystem.SharedUiSystems.KeyBindingSystem;
 
 public partial class KeyBindingMenuController : VBoxContainer
 {
+    internal bool IsCapturingInput => _captureAction >= 0 || _releaseToConsume != null;
+    internal Control? CaptureExcludedControl { get; set; }
     private InputEvent?[,] _draft = new InputEvent?[0, 2];
     private InputEvent?[,] _saved = new InputEvent?[0, 2];
     private Button[,] _buttons = new Button[0, 2];
@@ -116,6 +118,8 @@ public partial class KeyBindingMenuController : VBoxContainer
     public override void _Input(InputEvent input)
     {
         if (!IsVisibleInTree()) return;
+        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } &&
+            CaptureExcludedControl?.GetGlobalRect().HasPoint(GetGlobalMousePosition()) == true) return;
         if (_releaseToConsume != null)
         {
             if (input is InputEventKey { Echo: true })
@@ -224,7 +228,7 @@ public partial class KeyBindingMenuController : VBoxContainer
         _captureControls.Visible = _captureAction >= 0;
         _status.Text = _captureAction >= 0
             ? $"{KeyBindingCatalog.Actions[_captureAction].Label}: press a key or mouse button (modifiers supported)."
-            : conflict ?? (dirty ? "Unsaved changes. Save to apply; Back discards changes." : "Select a binding to change or clear it.");
+            : conflict ?? (dirty ? "Unsaved changes. Save to apply; Closing settings discards unsaved changes." : "Select a binding to change or clear it.");
     }
 
     private string? FindConflict()

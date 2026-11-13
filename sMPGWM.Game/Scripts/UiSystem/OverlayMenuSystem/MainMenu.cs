@@ -9,6 +9,8 @@ namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
 
 public partial class MainMenu : GameOverlayMenu
 {
+    internal event System.Action? SettingsRequested;
+    private void RequestSettings() => SettingsRequested?.Invoke();
     protected override string ScreenTitle => "Main Menu";
     
     private Button _quitGameButton = null!;
@@ -22,6 +24,7 @@ public partial class MainMenu : GameOverlayMenu
     protected override void OnReady()
     {
         base.OnReady();
+        GetNode<Button>("CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/Settings").Pressed += RequestSettings;
         _quitGameButton.Pressed += OnQuitGameButtonOnPressed;
     }
 
@@ -31,6 +34,7 @@ public partial class MainMenu : GameOverlayMenu
         if (_quitGameButton != null)
             _quitGameButton.Pressed -= OnQuitGameButtonOnPressed;
 
+        GetNode<Button>("CenterContainer/MenuPanel/MarginContainer/RootContent/ContentContainer/Settings").Pressed -= RequestSettings;
         base._ExitTree();
     }
 

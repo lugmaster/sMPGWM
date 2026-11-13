@@ -14,6 +14,7 @@ public partial class MenuToolbarControl : PanelContainer
     internal event Action<UiWindowId>? MenuRequested;
     private NotificationIcon _messages = null!;
     private bool _navigationEnabled;
+    private int _unreadCount;
 
     public override void _Ready()
     {
@@ -26,7 +27,22 @@ public partial class MenuToolbarControl : PanelContainer
         PresentNotification(NotificationKind.UnreadMessages, 0);
         SetNavigationEnabled(_navigationEnabled);
         MinimumSizeChanged += ApplyLayout;
+        sMPGWM.Scripts.InputSystem.KeyBindingSettings.BindingsChanged += RefreshTooltips;
         ApplyLayout();
+    }
+
+    private void RefreshTooltips()
+    {
+        RefreshTooltip("InventoryButton", UiWindowId.InventoryMenu, "Inventory");
+        RefreshTooltip("MapButton", UiWindowId.MapMenu, "Map");
+        RefreshTooltip("MainMenuButton", UiWindowId.MainMenu, "Main Menu");
+        PresentNotification(NotificationKind.UnreadMessages, _unreadCount);
+    }
+
+    private void RefreshTooltip(string node, UiWindowId id, string title)
+    {
+        var button = GetNode<ClickableIcon>("ButtonContainer/MenuButtonContainer/" + node);
+        button.SetDisplay(button.IconTexture, new IconDisplayData(Tooltip(id, title)));
     }
 
     private void ApplyLayout()
@@ -55,6 +71,7 @@ public partial class MenuToolbarControl : PanelContainer
     internal void PresentNotification(NotificationKind kind, int count)
     {
         if (kind != NotificationKind.UnreadMessages) throw new ArgumentOutOfRangeException(nameof(kind));
+        _unreadCount = count;
         var tooltip = count == 0 ? "Messages, no unread messages" : $"Messages, {count} unread messages";
         _messages.Present(Icons.Software.EmailMessageUnreadClosed.IconTexture, Tooltip(UiWindowId.MessageMenu, tooltip), count);
     }
@@ -71,6 +88,7 @@ public partial class MenuToolbarControl : PanelContainer
 
     public override void _ExitTree()
     {
+        sMPGWM.Scripts.InputSystem.KeyBindingSettings.BindingsChanged -= RefreshTooltips;
         MinimumSizeChanged -= ApplyLayout;
         _messages.Pressed -= RequestMessages;
     }

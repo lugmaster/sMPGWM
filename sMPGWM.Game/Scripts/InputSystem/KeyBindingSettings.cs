@@ -6,6 +6,7 @@ namespace sMPGWM.Scripts.InputSystem;
 
 public static class KeyBindingSettings
 {
+    internal static event Action? BindingsChanged;
     public const string ConfigSection = "keybindings";
     public const string ConfigKey = "bindings";
     public const int SlotCount = 2;
@@ -128,6 +129,7 @@ public static class KeyBindingSettings
             for (var slot = 0; slot < SlotCount; slot++)
                 if (_current[row, slot] is { } input) InputMap.ActionAddEvent(action, input);
         }
+        BindingsChanged?.Invoke();
     }
 
     private static InputEvent?[,] Clone(InputEvent?[,] source)

@@ -3,7 +3,10 @@
 [ext_resource type="PackedScene" uid="uid://bli57o43qurcm" path="res://scenes/ui/base/game_overlay_menu.tscn" id="1_nhf1b"]
 [ext_resource type="PackedScene" uid="uid://dqur7345s206c" path="res://scenes/ui/menu/shared_menu/settings/settings_menu_container.tscn" id="2_d1uqu"]
 
+[ext_resource type="Script" path="res://Scripts/UiSystem/OverlayMenuSystem/SettingsOverlayMenu.cs" id="3_settings"]
+
 [node name="SettingsOverlayMenu" unique_id=1431156458 instance=ExtResource("1_nhf1b")]
+script = ExtResource("3_settings")
 
 [node name="TitleLabel" parent="CenterContainer/MenuPanel/MarginContainer/RootContent/HeaderContainer" parent_id_path=PackedInt32Array(20106782) index="0" unique_id=1532561777]
 text = "Settings"

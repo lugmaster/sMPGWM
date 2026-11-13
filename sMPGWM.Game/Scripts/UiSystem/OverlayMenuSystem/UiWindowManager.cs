@@ -26,12 +26,20 @@ public partial class UiWindowManager : Control
     internal event Action? MessagesActivated;
     internal event Action? MenuActivating;
 
+    private bool SettingsOpen => _windows.TryGetValue(UiWindowId.MainMenu, out var view) && view is SettingsOverlayMenu;
+    private void ClearPressedActions() => _pressedMenuActions.Clear();
+
     internal void Activate(UiWindowId id)
     {
         if (!_navigationEnabled) return;
         if (_requiredMessage)
         {
             if (id == UiWindowId.MessageMenu) Focus(id);
+            return;
+        }
+        if (SettingsOpen)
+        {
+            if (id == UiWindowId.MainMenu) ReplaceMainView(false);
             return;
         }
         MenuActivating?.Invoke();
@@ -63,6 +71,7 @@ public partial class UiWindowManager : Control
 
     public override void _Ready()
     {
+        sMPGWM.Scripts.InputSystem.KeyBindingSettings.BindingsChanged += ClearPressedActions;
         MouseFilter = MouseFilterEnum.Ignore;
         _modalBlocker = GetNode<Control>("../../ModalBlocker");
         _scrollContainer = GetNode<ScrollContainer>("WindowScroll");
@@ -74,6 +83,7 @@ public partial class UiWindowManager : Control
 
     public override void _ExitTree()
     {
+        sMPGWM.Scripts.InputSystem.KeyBindingSettings.BindingsChanged -= ClearPressedActions;
         _windowRow.SortChildren -= QueueEnsureFocusedWindowVisible;
         _windowRow.MinimumSizeChanged -= RefreshScrollExtent;
         _scrollContainer.Resized -= QueueEnsureFocusedWindowVisible;
@@ -97,6 +107,7 @@ public partial class UiWindowManager : Control
     {
         if (!_navigationEnabled) return;
         if (_requiredMessage && id != UiWindowId.MessageMenu) return;
+        if (SettingsOpen && id != UiWindowId.MainMenu) return;
         if (id != UiWindowId.MainMenu) Close(UiWindowId.MainMenu);
         if (_registry.IsOpen(id))
         {
@@ -108,6 +119,7 @@ public partial class UiWindowManager : Control
 
         var window = CreateWindow(id);
         WindowOpening?.Invoke(id, window);
+        if (window is MainMenu main) main.SettingsRequested += ShowSettings;
         var closeHandler = () => Close(id);
         window.OnMenuClosed += closeHandler;
         _closeHandlers.Add(id, closeHandler);
@@ -124,6 +136,7 @@ public partial class UiWindowManager : Control
     {
         if (_requiredMessage) return;
         if (!_windows.Remove(id, out var window)) return;
+        if (window is MainMenu main) main.SettingsRequested -= ShowSettings;
         window.OnMenuClosed -= _closeHandlers[id];
         _closeHandlers.Remove(id);
         window.Hide();
@@ -149,6 +162,7 @@ public partial class UiWindowManager : Control
         foreach (var entry in _windows)
         {
             var window = entry.Value;
+            if (window is MainMenu main) main.SettingsRequested -= ShowSettings;
             window.OnMenuClosed -= _closeHandlers[entry.Key];
             window.Hide();
             _windowRow.RemoveChild(window);
@@ -163,10 +177,32 @@ public partial class UiWindowManager : Control
         _scrollContainer.Hide();
     }
 
+    private void ShowSettings() => ReplaceMainView(true);
+
+    private void ReplaceMainView(bool settings)
+    {
+        if (!_navigationEnabled || _requiredMessage || !_windows.TryGetValue(UiWindowId.MainMenu, out var old)) return;
+        old.OnMenuClosed -= _closeHandlers[UiWindowId.MainMenu];
+        if (old is MainMenu main) main.SettingsRequested -= ShowSettings;
+        old.Hide();
+        _windowRow.RemoveChild(old);
+        old.QueueFree();
+        var window = settings ? GameOverlayProvider.CreateSettingsMenu() : GameOverlayProvider.CreateMainMenu();
+        Action close = settings ? () => ReplaceMainView(false) : () => Close(UiWindowId.MainMenu);
+        if (window is MainMenu next) next.SettingsRequested += ShowSettings;
+        window.OnMenuClosed += close;
+        _closeHandlers[UiWindowId.MainMenu] = close;
+        _windows[UiWindowId.MainMenu] = window;
+        _pressedMenuActions.Clear();
+        _windowRow.AddChild(window);
+        Focus(UiWindowId.MainMenu);
+    }
+
     internal Func<bool>? CancelGameplayAction { get; set; }
 
     public override void _Input(InputEvent @event)
     {
+        if (SettingsOpen && ((SettingsOverlayMenu)_windows[UiWindowId.MainMenu]).Bindings.IsCapturingInput) return;
         foreach (var (action, actionName) in MenuActions)
             if (@event.IsActionReleased(actionName)) _pressedMenuActions.Remove(action);
 
