@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bb68re2pm4e0n"
-path="res://.godot/imported/projectile_bullet_S_blue_00.png-fecce2079f0d7096733c0fb6969de356.ctex"
+uid="uid://cfed38icss20y"
+path="res://.godot/imported/muzzle_laser_standard.png-4e6b27d7231f2f0d510d8c262fdebe23.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/vfx/tracers/projectile_bullet_S_blue_00.png"
-dest_files=["res://.godot/imported/projectile_bullet_S_blue_00.png-fecce2079f0d7096733c0fb6969de356.ctex"]
+source_file="res://assets/vfx/muzzle_flashes/muzzle_laser_standard/muzzle_laser_standard.png"
+dest_files=["res://.godot/imported/muzzle_laser_standard.png-4e6b27d7231f2f0d510d8c262fdebe23.ctex"]
 
 [params]
 

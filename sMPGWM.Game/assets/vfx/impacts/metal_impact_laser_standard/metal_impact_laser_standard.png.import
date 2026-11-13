@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cfed38icss20y"
-path="res://.godot/imported/muzzle_energy_S_blue.png-9c77d0bfd9a3cd3895ae77a262644cab.ctex"
+uid="uid://dyfi3uqf2wul6"
+path="res://.godot/imported/metal_impact_laser_standard.png-646e6e0c2f8cad86f5639e0896c7e914.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/vfx/muzzle_flashes/muzzle_energy_S_blue.png"
-dest_files=["res://.godot/imported/muzzle_energy_S_blue.png-9c77d0bfd9a3cd3895ae77a262644cab.ctex"]
+source_file="res://assets/vfx/impacts/metal_impact_laser_standard/metal_impact_laser_standard.png"
+dest_files=["res://.godot/imported/metal_impact_laser_standard.png-646e6e0c2f8cad86f5639e0896c7e914.ctex"]
 
 [params]
 
