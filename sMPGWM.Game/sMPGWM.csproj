@@ -3,42 +3,11 @@
         <TargetFramework>net8.0</TargetFramework>
         <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
         <EnableDynamicLoading>true</EnableDynamicLoading>
-    </PropertyGroup>
-    <PropertyGroup>
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Remove="Scripts\NetworkSystem\legacy\**\*.cs" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
         <PackageReference Include="YamlDotNet" Version="18.1.0" />
-    </ItemGroup>
-    <ItemGroup>
-        <Folder Include="assets\loadingscreen\" />
-        <Folder Include="assets\ui\backgrounds\" />
-        <Folder Include="assets\ui\fonts\" />
-        <Folder Include="assets\ui\icons\" />
-        <Folder Include="scenes\ui\controls\" />
-        <Folder Include="scenes\ui\screens\" />
-        <Folder Include="Scripts\PlayerController\" />
-    </ItemGroup>
-    <ItemGroup>
-        <Content Include="assets\game_data\DamageSources.yml" />
-        <Content Include="assets\game_data\EffectDefinitions.yml" />
-        <Content Include="assets\game_data\EffectDefinitionSchema.yml" />
-        <Content Include="assets\game_data\Ships.yml" />
-        <Content Include="assets\game_data\ShipsSchema.yml" />
-        <Content Include="assets\game_data\States.yml" />
-        <Content Include="assets\game_data\Attributes.yml" />
-        <Content Include="assets\ui\cursors\crosshair.png" />
-        <Content Include="assets\ui\mocks\ship_fighter_reference.png" />
-        <Content Include="assets\ui\mocks\ship_fighter_reference.png.import" />
-        <Content Include="assets\world\backgrounds\Blue_Nebula_1_1024x1024.png" />
-        <Content Include="assets\world\backgrounds\pixel_stars.png" />
-        <Content Include="config\config.cfg" />
-        <Content Include="credits" />
-        <Content Include="README.md" />
-        <Content Include="Scripts\World\GameWorld.cs.uid" />
-        <Content Include="Scripts\NetworkSystem\NetworkManager.cs.uid" />
     </ItemGroup>
 </Project>
