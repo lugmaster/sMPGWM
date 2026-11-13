@@ -31,6 +31,3 @@ ships:
       RotationSpeed: 2.0
       Acceleration: 0.1
       AfterBurnerAcceleration: 0.1
-    weapon_slots:
-      light: 2
-      heavy: 2

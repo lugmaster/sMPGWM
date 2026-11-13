@@ -26,6 +26,7 @@ public class ItemHotbarTests
         _inventory = new InventoryController();
         _equipment = new EquipmentController(_inventory.Items);
         _transfers = new InventoryEquipmentTransferService(_inventory, _equipment);
+        ItemFixture.Place(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture"); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-29 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.DisposalRevokesEditingAndDetachesObservers, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ConsumableAssignmentAggregatesOnlyMatchingDefinitionAndChangesNoOwnership, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AggregateRetainsZeroQuantityDefinitionAndSumsMultipleStacks, sMPGWM.Tests.ItemSystem.ItemHotbarTests.InventoryWeaponsAndUnsupportedCategoriesAreRejected, sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill, sMPGWM.Tests.ItemSystem.ItemHotbarTests.MoveSwapsEntriesClearLeavesEmptyAndUnavailableLinksStillMove, sMPGWM.Tests.ItemSystem.ItemHotbarTests.RejectedEditsAndNoOpsDoNotPublish, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AssignmentRejectsStaleSourceTargetAndSession, sMPGWM.Tests.ItemSystem.ItemHotbarTests.EmptyWeaponSlotCannotCreateAnAssignment, sMPGWM.Tests.ItemSystem.ItemHotbarTests.MergeAndMovesPreserveDefinitionAggregate, sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ReopeningRevokesOldEditsAndDisposalReleasesState, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ActivationPreservesOriginalActionIdentityAndEmitsTypedItemRequest, sMPGWM.Tests.ItemSystem.ItemHotbarTests.PublicationIsolatesFailuresAndRejectsReentrancy, sMPGWM.Tests.ItemSystem.ItemHotbarTests.NewCategoriesDefaultToNoHotbarEligibility, sMPGWM.Tests.ItemSystem.ItemHotbarTests.SourceValidationErrorsArePreservedWithoutMutation, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AssignmentAndMoveValidationAgreeWithNoOpCommits, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AssignmentDuringTransferPublicationRejectsWithoutCommitting, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksRevisionsWithoutSubscribersAndSharesDuplicateBindings, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksEquipmentOnlyChanges, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ControllerObserverSnapshotSurvivesSubscriptionChangesAndReporterFailures, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ControllerChangesFollowAllSourcesAndDetachOnUnbind
         _state = new ItemHotbarState(Enumerable.Range(0, 10).Select(index => new ActionHotbarBinding(index.ToString())));
         _controller = new ItemHotbarController(_state, _inventory, _equipment, _transfers);
         _session = _transfers.OpenEditSession();
@@ -66,7 +67,7 @@ public class ItemHotbarTests
         _inventory.Revision, _equipment.Revision));
 
     private TransferResult Equip(int source) => _transfers.Transfer(new TransferRequest(_session, ItemCellAddress.Inventory(source),
-        _inventory.Snapshot.Slots[source]!.Id, ItemCellAddress.Equipment("light_weapon_1"), _equipment.Snapshot.Slots[4]?.Id,
+        _inventory.Snapshot.Slots[source]!.Id, ItemCellAddress.Equipment("weapon_1"), _equipment.Snapshot.Slots[_equipment.FindSlot("weapon_1")]?.Id, // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-70 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.DisposalRevokesEditingAndDetachesObservers, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ConsumableAssignmentAggregatesOnlyMatchingDefinitionAndChangesNoOwnership, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AggregateRetainsZeroQuantityDefinitionAndSumsMultipleStacks, sMPGWM.Tests.ItemSystem.ItemHotbarTests.InventoryWeaponsAndUnsupportedCategoriesAreRejected, sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill, sMPGWM.Tests.ItemSystem.ItemHotbarTests.MoveSwapsEntriesClearLeavesEmptyAndUnavailableLinksStillMove, sMPGWM.Tests.ItemSystem.ItemHotbarTests.RejectedEditsAndNoOpsDoNotPublish, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AssignmentRejectsStaleSourceTargetAndSession, sMPGWM.Tests.ItemSystem.ItemHotbarTests.EmptyWeaponSlotCannotCreateAnAssignment, sMPGWM.Tests.ItemSystem.ItemHotbarTests.MergeAndMovesPreserveDefinitionAggregate, sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ReopeningRevokesOldEditsAndDisposalReleasesState, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ActivationPreservesOriginalActionIdentityAndEmitsTypedItemRequest, sMPGWM.Tests.ItemSystem.ItemHotbarTests.PublicationIsolatesFailuresAndRejectsReentrancy, sMPGWM.Tests.ItemSystem.ItemHotbarTests.NewCategoriesDefaultToNoHotbarEligibility, sMPGWM.Tests.ItemSystem.ItemHotbarTests.SourceValidationErrorsArePreservedWithoutMutation, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AssignmentAndMoveValidationAgreeWithNoOpCommits, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AssignmentDuringTransferPublicationRejectsWithoutCommitting, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksRevisionsWithoutSubscribersAndSharesDuplicateBindings, sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksEquipmentOnlyChanges, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ControllerObserverSnapshotSurvivesSubscriptionChangesAndReporterFailures, sMPGWM.Tests.ItemSystem.ItemHotbarTests.ControllerChangesFollowAllSourcesAndDetachOnUnbind
         _inventory.Revision, _equipment.Revision));
 
     [Test]
@@ -120,17 +121,18 @@ public class ItemHotbarTests
     public void WeaponSlotLinkTracksReplacementEmptyAndRefill()
     {
         Equip(3);
-        var first = _equipment.Snapshot.Slots[4]!;
-        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemCellAddress.Equipment("light_weapon_1"), first.Id, _inventory.Revision, _equipment.Revision)), Is.EqualTo(HotbarResult.Success));
-        Assert.That(_state.Entries[0], Is.EqualTo(new WeaponHotbarBinding("light_weapon_1")));
-        _transfers.Transfer(new TransferRequest(_session, ItemCellAddress.Equipment("light_weapon_1"), first.Id,
+        var first = _equipment.Snapshot.Slots[_equipment.FindSlot("weapon_1")]!; // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-124 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill
+        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemCellAddress.Equipment("weapon_1"), first.Id, _inventory.Revision, _equipment.Revision)), Is.EqualTo(HotbarResult.Success)); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-125 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill
+        Assert.That(_state.Entries[0], Is.EqualTo(new WeaponHotbarBinding("weapon_1"))); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-126 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill
+        _transfers.Transfer(new TransferRequest(_session, ItemCellAddress.Equipment("weapon_1"), first.Id, // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-127 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill
             ItemCellAddress.Inventory(3), null, _inventory.Revision, _equipment.Revision));
         Assert.That(_controller.Resolve(0).Available, Is.False);
-        Assert.That(_controller.Resolve(0).Label, Is.EqualTo("Light Weapon Slot 1"));
+        Assert.That(_controller.Entries[0], Is.Null); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-130 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill
         _inventory.Items.CreateItems(_inventory.Container, "mock_standard_light_weapon", 1);
         Equip(5);
-        Assert.That(_controller.Resolve(0).Available, Is.True);
-        Assert.That(_equipment.Snapshot.Slots[4]!.Id, Is.Not.EqualTo(first.Id));
+        Assert.That(_controller.Resolve(0).Available, Is.False); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-133 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill
+        Assert.That(_controller.Entries[0], Is.Null); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-134 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill
+        Assert.That(_equipment.Snapshot.Slots[_equipment.FindSlot("weapon_1")]!.Id, Is.Not.EqualTo(first.Id)); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-135 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.WeaponSlotLinkTracksReplacementEmptyAndRefill
     }
 
     [Test]
@@ -181,7 +183,7 @@ public class ItemHotbarTests
     [Test]
     public void EmptyWeaponSlotCannotCreateAnAssignment()
     {
-        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemCellAddress.Equipment("light_weapon_1"), ItemEntityId.Create(), _inventory.Revision, _equipment.Revision)), Is.EqualTo(HotbarResult.StaleRevision));
+        Assert.That(_controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemCellAddress.Equipment("weapon_1"), ItemEntityId.Create(), _inventory.Revision, _equipment.Revision)), Is.EqualTo(HotbarResult.StaleRevision)); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-186 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.EmptyWeaponSlotCannotCreateAnAssignment
         Assert.That(_state.Revision, Is.Zero);
     }
 
@@ -201,15 +203,16 @@ public class ItemHotbarTests
     public void UnavailableLinksMoveAndClearButCannotActivate()
     {
         Equip(3);
-        var weapon = _equipment.Snapshot.Slots[4]!;
-        _controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemCellAddress.Equipment("light_weapon_1"), weapon.Id, _inventory.Revision, _equipment.Revision));
-        _transfers.Transfer(new TransferRequest(_session, ItemCellAddress.Equipment("light_weapon_1"), weapon.Id,
+        var weapon = _equipment.Snapshot.Slots[_equipment.FindSlot("weapon_1")]!; // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-206 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate
+        _controller.Assign(new HotbarAssignmentRequest(_session, 0, 0, ItemCellAddress.Equipment("weapon_1"), weapon.Id, _inventory.Revision, _equipment.Revision)); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-207 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate
+        _transfers.Transfer(new TransferRequest(_session, ItemCellAddress.Equipment("weapon_1"), weapon.Id, // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-208 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate
             ItemCellAddress.Inventory(3), null, _inventory.Revision, _equipment.Revision));
-        _state.Move(_session, _state.Revision, 0, 1);
+        Assert.That(_state.Entries[0], Is.Null); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-210 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate
+        Assert.That(_state.Move(_session, _state.Revision, 0, 1), Is.EqualTo(HotbarResult.NoChange)); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-211 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate
         var activations = 0;
-        Assert.That(_controller.Activate(1, _ => activations++, _ => activations++), Is.EqualTo(HotbarResult.Unavailable));
+        Assert.That(_controller.Activate(0, _ => activations++, _ => activations++), Is.EqualTo(HotbarResult.Unavailable)); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-213 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate
         Assert.That(activations, Is.Zero);
-        Assert.That(_state.Clear(_session, _state.Revision, 1), Is.EqualTo(HotbarResult.Success));
+        Assert.That(_state.Clear(_session, _state.Revision, 0), Is.EqualTo(HotbarResult.NoChange)); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-215 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.UnavailableLinksMoveAndClearButCannotActivate
     }
 
     [Test]
@@ -315,8 +318,8 @@ public class ItemHotbarTests
     public void AssignmentAndMoveValidationAgreeWithNoOpCommits(bool weapon)
     {
         if (weapon) Assert.That(Equip(3), Is.EqualTo(TransferResult.Success));
-        var source = weapon ? ItemCellAddress.Equipment("light_weapon_1") : ItemCellAddress.Inventory(0);
-        var entity = weapon ? _equipment.Snapshot.Slots[4]!.Id : _inventory.Snapshot.Slots[0]!.Id;
+        var source = weapon ? ItemCellAddress.Equipment("weapon_1") : ItemCellAddress.Inventory(0); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-321 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.AssignmentAndMoveValidationAgreeWithNoOpCommits
+        var entity = weapon ? _equipment.Snapshot.Slots[_equipment.FindSlot("weapon_1")]!.Id : _inventory.Snapshot.Slots[0]!.Id; // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-322 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.AssignmentAndMoveValidationAgreeWithNoOpCommits
         HotbarResult AssignLink(int position, bool commit)
         {
             var request = new HotbarAssignmentRequest(_session, _state.Revision, position, source, entity,
@@ -403,16 +406,17 @@ public class ItemHotbarTests
     public void AvailabilityCacheTracksEquipmentOnlyChanges()
     {
         Equip(3);
-        var entity = _equipment.Snapshot.Slots[4]!;
+        var entity = _equipment.Snapshot.Slots[_equipment.FindSlot("weapon_1")]!; // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-409 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksEquipmentOnlyChanges
         _controller.Assign(new HotbarAssignmentRequest(_session, _controller.Revision, 0,
-            ItemCellAddress.Equipment("light_weapon_1"), entity.Id, _inventory.Revision, _equipment.Revision));
+            ItemCellAddress.Equipment("weapon_1"), entity.Id, _inventory.Revision, _equipment.Revision)); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-411 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksEquipmentOnlyChanges
         Assert.That(_controller.Resolve(0).Available, Is.True);
         var inventoryRevision = _inventory.Revision;
-        ItemFixture.MoveAway(_inventory.Items, _equipment.Container, 4);
+        ItemFixture.MoveAway(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1")); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-414 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksEquipmentOnlyChanges
         Assert.That(_inventory.Revision, Is.EqualTo(inventoryRevision));
         Assert.That(_controller.Resolve(0).Available, Is.False);
-        ItemFixture.Place(_inventory.Items, _equipment.Container, 4, "mock_standard_light_weapon");
-        Assert.That(_controller.Resolve(0).Available, Is.True);
+        ItemFixture.Place(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1"), "mock_standard_light_weapon"); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-417 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksEquipmentOnlyChanges
+        Assert.That(_controller.Resolve(0).Available, Is.False); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-418 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksEquipmentOnlyChanges
+        Assert.That(_controller.Entries[0], Is.Null); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-419 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.AvailabilityCacheTracksEquipmentOnlyChanges
     }
 
     [Test]
@@ -465,13 +469,13 @@ public class ItemHotbarTests
         Assert.That(changes, Is.EqualTo(1));
         ItemFixture.Place(_inventory.Items, _inventory.Container, 8, "mock_standard_consumable", 1);
         Assert.That(changes, Is.EqualTo(2));
-        ItemFixture.Place(_inventory.Items, _equipment.Container, 4, "mock_standard_light_weapon");
+        ItemFixture.Place(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1"), "mock_standard_light_weapon"); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-472 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.ControllerChangesFollowAllSourcesAndDetachOnUnbind
         Assert.That(changes, Is.EqualTo(3));
 
         _controller.Changed -= Observe;
         _controller.Clear(_session, _controller.Revision, 1);
         ItemFixture.MoveAway(_inventory.Items, _inventory.Container, 8);
-        ItemFixture.MoveAway(_inventory.Items, _equipment.Container, 4);
+        ItemFixture.MoveAway(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1")); // TEST-SUPPORT: WEAPON-HOTBAR-MIGRATE-478 | Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests.ControllerChangesFollowAllSourcesAndDetachOnUnbind
         Assert.That(changes, Is.EqualTo(3));
 
         _controller.Changed += Observe;

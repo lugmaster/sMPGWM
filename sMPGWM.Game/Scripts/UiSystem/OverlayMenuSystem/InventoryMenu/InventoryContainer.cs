@@ -42,7 +42,7 @@ public partial class InventoryContainer : VBoxContainer
         _tabs.AddTab("All");
         foreach (var category in ItemRegistry.GetAllCategories())
         {
-            if (category.Id == "heavy_weapon") continue;
+            if (category.Id is "medium_weapon" or "heavy_weapon") continue;
             _tabs.AddTab("", ItemIconResolver.Category(category));
             var index = _tabs.TabCount - 1;
             _tabs.SetTabMetadata(index, category.Id);
@@ -56,6 +56,7 @@ public partial class InventoryContainer : VBoxContainer
             _weaponFilter = new OptionButton { Name = "WeaponFilter", TooltipText = "Weapon type" };
             _weaponFilter.AddItem("All weapons");
             _weaponFilter.AddItem("Light weapons");
+            _weaponFilter.AddItem("Medium weapons");
             _weaponFilter.AddItem("Heavy weapons");
             GetNode<Control>("FilterToolbar").AddChild(_weaponFilter);
         }

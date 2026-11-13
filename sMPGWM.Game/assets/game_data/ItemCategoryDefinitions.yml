@@ -28,18 +28,23 @@ Categories:
   - Id: weapon_fixture
     DisplayName: Weapon Fixture
     Icon: Software.HardwareCPUProcessorComputing
-    Values: WeaponSlots
-    Description: "Determines how many light and heavy weapon slots can be used."
+    Values: WeaponSlots, Mass
+    Description: "Provides shared weapon capacity. Light weapons use 1 slot, medium weapons 2, and heavy weapons 3."
   - Id: light_weapon
     DisplayName: Light Weapons
     Icon: Warfare.WeaponSniperRifleGun
     Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, MagazinSize, ReloadDuration, Mass
-    Description: "A Weapon that needs a weapon slot to hold"
+    Description: "A weapon that uses 1 weapon slot."
+  - Id: medium_weapon
+    DisplayName: Medium Weapons
+    Icon: Warfare.WeaponSniperRifleGun
+    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, MagazinSize, ReloadDuration, Mass
+    Description: "A weapon that uses 2 weapon slots."
   - Id: heavy_weapon
     DisplayName: Heavy Weapons
     Icon: Warfare.AmmoRocketMissileRPG
     Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, ReloadDuration, Mass
-    Description: "A Weapon that needs 2 or more slots to hold."
+    Description: "A weapon that uses 3 weapon slots."
   - Id: consumable
     CanStack: true
     DisplayName: Consumables

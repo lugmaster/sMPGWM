@@ -14,8 +14,6 @@ public sealed record ShipData : GameplayDefinition
     public ShipStatModifiersDefinition StatModifiers { get; }
     public double Mass { get; }
     public double Health { get; }
-    public int LightWeaponSlots { get; }
-    public int HeavyWeaponSlots { get; }
 
     internal ShipData(ShipDefinition definition, Vector2[] points, ShipStats stats)
         : base(definition.Name, definition.Name, "", null)
@@ -27,7 +25,5 @@ public sealed record ShipData : GameplayDefinition
         StatModifiers = definition.Stats with { };
         Mass = definition.Mass;
         Health = definition.Health;
-        LightWeaponSlots = definition.WeaponSlots.Light;
-        HeavyWeaponSlots = definition.WeaponSlots.Heavy;
     }
 }

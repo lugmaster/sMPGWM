@@ -22,7 +22,8 @@ public static class EquipmentStatCalculator
             AfterBurnerAcceleration = Read(item, "AfterBurnerAcceleration"); Mass = Read(item, "Mass");
             Armor = Read(item, "Armor"); ShieldCapacity = Read(item, "ShieldCapacity");
             RechargeTime = Read(item, "RechargeTime"); DownTime = Read(item, "DownTime");
-            EnergyProduction = Read(item, "EnergyProduction"); EnergyConsumption = Read(item, "EnergyConsumption");
+            EnergyProduction = Read(item, "EnergyProduction");
+            EnergyConsumption = item.CategoryId == "weapon_fixture" ? 0 : Read(item, "EnergyConsumption");
             EnergyStorage = Read(item, "EnergyStorage");
         }
     }

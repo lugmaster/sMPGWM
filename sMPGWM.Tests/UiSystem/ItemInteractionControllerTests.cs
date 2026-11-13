@@ -378,10 +378,11 @@ public class ItemInteractionControllerTests
         using var hotbar = ConfigureHotbar();
         if (weapon)
         {
+            ItemFixture.Place(_equipment.Items, _equipment.Container, _equipment.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture"); // TEST-SUPPORT: WEAPON-UI-NOOP-001 | Tests: sMPGWM.Tests.UiSystem.ItemInteractionControllerTests.HotbarNoOpsRetainClickPickupAndEndNativeDrag
             Click(Bag(2));
-            Click(Slot("light_weapon_1"));
+            Click(Slot("weapon_1")); // TEST-SUPPORT: WEAPON-UI-NOOP-002 | Tests: sMPGWM.Tests.UiSystem.ItemInteractionControllerTests.HotbarNoOpsRetainClickPickupAndEndNativeDrag
         }
-        var itemSource = weapon ? Slot("light_weapon_1") : Bag(0);
+        var itemSource = weapon ? Slot("weapon_1") : Bag(0); // TEST-SUPPORT: WEAPON-UI-NOOP-003 | Tests: sMPGWM.Tests.UiSystem.ItemInteractionControllerTests.HotbarNoOpsRetainClickPickupAndEndNativeDrag
         Click(itemSource);
         Click(ItemCellBinding.Hotbar(1, hotbar.Revision));
         Click(itemSource);

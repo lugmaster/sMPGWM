@@ -104,12 +104,28 @@ internal sealed class ItemHotbarState : IDisposable
         return copy;
     }
 
+    internal bool RemoveBindings(Predicate<HotbarBinding> remove)
+    {
+        if (_disposed) return false;
+        HotbarBinding?[]? next = null;
+        for (var index = 0; index < Entries.Count; index++)
+        {
+            if (Entries[index] is not { } binding || !remove(binding)) continue;
+            next ??= CopyEntries();
+            next[index] = null;
+        }
+        if (next == null) return false;
+        Publish(next);
+        return true;
+    }
+
     private HotbarResult Publish(HotbarBinding?[] next)
     {
         var snapshot = Array.AsReadOnly(next);
         var revision = checked(Revision + 1);
         Entries = snapshot;
         Revision = revision;
+        var wasPublishing = _publishing;
         _publishing = true;
         try
         {
@@ -124,7 +140,7 @@ internal sealed class ItemHotbarState : IDisposable
                         catch (Exception) { }
                     }
         }
-        finally { _publishing = false; }
+        finally { _publishing = wasPublishing; }
         return HotbarResult.Success;
     }
 

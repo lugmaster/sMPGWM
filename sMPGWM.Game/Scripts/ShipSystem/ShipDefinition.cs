@@ -17,6 +17,4 @@ public sealed class ShipDefinition
     public double Health { get; set; }
     [JsonProperty("stat_modifiers", Required = Required.Always)]
     public ShipStatModifiersDefinition Stats { get; set; } = new();
-    [JsonProperty("weapon_slots", Required = Required.Always)]
-    public ShipWeaponSlotsDefinition WeaponSlots { get; set; } = new();
 }

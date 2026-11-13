@@ -16,8 +16,9 @@ internal static class InventoryProjection
         {
             var definition = entry.Entity.Definition;
             if ((category == null || (category == "light_weapon"
-                    ? (definition.CategoryId == "light_weapon" && state.WeaponFilter != 2) ||
-                      (definition.CategoryId == "heavy_weapon" && state.WeaponFilter != 1)
+                    ? (definition.CategoryId == "light_weapon" && state.WeaponFilter is 0 or 1) ||
+                      (definition.CategoryId == "medium_weapon" && state.WeaponFilter is 0 or 2) ||
+                      (definition.CategoryId == "heavy_weapon" && state.WeaponFilter is 0 or 3)
                     : definition.CategoryId == category)) &&
                 definition.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)) matches.Add(entry);
         }
@@ -38,7 +39,15 @@ internal static class InventoryProjection
             }
             return result.AsReadOnly();
         }
-        matches.Sort((left, right) => Compare(left, right, state.CategorySort));
+        matches.Sort((left, right) =>
+        {
+            if (category == "light_weapon")
+            {
+                var categoryOrder = WeaponOrder(left.Entity.Definition.CategoryId).CompareTo(WeaponOrder(right.Entity.Definition.CategoryId));
+                if (categoryOrder != 0) return categoryOrder;
+            }
+            return Compare(left, right, state.CategorySort);
+        });
         var cells = new ItemCellBinding[matches.Count + snapshot.EmptyAddresses.Count];
         var index = 0;
         foreach (var entry in matches) cells[index++] = ItemCellBinding.Bag(entry.Address, entry.Entity, snapshot.Revision);
@@ -53,6 +62,14 @@ internal static class InventoryProjection
         order = StringComparer.Ordinal.Compare(left.Entity.DefinitionId, right.Entity.DefinitionId);
         return order != 0 ? order : left.Entity.Id.Value.CompareTo(right.Entity.Id.Value);
     }
+
+    private static int WeaponOrder(string categoryId) => categoryId switch
+    {
+        "light_weapon" => 1,
+        "medium_weapon" => 2,
+        "heavy_weapon" => 3,
+        _ => 0
+    };
 
     internal static IReadOnlyList<ItemCellBinding> Create(InventorySnapshot snapshot)
     {

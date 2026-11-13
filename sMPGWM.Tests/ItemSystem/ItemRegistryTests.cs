@@ -13,7 +13,12 @@ public class ItemRegistryTests
     {
         var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: CLEANUP-CATEGORY-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
         var items = ItemRegistry.LoadItemDefinitions(Read("ItemDefinitions.yml", "ItemSchema.yml"), categories, _ => null!);
-        Assert.That(items.Count, Is.EqualTo(19));
+        Assert.That(items.Count, Is.EqualTo(21)); // TEST-SUPPORT: WEAPON-REGISTRY-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
+        Assert.That(items["mock_standard_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon")); // TEST-SUPPORT: WEAPON-REGISTRY-002 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
+        Assert.That(items["mock_advanced_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon")); // TEST-SUPPORT: WEAPON-REGISTRY-003 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
+        Assert.That(Convert.ToInt32(items["mock_standard_weapon_fixture"].Values["WeaponSlots"]), Is.EqualTo(9)); // TEST-SUPPORT: WEAPON-REGISTRY-004 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
+        Assert.That(Convert.ToDouble(items["mock_standard_weapon_fixture"].Values["Mass"]), Is.EqualTo(1)); // TEST-SUPPORT: WEAPON-REGISTRY-005 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
+        Assert.That(items["mock_standard_weapon_fixture"].Values.ContainsKey("EnergyConsumption"), Is.False); // TEST-SUPPORT: WEAPON-REGISTRY-006 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
         Assert.That(items["mock_standard_engine"].CanStack, Is.False);
         Assert.That(items["mock_standard_engine"].StackLimit, Is.EqualTo(1));
         Assert.That(items["mock_standard_consumable"].CanStack, Is.True);
@@ -100,6 +105,18 @@ public class ItemRegistryTests
             Assert.That(Icons.IsDefined(iconKey!), Is.True);
         }
     }
+
+    [TestCase(-1d)] // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+    [TestCase(1.5d)] // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-002 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+    [TestCase(10d)] // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-003 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+    public void InvalidFixtureCapacityIsRejected(double capacity) // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-004 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+    { // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-005 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("ItemCategoryDefinitions.yml", "ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-006 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+        var yaml = Read("ItemDefinitions.yml", "ItemSchema.yml"); // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-007 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+        foreach (var item in yaml["Items"]!) // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-008 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+            if ((string?)item["CategoryId"] == "weapon_fixture") item["Values"]!["WeaponSlots"] = capacity; // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-009 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!)); // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-010 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+    } // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-011 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
 
     private static JObject Read(string file, string schema)
     {

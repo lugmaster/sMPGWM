@@ -100,6 +100,32 @@ Items:
       ReloadDuration: 1
       Mass: 1
     Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+  - Id: mock_standard_medium_weapon
+    DisplayName: Standard Medium Weapon
+    CategoryId: medium_weapon
+    Values:
+      DamageSource: physical
+      Damage: 1
+      AttackSpeed: 1
+      EnergyConsumption: 1
+      EnergyPerShot: 1
+      MagazinSize: 1
+      ReloadDuration: 1
+      Mass: 1
+    Description: "PlayerMock example. Uses 2 weapon slots."
+  - Id: mock_advanced_medium_weapon
+    DisplayName: Advanced Medium Weapon
+    CategoryId: medium_weapon
+    Values:
+      DamageSource: physical
+      Damage: 1
+      AttackSpeed: 1
+      EnergyConsumption: 1
+      EnergyPerShot: 1
+      MagazinSize: 1
+      ReloadDuration: 1
+      Mass: 1
+    Description: "PlayerMock alternate example. Uses 2 weapon slots."
   - Id: mock_standard_heavy_weapon
     DisplayName: Standard Heavy Weapon
     CategoryId: heavy_weapon
@@ -166,4 +192,5 @@ Items:
     DisplayName: Standard Weapon Fixture
     CategoryId: weapon_fixture
     Values:
-      WeaponSlots: 2
+      WeaponSlots: 9
+      Mass: 1

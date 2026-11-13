@@ -96,6 +96,36 @@ public class InventoryProjectionTests
 
     private static readonly string Engine = "mock_standard_engine";
 
+    [TestCase(0, "light_weapon,medium_weapon,heavy_weapon")] // TEST-SUPPORT: WEAPON-UI-FILTER-001 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+    [TestCase(1, "light_weapon")] // TEST-SUPPORT: WEAPON-UI-FILTER-002 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+    [TestCase(2, "medium_weapon")] // TEST-SUPPORT: WEAPON-UI-FILTER-003 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+    [TestCase(3, "heavy_weapon")] // TEST-SUPPORT: WEAPON-UI-FILTER-004 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+    public void Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage(int filter, string expectedCategories) // TEST-SUPPORT: WEAPON-UI-FILTER-005 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+    {
+        using var inventory = new InventoryController(); // TEST-SUPPORT: WEAPON-UI-FILTER-006 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        inventory.Items.CreateItems(inventory.Container, "mock_standard_heavy_weapon", 1); // TEST-SUPPORT: WEAPON-UI-FILTER-007 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        inventory.Items.CreateItems(inventory.Container, "mock_standard_medium_weapon", 1); // TEST-SUPPORT: WEAPON-UI-FILTER-008 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        inventory.Items.CreateItems(inventory.Container, "mock_standard_light_weapon", 1); // TEST-SUPPORT: WEAPON-UI-FILTER-009 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        inventory.Items.CreateItems(inventory.Container, "mock_standard_engine", 1); // TEST-SUPPORT: WEAPON-UI-FILTER-010 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        var before = inventory.Snapshot; // TEST-SUPPORT: WEAPON-UI-FILTER-011 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        var state = new InventoryViewState { WeaponFilter = filter, SelectedTab = 1 }; // TEST-SUPPORT: WEAPON-UI-FILTER-012 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        while (state.SelectedCategoryId != "light_weapon") state.SelectedTab++; // TEST-SUPPORT: WEAPON-UI-FILTER-013 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        var expected = expectedCategories.Split(','); // TEST-SUPPORT: WEAPON-UI-FILTER-014 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        for (var sort = 0; sort < 2; sort++) // TEST-SUPPORT: WEAPON-UI-FILTER-015 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        {
+            state.CategorySort = sort; // TEST-SUPPORT: WEAPON-UI-FILTER-016 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+            var cells = InventoryProjection.Create(before, state); // TEST-SUPPORT: WEAPON-UI-FILTER-017 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+            Assert.That(cells.Count, Is.EqualTo(before.EmptyAddresses.Count + expected.Length)); // TEST-SUPPORT: WEAPON-UI-FILTER-018 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+            for (var index = 0; index < expected.Length; index++) // TEST-SUPPORT: WEAPON-UI-FILTER-019 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+            {
+                Assert.That(cells[index].Entity!.Definition.CategoryId, Is.EqualTo(expected[index])); // TEST-SUPPORT: WEAPON-UI-FILTER-020 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+                Assert.That(cells[index].Entity, Is.SameAs(before.Slots[cells[index].Address])); // TEST-SUPPORT: WEAPON-UI-FILTER-021 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+            }
+            Assert.That(inventory.Snapshot, Is.SameAs(before)); // TEST-SUPPORT: WEAPON-UI-FILTER-022 | Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests.Weapons_FilterBySizeInCapacityOrderWithoutChangingStorage
+        }
+    }
+
+
     [Test]
     public void EmptyInventory_Projects128GenuineAddresses()
     {

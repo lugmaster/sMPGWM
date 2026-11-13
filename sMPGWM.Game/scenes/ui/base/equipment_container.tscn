@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" uid="uid://cuerqmlisy4it" path="res://Scripts/UiSystem/OverlayMenuSystem/InventoryMenu/EquipmentContainer.cs" id="1_equipment"]
+[ext_resource type="PackedScene" path="res://scenes/ui/base/icon_with_label.tscn" id="2_capacity"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_content"]
 content_margin_top = 4.0
@@ -20,12 +21,19 @@ theme_override_constants/h_separation = 13
 theme_override_constants/v_separation = 10
 columns = 2
 
-[node name="Weapons" type="GridContainer" parent="."]
+[node name="Weapons" type="VBoxContainer" parent="."]
 visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Capacity" parent="Weapons" instance=ExtResource("2_capacity")]
+layout_mode = 2
+
+[node name="Slots" type="GridContainer" parent="Weapons"]
 layout_mode = 2
 theme_override_constants/h_separation = 13
 theme_override_constants/v_separation = 10
-columns = 2
+columns = 3
 
 [node name="Crew" type="Control" parent="."]
 visible = false

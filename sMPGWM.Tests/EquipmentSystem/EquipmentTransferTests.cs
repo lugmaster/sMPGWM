@@ -85,8 +85,8 @@ public class EquipmentTransferTests
     {
         Assert.That(_equipmentImpl.Definitions.Select(slot => slot.Key), Is.EqualTo(new[]
         {
-            "engine", "hull", "shield_generator", "reactor", "light_weapon_1", "light_weapon_2",
-            "heavy_weapon_1", "heavy_weapon_2", "battery" // TEST-SUPPORT: EQUIPMENT-BATTERY-001 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.SlotDefinitionsAndSnapshots_AreOrderedAndReadOnly
+            "engine", "hull", "shield_generator", "reactor", "battery", "weapon_fixture", // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-1 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.SlotDefinitionsAndSnapshots_AreOrderedAndReadOnly
+            "weapon_1", "weapon_2", "weapon_3", "weapon_4", "weapon_5", "weapon_6", "weapon_7", "weapon_8", "weapon_9" // TEST-SUPPORT: EQUIPMENT-BATTERY-001 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.SlotDefinitionsAndSnapshots_AreOrderedAndReadOnly
         }));
         Assert.That(_equipmentImpl.Snapshot.Slots, Has.All.Null);
         Assert.Throws<NotSupportedException>(() => ((IList<EquipmentSlotDefinition>)_equipmentImpl.Definitions).Clear());
@@ -112,26 +112,25 @@ public class EquipmentTransferTests
     [Test]
     public void EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity()
     {
+        ItemFixture.Place(_inventoryImpl.Items, _equipmentImpl.Container, _equipmentImpl.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture"); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-2 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
         Seed((0, "mock_standard_light_weapon", 1), (1, "mock_standard_light_weapon", 1), (2, "mock_standard_heavy_weapon", 1), (3, "mock_standard_hull", 1));
-        Move(ItemCellAddress.Inventory(0), ItemCellAddress.Equipment("light_weapon_1"));
-        Move(ItemCellAddress.Inventory(1), ItemCellAddress.Equipment("light_weapon_2"));
-        Move(ItemCellAddress.Inventory(2), ItemCellAddress.Equipment("heavy_weapon_1"));
+        Move(ItemCellAddress.Inventory(0), ItemCellAddress.Equipment("weapon_1")); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-3 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Move(ItemCellAddress.Inventory(1), ItemCellAddress.Equipment("weapon_2")); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-4 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Move(ItemCellAddress.Inventory(2), ItemCellAddress.Equipment("weapon_3")); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-5 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
         var before = _equipmentImpl.Snapshot;
         var inventoryBefore = _inventoryImpl.Snapshot;
-        Assert.That(Move(ItemCellAddress.Equipment("light_weapon_1"), ItemCellAddress.Equipment("heavy_weapon_1")),
-            Is.EqualTo(TransferResult.IncompatiblePlacement));
-        Assert.That(Move(ItemCellAddress.Equipment("light_weapon_1"), ItemCellAddress.Inventory(3)),
+        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Inventory(3)), // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-6 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
             Is.EqualTo(TransferResult.IncompatiblePlacement));
         Assert.That(_equipmentImpl.Snapshot, Is.SameAs(before));
         Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
-        Assert.That(Move(ItemCellAddress.Equipment("light_weapon_1"), ItemCellAddress.Equipment("light_weapon_2")),
+        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Equipment("weapon_2")), // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-7 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
             Is.EqualTo(TransferResult.Success));
-        Assert.That(_equipmentImpl.Snapshot.Slots[4], Is.SameAs(before.Slots[5]));
-        Assert.That(_equipmentImpl.Snapshot.Slots[5], Is.SameAs(before.Slots[4]));
+        Assert.That(_equipmentImpl.Snapshot.Slots[6], Is.SameAs(before.Slots[7])); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-8 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Assert.That(_equipmentImpl.Snapshot.Slots[7], Is.SameAs(before.Slots[6])); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-9 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
         Assert.That(_equipmentImpl.Revision, Is.EqualTo(before.Revision + 1));
         Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
-        Assert.That(Move(ItemCellAddress.Equipment("light_weapon_1"), ItemCellAddress.Inventory(0)), Is.EqualTo(TransferResult.Success));
-        Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.SameAs(before.Slots[5]));
+        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Inventory(0)), Is.EqualTo(TransferResult.Success)); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-10 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.SameAs(before.Slots[7])); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-11 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
         Assert.That(_inventoryImpl.Capacity, Is.EqualTo(128));
     }
 

@@ -77,7 +77,6 @@ public static class ShipRegistry
             var stats = new ShipStats(Number(s.Speed, "Speed"), Number(s.AfterBurnerSpeed, "AfterBurnerSpeed"),
                 Number(s.RotationSpeed, "RotationSpeed"), Number(s.Acceleration, "Acceleration"),
                 Number(s.AfterBurnerAcceleration, "AfterBurnerAcceleration"), Number(definition.Mass, "mass"));
-            Require(definition.WeaponSlots.Light >= 0 && definition.WeaponSlots.Heavy >= 0, "weapon_slots");
             result.Add(name, new ShipData(definition, points, stats));
         }
         return new System.Collections.ObjectModel.ReadOnlyDictionary<string, ShipData>(result);

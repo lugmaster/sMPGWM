@@ -1,4 +1,5 @@
 using sMPGWM.Scripts.GameplayDataSystem;
+using sMPGWM.Scripts.EquipmentSystem;
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -51,7 +52,11 @@ public static class ItemRegistry
         Dictionary<string, ItemCategoryDefinition> categories, Func<string, IconDefinition> resolveIcon)
     {
         var definitions = ItemDefinitionParser.LoadItemDefinitions(yaml, categories, resolveIcon);
-        foreach (var definition in definitions.Values) EquipmentStatCalculator.Precompile(definition);
+        foreach (var definition in definitions.Values)
+        {
+            if (definition.CategoryId == "weapon_fixture") WeaponSlotPolicy.GetCapacity(definition);
+            EquipmentStatCalculator.Precompile(definition);
+        }
         return definitions;
     }
 }

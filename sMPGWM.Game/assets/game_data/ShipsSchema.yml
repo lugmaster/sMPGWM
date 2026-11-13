@@ -21,7 +21,6 @@ properties:
         - mass
         - health
         - stat_modifiers
-        - weapon_slots
       properties:
         name:
           type: string
@@ -95,16 +94,3 @@ properties:
               type: number
               minimum: -3.4028234663852886e+38
               maximum: 3.4028234663852886e+38
-        weapon_slots:
-          type: object
-          additionalProperties: false
-          required:
-            - light
-            - heavy
-          properties:
-            light:
-              type: integer
-              minimum: 0
-            heavy:
-              type: integer
-              minimum: 0

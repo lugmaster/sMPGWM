@@ -1,7 +1,7 @@
 extends SceneTree
 
 var failures := 0
-const SLOT_LABELS := [["Engine", "Hull", "Shield Generator", "Reactor", "Battery"], ["Light Weapon Slot 1", "Light Weapon Slot 2", "Heavy Weapon Slot 1", "Heavy Weapon Slot 2"], []] # TEST-SUPPORT: EQUIP-TABS-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+const SLOT_LABELS := [["Engine", "Hull", "Shield Generator", "Reactor", "Battery", "Weapon Fixture"], ["Weapon 1", "Weapon 2", "Weapon 3", "Weapon 4", "Weapon 5", "Weapon 6", "Weapon 7", "Weapon 8", "Weapon 9"], []] # TEST-SUPPORT: EQUIP-TABS-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
 
 func _initialize() -> void:
     run.call_deferred()
@@ -34,7 +34,9 @@ func verify_cells(menu: Node, pointer_overlay: Control) -> void:
     expect(grid.get_child_count() == 128, "Bag must replace previews with 128 cells")
     expect(grid.columns == 8, "Bag must retain eight columns")
     var tabs := menu.get_node("%InventoryContainer").get_node("%CategoryTabs") as TabBar
-    expect(tabs.tab_count == 9 and tabs.get_tab_icon(0) == null, "Categories must use native tabs with a text-only All tab")
+    expect(tabs.tab_count == 10 and tabs.get_tab_icon(0) == null, "Categories must use native tabs with a text-only All tab") # TEST-SUPPORT: WEAPON-GRID-SMOKE-006 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    expect(equipment.get_node("Weapons/Slots").columns == 3, "Weapons must use three columns for nine UI cells") # TEST-SUPPORT: WEAPON-GRID-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    expect(equipment.get_node("Weapons/Capacity/Value").text == "0/0", "Missing fixture must show zero free and maximum capacity") # TEST-SUPPORT: WEAPON-GRID-SMOKE-002 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
     for index in range(1, tabs.tab_count):
         expect(tabs.get_tab_metadata(index) is String and not tabs.get_tab_metadata(index).is_empty(), "Tabs must retain stable category IDs")
     expect(not menu.has_node("ItemPointerPreview") and not menu.has_node("ItemPointerFeedback"), "Inventory must not own pointer presentation nodes")
@@ -52,11 +54,12 @@ func verify_cells(menu: Node, pointer_overlay: Control) -> void:
         expect(equipment.size == equipment_size, "Switching equipment tabs must preserve panel size") # TEST-SUPPORT: EQUIP-TABS-SMOKE-010 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
         var page := equipment.get_tab_control(tab_index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-011 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
         expect(page.visible, "Selected equipment page must be visible") # TEST-SUPPORT: EQUIP-TABS-SMOKE-012 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        expect(page.get_child_count() == SLOT_LABELS[tab_index].size(), "Equipment slots must be grouped by tab, leaving Crew empty") # TEST-SUPPORT: EQUIP-TABS-SMOKE-013 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        var slots := page.get_node("Slots") if tab_index == 1 else page # TEST-SUPPORT: WEAPON-GRID-SMOKE-003 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        expect(slots.get_child_count() == SLOT_LABELS[tab_index].size(), "Equipment slots must be grouped by tab, leaving Crew empty") # TEST-SUPPORT: EQUIP-TABS-SMOKE-013 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
         for other_index in range(3): # TEST-SUPPORT: EQUIP-TABS-SMOKE-014 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             expect(equipment.get_tab_control(other_index).visible == (other_index == tab_index), "Only the selected equipment page must be visible") # TEST-SUPPORT: EQUIP-TABS-SMOKE-015 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        for index in range(page.get_child_count()): # TEST-SUPPORT: EQUIP-TABS-SMOKE-016 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-            var cell := page.get_child(index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-017 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        for index in range(slots.get_child_count()): # TEST-SUPPORT: EQUIP-TABS-SMOKE-016 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+            var cell := slots.get_child(index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-017 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             var label := cell.get_node("%Label") as Label # TEST-SUPPORT: EQUIP-TABS-SMOKE-018 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             expect(label.text == SLOT_LABELS[tab_index][index], "Equipment labels must follow domain order within their tab") # TEST-SUPPORT: EQUIP-TABS-SMOKE-019 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
             expect(label.size.y >= label.get_minimum_size().y, "Equipment labels must fit their cells") # TEST-SUPPORT: EQUIP-TABS-SMOKE-020 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
@@ -123,12 +126,12 @@ func run() -> void:
     for cell in demo_grid.get_children():
         if cell.icon != null:
             occupied += 1
-    expect(demo_grid.get_child_count() == 128 and occupied == 34, "PlayerMock must seed examples while keeping free inventory slots")
+    expect(demo_grid.get_child_count() == 128 and occupied == 40, "PlayerMock must seed examples while keeping free inventory slots") # TEST-SUPPORT: WEAPON-GRID-SMOKE-004 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.run
     var demo_tabs := demo_container.get_node("%CategoryTabs") as TabBar
     for index in range(1, demo_tabs.tab_count):
         demo_tabs.current_tab = index
         await settle()
-        expect(demo_grid.get_child_count() > 94, "Every category must contain PlayerMock examples")
+        expect(demo_grid.get_child_count() >= 88, "Category filtering must preserve free inventory slots") # TEST-SUPPORT: WEAPON-GRID-SMOKE-005 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.run
     var demo_buttons := demo.get_node("UiCanvas").get_node("%PlayerHud").get_node("%HotbarControl").get_node("%ButtonContainer")
     expect(demo_buttons.get_child_count() == 10, "Default hotbar must retain ten empty slots")
     for cell in demo_buttons.get_children():

@@ -14,6 +14,7 @@ public sealed class ItemHotbarController : IDisposable
     private readonly Action<Exception>? _reportError;
     private bool _disposed;
     private bool _restored;
+    private readonly Predicate<HotbarBinding> _removeUnequippedWeapon;
     public Func<bool>? EquipmentAbilitiesAvailable { get; set; }
     private bool _cachedEquipmentAvailability;
     public Predicate<string>? SupportsAbility { private get; init; }
@@ -31,6 +32,9 @@ public sealed class ItemHotbarController : IDisposable
         this._equipment = equipment;
         this._transfers = transfers;
         this._reportError = reportError;
+        _removeUnequippedWeapon = IsUnequippedWeaponBinding;
+        _inventory.Changed += OnInventoryChanged;
+        _equipment.Changed += OnEquipmentChanged;
     }
 
     internal void InvalidateAvailability()
@@ -47,15 +51,12 @@ public sealed class ItemHotbarController : IDisposable
         _equipment.Changed -= OnEquipmentChanged;
         _inventory = inventory;
         _equipment = equipment;
-        if (_changed != null)
-        {
-            _inventory.Changed += OnInventoryChanged;
-            _equipment.Changed += OnEquipmentChanged;
-        }
+        _inventory.Changed += OnInventoryChanged;
+        _equipment.Changed += OnEquipmentChanged;
         _cachedInventoryRevision = -1;
         _cachedEquipmentRevision = -1;
         _availability.Clear();
-        NotifyChanged();
+        RefreshEquipmentBindings();
     }
 
     public void Dispose()
@@ -143,6 +144,7 @@ public sealed class ItemHotbarController : IDisposable
         }
         _state.RestoreState(snapshot);
         _restored = true;
+        _state.RemoveBindings(_removeUnequippedWeapon);
         InvalidateAvailability();
     }
     public long Revision => _state.Revision;
@@ -162,8 +164,6 @@ public sealed class ItemHotbarController : IDisposable
             if (_changed == null)
             {
                 _state.Changed += NotifyChanged;
-                _inventory.Changed += OnInventoryChanged;
-                _equipment.Changed += OnEquipmentChanged;
             }
             _changed += value;
             _observers = _changed.GetInvocationList();
@@ -175,14 +175,31 @@ public sealed class ItemHotbarController : IDisposable
             if (_changed == null)
             {
                 _state.Changed -= NotifyChanged;
-                _inventory.Changed -= OnInventoryChanged;
-                _equipment.Changed -= OnEquipmentChanged;
             }
         }
     }
 
-    private void OnInventoryChanged(InventorySnapshot _) => NotifyChanged();
-    private void OnEquipmentChanged(EquipmentSnapshot _) => NotifyChanged();
+    private void OnInventoryChanged(InventorySnapshot _) => RefreshEquipmentBindings();
+    private void OnEquipmentChanged(EquipmentSnapshot _) => RefreshEquipmentBindings();
+
+    private void RefreshEquipmentBindings()
+    {
+        if (!_state.RemoveBindings(_removeUnequippedWeapon)) NotifyChanged();
+    }
+
+    private bool IsUnequippedWeaponBinding(HotbarBinding binding)
+    {
+        var key = binding switch
+        {
+            WeaponHotbarBinding weapon => weapon.SlotKey,
+            EquipmentAbilityHotbarBinding ability => ability.SlotKey,
+            _ => null
+        };
+        if (key == null) return false;
+        var index = FindEquipmentSlot(key);
+        if (index < 0) return binding is WeaponHotbarBinding;
+        return _equipment.Definitions[index].IsWeaponSlot && _equipment.Snapshot.Slots[index] == null;
+    }
     private void NotifyChanged()
     {
         // Keep this publication's snapshot even if a handler changes subscriptions.

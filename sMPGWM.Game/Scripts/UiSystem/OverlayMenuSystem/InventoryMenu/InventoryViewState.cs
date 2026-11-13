@@ -17,7 +17,7 @@ internal sealed class InventoryViewState
             var index = 1;
             foreach (var category in ItemRegistry.GetAllCategories())
             {
-                if (category.Id == "heavy_weapon") continue;
+                if (category.Id is "medium_weapon" or "heavy_weapon") continue;
                 if (index++ == SelectedTab) return category.Id;
             }
             return null;

@@ -20,6 +20,8 @@ public sealed class ItemContainer
     // Preparation must not mutate the store; the returned install must not fail or publish.
     internal Func<ItemEntity?[], Action?>? PrepareChange { get; set; }
     internal Action? PublishDomainChange { get; set; }
+    internal Func<ItemEntity?[], bool>? ValidateState { get; set; }
+    internal Action<Dictionary<ItemContainer, ItemEntity?[]>, ItemContainer>? PrepareTransfer { get; set; }
 
     internal ItemContainer(int capacity, int growthChunk, Func<int, ItemDefinition, int, bool>? accepts)
     {
@@ -60,6 +62,8 @@ public sealed class ItemContainer
         Changed = null;
         PrepareChange = null;
         PublishDomainChange = null;
+        ValidateState = null;
+        PrepareTransfer = null;
     }
 
     internal void Subscribe(Action handler) => Changed += handler;

@@ -195,7 +195,9 @@ public sealed class ItemStore
             !targetContainer.Accepts(destination.SlotIndex, nextTarget.Definition, targetCount)) return TransferResult.IncompatiblePlacement;
         if (sourceContainer.Revision == long.MaxValue || targetContainer.Revision == long.MaxValue)
             return TransferResult.CapacityExceeded;
-        if (!commit && sourceContainer.PrepareChange == null && targetContainer.PrepareChange == null)
+        if (!commit && sourceContainer.PrepareChange == null && targetContainer.PrepareChange == null &&
+            sourceContainer.ValidateState == null && targetContainer.ValidateState == null &&
+            sourceContainer.PrepareTransfer == null && targetContainer.PrepareTransfer == null)
             return TransferResult.Success;
         Dictionary<ItemContainer, ItemEntity?[]> changes;
         PreparedTransaction transaction;
@@ -210,6 +212,8 @@ public sealed class ItemStore
             sourceSlots[expectedSource.SlotIndex] = nextSource;
             targetSlots[destination.SlotIndex] = nextTarget;
             changes = new Dictionary<ItemContainer, ItemEntity?[]> { [sourceContainer] = sourceSlots, [targetContainer] = targetSlots };
+            sourceContainer.PrepareTransfer?.Invoke(changes, targetContainer);
+            if (!ReferenceEquals(sourceContainer, targetContainer)) targetContainer.PrepareTransfer?.Invoke(changes, sourceContainer);
             transaction = Prepare(changes);
         }
         catch (OutOfMemoryException) { return TransferResult.CapacityExceeded; }
@@ -279,7 +283,7 @@ public sealed class ItemStore
         for (var index = 0; index < slots.Length; index++)
             if (slots[index] is { } item && (item.Id == default || item.Count <= 0 ||
                 item.Count > item.Definition.StackLimit || !container.Accepts(index, item.Definition, item.Count))) return false;
-        return true;
+        return container.ValidateState?.Invoke(slots) ?? true;
     }
 
     private PreparedTransaction Prepare(Dictionary<ItemContainer, ItemEntity?[]> changes)
@@ -288,6 +292,7 @@ public sealed class ItemStore
         var finalCount = _items.Count;
         foreach (var (container, slots) in changes)
         {
+            if (!Valid(container, slots)) throw new ArgumentException("Invalid resulting container state.");
             foreach (var item in container.Entities)
                 if (item != null) finalCount--;
             foreach (var item in slots)

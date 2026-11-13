@@ -33,7 +33,8 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
             throw new ArgumentException("Invalid equipment layout.", nameof(definitions));
         if (ReferenceEquals(definitions, EquipmentSlotDefinition.Defaults))
         {
-            for (var i = 0; i < definitions.Count; i++) ItemRegistry.GetCategoryById(definitions[i].AcceptedCategory);
+            for (var i = 0; i < definitions.Count; i++)
+                if (definitions[i].AcceptedCategory != "weapon") ItemRegistry.GetCategoryById(definitions[i].AcceptedCategory);
             Definitions = definitions;
         }
         else
@@ -46,8 +47,8 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
                 var definition = definitions[i];
                 if (definition == null || string.IsNullOrWhiteSpace(definition.Key) || definition.Key.Length > 64 || !keys.Add(definition.Key))
                     throw new ArgumentException("Invalid or duplicate equipment slot key.", nameof(definitions));
-                ItemRegistry.GetCategoryById(definition.AcceptedCategory);
-                if (definition.AcceptedCategory is "engine" or "hull" or "shield_generator" or "reactor" or "battery" &&
+                if (definition.AcceptedCategory != "weapon") ItemRegistry.GetCategoryById(definition.AcceptedCategory);
+                if (definition.AcceptedCategory is "engine" or "hull" or "shield_generator" or "reactor" or "battery" or "weapon_fixture" &&
                     !singletonCategories.Add(definition.AcceptedCategory))
                     throw new ArgumentException("Duplicate singleton component category.", nameof(definitions));
                 copy[i] = definition;
@@ -55,7 +56,9 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
             Definitions = Array.AsReadOnly(copy);
         }
         Container = itemRequestService.CreateContainer(Definitions.Count, accepts: (index, definition, count) =>
-            index >= 0 && index < Definitions.Count && count == 1 && definition.CategoryId == Definitions[index].AcceptedCategory);
+            index >= 0 && index < Definitions.Count && count == 1 && Definitions[index].Accepts(definition.CategoryId));
+        Container.ValidateState = slots => WeaponSlotPolicy.Used(slots) <= WeaponSlotPolicy.Capacity(slots);
+        Container.PrepareTransfer = PrepareTransfer;
         Container.Subscribe(NotifyObservers);
     }
 
@@ -69,7 +72,39 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     public bool CanPlace(string key, string definitionId)
     {
         var index = FindSlot(key);
-        return index >= 0 && ItemRegistry.GetById(definitionId).CategoryId == Definitions[index].AcceptedCategory;
+        return index >= 0 && Definitions[index].Accepts(ItemRegistry.GetById(definitionId).CategoryId);
+    }
+
+    private void PrepareTransfer(Dictionary<ItemContainer, ItemEntity?[]> changes, ItemContainer storage)
+    {
+        var slots = changes[Container];
+        var capacity = WeaponSlotPolicy.Capacity(slots);
+        if (capacity >= WeaponSlotPolicy.Capacity(Container.Entities)) return;
+        var used = WeaponSlotPolicy.Used(slots);
+        if (used <= capacity) return;
+        if (ReferenceEquals(storage, Container) || storage.Disposed || storage.Revision == long.MaxValue)
+            throw new InvalidOperationException("Cannot return weapons to inventory.");
+        var inventory = changes[storage];
+        for (var index = slots.Length - 1; index >= 0 && used > capacity; index--)
+        {
+            if (slots[index] is not { } item || !Definitions[index].IsWeaponSlot) continue;
+            var destination = -1;
+            for (var i = 0; i < inventory.Length; i++)
+                if (inventory[i] == null && storage.Accepts(i, item.Definition, item.Count)) { destination = i; break; }
+            if (destination < 0)
+            {
+                if (storage.GrowthChunk == 0 || inventory.Length > ItemContainer.MaxCapacity - storage.GrowthChunk)
+                    throw new InvalidOperationException("Inventory cannot hold unequipped weapons.");
+                destination = inventory.Length;
+                Array.Resize(ref inventory, inventory.Length + storage.GrowthChunk);
+                if (!storage.Accepts(destination, item.Definition, item.Count))
+                    throw new InvalidOperationException("Inventory cannot accept unequipped weapons.");
+                changes[storage] = inventory;
+            }
+            inventory[destination] = item;
+            slots[index] = null;
+            used -= WeaponSlotPolicy.GetCost(item.Definition.CategoryId);
+        }
     }
 
     // Subscriber failures are programming errors: propagate them immediately.

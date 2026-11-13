@@ -39,15 +39,12 @@ public class ShipDefinitionTests // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-6 
             Assert.That(ship.Stats.AfterBurnerAcceleration, Is.EqualTo(0.1)); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-37 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
             Assert.That(ship.Health, Is.EqualTo(150)); // TEST-SUPPORT: SHIP-HEALTH-DEF-001 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration
             Assert.That(ship.Mass, Is.EqualTo(1)); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-38 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
-            Assert.That(ship.WeaponSlots.Light, Is.EqualTo(2)); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-39 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
-            Assert.That(ship.WeaponSlots.Heavy, Is.EqualTo(2)); // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-40 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
         });
     }
 
     [TestCase("Speed: 50.0", "Speed: invalid")] // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-44 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
     [TestCase("Speed: 50.0", "unknown: 350.0")] // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-45 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
     [TestCase("name: \"fighter\"", "name: \" \"")] // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-46 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
-    [TestCase("light: 2", "light: 2147483648")] // TEST-SUPPORT: DATA-V2-SHIPDEFINITIONTESTS-47 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.PackagedFighterPreservesConfiguration, sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
     [TestCase("health: 150", "")] // TEST-SUPPORT: SHIP-HEALTH-DEF-002 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
     [TestCase("health: 150", "health: 0")] // TEST-SUPPORT: SHIP-HEALTH-DEF-003 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource
     [TestCase("health: 150", "health: -1")] // TEST-SUPPORT: SHIP-HEALTH-DEF-004 | Tests: sMPGWM.Tests.FileLoader.ShipDefinitionTests.InvalidDefinitionsIdentifySource

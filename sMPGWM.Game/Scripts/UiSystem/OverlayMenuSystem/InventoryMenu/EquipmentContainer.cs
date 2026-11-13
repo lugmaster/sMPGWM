@@ -17,6 +17,7 @@ public partial class EquipmentContainer : TabContainer
     private readonly List<ClickableIcon> _cells = new();
     private GridContainer _shipSlots = null!;
     private GridContainer _weaponSlots = null!;
+    private Label _weaponCapacity = null!;
     internal IReadOnlyList<ClickableIcon> Cells => _cells;
     internal event Action<ClickableIcon>? CellCreated;
     internal event Action? ViewChanging;
@@ -27,7 +28,11 @@ public partial class EquipmentContainer : TabContainer
     public override void _Ready()
     {
         _shipSlots = GetNode<GridContainer>("Ship");
-        _weaponSlots = GetNode<GridContainer>("Weapons");
+        _weaponSlots = GetNode<GridContainer>("Weapons/Slots");
+        var capacity = GetNode<Control>("Weapons/Capacity");
+        capacity.TooltipText = "Free weapon slots / fixture capacity";
+        capacity.GetNode<TextureRect>("Icon").Texture = ItemIconResolver.Category(ItemRegistry.GetCategoryById("weapon_fixture"));
+        _weaponCapacity = capacity.GetNode<Label>("Value");
         SetTabIcon(0, ItemIconResolver.Category(ItemRegistry.GetCategoryById("hull")));
         SetTabIcon(1, ItemIconResolver.Category(ItemRegistry.GetCategoryById("light_weapon")));
         SetTabIcon(2, Icons.Travel.PersonPeopleThree.IconTexture);
@@ -43,6 +48,7 @@ public partial class EquipmentContainer : TabContainer
 
     internal void Render(IReadOnlyList<EquipmentSlotDefinition> definitions, EquipmentSnapshot snapshot, ItemVisuals visuals)
     {
+        _weaponCapacity.Text = $"{snapshot.FreeWeaponSlots}/{snapshot.MaxWeaponSlots}";
         for (var index = 0; index < definitions.Count; index++)
         {
             var definition = definitions[index];
@@ -51,7 +57,7 @@ public partial class EquipmentContainer : TabContainer
                 var cell = HudProvider.CreateClickableIconWithLabel();
                 cell.LabelText = definition.DisplayName;
                 _cells.Add(cell.Cell);
-                var slots = definition.AcceptedCategory is "light_weapon" or "heavy_weapon" ? _weaponSlots : _shipSlots;
+                var slots = definition.IsWeaponSlot ? _weaponSlots : _shipSlots;
                 slots.AddChild(cell);
                 CellCreated?.Invoke(cell.Cell);
             }
