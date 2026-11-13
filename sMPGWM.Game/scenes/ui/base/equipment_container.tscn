@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://cuerqmlisy4it" path="res://Scripts/UiSystem/OverlayMenuSystem/InventoryMenu/EquipmentContainer.cs" id="1_equipment"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_content"]
+content_margin_top = 4.0
+
+[node name="EquipmentContainer" type="TabContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_content")
+clip_tabs = false
+current_tab = 0
+use_hidden_tabs_for_min_size = true
+script = ExtResource("1_equipment")
+
+[node name="Ship" type="GridContainer" parent="."]
+layout_mode = 2
+theme_override_constants/h_separation = 13
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="Weapons" type="GridContainer" parent="."]
+visible = false
+layout_mode = 2
+theme_override_constants/h_separation = 13
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="Crew" type="Control" parent="."]
+visible = false
+layout_mode = 2

@@ -4,6 +4,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UtilitySystem.UiComponents;
@@ -11,19 +12,33 @@ using ClickableIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.ClickableIcon;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
-public partial class EquipmentContainer : GridContainer
+public partial class EquipmentContainer : TabContainer
 {
     private readonly List<ClickableIcon> _cells = new();
+    private GridContainer _shipSlots = null!;
+    private GridContainer _weaponSlots = null!;
     internal IReadOnlyList<ClickableIcon> Cells => _cells;
     internal event Action<ClickableIcon>? CellCreated;
+    internal event Action? ViewChanging;
+
+    internal bool IsToolbarControl(Control control) =>
+        control == GetTabBar() || GetTabBar().IsAncestorOf(control);
 
     public override void _Ready()
     {
-        foreach (var preview in GetChildren())
-        {
-            RemoveChild(preview);
-            preview.QueueFree();
-        }
+        _shipSlots = GetNode<GridContainer>("Ship");
+        _weaponSlots = GetNode<GridContainer>("Weapons");
+        SetTabIcon(0, ItemIconResolver.Category(ItemRegistry.GetCategoryById("hull")));
+        SetTabIcon(1, ItemIconResolver.Category(ItemRegistry.GetCategoryById("light_weapon")));
+        SetTabIcon(2, Icons.Travel.PersonPeopleThree.IconTexture);
+        for (var index = 0; index < GetTabCount(); index++) SetTabIconMaxWidth(index, 14);
+        TabChanged += OnTabChanged;
+    }
+
+    private void OnTabChanged(long index)
+    {
+        ViewChanging?.Invoke();
+        foreach (var cell in _cells) cell.DismissTooltip();
     }
 
     internal void Render(IReadOnlyList<EquipmentSlotDefinition> definitions, EquipmentSnapshot snapshot, ItemVisuals visuals)
@@ -36,7 +51,8 @@ public partial class EquipmentContainer : GridContainer
                 var cell = HudProvider.CreateClickableIconWithLabel();
                 cell.LabelText = definition.DisplayName;
                 _cells.Add(cell.Cell);
-                AddChild(cell);
+                var slots = definition.AcceptedCategory is "light_weapon" or "heavy_weapon" ? _weaponSlots : _shipSlots;
+                slots.AddChild(cell);
                 CellCreated?.Invoke(cell.Cell);
             }
 

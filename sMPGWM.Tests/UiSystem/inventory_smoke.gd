@@ -1,7 +1,7 @@
 extends SceneTree
 
 var failures := 0
-const SLOT_LABELS := ["Engine", "Hull", "Shield Generator", "Reactor", "Light Weapon Slot 1", "Light Weapon Slot 2", "Heavy Weapon Slot 1", "Heavy Weapon Slot 2"]
+const SLOT_LABELS := [["Engine", "Hull", "Shield Generator", "Reactor", "Battery"], ["Light Weapon Slot 1", "Light Weapon Slot 2", "Heavy Weapon Slot 1", "Heavy Weapon Slot 2"], []] # TEST-SUPPORT: EQUIP-TABS-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
 
 func _initialize() -> void:
     run.call_deferred()
@@ -27,10 +27,10 @@ func capture_visual(name: String) -> void:
     expect(root.get_texture().get_image().save_png(path) == OK, "Visual evidence must save: %s" % path)
 
 func verify_cells(menu: Node, pointer_overlay: Control) -> void:
-    var equipment := menu.get_node("%EquipmentContainer")
+    var equipment := menu.get_node("%EquipmentContainer") as TabContainer # TEST-SUPPORT: EQUIP-TABS-SMOKE-002 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
     var bag := menu.get_node("%InventoryContainer").get_node("%ItemGrid")
     var grid := bag.get_node("%SlotGrid")
-    expect(equipment.get_child_count() == 8, "Equipment must replace previews with eight slots")
+    expect(equipment.get_tab_count() == 3, "Equipment must have Ship, Weapons, and Crew tabs") # TEST-SUPPORT: EQUIP-TABS-SMOKE-003 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
     expect(grid.get_child_count() == 128, "Bag must replace previews with 128 cells")
     expect(grid.columns == 8, "Bag must retain eight columns")
     var tabs := menu.get_node("%InventoryContainer").get_node("%CategoryTabs") as TabBar
@@ -43,12 +43,26 @@ func verify_cells(menu: Node, pointer_overlay: Control) -> void:
     expect(pointer_overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE and pointer_overlay.get_node("%ItemPointerFeedback").mouse_filter == Control.MOUSE_FILTER_IGNORE,
         "Shared pointer presentation must pass mouse input through")
     expect(pointer_overlay.get_canvas() == menu.get_canvas() and pointer_overlay.get_index() == pointer_overlay.get_parent().get_child_count() - 1, "Pointer presentation must render last in the shared UI canvas")
-    for index in range(equipment.get_child_count()):
-        var cell := equipment.get_child(index)
-        var label := cell.get_node("%Label") as Label
-        expect(label.text == SLOT_LABELS[index], "Equipment labels must follow domain order")
-        expect(label.size.y >= label.get_minimum_size().y, "Equipment labels must fit their cells")
-        expect(cell.get_node("%ClickableIcon").icon == null, "Empty equipment must have no mock texture")
+    var equipment_size := equipment.size # TEST-SUPPORT: EQUIP-TABS-SMOKE-004 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    for tab_index in range(3): # TEST-SUPPORT: EQUIP-TABS-SMOKE-005 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        expect(equipment.get_tab_title(tab_index) == ["Ship", "Weapons", "Crew"][tab_index], "Equipment tabs must retain their labels") # TEST-SUPPORT: EQUIP-TABS-SMOKE-006 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        expect(equipment.get_tab_icon(tab_index) != null, "Equipment tabs must have icons") # TEST-SUPPORT: EQUIP-TABS-SMOKE-007 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        equipment.current_tab = tab_index # TEST-SUPPORT: EQUIP-TABS-SMOKE-008 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        await settle() # TEST-SUPPORT: EQUIP-TABS-SMOKE-009 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        expect(equipment.size == equipment_size, "Switching equipment tabs must preserve panel size") # TEST-SUPPORT: EQUIP-TABS-SMOKE-010 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        var page := equipment.get_tab_control(tab_index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-011 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        expect(page.visible, "Selected equipment page must be visible") # TEST-SUPPORT: EQUIP-TABS-SMOKE-012 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        expect(page.get_child_count() == SLOT_LABELS[tab_index].size(), "Equipment slots must be grouped by tab, leaving Crew empty") # TEST-SUPPORT: EQUIP-TABS-SMOKE-013 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        for other_index in range(3): # TEST-SUPPORT: EQUIP-TABS-SMOKE-014 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+            expect(equipment.get_tab_control(other_index).visible == (other_index == tab_index), "Only the selected equipment page must be visible") # TEST-SUPPORT: EQUIP-TABS-SMOKE-015 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+        for index in range(page.get_child_count()): # TEST-SUPPORT: EQUIP-TABS-SMOKE-016 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+            var cell := page.get_child(index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-017 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+            var label := cell.get_node("%Label") as Label # TEST-SUPPORT: EQUIP-TABS-SMOKE-018 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+            expect(label.text == SLOT_LABELS[tab_index][index], "Equipment labels must follow domain order within their tab") # TEST-SUPPORT: EQUIP-TABS-SMOKE-019 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+            expect(label.size.y >= label.get_minimum_size().y, "Equipment labels must fit their cells") # TEST-SUPPORT: EQUIP-TABS-SMOKE-020 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+            expect(cell.get_node("%ClickableIcon").icon == null, "Empty equipment must have no mock texture") # TEST-SUPPORT: EQUIP-TABS-SMOKE-021 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    equipment.current_tab = 0 # TEST-SUPPORT: EQUIP-TABS-SMOKE-022 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    await settle() # TEST-SUPPORT: EQUIP-TABS-SMOKE-023 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
     for cell in grid.get_children():
         expect(cell.icon == null and cell.tooltip_text.is_empty(), "Empty bag cells must have no item texture or tooltip")
         var quantity := cell.get_node("QuantityLabel") as Label

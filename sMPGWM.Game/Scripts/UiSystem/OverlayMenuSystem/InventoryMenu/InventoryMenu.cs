@@ -109,6 +109,7 @@ public partial class InventoryMenu : GameOverlayMenu
         _inventoryView.Bind(_viewState);
         _inventoryView.CellCreated += RegisterCell;
         _equipmentView.CellCreated += RegisterCell;
+        _equipmentView.ViewChanging += OnViewChanging;
         foreach (var cell in _inventoryView.Cells) RegisterCell(cell);
         foreach (var cell in _equipmentView.Cells) RegisterCell(cell);
         _inventoryView.ViewChanging += OnViewChanging;
@@ -131,6 +132,7 @@ public partial class InventoryMenu : GameOverlayMenu
         {
             _inventoryView.CellCreated -= RegisterCell;
             _equipmentView.CellCreated -= RegisterCell;
+            _equipmentView.ViewChanging -= OnViewChanging;
             _inventoryView.ViewChanging -= OnViewChanging;
             _inventoryView.ViewChanged -= RefreshView;
             _inventoryView.Unbind();
@@ -249,7 +251,8 @@ public partial class InventoryMenu : GameOverlayMenu
             }
         if (!IsCarrying) return;
         CancelInteraction();
-        if (hovered == null || !_inventoryView.IsToolbarControl(hovered)) GetViewport().SetInputAsHandled();
+        if (hovered == null || (!_inventoryView.IsToolbarControl(hovered) && !_equipmentView.IsToolbarControl(hovered)))
+            GetViewport().SetInputAsHandled();
     }
 
     private void OnCellInput(ClickableIcon icon, InputEvent @event)

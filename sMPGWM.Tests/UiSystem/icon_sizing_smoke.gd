@@ -21,7 +21,7 @@ func texture(width: int, height: int) -> ImageTexture:
 
 func verify_sizes(cells: Array, expected: Vector2, surface: String) -> void:
     var samples := [texture(16, 16), texture(64, 64), texture(256, 256), texture(256, 64), null]
-    for index in range(samples.size()):
+    for index in range(mini(samples.size(), cells.size())): # TEST-SUPPORT: EQUIP-TABS-SIZING-001 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
         cells[index].set("IconTexture", samples[index])
         expect(cells[index].icon == samples[index], "%s must apply the replacement texture before checking layout" % surface)
     await settle()
@@ -56,10 +56,16 @@ func run() -> void:
         var menu := row.get_child(0)
         var bag_cells := menu.get_node("%InventoryContainer").get_node("%ItemGrid").get_node("%SlotGrid").get_children()
         await verify_sizes(bag_cells, Vector2(48, 48), "Inventory")
-        var equipment_cells: Array = []
-        for slot in menu.get_node("%EquipmentContainer").get_children():
-            equipment_cells.append(slot.get_node("%ClickableIcon"))
-        await verify_sizes(equipment_cells, Vector2(48, 48), "Equipment")
+        var equipment := menu.get_node("%EquipmentContainer") as TabContainer # TEST-SUPPORT: EQUIP-TABS-SIZING-002 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+        for tab_index in range(2): # TEST-SUPPORT: EQUIP-TABS-SIZING-003 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+            equipment.current_tab = tab_index # TEST-SUPPORT: EQUIP-TABS-SIZING-004 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+            await settle() # TEST-SUPPORT: EQUIP-TABS-SIZING-005 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+            var equipment_cells: Array = [] # TEST-SUPPORT: EQUIP-TABS-SIZING-006 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+            for slot in equipment.get_tab_control(tab_index).get_children(): # TEST-SUPPORT: EQUIP-TABS-SIZING-007 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+                equipment_cells.append(slot.get_node("%ClickableIcon")) # TEST-SUPPORT: EQUIP-TABS-SIZING-008 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+            await verify_sizes(equipment_cells, Vector2(48, 48), equipment.get_tab_title(tab_index)) # TEST-SUPPORT: EQUIP-TABS-SIZING-009 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+        equipment.current_tab = 0 # TEST-SUPPORT: EQUIP-TABS-SIZING-010 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
+        await settle() # TEST-SUPPORT: EQUIP-TABS-SIZING-011 | Tests: sMPGWM.Tests.UiSystem.icon_sizing_smoke.run
         await verify_sizes(hotbar_cells, Vector2(64, 64), "Hotbar with inventory open")
         game.queue_free()
         await settle()
