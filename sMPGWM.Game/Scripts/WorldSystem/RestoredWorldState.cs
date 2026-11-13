@@ -9,6 +9,7 @@ namespace sMPGWM.Scripts.WorldSystem;
 /// <summary>In-memory authoritative state at a completed physics step, independent of a storage format.</summary>
 public sealed class RestoredWorldState
 {
+    public IReadOnlyList<sMPGWM.Scripts.WeaponSystem.WeaponStateSnapshot> Weapons { get; init; } = Array.Empty<sMPGWM.Scripts.WeaponSystem.WeaponStateSnapshot>();
     public long CompletedTick { get; }
     public long AbilitySequence { get; }
     public int NextSpawnIndex { get; }

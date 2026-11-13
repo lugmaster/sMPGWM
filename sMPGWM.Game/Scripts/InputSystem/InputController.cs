@@ -11,6 +11,8 @@ public partial class InputController : AbstractSingleton<InputController>
     public Vector2 Direction { get; private set; } = Vector2.Zero;
     
     public bool ActionButtonPressed { get; private set; }
+    public byte FireGroupMask => (byte)((ActionButtonPressed ? 1 : 0) | (_fireGroup2Input.IsActive() ? 2 : 0));
+    public bool ReloadWeaponsJustPressed { get; private set; }
     public bool AlternateActionPressed { get; private set; }
     public bool MainMenuJustPressed { get; private set; }
     public bool InventoryMenuJustPressed { get; private set; }
@@ -24,6 +26,7 @@ public partial class InputController : AbstractSingleton<InputController>
     
     private readonly ToggleInputMode _enableAutoBreaking = new("EnableAutoBreaking", true);
     private readonly HoldInputMode _actionInput = new("Action");
+    private readonly HoldInputMode _fireGroup2Input = new("FireGroup2");
     private readonly HoldInputMode _afterBurnerInput = new("AfterBurner");
     private readonly HoldInputMode _alternateActionInput = new("AlternateAction");
     private readonly HoldInputMode _breakInput = new("Break");
@@ -44,6 +47,7 @@ public partial class InputController : AbstractSingleton<InputController>
             $"{nameof(InputController)}.{nameof(OnReady)} setting up for authority {GetMultiplayerAuthority()} on peer {(Multiplayer.HasMultiplayerPeer() ? Multiplayer.GetUniqueId() : 0)}.");
         _inputModes.Add(_enableAutoBreaking);
         _inputModes.Add(_actionInput);
+        _inputModes.Add(_fireGroup2Input);
         _inputModes.Add(_alternateActionInput);
         _inputModes.Add(_afterBurnerInput);
         _inputModes.Add(_breakInput);
@@ -75,7 +79,7 @@ public partial class InputController : AbstractSingleton<InputController>
         var pointerBlocked = _isPointerOverUi();
         for (var index = 0; index < _inputModes.Count; index++)
         {
-            if (pointerBlocked && (_inputModes[index] == _actionInput || _inputModes[index] == _alternateActionInput))
+            if (pointerBlocked && (_inputModes[index] == _actionInput || _inputModes[index] == _fireGroup2Input || _inputModes[index] == _alternateActionInput))
             {
                 _inputModes[index].ResetState();
                 continue;
@@ -85,6 +89,7 @@ public partial class InputController : AbstractSingleton<InputController>
 
         Direction = Input.GetVector("Backwards", "Forwards", "StrafeLeft", "StrafeRight");
         UpdateInputs();
+        ReloadWeaponsJustPressed = !pointerBlocked && Input.IsActionJustPressed("ReloadWeapons");
         DetectTargetSwitchPressed();
     }
 
@@ -128,6 +133,7 @@ public partial class InputController : AbstractSingleton<InputController>
         }
 
         Direction = Vector2.Zero;
+        ReloadWeaponsJustPressed = false;
         TargetSwitchJustReleased = false;
         TargetNearestSwitchJustReleased = false;
         UpdateInputs();

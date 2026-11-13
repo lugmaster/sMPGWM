@@ -23,6 +23,7 @@ public partial class SynchronizationCoordinator : Node
     public double Rtt => _clock.Rtt;
     public double Jitter => _clock.Jitter;
     public int Lead => _clock.Lead;
+    public double PresentationTick => Network.IsHost() ? CompletedTick : _clock.PresentationTick;
     public double HostEstimate => _clock.HostEstimate;
     private bool _active;
     private Func<int, bool>? _gameplayReady;
@@ -46,6 +47,7 @@ public partial class SynchronizationCoordinator : Node
             CompletedTick = World.InitialCompletedTick;
         }
         else if (!_client.HasBaseline) { Network.FailSession("Missing movement baseline."); return; }
+        Network.BindWeaponEvents();
         Player.UsePredictionCamera(!Network.IsHost());
         _active = true; _client.Activate();
     }
@@ -160,6 +162,7 @@ public partial class SynchronizationCoordinator : Node
                 !World.Players.TryGetValue(s.Peer, out var p) || p.ControlledShip?.EntityId != s.Entity ||
                 p.ControlGeneration != s.Generation)) return false;
             Session = session;
+            Network.WeaponBaselineCutoff(tick);
             _client.ApplyBaseline(session, tick);
             _prediction.Reset(tick); _remote.Reset(tick); _clock.ClearProbes();
         }
@@ -184,9 +187,12 @@ public partial class SynchronizationCoordinator : Node
 
     public override void _Process(double delta)
     {
-        if (!_active || Network.IsHost() || !_client.CanPresent) return;
+        if (!_active) return;
+        if (Network.IsHost()) { Network.AdvanceWeaponPresentation(PresentationTick); return; }
+        if (!_client.CanPresent) return;
         _remote.Render(delta, _clock.PresentationTick, World.Players);
         Player.Participant?.ControlledShip?.Presentation.RenderLocal(delta);
+        Network.AdvanceWeaponPresentation(PresentationTick);
     }
 
     private void Recover()
@@ -207,7 +213,11 @@ public partial class SynchronizationCoordinator : Node
             if (_active) Recover();
         }
     }
-    public void ResetCommands(int peer) { _queues.Remove(peer); _bindings.Remove(peer); }
+    public void ResetCommands(int peer)
+    {
+        _queues.Remove(peer); _bindings.Remove(peer);
+        if (World.Players.TryGetValue(peer, out var owner) && owner.ControlledShip is { } ship) { ship.ClearInput(); ship.Loadout.Weapons.ClearInput(); }
+    }
     public void Stop()
     {
         _active = false; ProcessMode = ProcessModeEnum.Disabled; _client.Stop();

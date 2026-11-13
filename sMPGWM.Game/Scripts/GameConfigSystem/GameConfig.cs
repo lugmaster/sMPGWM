@@ -69,7 +69,8 @@ public static class GameConfig
             _ = GameplayDefinitions.Current;
             sMPGWM.Scripts.GamePlaySystem.StarterLoadout.ValidateDefinitions();
             var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoader.CapturedInputs);
-            inputs.Add("GameplayProtocol", "6:complete-initial-state-readiness");
+            sMPGWM.Scripts.VfxSystem.WeaponPresentationCompatibility.Capture(inputs);
+            inputs.Add("GameplayProtocol", "7:hitscan-weapons-and-combat-state");
             var checksum = ChecksumGenerator.Compute(inputs);
             foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
             Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={checksum}");

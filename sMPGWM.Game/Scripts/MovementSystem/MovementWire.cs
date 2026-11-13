@@ -16,7 +16,8 @@ public readonly record struct MovementCommand(long Tick, ShipInputState Input);
 public static class MovementWire
 {
     public const int MaxPlayers = 10, MaxCommands = 6, MaxBytes = 1400;
-    public const int SnapshotHeaderBytes = 25, SampleBytes = 111;
+    public const int SnapshotHeaderBytes = 25, SampleBytes = 120;
+    public const int CommandHeaderBytes = 41, CommandBytes = 30, MaxCommandBytes = CommandHeaderBytes + MaxCommands * CommandBytes;
     public const long MaxTick = SnapshotEnvelope.MaxTick;
     public static byte[] Snapshot(Guid session, long tick, IReadOnlyList<MovementSample> samples)
     {
@@ -75,7 +76,7 @@ public static class MovementWire
     public static bool ReadCommands(byte[] bytes, out Guid session, out string entity, out long generation, out List<MovementCommand> commands)
     {
         session = default; entity = ""; generation = 0; commands = new();
-        if (bytes.Length < 41 || bytes.Length > 256) return false;
+        if (bytes.Length < 41 || bytes.Length > MaxCommandBytes) return false;
         try
         {
             using var r = new BinaryReader(new MemoryStream(bytes));
@@ -93,7 +94,7 @@ public static class MovementWire
         }
         catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException) { return false; }
     }
-    public static bool Valid(ShipInputState i) => i.Direction.IsFinite() && i.Direction.LengthSquared() <= 1.001f && float.IsFinite(i.AimAngle);
+    public static bool Valid(ShipInputState i) => i.Direction.IsFinite() && i.Direction.LengthSquared() <= 1.001f && float.IsFinite(i.AimAngle) && i.FireMask <= 3 && i.WeaponConfigurationRevision >= 0;
     private static void WriteConfiguration(BinaryWriter writer, MovementConfiguration configuration)
     {
         writer.Write(configuration.Speed); writer.Write(configuration.AfterBurnerSpeed);
@@ -114,13 +115,15 @@ public static class MovementWire
     private static Vector2 ReadVector(BinaryReader r) => new(r.ReadSingle(), r.ReadSingle());
     private static void WriteInput(BinaryWriter w, ShipInputState i)
     {
+        w.Write(i.FireMask); w.Write(i.WeaponConfigurationRevision);
         WriteVector(w, i.Direction); w.Write(i.AimAngle);
         w.Write((byte)((i.HasAim ? 1 : 0) | (i.Afterburner ? 2 : 0) | (i.Brake ? 4 : 0) | (i.AutomaticBraking ? 8 : 0)));
     }
     private static ShipInputState ReadInput(BinaryReader r)
     {
+        var fire = r.ReadByte(); var revision = r.ReadInt64();
         var direction = ReadVector(r); float angle = r.ReadSingle(); byte flags = r.ReadByte();
         if (flags > 15) throw new InvalidDataException();
-        return new(direction, angle, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0);
+        return new(direction, angle, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0, fire, revision);
     }
 }

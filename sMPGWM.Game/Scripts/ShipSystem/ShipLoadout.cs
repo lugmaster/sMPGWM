@@ -2,6 +2,7 @@ using System;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.StatSystem;
+using sMPGWM.Scripts.WeaponSystem;
 
 namespace sMPGWM.Scripts.ShipSystem;
 
@@ -15,12 +16,14 @@ public sealed class ShipLoadout : IDisposable
     private bool _publishGameplay;
     public ItemStore Store { get; }
     public EquipmentController Equipment { get; }
+    public ShipWeaponController Weapons { get; }
 
     public ShipLoadout(ShipController ship, ItemStore store, bool authoritative)
     {
         _ship = ship;
         Store = store;
         Equipment = new(store, EquipmentSlotDefinition.Defaults);
+        Weapons = new(ship, store.Weapons, Equipment.Definitions.Count);
         _sourceItems = new ItemEntityId?[Equipment.Definitions.Count];
         _sources = new StatContributionSource?[Equipment.Definitions.Count];
         _authoritative = authoritative;
@@ -56,6 +59,7 @@ public sealed class ShipLoadout : IDisposable
 
     private Action Prepare(ItemEntity?[] slots)
     {
+        var installWeapons = Weapons.Prepare(slots, _authoritative);
         var stats = _authoritative ? EquipmentStatCalculator.Calculate(_ship.Data.StatModifiers, _ship.Data.Mass,
             slots, Equipment.Definitions) : default;
         var batterySlot = Equipment.FindSlot("battery");
@@ -71,6 +75,7 @@ public sealed class ShipLoadout : IDisposable
         }
         return () =>
         {
+            installWeapons();
             for (var i = 0; i < slots.Length; i++)
                 if (_sourceItems[i] != slots[i]?.Id && _sources[i] is { } previous)
                     _ship.Runtime.Grants.RemoveSource(previous);
@@ -119,6 +124,7 @@ public sealed class ShipLoadout : IDisposable
         if (_disposed) return;
         _disposed = true;
         _ship.DefinitionChanged -= DefinitionChanged;
+        Weapons.ClearInput();
         for (var i = 0; i < _sources.Length; i++)
             if (_sources[i] is { } source) _ship.Runtime.Grants.RemoveSource(source);
         Equipment.Dispose();

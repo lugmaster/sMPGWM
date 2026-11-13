@@ -111,6 +111,7 @@ public partial class UiCanvas : CanvasLayer
     private InventoryMenu? _inventoryMenu;
     private bool _hasApplicationFocus = true;
     private ItemHotbarController? _hotbar;
+    private NetworkManager? _combatNetwork;
 
     internal bool HasBlockingWindow => _windowManager.HasBlockingWindow;
     internal event Action<bool>? BlockingChanged;
@@ -181,6 +182,8 @@ public partial class UiCanvas : CanvasLayer
 
     internal void BindGameplay(NetworkManager? network)
     {
+        _combatNetwork = network;
+        _inventoryMenu?.BindCombat(network);
         if (network == null && _gameplayFeedback != null) _gameplayFeedback.Text = "";
         var panels = FindChildren("*", "", true, false);
         foreach (var panel in panels)
@@ -216,6 +219,7 @@ public partial class UiCanvas : CanvasLayer
         }
         if (id != UiWindowId.InventoryMenu) return;
         _inventoryMenu = (InventoryMenu)window;
+        _inventoryMenu.BindCombat(_combatNetwork);
         _inventoryMenu.SetPointerOverlay(_itemPointerOverlay);
         if (_inventory != null && _equipment != null)
         {

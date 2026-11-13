@@ -65,7 +65,7 @@ public sealed class CommandQueueTests // TEST-SUPPORT: COMMAND-RING-005 | Tests:
         for (var tick = 1L; tick <= 1000; tick++) // TEST-SUPPORT: COMMAND-RING-044 | Tests: sMPGWM.Tests.MovementSystem.CommandQueueTests.AcceptAndConsumeAllocateNothingAfterConstruction
         {
             queue.Accept(new(tick, input), tick - 1); // TEST-SUPPORT: COMMAND-RING-045 | Tests: sMPGWM.Tests.MovementSystem.CommandQueueTests.AcceptAndConsumeAllocateNothingAfterConstruction
-            queue.Consume(tick); // TEST-SUPPORT: COMMAND-RING-046 | Tests: sMPGWM.Tests.MovementSystem.CommandQueueTests.AcceptAndConsumeAllocateNothingAfterConstruction
+            _ = queue.Consume(tick) == input; // TEST-SUPPORT: COMMAND-RING-046 | Tests: sMPGWM.Tests.MovementSystem.CommandQueueTests.AcceptAndConsumeAllocateNothingAfterConstruction
         }
         var before = GC.GetAllocatedBytesForCurrentThread(); // TEST-SUPPORT: COMMAND-RING-047 | Tests: sMPGWM.Tests.MovementSystem.CommandQueueTests.AcceptAndConsumeAllocateNothingAfterConstruction
         var accepted = true; // TEST-SUPPORT: COMMAND-RING-048 | Tests: sMPGWM.Tests.MovementSystem.CommandQueueTests.AcceptAndConsumeAllocateNothingAfterConstruction

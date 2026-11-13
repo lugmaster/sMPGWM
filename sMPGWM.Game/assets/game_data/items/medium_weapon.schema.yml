@@ -6,8 +6,7 @@ required:
 - Items
 properties:
   Version:
-    type: string
-    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+    const: 3.0.0
   Items:
     type: array
     items:
@@ -18,6 +17,7 @@ properties:
       - DisplayName
       - CategoryId
       - Values
+      - Weapon
       not:
         required:
         - CanStack
@@ -34,15 +34,12 @@ properties:
         Description:
           type: string
         CanStack:
-          type: boolean
+          const: false
         Icon:
           type:
           - string
           - 'null'
-        StackLimit:
-          type: integer
-          minimum: 2
-          maximum: 2147483646
+        StackLimit: false
         Values:
           type: object
           additionalProperties: false
@@ -55,30 +52,40 @@ properties:
               minimum: 0
             AttackSpeed:
               type: number
-              minimum: 0
+              exclusiveMinimum: 0
+              maximum: 60
             EnergyConsumption:
               type: number
               minimum: 0
             EnergyPerShot:
               type: number
-              minimum: 0
-            MagazinSize:
-              type: number
-              minimum: 0
+              exclusiveMinimum: 0
             ReloadDuration:
               type: number
-              minimum: 0
+              exclusiveMinimum: 0
+              maximum: 7.686143364045645e+19
             Mass:
               type: number
               minimum: 0
+            Range:
+              type: number
+              exclusiveMinimum: 0
+              maximum: 8.5070586659632215e+37
+            SpreadDegrees:
+              type: number
+              minimum: 0
+              maximum: 180
+            MagazineCapacity:
+              type: integer
+              minimum: 1
+              maximum: 65535
           required:
           - DamageSource
           - Damage
           - AttackSpeed
+          - Range
+          - SpreadDegrees
           - EnergyConsumption
-          - EnergyPerShot
-          - MagazinSize
-          - ReloadDuration
           - Mass
         AbilityIds:
           type: array
@@ -109,3 +116,56 @@ properties:
                 enum:
                 - WhileSourceActive
           minItems: 1
+        Weapon:
+          type: object
+          additionalProperties: false
+          required:
+          - Archetype
+          - Delivery
+          - FireMode
+          - SupplyMode
+          - PresentationId
+          properties:
+            Archetype:
+              type: string
+              pattern: ^[A-Za-z][A-Za-z0-9_]*$
+              maxLength: 64
+            Delivery:
+              const: HitScan
+            FireMode:
+              const: Automatic
+            SupplyMode:
+              enum:
+              - Ammunition
+              - Energy
+            PresentationId:
+              enum:
+              - smg_standard
+              - laser_standard
+      allOf:
+      - if:
+          properties:
+            Weapon:
+              properties:
+                SupplyMode:
+                  const: Ammunition
+        then:
+          properties:
+            Values:
+              required:
+              - MagazineCapacity
+              - ReloadDuration
+              not:
+                required:
+                - EnergyPerShot
+        else:
+          properties:
+            Values:
+              required:
+              - EnergyPerShot
+              not:
+                anyOf:
+                - required:
+                  - MagazineCapacity
+                - required:
+                  - ReloadDuration

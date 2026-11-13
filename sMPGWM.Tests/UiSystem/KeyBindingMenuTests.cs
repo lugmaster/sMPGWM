@@ -105,7 +105,7 @@ public sealed class KeyBindingMenuTests // TEST-SUPPORT: KEYBIND-MENU-003 | Test
             foreach (var section in sections.GetChildren()) // TEST-SUPPORT: KEYBIND-MENU-084 | Tests: sMPGWM.Tests.UiSystem.KeyBindingMenuTests.RuntimeMenuReplacesSamplesAndSavesDraftAfterTabSwitch
                 rowCount += section.GetNode<VBoxContainer>("RowsContainer").GetChildCount(); // TEST-SUPPORT: KEYBIND-MENU-085 | Tests: sMPGWM.Tests.UiSystem.KeyBindingMenuTests.RuntimeMenuReplacesSamplesAndSavesDraftAfterTabSwitch
             Assert.That(rowCount, Is.EqualTo(KeyBindingCatalog.Actions.Length)); // TEST-SUPPORT: KEYBIND-MENU-086 | Tests: sMPGWM.Tests.UiSystem.KeyBindingMenuTests.RuntimeMenuReplacesSamplesAndSavesDraftAfterTabSwitch
-            Assert.That(rowCount, Is.EqualTo(15)); // TEST-SUPPORT: KEYBIND-MENU-087 | Tests: sMPGWM.Tests.UiSystem.KeyBindingMenuTests.RuntimeMenuReplacesSamplesAndSavesDraftAfterTabSwitch
+            Assert.That(rowCount, Is.EqualTo(KeyBindingCatalog.Actions.Length)); // TEST-SUPPORT: KEYBIND-MENU-087 | Tests: sMPGWM.Tests.UiSystem.KeyBindingMenuTests.RuntimeMenuReplacesSamplesAndSavesDraftAfterTabSwitch
             var firstRows = sections.GetChild(0).GetNode<VBoxContainer>("RowsContainer"); // TEST-SUPPORT: KEYBIND-MENU-088 | Tests: sMPGWM.Tests.UiSystem.KeyBindingMenuTests.RuntimeMenuReplacesSamplesAndSavesDraftAfterTabSwitch
             var row = firstRows.GetChild(0); // TEST-SUPPORT: KEYBIND-MENU-089 | Tests: sMPGWM.Tests.UiSystem.KeyBindingMenuTests.RuntimeMenuReplacesSamplesAndSavesDraftAfterTabSwitch
             var primary = row.GetNode<Button>("PrimaryBindingButton"); // TEST-SUPPORT: KEYBIND-MENU-090 | Tests: sMPGWM.Tests.UiSystem.KeyBindingMenuTests.RuntimeMenuReplacesSamplesAndSavesDraftAfterTabSwitch

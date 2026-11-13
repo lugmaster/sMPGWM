@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UtilitySystem.UiComponents;
@@ -19,6 +20,9 @@ public partial class EquipmentContainer : TabContainer
     private ItemGrid _weaponSlots = null!;
     private ItemCellBinding[] _weaponBindings = Array.Empty<ItemCellBinding>();
     private Label _weaponCapacity = null!;
+    private WeaponStatusPanel? _weaponStatus;
+    private NetworkManager? _network;
+    internal void BindCombat(NetworkManager? network) { _network = network; _weaponStatus?.Bind(network); }
     internal IReadOnlyList<ClickableIcon> Cells => _cells;
     internal event Action<ClickableIcon>? CellCreated;
     internal event Action? ViewChanging;
@@ -34,6 +38,9 @@ public partial class EquipmentContainer : TabContainer
         capacity.TooltipText = "Free weapon slots / fixture capacity";
         capacity.GetNode<TextureRect>("Icon").Texture = ItemIconResolver.Category(ItemRegistry.GetCategoryById("weapon_fixture"));
         _weaponCapacity = capacity.GetNode<Label>("Value");
+        _weaponStatus = new WeaponStatusPanel();
+        GetNode<Control>("Weapons").AddChild(_weaponStatus);
+        _weaponStatus.Bind(_network);
         SetTabIcon(0, ItemIconResolver.Category(ItemRegistry.GetCategoryById("hull")));
         SetTabIcon(1, ItemIconResolver.Category(ItemRegistry.GetCategoryById("light_weapon")));
         SetTabIcon(2, Icons.Travel.PersonPeopleThree.IconTexture);

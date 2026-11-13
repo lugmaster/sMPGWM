@@ -5,7 +5,7 @@ DamageSources:
     Description: "Does even damage to shield and hull"
   - Id: physical
     DisplayName: Physical Damage
-    Description: "Does less damage to shields and more to hull"
+    Description: "Shields absorb first; remaining damage is reduced by hull armor."
   - Id: plasma
     DisplayName: Plasma Damage
     Description: "Does more damage to shields and less to hull"

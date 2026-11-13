@@ -98,6 +98,9 @@ internal static class GameplaySnapshotCodec
                     if (conditions[k] == id) return false;
                 conditions[j] = id;
             }
+            var hasDeadCondition = false;
+            foreach (var condition in conditions) if (condition == "dead") hasDeadCondition = true;
+            if (healthCapacity > 0 && hasDeadCondition != (healthCurrent == 0) || hasDeadCondition && afterburnerActive) return false;
             var hasDepletedCondition = false;
             foreach (var condition in conditions)
                 if (condition == "energyDepleted") hasDepletedCondition = true;

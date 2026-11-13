@@ -12,6 +12,7 @@ public sealed record ItemDefinition(string id, string displayName, string catego
     public System.Collections.Generic.IReadOnlyDictionary<string, object> Values { get; init; } = EmptyValues;
     public System.Collections.Generic.IReadOnlyList<string> AbilityIds { get; init; } = System.Array.Empty<string>();
     public System.Collections.Generic.IReadOnlyList<ItemBehaviourGrant> BehaviourGrants { get; init; } = System.Array.Empty<ItemBehaviourGrant>();
+    public sMPGWM.Scripts.WeaponSystem.WeaponDefinition? Weapon { get; init; }
     public string CategoryName { get; } = categoryName;
     public string CategoryId { get; init; } = "";
     public bool CanStack { get; } = canStack;

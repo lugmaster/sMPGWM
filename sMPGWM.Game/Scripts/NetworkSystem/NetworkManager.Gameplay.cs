@@ -72,14 +72,16 @@ public partial class NetworkManager
         if (!IsHost() || tick % 2 != 0) return;
         PublishWorldTopology();
         PublishItemChanges();
+        PublishWeapons(tick);
         foreach (var ship in World.Entities.Values)
             if (!_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var revision) || revision != ship.Runtime.Revision)
                 _gameplayDirty = true;
         if (_gameplayDirty)
         {
             var state = GameplaySnapshot();
+            var changed = GameplaySnapshot(true);
             foreach (var (peer, join) in _joins.Snapshot())
-                if (join.ReceivesWorld && RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"), state) != Error.Ok)
+                if (join.ReceivesWorld && RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"), join.Phase == PeerJoinPhase.Ready ? changed : state) != Error.Ok)
                 {
                     FailSession("Gameplay snapshot send failed.");
                     return;
@@ -96,11 +98,12 @@ public partial class NetworkManager
         ReplyAbility(peer, request, result);
     }
 
-    private Godot.Collections.Array GameplaySnapshot()
+    private Godot.Collections.Array GameplaySnapshot(bool changedOnly = false)
     {
         var rows = new Godot.Collections.Array();
         foreach (var ship in World.Entities.Values)
-            rows.Add(GameplaySnapshotCodec.Encode(ship.EntityId, ship.Runtime));
+            if (!changedOnly || !_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var previous) || previous != ship.Runtime.Revision)
+                rows.Add(GameplaySnapshotCodec.Encode(ship.EntityId, ship.Runtime));
         return rows;
     }
 
@@ -149,6 +152,7 @@ public partial class NetworkManager
     }
     private void ClearGameplay()
     {
+        ClearWeapons();
         _simulation?.Dispose(); _abilityResults.Clear(); AbilityFeedback = null;
         _publishedGameplayRevisions.Clear();
         Abilities?.Dispose();

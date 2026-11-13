@@ -21,6 +21,9 @@ public class GodotIntegrationTests
             CopyTree(Path.Combine(game, "Scripts"), Path.Combine(staging, "Scripts")); // TEST-SUPPORT: CURSOR-STAGE-002 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
             CopyTree(Path.Combine(game, "assets/ui/cursors"), Path.Combine(staging, "assets/ui/cursors")); // TEST-SUPPORT: CURSOR-STAGE-001 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
             CopyTree(Path.Combine(game, "assets/game_data"), Path.Combine(staging, "assets/game_data"));
+            CopyTree(Path.Combine(game, "scenes/vfx"), Path.Combine(staging, "scenes/vfx")); // TEST-SUPPORT: COMBAT-STAGE-001 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
+            CopyTree(Path.Combine(game, "assets/vfx"), Path.Combine(staging, "assets/vfx")); // TEST-SUPPORT: COMBAT-STAGE-002 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
+            CopyTree(Path.Combine(game, "assets/audio"), Path.Combine(staging, "assets/audio")); // TEST-SUPPORT: COMBAT-STAGE-003 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
             CopyTree(Path.Combine(game, "assets/ui/icons/atlases"), Path.Combine(staging, "assets/ui/icons/atlases"));
             foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "icons_0.png-*"))
                 Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));

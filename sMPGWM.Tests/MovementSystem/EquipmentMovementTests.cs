@@ -25,7 +25,7 @@ public class EquipmentMovementTests // TEST-SUPPORT: EQMOVE-3 | Tests: sMPGWM.Te
             samples[i] = new(i + 1, Guid.NewGuid().ToString("N"), 1, 0, new Vector2(i, i), .5f, // TEST-SUPPORT: EQMOVE-21 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip
                 Vector2.One, default, 20, 0, 7, new(350, 600, 3, 2, 4, 9, i % 2 == 0)); // TEST-SUPPORT: EQMOVE-22 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip
         var bytes = MovementWire.Snapshot(Guid.NewGuid(), 20, samples); // TEST-SUPPORT: EQMOVE-23 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip
-        Assert.That(bytes.Length, Is.EqualTo(1135)); // TEST-SUPPORT: EQMOVE-24 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip
+        Assert.That(bytes.Length, Is.EqualTo(1225)); // TEST-SUPPORT: EQMOVE-24 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip
         Assert.That(bytes.Length, Is.LessThanOrEqualTo(MovementWire.MaxBytes)); // TEST-SUPPORT: EQMOVE-25 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip
         Assert.That(MovementWire.ReadSnapshot(bytes, out _, out _, out var decoded), Is.True); // TEST-SUPPORT: EQMOVE-26 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip
         Assert.That(decoded, Is.EqualTo(samples)); // TEST-SUPPORT: EQMOVE-27 | Tests: sMPGWM.Tests.MovementSystem.EquipmentMovementTests.TenConfiguredShipsFitAndRoundTrip

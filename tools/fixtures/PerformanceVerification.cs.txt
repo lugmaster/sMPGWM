@@ -18,6 +18,12 @@ namespace sMPGWM.Scripts.Verification; // TEST-SUPPORT: PERF-WORKLOAD-0016 | Tes
 
 public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLOAD-0017 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
 { // TEST-SUPPORT: PERF-WORKLOAD-0018 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private long _confirmedShots; // TEST-SUPPORT: COMBAT-PERF-FIELDS-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private long _localShots; // TEST-SUPPORT: COMBAT-PERF-FIELDS-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private long _smgShots; // TEST-SUPPORT: COMBAT-PERF-FIELDS-003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private long _laserShots; // TEST-SUPPORT: COMBAT-PERF-FIELDS-004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private int _poolHighWater; // TEST-SUPPORT: COMBAT-PERF-FIELDS-005 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private long _poolDrops; // TEST-SUPPORT: COMBAT-PERF-FIELDS-006 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     private readonly Stopwatch _clock = new(); // TEST-SUPPORT: PERF-WORKLOAD-0019 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     private static readonly object FocusedValue = true; // TEST-SUPPORT: PERF-WORKLOAD-FOCUS-CACHE | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     private readonly PropertyInfo _focus = typeof(InputController).GetProperty(nameof(InputController.IsWindowFocused))!; // TEST-SUPPORT: PERF-WORKLOAD-0020 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
@@ -96,6 +102,7 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
                 _boundNetwork = network; // TEST-SUPPORT: PERF-WORKLOAD-0085 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                 _lastPosition = ship.GlobalPosition; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-5 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                 network.AbilityFeedback += AbilityResult; // TEST-SUPPORT: PERF-WORKLOAD-0086 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                network.ShotReceived += ObserveShot; // TEST-SUPPORT: COMBAT-PERF-SUBSCRIBE-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                 network.ItemFeedback += ItemResult; // TEST-SUPPORT: PERF-WORKLOAD-0087 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                 _focus.SetValue(null, FocusedValue); // TEST-SUPPORT: PERF-WORKLOAD-0088 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                 _activeSeen = true; // TEST-SUPPORT: PERF-WORKLOAD-0089 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
@@ -136,6 +143,24 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
                 Input.ActionRelease("Forwards"); // TEST-SUPPORT: PERF-WORKLOAD-0121 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                 Input.ActionRelease("Backwards"); // TEST-SUPPORT: PERF-WORKLOAD-0122 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             } // TEST-SUPPORT: PERF-WORKLOAD-0123 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (phase == "combat") // TEST-SUPPORT: COMBAT-PERF-DRIVE-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            { // TEST-SUPPORT: COMBAT-PERF-DRIVE-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                if (elapsed - _firstActive >= 1) // TEST-SUPPORT: COMBAT-PERF-DRIVE-003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                { // TEST-SUPPORT: COMBAT-PERF-DRIVE-004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    Input.ActionPress("Action"); // TEST-SUPPORT: COMBAT-PERF-DRIVE-005 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    Input.ActionPress("FireGroup2"); // TEST-SUPPORT: COMBAT-PERF-DRIVE-006 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                } // TEST-SUPPORT: COMBAT-PERF-DRIVE-007 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                else // TEST-SUPPORT: COMBAT-PERF-DRIVE-008 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                { // TEST-SUPPORT: COMBAT-PERF-DRIVE-009 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    Input.ActionRelease("Action"); // TEST-SUPPORT: COMBAT-PERF-DRIVE-010 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    Input.ActionRelease("FireGroup2"); // TEST-SUPPORT: COMBAT-PERF-DRIVE-011 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                } // TEST-SUPPORT: COMBAT-PERF-DRIVE-012 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                if (network.World.GetNodeOrNull<sMPGWM.Scripts.VfxSystem.ShotPresentationController>("ShotPresentation") is { } presentation) // TEST-SUPPORT: COMBAT-PERF-DRIVE-013 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                { // TEST-SUPPORT: COMBAT-PERF-DRIVE-014 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    _poolHighWater = Math.Max(_poolHighWater, presentation.HighWater); // TEST-SUPPORT: COMBAT-PERF-DRIVE-015 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                    _poolDrops = presentation.DroppedEffects; // TEST-SUPPORT: COMBAT-PERF-DRIVE-016 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                } // TEST-SUPPORT: COMBAT-PERF-DRIVE-017 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            } // TEST-SUPPORT: COMBAT-PERF-DRIVE-018 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             if (phase != "idle") // TEST-SUPPORT: PERF-WORKLOAD-0124 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             { // TEST-SUPPORT: PERF-WORKLOAD-0125 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                 if (elapsed >= _nextFocus) // TEST-SUPPORT: PERF-WORKLOAD-0126 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
@@ -177,6 +202,13 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
         if (elapsed >= _seconds) Finish(); // TEST-SUPPORT: PERF-WORKLOAD-0162 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     } // TEST-SUPPORT: PERF-WORKLOAD-0163 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
 
+    private void ObserveShot(sMPGWM.Scripts.WeaponSystem.AcceptedShot shot) // TEST-SUPPORT: COMBAT-PERF-SHOTS-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: COMBAT-PERF-SHOTS-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        _confirmedShots++; // TEST-SUPPORT: COMBAT-PERF-SHOTS-003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (shot.EntityId == NetworkManager.Instance.World.LocalPlayer?.Participant?.ControlledShip?.EntityId) _localShots++; // TEST-SUPPORT: COMBAT-PERF-SHOTS-004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (shot.ProfileId == "smg_standard") _smgShots++; // TEST-SUPPORT: COMBAT-PERF-SHOTS-005 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (shot.ProfileId == "laser_standard") _laserShots++; // TEST-SUPPORT: COMBAT-PERF-SHOTS-006 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: COMBAT-PERF-SHOTS-007 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     private void Start(RestoredWorldState? state) // TEST-SUPPORT: PERF-WORKLOAD-0164 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     { // TEST-SUPPORT: PERF-WORKLOAD-0165 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         GameFlowManager.Instance.StartNetworkGame(new NetworkStartupData(_host ? NetworkRole.Host : NetworkRole.Client, // TEST-SUPPORT: PERF-WORKLOAD-0166 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
@@ -226,11 +258,15 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
         PerformanceRecorder.Mark("finished"); // TEST-SUPPORT: PERF-WORKLOAD-0206 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         var activeStart = Math.Max(_firstActive, _scenario == "matrix" ? 210 - _offset : 0); // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-ACTIVE-START | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         var verifyActivity = _scenario != "idle" && _seconds - activeStart >= 20; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-ACTIVITY | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Input.ActionRelease("Action"); // TEST-SUPPORT: COMBAT-PERF-RELEASE-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        Input.ActionRelease("FireGroup2"); // TEST-SUPPORT: COMBAT-PERF-RELEASE-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         var success = _activeSeen && _maxPeers == _expectedPeers && GameFlowManager.Instance.GameFlowState == GameFlowState.InGame && // TEST-SUPPORT: PERF-WORKLOAD-0207 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             (!verifyActivity || _distance > 1 && _accepted > 0) && // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-MOVEMENT-ABILITIES | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
-            (!_host || _scenario != "restored" || _restoreVerified); // TEST-SUPPORT: PERF-WORKLOAD-0208 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            (!_host || _scenario != "restored" || _restoreVerified) && (_scenario != "combat" || _localShots > 0); // TEST-SUPPORT: PERF-WORKLOAD-0208 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         File.WriteAllText(Path.Combine(_output, "workload.json"), JsonConvert.SerializeObject(new // TEST-SUPPORT: PERF-WORKLOAD-0209 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         { // TEST-SUPPORT: PERF-WORKLOAD-0210 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            confirmedShots = _confirmedShots, localShots = _localShots, smgShots = _smgShots, laserShots = _laserShots, // TEST-SUPPORT: COMBAT-PERF-REPORT-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            poolHighWater = _poolHighWater, poolDrops = _poolDrops, // TEST-SUPPORT: COMBAT-PERF-REPORT-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             success, role = _host ? "host" : "client", scenario = _scenario, duration = _clock.Elapsed.TotalSeconds, // TEST-SUPPORT: PERF-WORKLOAD-0211 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             offset = _offset, distanceTravelled = _distance, expectedPeers = _expectedPeers, // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-8 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             assemblyConfiguration = typeof(PerformanceVerification).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration, // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-9 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix

@@ -44,6 +44,7 @@ public static class StarterLoadout
                 if (store.TransferItem(item.Id, new(inventory.Container.Id, sourceIndex), new(equipment.Container.Id, index),
                         inventory.Container.Revision, equipment.Container.Revision) != TransferResult.Success)
                     throw new InvalidOperationException("Could not equip starter item: " + definition);
+                if (slot.Key == "weapon_2") loadout.Weapons.AssignGroup(index, item.Id, loadout.Weapons.ConfigurationRevision, 2);
             }
         }
     }
@@ -51,8 +52,8 @@ public static class StarterLoadout
     private static string? GetStarterItem(EquipmentSlotDefinition slot) => slot.IsWeaponSlot
         ? slot.Key switch
         {
-            "weapon_1" => "mock_standard_light_weapon",
-            "weapon_2" => "mock_standard_medium_weapon",
+            "weapon_1" => "vulcan_mk1",
+            "weapon_2" => "laser_mk1",
             "weapon_3" => "mock_standard_heavy_weapon",
             _ => null
         }

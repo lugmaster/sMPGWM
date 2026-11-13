@@ -3,31 +3,31 @@ title: Ship definitions
 type: object
 additionalProperties: false
 required:
-  - Version
-  - ships
+- Version
+- ships
 properties:
   Version:
-    type: string
-    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    const: 3.0.0
   ships:
     type: array
     items:
       type: object
       additionalProperties: false
       required:
-        - name
-        - texture_path
-        - collider_points
-        - mass
-        - health
-        - stat_modifiers
+      - name
+      - texture_path
+      - collider_points
+      - mass
+      - health
+      - stat_modifiers
+      - muzzle_offsets
       properties:
         name:
           type: string
-          pattern: '\S'
+          pattern: \S
         texture_path:
           type: string
-          pattern: '^res://.+'
+          pattern: ^res://.+
         collider_points:
           type: array
           minItems: 3
@@ -46,7 +46,8 @@ properties:
           type: number
           exclusiveMinimum: 0
         stat_modifiers:
-          description: Flat adjustments to installed equipment; omitted fields are zero. Legacy ship_stats and ShieldCurrent are no longer supported.
+          description: Flat adjustments to installed equipment; omitted fields are
+            zero. Legacy ship_stats and ShieldCurrent are no longer supported.
           type: object
           additionalProperties: false
           properties:
@@ -91,6 +92,18 @@ properties:
               minimum: -3.4028234663852886e+38
               maximum: 3.4028234663852886e+38
             EnergyStorage:
+              type: number
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
+        muzzle_offsets:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items:
               type: number
               minimum: -3.4028234663852886e+38
               maximum: 3.4028234663852886e+38

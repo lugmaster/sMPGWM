@@ -23,13 +23,13 @@ public partial class GameWorld
         foreach (var ship in _entities.Values)
             ships[index++] = new RestoredShipState(new EntitySpawnRecord(ship.EntityId, ship.Data.Name,
                 ship.GlobalPosition, ship.GlobalRotation, ship.Velocity), Items.Capture(ship.Equipment.Container),
-                ship.Runtime.CaptureState(), ship.CaptureMovementState());
+                ship.Runtime.CaptureState(), ship.CaptureMovementState()) { Weapons = ship.Loadout.Weapons.CaptureConfiguration() };
         var players = new RestoredPlayerState[_controllers.Count];
         index = 0;
         foreach (var owner in _controllers.Values)
             players[index++] = new RestoredPlayerState(new ParticipantBinding(owner.ControllingPeerId,
                 owner.ControlGeneration, owner.ControlledShip?.EntityId ?? ""), Items.Capture(owner.Inventory.Container));
-        return new RestoredWorldState(completedTick, abilitySequence, _spawnIndex, ships, players, localHotbar);
+        return new RestoredWorldState(completedTick, abilitySequence, _spawnIndex, ships, players, localHotbar) { Weapons = Array.AsReadOnly(Items.Weapons.CaptureState()) };
     }
 
     public void RestoreState(RestoredWorldState state)
@@ -85,11 +85,20 @@ public partial class GameWorld
                         ship.Position, ship.Rotation, ship.Velocity));
             }
             store.Restore(containers);
+            foreach (var weapon in state.Weapons)
+                if (weapon.ReloadDeadline >= 0 && (weapon.ReloadDeadline <= state.CompletedTick || weapon.ReloadStartTick > state.CompletedTick))
+                    throw new ArgumentException("Restored reload is outside the completed tick domain.");
+            store.Weapons.RestoreState(state.Weapons, store);
             foreach (var saved in state.Ships)
             {
                 var ship = ships[saved.Entity.EntityId];
                 ship.Runtime.RestoreState(saved.Runtime, GameplayDefinitions.Current);
                 ship.RestoreMovementState(saved.Movement);
+                ship.ClearInput();
+                if (saved.Weapons == null)
+                    foreach (var binding in ship.Loadout.Weapons.Bindings)
+                        if (binding != null) throw new ArgumentException("Restored ship is missing weapon configuration.");
+                if (saved.Weapons != null && !ship.Loadout.Weapons.ConfirmConfiguration(saved.Weapons)) throw new ArgumentException("Invalid restored weapon configuration.");
             }
             foreach (var ship in ships.Values) AddChild(ship);
         }

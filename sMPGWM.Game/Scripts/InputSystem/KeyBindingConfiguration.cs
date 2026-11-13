@@ -12,7 +12,7 @@ internal sealed class KeyBindingConfiguration
     [
         "Forwards", "Backwards", "StrafeLeft", "StrafeRight", "AfterBurner", "Break", "EnableAutoBreaking",
         "Action", "AlternateAction", "TargetSwitch", "TargetNearestSwitch", "MainMenu", "InventoryMenu",
-        "MapMenu", "MessageMenu"
+        "MapMenu", "MessageMenu", "FireGroup2", "ReloadWeapons"
     ];
 
     public KeyBindingDefinition[] Actions { get; }
@@ -69,6 +69,28 @@ internal sealed class KeyBindingConfiguration
             bindings[row, 1] = Decode(Require(definition, "secondary", actionPath), actionPath + ".secondary");
         }
         return new KeyBindingConfiguration(actions, bindings, values.Duplicate(true));
+    }
+
+    public static Variant MergeNewActions(Variant defaults, Variant effective)
+    {
+        if (defaults.VariantType != Variant.Type.Dictionary || effective.VariantType != Variant.Type.Dictionary) return effective;
+        var merged = effective.AsGodotDictionary().Duplicate(true);
+        var shipped = defaults.AsGodotDictionary();
+        foreach (var action in new[] { "FireGroup2", "ReloadWeapons" })
+        {
+            if (merged.ContainsKey(action) || !shipped.ContainsKey(action)) continue;
+            var definition = shipped[action].AsGodotDictionary().Duplicate(true);
+            var order = definition["order"].AsInt64();
+            foreach (var entry in merged)
+                if (entry.Value.VariantType == Variant.Type.Dictionary && entry.Value.AsGodotDictionary().TryGetValue("order", out var existing) &&
+                    existing.VariantType == Variant.Type.Int && existing.AsInt64() >= order)
+                    order = checked(existing.AsInt64() + 1);
+            definition["order"] = order;
+            merged[action] = definition;
+        }
+        if (merged.TryGetValue("Action", out var primary) && primary.VariantType == Variant.Type.Dictionary)
+            primary.AsGodotDictionary()["label"] = "Fire Group 1";
+        return merged;
     }
 
     public static void RequireMatchingActions(KeyBindingConfiguration defaults, KeyBindingConfiguration effective, string source)

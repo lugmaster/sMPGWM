@@ -28,8 +28,8 @@ public sealed class HealthResourceTests // TEST-SUPPORT: HEALTH-RESOURCE-005 | T
         Assert.That(notifications, Is.EqualTo(1)); // TEST-SUPPORT: HEALTH-RESOURCE-026 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
         Assert.That(ship.SetHealthCurrent(0), Is.True); // TEST-SUPPORT: HEALTH-RESOURCE-027 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
         Assert.That(ship.Health.Current, Is.Zero); // TEST-SUPPORT: HEALTH-RESOURCE-028 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
-        Assert.That(ship.SetHealthCurrent(150), Is.True); // TEST-SUPPORT: HEALTH-RESOURCE-029 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
-        Assert.That(ship.Health.Current, Is.EqualTo(150)); // TEST-SUPPORT: HEALTH-RESOURCE-030 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
+        Assert.Throws<InvalidOperationException>(() => ship.SetHealthCurrent(150)); // TEST-SUPPORT: HEALTH-RESOURCE-029 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
+        Assert.That(ship.Health.Current, Is.Zero); // TEST-SUPPORT: HEALTH-RESOURCE-030 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
         ship.Dispose(); // TEST-SUPPORT: HEALTH-RESOURCE-031 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
         var disposedRevision = ship.Revision; // TEST-SUPPORT: HEALTH-RESOURCE-032 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges
         Assert.That(ship.SetHealthCurrent(20), Is.False); // TEST-SUPPORT: HEALTH-RESOURCE-033 | Tests: sMPGWM.Tests.HealthResourceTests.InitializesAndPublishesValidatedHealthChanges

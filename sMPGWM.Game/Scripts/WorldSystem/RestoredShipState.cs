@@ -4,4 +4,7 @@ using sMPGWM.Scripts.ShipSystem;
 namespace sMPGWM.Scripts.WorldSystem;
 
 public sealed record RestoredShipState(EntitySpawnRecord Entity, ItemContainerState Equipment,
-    ShipRuntimeState Runtime, ShipMovementState Movement);
+    ShipRuntimeState Runtime, ShipMovementState Movement)
+{
+    public sMPGWM.Scripts.WeaponSystem.WeaponConfigurationSnapshot? Weapons { get; init; }
+}

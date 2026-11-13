@@ -1,0 +1,491 @@
+{
+  "windowSeconds": [
+    10,
+    29
+  ],
+  "percentile": "nearest-rank",
+  "runs": [
+    {
+      "scenario": "smg15-nine",
+      "run": "5-players-run-1",
+      "allPeersPassed": false,
+      "players": 5,
+      "hostConfirmedShots": 0,
+      "hostStepMs": {
+        "p50": 0.1512,
+        "p95": 0.3718,
+        "p99": 0.5098
+      },
+      "hostPublicationIntervalMs": {
+        "p50": 33.3336,
+        "p95": 33.6056,
+        "p99": 34.9115
+      },
+      "hostStepAllocationBytesPerSecond": 697599.1578947369,
+      "hostGcPauseMs": 13.783,
+      "hostToClientsBytesPerSecond": 79435.15203461716,
+      "clientsToHostBytesPerSecond": 20402.748337658344,
+      "maxPoolHighWater": 0,
+      "maxPoolDrops": 0,
+      "peerLocalShots": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "engineErrors": {
+        "host": {
+          "ERROR: Unable to send packet on channel 0, max channels: 0": 6
+        }
+      },
+      "arguments": {
+        "output": "docs/measurements/2026-11-14-hitscan/smg15-nine",
+        "players": [
+          5,
+          10
+        ],
+        "repeats": 1,
+        "seconds": 30.0,
+        "scenario": "combat",
+        "configuration": "Release",
+        "diagnostic": false,
+        "uninstrumented": false,
+        "latejoin": false,
+        "impairment": "moderate",
+        "combat_weapons": 9,
+        "combat_rate": 15
+      },
+      "exitCodes": {
+        "host": 2,
+        "client-1": 2,
+        "client-2": 2,
+        "client-3": 2,
+        "client-4": 2
+      }
+    },
+    {
+      "scenario": "smg15-nine-powered",
+      "run": "5-players-run-1",
+      "allPeersPassed": true,
+      "players": 5,
+      "hostConfirmedShots": 12285,
+      "hostStepMs": {
+        "p50": 0.3147,
+        "p95": 0.6391,
+        "p99": 0.8209
+      },
+      "hostPublicationIntervalMs": {
+        "p50": 33.3333,
+        "p95": 33.6986,
+        "p99": 34.049
+      },
+      "hostStepAllocationBytesPerSecond": 1132104.4210526317,
+      "hostGcPauseMs": 46.368,
+      "hostToClientsBytesPerSecond": 196373.35102653626,
+      "clientsToHostBytesPerSecond": 20699.900449666522,
+      "maxPoolHighWater": 171,
+      "maxPoolDrops": 0,
+      "peerLocalShots": [
+        2376,
+        2187,
+        2244,
+        2160,
+        3105
+      ],
+      "engineErrors": {
+        "client-1": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "host": {
+          "ERROR: Unable to send packet on channel 0, max channels: 0": 6,
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        }
+      },
+      "arguments": {
+        "output": "docs/measurements/2026-11-14-hitscan/smg15-nine-powered",
+        "players": [
+          5,
+          10
+        ],
+        "repeats": 1,
+        "seconds": 30.0,
+        "scenario": "combat",
+        "configuration": "Release",
+        "diagnostic": false,
+        "uninstrumented": false,
+        "latejoin": false,
+        "impairment": "moderate",
+        "combat_weapons": 9,
+        "combat_rate": 15
+      },
+      "exitCodes": {
+        "host": 0,
+        "client-1": 0,
+        "client-2": 0,
+        "client-3": 0,
+        "client-4": 0
+      }
+    },
+    {
+      "scenario": "smg15-nine-powered",
+      "run": "10-players-run-1",
+      "allPeersPassed": true,
+      "players": 10,
+      "hostConfirmedShots": 23004,
+      "hostStepMs": {
+        "p50": 0.5211,
+        "p95": 1.3743,
+        "p99": 1.617
+      },
+      "hostPublicationIntervalMs": {
+        "p50": 33.3366,
+        "p95": 33.9779,
+        "p99": 34.818
+      },
+      "hostStepAllocationBytesPerSecond": 2356477.052631579,
+      "hostGcPauseMs": 96.18700000000001,
+      "hostToClientsBytesPerSecond": 787636.6260898256,
+      "clientsToHostBytesPerSecond": 45423.23379876016,
+      "maxPoolHighWater": 297,
+      "maxPoolDrops": 8,
+      "peerLocalShots": [
+        2385,
+        2244,
+        2214,
+        2169,
+        2136,
+        2124,
+        2145,
+        2082,
+        2019,
+        3114
+      ],
+      "engineErrors": {
+        "client-1": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "client-3": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "host": {
+          "ERROR: Unable to send packet on channel 0, max channels: 0": 6
+        }
+      },
+      "arguments": {
+        "output": "docs/measurements/2026-11-14-hitscan/smg15-nine-powered",
+        "players": [
+          5,
+          10
+        ],
+        "repeats": 1,
+        "seconds": 30.0,
+        "scenario": "combat",
+        "configuration": "Release",
+        "diagnostic": false,
+        "uninstrumented": false,
+        "latejoin": false,
+        "impairment": "moderate",
+        "combat_weapons": 9,
+        "combat_rate": 15
+      },
+      "exitCodes": {
+        "host": 0,
+        "client-1": 0,
+        "client-2": 0,
+        "client-3": 0,
+        "client-4": 0,
+        "client-5": 0,
+        "client-6": 0,
+        "client-7": 0,
+        "client-8": 0,
+        "client-9": 0
+      }
+    },
+    {
+      "scenario": "smg15-one-powered",
+      "run": "5-players-run-1",
+      "allPeersPassed": true,
+      "players": 5,
+      "hostConfirmedShots": 1377,
+      "hostStepMs": {
+        "p50": 0.219,
+        "p95": 0.5313,
+        "p99": 0.7188
+      },
+      "hostPublicationIntervalMs": {
+        "p50": 33.3282,
+        "p95": 33.6694,
+        "p99": 34.1921
+      },
+      "hostStepAllocationBytesPerSecond": 981127.5789473684,
+      "hostGcPauseMs": 15.183,
+      "hostToClientsBytesPerSecond": 93448.47473420178,
+      "clientsToHostBytesPerSecond": 20745.110904576366,
+      "maxPoolHighWater": 19,
+      "maxPoolDrops": 0,
+      "peerLocalShots": [
+        265,
+        256,
+        242,
+        243,
+        345
+      ],
+      "engineErrors": {
+        "client-2": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "host": {
+          "ERROR: Unable to send packet on channel 0, max channels: 0": 3,
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        }
+      },
+      "arguments": {
+        "output": "docs/measurements/2026-11-14-hitscan/smg15-one-powered",
+        "players": [
+          5,
+          10
+        ],
+        "repeats": 1,
+        "seconds": 30.0,
+        "scenario": "combat",
+        "configuration": "Release",
+        "diagnostic": false,
+        "uninstrumented": false,
+        "latejoin": false,
+        "impairment": "moderate",
+        "combat_weapons": 1,
+        "combat_rate": 15
+      },
+      "exitCodes": {
+        "host": 0,
+        "client-1": 0,
+        "client-2": 0,
+        "client-3": 0,
+        "client-4": 0
+      }
+    },
+    {
+      "scenario": "smg15-one-powered",
+      "run": "10-players-run-1",
+      "allPeersPassed": true,
+      "players": 10,
+      "hostConfirmedShots": 2557,
+      "hostStepMs": {
+        "p50": 0.4389,
+        "p95": 0.9458,
+        "p99": 1.2456
+      },
+      "hostPublicationIntervalMs": {
+        "p50": 33.3284,
+        "p95": 33.801,
+        "p99": 34.1354
+      },
+      "hostStepAllocationBytesPerSecond": 1778111.5789473683,
+      "hostGcPauseMs": 50.281000000000006,
+      "hostToClientsBytesPerSecond": 367204.701006803,
+      "clientsToHostBytesPerSecond": 45327.60554907726,
+      "maxPoolHighWater": 33,
+      "maxPoolDrops": 0,
+      "peerLocalShots": [
+        263,
+        244,
+        249,
+        246,
+        239,
+        238,
+        239,
+        232,
+        227,
+        348
+      ],
+      "engineErrors": {
+        "client-2": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "client-3": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "host": {
+          "ERROR: Unable to send packet on channel 0, max channels: 0": 18
+        }
+      },
+      "arguments": {
+        "output": "docs/measurements/2026-11-14-hitscan/smg15-one-powered",
+        "players": [
+          5,
+          10
+        ],
+        "repeats": 1,
+        "seconds": 30.0,
+        "scenario": "combat",
+        "configuration": "Release",
+        "diagnostic": false,
+        "uninstrumented": false,
+        "latejoin": false,
+        "impairment": "moderate",
+        "combat_weapons": 1,
+        "combat_rate": 15
+      },
+      "exitCodes": {
+        "host": 0,
+        "client-1": 0,
+        "client-2": 0,
+        "client-3": 0,
+        "client-4": 0,
+        "client-5": 0,
+        "client-6": 0,
+        "client-7": 0,
+        "client-8": 0,
+        "client-9": 0
+      }
+    },
+    {
+      "scenario": "smg60-nine-powered",
+      "run": "5-players-run-1",
+      "allPeersPassed": true,
+      "players": 5,
+      "hostConfirmedShots": 27243,
+      "hostStepMs": {
+        "p50": 0.3883,
+        "p95": 0.7273,
+        "p99": 0.9163
+      },
+      "hostPublicationIntervalMs": {
+        "p50": 33.3329,
+        "p95": 33.7386,
+        "p99": 33.976
+      },
+      "hostStepAllocationBytesPerSecond": 1402579.7894736843,
+      "hostGcPauseMs": 77.711,
+      "hostToClientsBytesPerSecond": 326651.3939703627,
+      "clientsToHostBytesPerSecond": 20878.82578228502,
+      "maxPoolHighWater": 362,
+      "maxPoolDrops": 283,
+      "peerLocalShots": [
+        5346,
+        5139,
+        4929,
+        4803,
+        6651
+      ],
+      "engineErrors": {
+        "client-2": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "client-3": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "client-4": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "host": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        }
+      },
+      "arguments": {
+        "output": "docs/measurements/2026-11-14-hitscan/smg60-nine-powered",
+        "players": [
+          5,
+          10
+        ],
+        "repeats": 1,
+        "seconds": 30.0,
+        "scenario": "combat",
+        "configuration": "Release",
+        "diagnostic": false,
+        "uninstrumented": false,
+        "latejoin": false,
+        "impairment": "moderate",
+        "combat_weapons": 9,
+        "combat_rate": 60
+      },
+      "exitCodes": {
+        "host": 0,
+        "client-1": 0,
+        "client-2": 0,
+        "client-3": 0,
+        "client-4": 0
+      }
+    },
+    {
+      "scenario": "smg60-nine-powered",
+      "run": "10-players-run-1",
+      "allPeersPassed": true,
+      "players": 10,
+      "hostConfirmedShots": 49572,
+      "hostStepMs": {
+        "p50": 0.8019,
+        "p95": 2.1687,
+        "p99": 3.7378
+      },
+      "hostPublicationIntervalMs": {
+        "p50": 33.316,
+        "p95": 34.2739,
+        "p99": 45.481
+      },
+      "hostStepAllocationBytesPerSecond": 3020741.052631579,
+      "hostGcPauseMs": 139.833,
+      "hostToClientsBytesPerSecond": 1246189.1059161741,
+      "clientsToHostBytesPerSecond": 45006.866409554386,
+      "maxPoolHighWater": 384,
+      "maxPoolDrops": 27165,
+      "peerLocalShots": [
+        5334,
+        5019,
+        4836,
+        4812,
+        4377,
+        4728,
+        4374,
+        4344,
+        2568,
+        6795
+      ],
+      "engineErrors": {
+        "client-4": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "client-7": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "client-8": {
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        },
+        "host": {
+          "ERROR: Unable to send packet on channel 0, max channels: 0": 12,
+          "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+        }
+      },
+      "arguments": {
+        "output": "docs/measurements/2026-11-14-hitscan/smg60-nine-powered",
+        "players": [
+          5,
+          10
+        ],
+        "repeats": 1,
+        "seconds": 30.0,
+        "scenario": "combat",
+        "configuration": "Release",
+        "diagnostic": false,
+        "uninstrumented": false,
+        "latejoin": false,
+        "impairment": "moderate",
+        "combat_weapons": 9,
+        "combat_rate": 60
+      },
+      "exitCodes": {
+        "host": 0,
+        "client-1": 0,
+        "client-2": 0,
+        "client-3": 0,
+        "client-4": 0,
+        "client-5": 0,
+        "client-6": 0,
+        "client-7": 0,
+        "client-8": 0,
+        "client-9": 0
+      }
+    }
+  ]
+}

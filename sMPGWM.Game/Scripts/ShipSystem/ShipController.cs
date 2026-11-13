@@ -122,6 +122,7 @@ public partial class ShipController : CharacterBody2D
     public void Simulate(double delta)
     {
 
+        if (!Runtime.IsAlive) { Velocity = Vector2.Zero; ClearInput(); }
         var previousRotation = GlobalRotation;
         var s = MovementConfiguration;
         if (s.Enabled)

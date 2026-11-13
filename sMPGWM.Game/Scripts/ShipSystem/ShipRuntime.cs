@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.ConditionSystem;
+using sMPGWM.Scripts.CombatSystem;
 using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.StatSystem;
 
@@ -38,7 +39,7 @@ public sealed class ShipRuntime : IDisposable
     public bool AfterburnerActive { get; private set; }
     public double EnergyConsumption => Stats.GetEnergyConsumption(AfterburnerActive);
     public bool PoweredSystemsAvailable => Components.Power != null && !EnergyDepleted;
-    public bool MovementAvailable => Components.Movement?.Available(Stats, PoweredSystemsAvailable) == true;
+    public bool MovementAvailable => IsAlive && Components.Movement?.Available(Stats, PoweredSystemsAvailable) == true;
     public bool ShieldProtectionAvailable => Components.Shield != null && Stats.HasShieldGenerator && PoweredSystemsAvailable &&
         _shield.Current > 0 && AuthoritativeTick >= ShieldDowntimeDeadline;
     public long ShieldDowntimeDeadline { get; private set; }
@@ -138,6 +139,8 @@ public sealed class ShipRuntime : IDisposable
                 throw new ArgumentException("Invalid restored condition: " + id);
             conditions[i] = id;
         }
+        if (state.HealthCapacity > 0 && conditionIds.Contains("dead") != (state.HealthCurrent == 0))
+            throw new ArgumentException("Restored death condition is inconsistent with health.");
         if (conditionIds.Contains("energyDepleted") != depleted)
             throw new ArgumentException("Restored energy condition is inconsistent.");
         if (state.PendingComponents is { } proposed)
@@ -214,7 +217,7 @@ public sealed class ShipRuntime : IDisposable
     public void SetAfterburner(bool active)
     {
         if (_disposed) return;
-        active &= Stats.HasEngine && Components.Movement != null;
+        active &= IsAlive && Stats.HasEngine && Components.Movement != null;
         if (AfterburnerActive == active) return;
         var beforeMovement = MovementAvailable;
         // Keep demand while depleted so holding afterburner cannot oscillate the power state.
@@ -232,6 +235,7 @@ public sealed class ShipRuntime : IDisposable
         if (tick <= _lastResourceTick || tick < AuthoritativeTick) return false;
         _lastResourceTick = tick;
         AuthoritativeTick = tick;
+        if (!IsAlive) return false;
         var beforeEnergy = _energy.Current;
         var beforeShield = _shield.Current;
         var beforeDepleted = EnergyDepleted;
@@ -293,10 +297,11 @@ public sealed class ShipRuntime : IDisposable
         ArgumentNullException.ThrowIfNull(condition);
         if (string.IsNullOrWhiteSpace(condition.Id) || condition.Id.Length > 64)
             throw new ArgumentException("Invalid condition ID.", nameof(condition));
+        if (condition.Id == "dead" && _initialized && _health.Capacity > 0) throw new InvalidOperationException("Death is derived from health.");
         if (condition.Id == "energyDepleted") throw new InvalidOperationException("Energy depletion is derived from the power supply.");
         var index = _conditions.IndexOf(condition.Id);
         if (active == (index >= 0)) return false;
-        if (active && _conditions.Count >= MaxConditions - 1) throw new InvalidOperationException("Condition limit reached.");
+        if (active && _conditions.Count >= MaxConditions - 2) throw new InvalidOperationException("Condition limit reached.");
         var revision = checked(Revision + 1);
         if (active) _conditions.Add(condition.Id);
         else _conditions.RemoveAt(index);
@@ -305,9 +310,69 @@ public sealed class ShipRuntime : IDisposable
         return true;
     }
 
+    public bool TrySpendEnergy(double amount)
+    {
+        if (!double.IsFinite(amount) || amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount));
+        if (!IsAlive || !PoweredSystemsAvailable || _energy.Current < amount) return false;
+        var revision = checked(Revision + 1);
+        var configurationRevision = checked(ConfigurationRevision + 1);
+        var movement = MovementAvailable;
+        _energy.SetCurrent(_energy.Current - amount);
+        RefreshPower();
+        if (movement != MovementAvailable) ConfigurationRevision = configurationRevision;
+        Revision = revision;
+        PublishChanges();
+        return true;
+    }
+
+    public DamageResult ApplyDamage(double amount)
+    {
+        if (!double.IsFinite(amount) || amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+        if (!IsAlive || amount == 0) return default;
+        var shieldDamage = ShieldProtectionAvailable ? Math.Min(amount, _shield.Current) : 0;
+        var healthDamage = Math.Min(_health.Current, (amount - shieldDamage) * (100d / (100d + Stats.Armor)));
+        if (shieldDamage == 0 && healthDamage == 0) return default;
+        var killed = healthDamage > 0 && healthDamage == _health.Current;
+        if (killed && _conditions.Count >= MaxConditions) throw new InvalidOperationException("Condition limit reached.");
+        var revision = checked(Revision + 1);
+        var configurationRevision = checked(ConfigurationRevision + 1);
+        ChangeShield(_shield.Current - shieldDamage);
+        _health.SetCurrent(_health.Current - healthDamage);
+        if (killed)
+        {
+            _conditions.Add("dead");
+            AfterburnerActive = false;
+            RefreshPower();
+            ConfigurationRevision = configurationRevision;
+        }
+        Revision = revision;
+        PublishChanges();
+        return new(shieldDamage, healthDamage, killed);
+    }
+
     public bool SetHealthCurrent(double current)
     {
-        if (_disposed || current == _health.Current) return false;
+        if (_disposed) return false;
+        if (!double.IsFinite(current) || current < 0 || current > _health.Capacity) throw new ArgumentOutOfRangeException(nameof(current));
+        if (current == _health.Current) return false;
+        if (_initialized && _health.Capacity > 0)
+        {
+            if (!IsAlive) throw new InvalidOperationException("Dead ships cannot be revived.");
+            if (current == 0)
+            {
+                if (_conditions.Count >= MaxConditions) throw new InvalidOperationException("Condition limit reached.");
+                var deathRevision = checked(Revision + 1);
+                var deathConfiguration = checked(ConfigurationRevision + 1);
+                _health.SetCurrent(0);
+                _conditions.Add("dead");
+                AfterburnerActive = false;
+                RefreshPower();
+                Revision = deathRevision;
+                ConfigurationRevision = deathConfiguration;
+                PublishChanges();
+                return true;
+            }
+        }
         var revision = checked(Revision + 1);
         _health.SetCurrent(current);
         Revision = revision;
@@ -367,6 +432,9 @@ public sealed class ShipRuntime : IDisposable
             energyDepleted != (stats.EnergyProduction < stats.GetEnergyConsumption(afterburnerActive) && energyCurrent == 0) ||
             shieldProtectionAvailable != ((components & (ShipComponentKind.Power | ShipComponentKind.Shield)) == (ShipComponentKind.Power | ShipComponentKind.Shield) && stats.HasShieldGenerator && !energyDepleted && current > 0 && authoritativeTick >= shieldDowntimeDeadline))
             throw new ArgumentException("Invalid confirmed gameplay state.");
+        var hasDead = false;
+        for (var i = 0; i < conditions.Count; i++) if (conditions[i] == "dead") hasDead = true;
+        if (healthCapacity > 0 && hasDead != (healthCurrent == 0)) throw new ArgumentException("Inconsistent death condition.");
         var hasDepleted = false;
         for (var i = 0; i < conditions.Count; i++) if (conditions[i] == "energyDepleted") hasDepleted = true;
         if (hasDepleted != energyDepleted) throw new ArgumentException("Inconsistent energy condition.");

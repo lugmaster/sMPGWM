@@ -23,6 +23,21 @@ public static class YamlParser
         if (!dataResult.IsSuccess)
             return LoadResult<JToken>.Failure(dataResult.Error!);
 
+        if (dataResult.Value is JObject document)
+        {
+            if (document["Items"] is JArray items)
+                foreach (var item in items)
+                    if ((string?)item["CategoryId"] is "light_weapon" or "medium_weapon" or "heavy_weapon" &&
+                        (item["Weapon"] == null || item["Values"]?["MagazinSize"] != null))
+                        return LoadResult<JToken>.Failure(new DataLoadError("Weapon format migration required",
+                            $"Item '{item["Id"]}': use Version: 3.0.0; add Weapon: {{Archetype: SMG, Delivery: HitScan, FireMode: Automatic, SupplyMode: Ammunition, PresentationId: smg_standard}}; replace MagazinSize with MagazineCapacity, add Range and SpreadDegrees, and remove EnergyPerShot for ammunition. See packaged light_weapon.yml for complete examples. User definitions were preserved.", sourcePath, schemaPath));
+            if (document["ships"] is JArray ships)
+                foreach (var ship in ships)
+                    if (ship["muzzle_offsets"] == null)
+                        return LoadResult<JToken>.Failure(new DataLoadError("Ship format migration required",
+                            $"Ship '{ship["name"]}': use Version: 3.0.0 and add two authored muzzle_offsets (fighter example: [[1,-15],[1,15]]). User definitions were preserved.", sourcePath, schemaPath));
+        }
+
         var schemaTokenResult = ParseToken(yamlSchemaText, schemaPath, "YAML schema");
         if (!schemaTokenResult.IsSuccess)
             return LoadResult<JToken>.Failure(schemaTokenResult.Error!);

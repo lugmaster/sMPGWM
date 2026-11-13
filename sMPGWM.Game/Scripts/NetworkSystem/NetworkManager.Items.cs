@@ -21,6 +21,7 @@ public partial class NetworkManager
     internal void ResetItemBinding()
     {
         _hasItemBaseline = false;
+        _hasWeaponBaseline = false;
         _pendingItemRequest = 0;
         ItemBindingChanged?.Invoke();
     }
@@ -96,7 +97,7 @@ public partial class NetworkManager
             return false;
         }
         _publishedItemRevisions[peer] = (player.ControlGeneration, player.Inventory.Revision, player.ControlledShip?.Equipment.Revision ?? 0);
-        return true;
+        return SendWeapons(peer);
     }
 
     private void PublishItemChanges()
@@ -133,7 +134,7 @@ public partial class NetworkManager
         var wasReady = _hasItemBaseline;
         _hasItemBaseline = true;
         if (!wasReady) ItemBindingChanged?.Invoke();
-        if (_stopped || !_clientJoin.ApplyItems(Time.GetTicksMsec())) return;
+        if (_stopped || !_hasWeaponBaseline || !_clientJoin.ApplyItems(Time.GetTicksMsec())) return;
         if (RpcId(1, nameof(ConfirmSpawnReady), session, owner.ControlledShip?.EntityId ?? "",
                 owner.ControlGeneration) != Error.Ok) FailSession("Spawn acknowledgement failed.");
     }
@@ -152,6 +153,10 @@ public partial class NetworkManager
 
     private void RemovePlayerItems(int peer)
     {
+        _weaponHistory.Remove(peer);
+        _latestWeaponRequest.Remove(peer);
+        _publishedWeapons.Remove(peer);
+        _pendingWeapons.RemoveWhere(entry => entry.Peer == peer);
         _itemRequests.Remove(peer);
         _itemRequestTimes.Remove(peer);
         _publishedItemRevisions.Remove(peer);
@@ -164,6 +169,7 @@ public partial class NetworkManager
         _publishedItemRevisions.Clear();
         _pendingItemRequest = 0;
         _hasItemBaseline = false;
+        _hasWeaponBaseline = false;
         ItemFeedback = null;
         ItemBindingChanged = null;
     }

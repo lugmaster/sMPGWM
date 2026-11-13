@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.UtilitySystem;
+using sMPGWM.Scripts.WeaponSystem;
 
 namespace sMPGWM.Scripts.ItemSystem;
 
 /// <summary>Item identity, storage and movement. Commands run on the game thread.</summary>
 public sealed class ItemStore
 {
+    public WeaponStateStore Weapons { get; } = new();
     private readonly Dictionary<ItemEntityId, ItemEntity> _items = new();
     private readonly Dictionary<ItemEntityId, ItemLocation> _locations = new();
     private readonly Dictionary<ItemContainerId, ItemContainer> _containers = new();
@@ -14,6 +16,7 @@ public sealed class ItemStore
     internal bool IsEmpty => _containers.Count == 0 && _items.Count == 0 && _locations.Count == 0;
 
     public ItemEntity GetItem(ItemEntityId id) => _items[id];
+    public bool TryGetItem(ItemEntityId id, out ItemEntity item) => _items.TryGetValue(id, out item!);
     public ItemLocation GetLocation(ItemEntityId id) => _locations[id];
 
     public ItemContainerState Capture(ItemContainer container)
@@ -87,6 +90,7 @@ public sealed class ItemStore
         {
             if (item == null) continue;
             _items.Remove(item.Id);
+            Weapons.Remove(item.Id);
             _locations.Remove(item.Id);
         }
         _containers.Remove(container.Id);
@@ -316,10 +320,14 @@ public sealed class ItemStore
         // Reserve before committing so index updates cannot allocate midway through a transfer.
         _items.EnsureCapacity(finalCount);
         _locations.EnsureCapacity(finalCount);
-        return new PreparedTransaction(this, states, domainInstalls);
+        var removedWeapons = new List<ItemEntityId>();
+        foreach (var container in changes.Keys)
+            foreach (var item in container.Entities)
+                if (item?.Definition.Weapon != null && !identities.Contains(item.Id)) removedWeapons.Add(item.Id);
+        return new PreparedTransaction(this, states, domainInstalls, Weapons.PrepareItems(changes.Values), removedWeapons);
     }
 
-    private sealed class PreparedTransaction(ItemStore store, ItemContainer.PreparedState[] states, Action?[] domainInstalls)
+    private sealed class PreparedTransaction(ItemStore store, ItemContainer.PreparedState[] states, Action?[] domainInstalls, Action installWeapons, List<ItemEntityId> removedWeapons)
     {
         internal void Commit()
         {
@@ -337,7 +345,9 @@ public sealed class ItemStore
                     store._locations.Add(item.Id, new ItemLocation(state.Container.Id, index));
                 }
             }
+            installWeapons();
             foreach (var install in domainInstalls) install?.Invoke();
+            foreach (var item in removedWeapons) store.Weapons.Remove(item);
         }
     }
 

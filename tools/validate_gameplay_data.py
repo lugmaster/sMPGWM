@@ -167,6 +167,9 @@ def validate(documents, schemas):
             errors.append(f'{owner}: unknown item category')
         category = indices['categories'].get(item['CategoryId'], {})
         required = {v.strip() for v in category.get('Values', '').split(',') if v.strip()}
+        if item['CategoryId'] in ('light_weapon', 'medium_weapon', 'heavy_weapon'): # TEST-SUPPORT: WEAPON-DATA-VALIDATOR-001 | Tests: tools.validate_gameplay_data.main
+            supply = item.get('Weapon', {}).get('SupplyMode') # TEST-SUPPORT: WEAPON-DATA-VALIDATOR-002 | Tests: tools.validate_gameplay_data.main
+            required.update(('MagazineCapacity', 'ReloadDuration') if supply == 'Ammunition' else ('EnergyPerShot',)) # TEST-SUPPORT: WEAPON-DATA-VALIDATOR-003 | Tests: tools.validate_gameplay_data.main
         values = item.get('Values', {})
         for key in required:
             if key == 'AbilityIds':

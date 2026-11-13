@@ -26,6 +26,8 @@ public static class ItemDefinitionDocuments
         foreach (var file in Files)
         {
             var document = load(file);
+            if ((string?)document["Version"] != "3.0.0")
+                throw new InvalidOperationException($"{file}: item format 3.0.0 required; migrate weapon metadata and supply fields in all eleven item files together. Packaged light_weapon.yml provides Vulcan and Laser examples.");
             if (combined is null)
             {
                 combined = document;

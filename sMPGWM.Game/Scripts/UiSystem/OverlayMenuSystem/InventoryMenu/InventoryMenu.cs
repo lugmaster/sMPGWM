@@ -3,6 +3,7 @@ using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem.Hotbar;
@@ -35,6 +36,8 @@ public partial class InventoryMenu : GameOverlayMenu
     private bool _nativeDrag;
     private bool _dropping;
     internal bool IsCarrying => _interaction?.IsCarrying == true;
+    private NetworkManager? _combatNetwork;
+    internal void BindCombat(NetworkManager? network) { _combatNetwork = network; _equipmentView?.BindCombat(network); }
 
     internal void SetPointerOverlay(ItemPointerOverlay overlay)
     {
@@ -101,6 +104,7 @@ public partial class InventoryMenu : GameOverlayMenu
         base.OnReady();
         _inventoryView = GetNode<InventoryContainer>("%InventoryContainer");
         _equipmentView = GetNode<EquipmentContainer>("%EquipmentContainer");
+        _equipmentView.BindCombat(_combatNetwork);
         if (_inventory != null) BindViews();
     }
 

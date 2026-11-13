@@ -1,7 +1,10 @@
-Version: 2.0.0
+Version: 3.0.0
 ships:
   - name: "fighter"
     texture_path: "res://assets/mocks/ship_fighter_reference.png"
+    muzzle_offsets:
+      - [1, -15]
+      - [1, 15]
     collider_points:
       - [27, -1]
       - [22, -7]

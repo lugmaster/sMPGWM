@@ -1,28 +1,41 @@
-Version: 2.0.0
+Version: 3.0.0
 Items:
-  - Id: mock_standard_light_weapon
-    DisplayName: Standard Light Weapon
+  - Id: vulcan_mk1
+    DisplayName: Vulcan Mk1
     CategoryId: light_weapon
+    Description: Fast-firing physical SMG with a reloadable magazine.
+    Weapon:
+      Archetype: SMG
+      Delivery: HitScan
+      FireMode: Automatic
+      SupplyMode: Ammunition
+      PresentationId: smg_standard
     Values:
       DamageSource: physical
-      Damage: 1
-      AttackSpeed: 1
+      Damage: 1.8
+      AttackSpeed: 15
+      Range: 800
+      SpreadDegrees: 6
       EnergyConsumption: 1
-      EnergyPerShot: 1
-      MagazinSize: 1
-      ReloadDuration: 1
+      MagazineCapacity: 60
+      ReloadDuration: 1500
       Mass: 1
-    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
-  - Id: mock_advanced_light_weapon
-    DisplayName: Advanced Light Weapon
+  - Id: laser_mk1
+    DisplayName: Laser Mk1
     CategoryId: light_weapon
+    Description: Precise laser firing repeated energy-powered pulses.
+    Weapon:
+      Archetype: Laser
+      Delivery: HitScan
+      FireMode: Automatic
+      SupplyMode: Energy
+      PresentationId: laser_standard
     Values:
-      DamageSource: physical
-      Damage: 1
-      AttackSpeed: 1
-      EnergyConsumption: 1
-      EnergyPerShot: 1
-      MagazinSize: 1
-      ReloadDuration: 1
+      DamageSource: laser
+      Damage: 9
+      AttackSpeed: 3
+      Range: 1200
+      SpreadDegrees: 0
+      EnergyConsumption: 2
+      EnergyPerShot: 4
       Mass: 1
-    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."

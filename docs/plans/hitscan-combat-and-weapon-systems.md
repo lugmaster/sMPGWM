@@ -1,7 +1,7 @@
 # Hitscan combat and weapon systems — implementation handover
 
 Date: 2026-11-14  
-Status: planning complete; gameplay implementation has not started.  
+Status: gameplay implementation integrated; build, automated Godot integration, startup, and short impaired ENet firing runs pass. Full transport/performance acceptance remains subject to the limitations below.
 Repository inspected at: `a93ba62f76eb14669bc1124f109ee5117ce273b8`  
 Primary data entry point: [light_weapon.yml](../../sMPGWM.Game/assets/game_data/items/light_weapon.yml)
 
@@ -451,4 +451,16 @@ No projectile entities, generic strategy registry, rewind history, or unused pro
 - [ ] Record performance evidence and any untested transport/visual limitations.
 - [ ] Update this document's implementation status only with completed work and evidence.
 
-The Markdown plan is the only artifact created during this planning task. Gameplay code, schemas, and authored item data remain unchanged until implementation is requested.
+## 16. Implementation evidence (2026-11-14)
+
+Implemented typed weapon definitions and v3 item/ship migration diagnostics; the supplied Vulcan and Laser; per-item magazines/cadence/reload state; transactional slot groups; fixed-forward alternating hitscan; atomic energy payment; shield overflow, hull mitigation and inert death; reliable owner weapon baselines and requests; held-fire input with revision validation; recovery/restoration; separate bounded unreliable shot batches; pooled presentation/audio; configurable controls and equipment weapon status.
+
+Protocol is now 12. Movement snapshots for ten players are 1,225 bytes; six-command input packets are 221 bytes. Shot batches hold at most 15 events (1,142 bytes), below the 1,200-byte ceiling. Ready peers receive changed gameplay rows; joining peers retain complete gameplay baselines. Ammo revisions do not modify inventory revisions.
+
+Validation: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-restore` passed 374 outer tests, including the real Godot integration runner. Coverage includes weapon timing, reload, resource/death arithmetic, collision exclusions and origin-inside blocking, simultaneous trades, packet bounds, owner state, stale binding readiness, pool exhaustion/deduplication, and restoration. Normal Godot 4.7.2 main-scene startup reached StartMenu in an isolated 120-frame headless run with exit code 0. No user-authored data was overwritten by these validation runs.
+
+Six short impaired ENet process runs passed: five and ten players, one and nine 15/s SMGs, plus nine 60/s synthetic SMGs. See [measurement evidence and limitations](../measurements/2026-11-14-hitscan/README.md). The initial underpowered nine-weapon fixture correctly refused fire; the measured powered fixtures use a test-only reactor increase. The ceiling run exhausts cosmetic pools without suppressing accepted shots. GC pauses and publication outliers remain measurable; this is not a claim of zero allocations or a completed long-duration performance acceptance gate.
+
+Not verified: live multiplayer through GodotSteam, exported-build interoperability, long-duration reliable backlog, the entire dense-hit/mixed-supply impairment matrix, and subjective rendered/audio quality. Short-run teardown logs include an ENet disconnect-publication race; see the measurement notes. Host-confirmed shots intentionally have network latency and no historical hit rewind. These limitations must remain visible rather than marking phase 6 fully accepted.
+
+Default controls: LMB fire group 1, F fire group 2, R reload all ammunition weapons; RMB retains steering. The equipment Weapons tab edits groups and displays authoritative ammunition/reload/power state. Existing authored v2 data requires explicit migration or the existing default-reload workflow.

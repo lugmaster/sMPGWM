@@ -36,6 +36,8 @@ internal sealed class LocalPlayerBindings : IDisposable
         _hotbar = hotbar; _targeting = targeting; _fixture = fixture;
         _emptyInventory = emptyInventory; _emptyEquipment = emptyEquipment;
         player.ParticipantChanged += Bind;
+        player.ReloadRequested += network.RequestWeaponReload;
+        player.CombatReady = () => network.WeaponBaselineReady;
         network.ItemBindingChanged += Refresh;
         hotbar.EquipmentAbilitiesAvailable = () => _network.ItemBaselineReady && _owner?.ControlledShip?.Runtime.AbilityAdmissionAvailable == true;
         Bind(player.Participant);
@@ -101,6 +103,8 @@ internal sealed class LocalPlayerBindings : IDisposable
         _disposed = true;
         if (_boundShip != null) _boundShip.Runtime.Changed -= RuntimeChanged;
         _player.ParticipantChanged -= Bind;
+        _player.ReloadRequested -= _network.RequestWeaponReload;
+        _player.CombatReady = null;
         _network.ItemBindingChanged -= Refresh;
         if (_owner != null) _owner.ControlledShipChanged -= ShipChanged;
         _transfers.RevokeEditSession();

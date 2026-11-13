@@ -11,6 +11,8 @@ public sealed class ShipDefinition
     public string TexturePath { get; set; } = "";
     [JsonProperty("collider_points", Required = Required.Always)]
     public List<double[]> ColliderPoints { get; set; } = new();
+    [JsonProperty("muzzle_offsets", Required = Required.Always)]
+    public List<double[]> MuzzleOffsets { get; set; } = new();
     [JsonProperty("mass", Required = Required.Always)]
     public double Mass { get; set; }
     [JsonProperty("health", Required = Required.Always)]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
+using sMPGWM.Scripts.WeaponSystem;
 using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
@@ -78,7 +79,25 @@ public static class ItemDefinitionParser
                 if (legacyValues.ContainsKey("Energy"))
                     throw new ArgumentException($"Item '{row["Id"]}': remove legacy Energy; use EnergyProduction on reactors and EnergyStorage on batteries.");
             }
-            foreach (var required in category.Values)
+            var weaponCategory = categoryId is "light_weapon" or "medium_weapon" or "heavy_weapon";
+            WeaponDefinition? weapon = null;
+            if (weaponCategory)
+            {
+                if (canStack) throw new ArgumentException("Weapons must be nonstackable.");
+                weapon = ParseWeapon(row);
+            }
+            else if (row["Weapon"] != null) throw new ArgumentException("Weapon metadata requires a weapon category.");
+            var requiredValues = new List<string>(category.Values);
+            if (weapon != null)
+            {
+                if (weapon.SupplyMode == WeaponSupplyMode.Ammunition)
+                {
+                    requiredValues.Add("MagazineCapacity");
+                    requiredValues.Add("ReloadDuration");
+                }
+                else requiredValues.Add("EnergyPerShot");
+            }
+            foreach (var required in requiredValues)
             {
                 if (required == "AbilityIds")
                 {
@@ -106,6 +125,7 @@ public static class ItemDefinitionParser
                 row["Icon"]?.Type == JTokenType.String ? resolveIcon((string)row["Icon"]!) : category.Icon!)
             {
                 CategoryId = category.Id,
+                Weapon = weapon,
                 Values = new System.Collections.ObjectModel.ReadOnlyDictionary<string, object>(values),
                 AbilityIds = abilities.AsReadOnly(),
                 BehaviourGrants = grants.AsReadOnly()
@@ -114,6 +134,68 @@ public static class ItemDefinitionParser
             return definition;
         })) definitions.Add(definition.Id, definition);
         return definitions;
+    }
+
+    private static WeaponDefinition ParseWeapon(JToken row)
+    {
+        if (row["Values"]?["MagazinSize"] != null || row["Weapon"] is not JObject metadata)
+            throw new ArgumentException("Weapon format 3.0.0 required: add Weapon: {Archetype: SMG, Delivery: HitScan, FireMode: Automatic, SupplyMode: Ammunition, PresentationId: smg_standard}; replace MagazinSize with MagazineCapacity, add Range and SpreadDegrees, and remove EnergyPerShot for ammunition weapons.");
+        string Identifier(string key)
+        {
+            var value = (string?)metadata[key];
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 64)
+                throw new ArgumentException($"Weapon.{key}: expected identifier of at most 64 characters.");
+            foreach (var character in value)
+                if (!char.IsAsciiLetterOrDigit(character) && character != '_')
+                    throw new ArgumentException($"Weapon.{key}: invalid identifier.");
+            return value;
+        }
+        if (metadata.Count != 5) throw new ArgumentException("Weapon requires exactly Archetype, Delivery, FireMode, SupplyMode and PresentationId.");
+        var archetype = Identifier("Archetype");
+        if (Identifier("Delivery") != "HitScan" || Identifier("FireMode") != "Automatic")
+            throw new ArgumentException("Only HitScan + Automatic weapons are currently supported.");
+        var supplyName = Identifier("SupplyMode");
+        var supply = supplyName switch
+        {
+            "Ammunition" => WeaponSupplyMode.Ammunition,
+            "Energy" => WeaponSupplyMode.Energy,
+            _ => throw new ArgumentException("Weapon.SupplyMode must be Ammunition or Energy.")
+        };
+        var profile = Identifier("PresentationId");
+        if (profile is not ("smg_standard" or "laser_standard"))
+            throw new ArgumentException($"Weapon.PresentationId: unknown profile '{profile}'.");
+        double Number(string key)
+        {
+            if (row["Values"]?[key] is not JValue value || value.Type is not (JTokenType.Integer or JTokenType.Float) ||
+                !double.IsFinite((double)value)) throw new ArgumentException($"Values.{key}: finite number required.");
+            return (double)value;
+        }
+        var capacity = 0;
+        var reloadTicks = 0L;
+        var energy = 0d;
+        if (supply == WeaponSupplyMode.Ammunition)
+        {
+            if (row["Values"]?["EnergyPerShot"] != null) throw new ArgumentException("Ammunition weapons forbid EnergyPerShot.");
+            var authoredCapacity = Number("MagazineCapacity");
+            var duration = Number("ReloadDuration");
+            if (authoredCapacity < 1 || authoredCapacity > ushort.MaxValue || authoredCapacity != Math.Truncate(authoredCapacity))
+                throw new ArgumentException("MagazineCapacity must be an integer in 1..65535.");
+            if (duration <= 0 || duration > long.MaxValue / 120d * 1000d)
+                throw new ArgumentException("ReloadDuration must be positive milliseconds with a representable tick deadline.");
+            capacity = (int)authoredCapacity;
+            reloadTicks = checked((long)Math.Max(1, Math.Ceiling(duration * 60 / 1000)));
+        }
+        else
+        {
+            if (row["Values"]?["MagazineCapacity"] != null || row["Values"]?["ReloadDuration"] != null)
+                throw new ArgumentException("Energy weapons forbid MagazineCapacity and ReloadDuration.");
+            energy = Number("EnergyPerShot");
+            if (energy <= 0) throw new ArgumentException("EnergyPerShot must be positive.");
+        }
+        var stats = new ResolvedWeaponStats((string?)row["Values"]?["DamageSource"] ?? "", Number("Damage"),
+            Number("AttackSpeed"), Number("Range"), Number("SpreadDegrees"), Number("EnergyConsumption"), energy, capacity, reloadTicks);
+        if (!stats.IsValid) throw new ArgumentException("Invalid resolved weapon stats: AttackSpeed must be (0,60], Range positive and representable, SpreadDegrees 0..180, Damage and EnergyConsumption nonnegative.");
+        return new(archetype, WeaponDelivery.HitScan, WeaponFireMode.Automatic, supply, profile, stats);
     }
 
 }

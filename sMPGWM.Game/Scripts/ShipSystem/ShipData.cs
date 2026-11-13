@@ -10,6 +10,7 @@ public sealed record ShipData : GameplayDefinition
     public string Name { get; }
     public string TexturePath { get; }
     public IReadOnlyList<Vector2> ColliderPoints { get; }
+    public IReadOnlyList<Vector2> MuzzleOffsets { get; }
     public ShipStats Stats { get; }
     public ShipStatModifiersDefinition StatModifiers { get; }
     public double Mass { get; }
@@ -21,6 +22,10 @@ public sealed record ShipData : GameplayDefinition
         Name = definition.Name;
         TexturePath = definition.TexturePath;
         ColliderPoints = Array.AsReadOnly((Vector2[])points.Clone());
+        var muzzles = new Vector2[definition.MuzzleOffsets.Count];
+        for (var i = 0; i < muzzles.Length; i++)
+            muzzles[i] = new((float)definition.MuzzleOffsets[i][0], (float)definition.MuzzleOffsets[i][1]);
+        MuzzleOffsets = Array.AsReadOnly(muzzles);
         Stats = stats;
         StatModifiers = definition.Stats with { };
         Mass = definition.Mass;

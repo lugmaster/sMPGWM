@@ -24,7 +24,7 @@ public static class KeyBindingSettings
     public static void LoadConfiguration(Variant defaults, Variant effective, string effectiveSource)
     {
         var shipped = KeyBindingConfiguration.Parse(defaults, FilePaths.SystemConfigPath);
-        var configured = KeyBindingConfiguration.Parse(effective, effectiveSource);
+        var configured = KeyBindingConfiguration.Parse(KeyBindingConfiguration.MergeNewActions(defaults, effective), effectiveSource);
         KeyBindingConfiguration.RequireMatchingActions(shipped, configured, effectiveSource);
         var defaultBindings = new InputEvent?[configured.Actions.Length, SlotCount];
         for (var row = 0; row < configured.Actions.Length; row++)

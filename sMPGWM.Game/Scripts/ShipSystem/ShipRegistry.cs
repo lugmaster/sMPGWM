@@ -65,6 +65,13 @@ public static class ShipRegistry
                 return new Vector2((float)pair[0], (float)pair[1]);
             }).ToArray();
             Require(IsUsablePolygon(points), "collider_points (duplicate, degenerate or intersecting polygon)");
+            Require(definition.MuzzleOffsets.Count == 2, "muzzle_offsets (format 3.0.0 requires two authored offsets, e.g. [[1,-15],[1,15]])");
+            foreach (var pair in definition.MuzzleOffsets)
+            {
+                Require(pair != null && pair.Length == 2, "muzzle_offsets");
+                Number(pair![0], "muzzle_offsets");
+                Number(pair[1], "muzzle_offsets");
+            }
             var s = definition.Stats;
             Number(s.ShieldCapacity, "ShieldCapacity");
             Number(s.Armor, "Armor");

@@ -443,6 +443,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         {
             PublishWorldTopology();
             Synchronization!.ResetCommands(peer);
+            RpcId(peer, nameof(ReceiveGameplay), session, GameplaySnapshot());
+            if (!SendItems(peer)) return;
             RpcId(peer, nameof(ReceiveBaseline), request, Synchronization.Baseline());
         }
     }
