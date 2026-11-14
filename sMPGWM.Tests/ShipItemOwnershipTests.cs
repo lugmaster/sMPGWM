@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.AbilitySystem;
@@ -21,7 +22,7 @@ public sealed class ShipItemOwnershipTests
             world.ApproveSpawn(1, new("fighter"));
             var player = world.Players[1];
             var ship = player.ControlledShip!;
-            var definition = (EngineItemDefinition)ItemRegistry.GetById("mock_standard_engine") with
+            var definition = (EngineItemDefinition)GameplayDefinitions.Current.Items.GetById("mock_standard_engine") with
                 { Mass = float.MaxValue };
             var item = new ItemEntity(ItemEntityId.Create(), definition, 1);
             var slots = new ItemEntity?[player.Inventory.Capacity];
@@ -185,7 +186,7 @@ public sealed class ShipItemOwnershipTests
             ship.Runtime.SetShieldCurrent(20);
             Assert.That(ship.Runtime.ApplyBehaviour(new SupportedBehaviour(abilities.Definitions.Behaviours.GetById("shieldCapacityBoost"), 1800, 0, .5), 1, 1, out _),
                 Is.True);
-            var definition = (ShieldGeneratorItemDefinition)ItemRegistry.GetById("mock_standard_shield_generator") with
+            var definition = (ShieldGeneratorItemDefinition)GameplayDefinitions.Current.Items.GetById("mock_standard_shield_generator") with
                 { ShieldCapacity = double.MaxValue / 1.2, RechargeTime = 5000, DownTime = 3000, AbilityIds = new[] { "shieldCapacityBoost" } };
             var candidate = new ItemEntity(ItemEntityId.Create(), definition, 1);
             var slots = new ItemEntity?[player.Inventory.Capacity];

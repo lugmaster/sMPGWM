@@ -1,6 +1,6 @@
 # Unified catalogue loading refactor
 
-Status: implemented and verified on 2026-11-14.
+Status: startup-loading refactor and DefinitionSet follow-up implemented and verified on 2026-11-14.
 Scope: gameplay definitions, item categories, items, and ships.  
 Primary reference: [Catalogue.cs](../../sMPGWM.Game/Scripts/GameplayDataSystem/Catalogue.cs).
 
@@ -21,10 +21,11 @@ CatalogueParser.Parse<TDefinition>()
     | constructs typed definitions and checks duplicate identities
     v
 TDefinition[]
-    | passed to the specific registry constructor
+    | passed to the shared definition-set constructor
     v
-SpecificRegistry
-    | stores definitions and provides lookup by ID
+DefinitionSet<TDefinition>
+    | owns ordered definitions and provides lookup by ID
+    | AbilityDefinitions adds prepared ability plans and support diagnostics
     v
 GameplayCatalogues
     | validates cross-catalogue references and prepares plans
@@ -32,9 +33,13 @@ GameplayCatalogues
 Publish the completed dataset for gameplay
 ```
 
-The shared pipeline owns loading mechanics. Type-specific parsers own construction of their runtime types. Registries receive typed definitions, not YAML, JSON tokens, file paths, or schema readers.
+The shared pipeline owns loading mechanics. Type-specific parsers own construction of their runtime types. Definition sets receive typed definitions and optional source provenance, not YAML, JSON tokens, or schema readers. They perform no file I/O.
 
-Schema and conversion validity are established before registry construction. Complete domain validity, cross-catalogue consistency, and preparation are established before publication. Constructing a registry internally does not make it available to gameplay. This entire process is definition initialization, including item initialization.
+Schema and conversion validity are established before definition-set construction. Complete domain validity, cross-catalogue consistency, and preparation are established before publication. Constructing a definition set internally does not make it available to gameplay. This entire process is definition initialization, including item initialization.
+
+Use `DefinitionSet<T>` directly for items, item categories, ships, effects, behaviours, targeting, classifications, stats, conditions, projectiles, and damage sources. It owns its input array, provides ordinal `GetById`/`TryGetById` lookup, and exposes ordered read-only enumeration through `All`. Optional source provenance belongs in this shared collection so item diagnostics do not require an otherwise empty subclass.
+
+Keep `AbilityDefinitions : DefinitionSet<AbilityDefinition>` because abilities additionally own prepared execution plans and unsupported-content diagnostics. Do not retain an individual collection subclass merely to name a definition type. Remove the static `ItemRegistry` and `ShipRegistry` forwarding facades; consumers access `GameplayDefinitions.Current.Items`, `.ItemCategories`, and `.Ships` directly.
 
 ## Pre-refactor implementation (historical)
 
@@ -71,7 +76,7 @@ The schema, description, validator, and test changes from preceding work were re
 
 ## Loading specifications and source metadata
 
-Use one `Catalogue<T>` specification per source document. The eleven item documents share the runtime base type `ItemDefinition` and feed one item registry. A shared multi-source assembly operation may collect their typed arrays, but there must be only one file-validation and row-conversion pipeline.
+Use one `Catalogue<T>` specification per source document. The eleven item documents share the runtime base type `ItemDefinition` and feed one `DefinitionSet<ItemDefinition>`. A shared multi-source assembly operation may collect their typed arrays, but there must be only one file-validation and row-conversion pipeline.
 
 Extend source metadata with an identity field, defaulting to `Id`; ships use `name`. Keep root keys explicit: gameplay keys vary, item categories use `Categories`, items use `Items`, and ships use `ships`.
 
@@ -89,39 +94,39 @@ Prefer existing delegates and explicit dependencies. Category lookup and icon/te
 
 ## Initialization and publication order
 
-1. Invoke the shared initialization operation explicitly from application startup, after required configuration and asset services are available and before any definition consumer runs. Create a private preparation attempt with its source-input capture and temporary definitions. None of its partially built registries are publicly accessible.
-2. Load and parse item categories through `Catalogue<ItemCategoryDefinition>`, then construct their registry. Pass this local registry or an equivalent read-only lookup into item row conversion.
-3. Load each item document through `Catalogue<ItemDefinition>`. Validate each against its own category schema, preserve the existing file order, require matching item-document versions, and combine typed results. Check duplicates across source files before constructing the item registry.
-4. Load ships through `Catalogue<ShipData>`. A ship row parser may use an internal DTO as an implementation detail, but the common pipeline must produce `ShipData[]` before constructing the ship registry. Copy owned data so later DTO changes cannot alter registered definitions.
-5. Load the existing nine gameplay catalogues using the same mechanics and construct their specific registries. Keep cross-catalogue references as typed definition fields during conversion; do not require global registry access from row parsers.
-6. Assemble `GameplayCatalogues` with all local registries. Validate gameplay references and cycles, item references, ship/equipment combinations, and starter loadout requirements. Precompile item values, prepare ability plans, and produce support diagnostics before publication. Preserve meaningful diagnostic order where tests or callers depend on it.
-7. Finalize compatibility inputs and publish only the successfully prepared dataset. Read-only lookup facades then expose that dataset and startup may proceed to definition consumers. On failure, discard the attempt and its partial capture and prevent startup from proceeding to those consumers; repaired input must support a clean explicit initialization retry. A lookup must never initiate that retry.
+1. Invoke the shared initialization operation explicitly from application startup, after required configuration and asset services are available and before any definition consumer runs. Create a private preparation attempt with its source-input capture and temporary definitions. None of its partially built definition sets are publicly accessible.
+2. Load and parse item categories through `Catalogue<ItemCategoryDefinition>`, then construct `DefinitionSet<ItemCategoryDefinition>`. Pass this local set or its read-only lookup into item row conversion.
+3. Load each item document through `Catalogue<ItemDefinition>`. Validate each against its own category schema, preserve the existing file order, require matching item-document versions, and combine typed results. Check duplicates across source files before constructing `DefinitionSet<ItemDefinition>` with owned source provenance.
+4. Load ships through `Catalogue<ShipData>`. A ship row parser may use an internal DTO as an implementation detail, but the common pipeline must produce `ShipData[]` before constructing `DefinitionSet<ShipData>`. Copy owned data so later DTO changes cannot alter registered definitions.
+5. Load the existing nine gameplay catalogues using the same mechanics and construct their `DefinitionSet<T>` collections, using `AbilityDefinitions` for abilities. Keep cross-catalogue references as typed definition fields during conversion; do not require access to the published dataset from row parsers.
+6. Assemble `GameplayCatalogues` with all local definition sets. Validate gameplay references and cycles, item references, ship/equipment combinations, and starter loadout requirements. Precompile item values, prepare ability plans, and produce support diagnostics before publication. Preserve meaningful diagnostic order where tests or callers depend on it.
+7. Finalize compatibility inputs and publish only the successfully prepared dataset. `GameplayDefinitions.Current` then exposes that dataset and startup may proceed to definition consumers. On failure, discard the attempt and its partial capture and prevent startup from proceeding to those consumers; repaired input must support a clean explicit initialization retry. A lookup must never initiate that retry.
 
 Category-dependent construction is an explicit dependency: item categories must be available locally before items are converted. This does not require publishing categories early or changing the agreed pipeline.
 
 ### Explicit startup ownership and lookup access
 
-Use a single owner with an explicit initialization operation for prepared definitions and reset/retry. Remove `Lazy<T>` from `GameplayDefinitions`, `ItemRegistry`, and `ShipRegistry`, including their factories and reset mechanisms that recreate lazy wrappers. `GameplayDefinitions.Current` and retained registry facades must only read already-published data. Before successful initialization, access must report a clear not-initialized error without file I/O, assembly, or preparation.
+Use a single owner with an explicit initialization operation for prepared definitions and reset/retry. Keep all definition loading free of `Lazy<T>` factories and lazy reset mechanisms. `GameplayDefinitions.Current` must only read already-published data; consumers access its definition sets directly. Remove the obsolete `ItemRegistry` and `ShipRegistry` facades rather than keeping aliases for their old APIs. Before successful initialization, access must report a clear not-initialized error without file I/O, assembly, or preparation.
 
-Pass staged registry instances or typed collections explicitly into item conversion, `ValidateItems`, equipment validation, starter validation, and support diagnostics. Change `StarterLoadout.ValidateDefinitions` to consume prepared data rather than initiating static lookups during preparation. Keep runtime starter-equipping behavior unchanged.
+Pass staged definition sets or typed collections explicitly into item conversion, `ValidateItems`, equipment validation, starter validation, and support diagnostics. Change `StarterLoadout.ValidateDefinitions` to consume prepared data rather than initiating static lookups during preparation. Keep runtime starter-equipping behavior unchanged.
 
-All supported startup paths must call and complete the same initialization boundary. Replace calls that force initialization by touching `Current`, `GetAll()`, or another lookup with explicit startup initialization. Compatibility consumers use the completed dataset and checksum; they must not serve as a fallback loading path. Repeated initialization after success must reuse the prepared dataset without reloading or rebuilding. Ensure startup callers do not expose a completed checksum for a failed definition attempt.
+All supported startup paths must call and complete the same initialization boundary. Replace calls that force initialization by touching `Current`, `All`, or another lookup with explicit startup initialization. Compatibility consumers use the completed dataset and checksum; they must not serve as a fallback loading path. Repeated initialization after success must reuse the prepared dataset without reloading or rebuilding. Ensure startup callers do not expose a completed checksum for a failed definition attempt.
 
 ### What sealing means
 
-Sealing is the completion of initialization and publication of a stable dataset. It does not require a public mutable `Seal()` method on every registry.
+Sealing is the completion of initialization and publication of a stable dataset. It does not require a public mutable `Seal()` method on every definition set.
 
-The generic registry owns identity indexing and read-only enumeration. Specialized registries own their prepared indexes or plans. Prevent registration after publication and prevent callers from mutating backing arrays or dictionaries. Inspect mutable nested definition data, especially `ShipData.StatModifiers`, and use immutable published values or owned snapshots. Runtime ship state must remain separate from authored definitions.
+`DefinitionSet<T>` owns identity indexing, ordered read-only enumeration, and optional source provenance. It copies input arrays and source mappings so callers cannot alter the set after construction. `AbilityDefinitions` inherits this shared behavior and owns prepared plans and support diagnostics. Prevent registration after publication and prevent callers from mutating backing arrays or dictionaries. Inspect mutable nested definition data, especially `ShipData.StatModifiers`, and use immutable published values or owned snapshots. Runtime ship state must remain separate from authored definitions.
 
 Only remove redundant required-field checks from consumers when all their definition inputs come from this validated boundary. Retain appropriate construction validation where public/manual construction remains supported. Tests that intentionally bypass file loading must not create an unchecked production loading route.
 
-## Implementation sequence
+## Implementation sequence and follow-up requirements
 
 ### 1 Establish the baseline
 
 - Read `AGENTS.md` and applicable refactoring/testing skills before semantic edits.
 - Inspect current working changes and run the existing test command.
-- Record shipped definition IDs, ordering, representative values, current input-capture keys, and registry lookup behavior for comparison.
+- Record shipped definition IDs, ordering, representative values, current input-capture keys, and definition lookup behavior for comparison.
 - Inventory every production entry point and direct parser/build caller. Include compatibility preparation, startup equipment, tests, and UI consumers. Identify all lazy wrappers, lazy factories, lookup-triggered initialization, and reset/retry hooks so their replacements and removal are accounted for.
 
 ### 2 Generalize the common parser and loader
@@ -137,22 +142,22 @@ Only remove redundant required-field checks from consumers when all their defini
 - Extract row construction from `ItemDefinitionParser` while preserving its category resolution, subtype selection, supply variants, stacking, and icon behavior.
 - Declare the category source and the eleven item sources as catalogue specifications.
 - Replace `ItemDefinitionDocuments.Load` in production with typed multi-source assembly and version/identity checks.
-- Construct item registries from typed arrays. Move item precompilation into the shared initialization lifecycle.
-- Preserve static lookup APIs through delegation where practical; add instance registry types only as needed by `GameplayCatalogues`.
+- Construct item and category definition sets from typed arrays. Move item precompilation into the shared initialization lifecycle.
+- Remove static lookup facades and empty collection subclasses; consumers access the shared sets on `GameplayDefinitions.Current`. Keep inheritance only for the additional behavior in `AbilityDefinitions`.
 - Retain the aggregate `items/ItemSchema.yml` as an authoring/test schema if still useful; it is not a required second production validation pass.
 
 ### 4 Migrate ships
 
 - Introduce a row parser producing `ShipData` from validated ship rows with explicit asset dependencies.
 - Reuse geometry and resource validation without preserving a separate file-loading pipeline.
-- Construct the ship registry from `ShipData[]`, with `name` mapped to its runtime identity.
-- Remove obsolete document wrappers/loaders only after checking all callers. Keep useful DTOs local to conversion rather than in registry APIs.
+- Construct `DefinitionSet<ShipData>` from `ShipData[]`, with `name` mapped to its runtime identity.
+- Remove obsolete document wrappers/loaders only after checking all callers. Keep useful DTOs local to conversion rather than in definition-set APIs.
 
 ### 5 Unify final preparation
 
-- Extend `GameplayCatalogues` to own category, item, and ship registries alongside gameplay registries.
+- Have `GameplayCatalogues` own shared typed definition sets for categories, items, ships, and gameplay data, with `AbilityDefinitions` as the specialized ability set.
 - Move the distributed cross-catalogue validation and preparation into one private build operation in the agreed order.
-- Add explicit startup initialization and wire every supported startup path to complete it before definition consumers run. Adapt `GameplayDefinitions`, lookup facades, `GameConfig.EnsureCompatibilityData`, and starter validation to use the single dataset prepared at startup.
+- Add explicit startup initialization and wire every supported startup path to complete it before definition consumers run. Adapt `GameplayDefinitions`, direct definition-set consumers, `GameConfig.EnsureCompatibilityData`, and starter validation to use the single dataset prepared at startup.
 - Make lookup access fail clearly before publication without triggering initialization. Preserve clean explicit retry and checksum semantics; eliminate partial-cache visibility.
 
 ### 6 Remove superseded paths and verify
@@ -161,6 +166,7 @@ Only remove redundant required-field checks from consumers when all their defini
 - Remove superseded JSON merge code, obsolete path constants, and adapters that would permit an alternate production loading path. Do not leave dormant lazy-loading implementations, fallback routes, or obsolete wrappers behind.
 - Update direct-loader tests to exercise the common pipeline or focused domain factories. Update fixtures and consumers that relied on first-access loading to initialize explicitly, and replace lazy-loading tests and documentation with the startup contract. Preserve tests for supported manual construction where needed.
 - Search production code, tests, and documentation for legacy lazy-loading references and inspect remaining callers to verify cleanup is complete; historical descriptions of the previous implementation may remain clearly labeled.
+- Remove `DefinitionRegistry<T>`, empty specialized collection types, and item/ship forwarding facades. Update all consumers from `GetAll()` to `All` and to direct dataset access. Retain ability preparation through `AbilityDefinitions` and source provenance through the shared set.
 - Keep useful context-specific errors and inspect the final diff for unrelated changes.
 - Record the completed verification and any remaining limitations in this plan when implementation is performed.
 
@@ -169,19 +175,20 @@ Only remove redundant required-field checks from consumers when all their defini
 The refactor is complete when all the following hold:
 
 - Every active definition document is described by a `Catalogue<T>` and loaded through the same schema-validation and row-parsing pipeline.
-- Gameplay, item categories, items, and ships become typed arrays before entering their specific registries. Registries perform no file I/O or YAML/JSON deserialization.
+- Gameplay, item categories, items, and ships become typed arrays before entering `DefinitionSet<T>` or its `AbilityDefinitions` specialization. Definition sets perform no file I/O or YAML/JSON deserialization.
 - Missing, null, empty, whitespace-only, wrong-type, out-of-range, and unknown-field inputs fail at the appropriate loading boundary. Preserve the existing description and numeric regressions.
 - Duplicate IDs within one document and across item documents fail with the relevant source and identity. Duplicate ship names use the same common mechanism.
 - Item version mismatches, invalid category references, missing assets, invalid polygons, invalid gameplay references, dependency cycles, and invalid static numeric combinations fail before public access.
 - Errors identify the actual file, schema, definition, and field where available; item errors do not point to an invented merged source.
-- Registry lookups return the correct typed definitions with unchanged IDs, ordering, values, defaults, and descriptions. Item instances, equipment, tooltips, and ship creation retain behavior.
+- Definition-set lookups return the correct typed definitions with unchanged IDs, ordering, values, defaults, and descriptions. Item instances, equipment, tooltips, and ship creation retain behavior.
 - Unsupported abilities remain unavailable with diagnostics, while malformed definition data fails loading. Prepared plans remain owned by the prepared dataset and reusable by independent sessions.
-- A failure after several registries have been constructed exposes none of those partial results. Fixing the input allows a clean retry. Repeated successful access does not reload files or rebuild plans.
+- A failure after several definition sets have been constructed exposes none of those partial results. Fixing the input allows a clean retry. Repeated successful access does not reload files or rebuild plans.
 - All active definitions are loaded, assembled, validated, and prepared during explicit startup initialization before any definition-dependent UI, compatibility consumer, or gameplay runs. All supported startup paths pass the same preparation boundary.
-- Access through `GameplayDefinitions.Current` or any retained registry facade before publication fails clearly and performs no loading or preparation. Lookup access after failed initialization does not implicitly retry. Explicit retry after input repair succeeds, and repeated initialization after success performs no additional loading or preparation.
+- Access through `GameplayDefinitions.Current` before publication fails clearly and performs no loading or preparation. Lookup access after failed initialization does not implicitly retry. Explicit retry after input repair succeeds, and repeated initialization after success performs no additional loading or preparation.
 - Legacy definition lazy wrappers, factories, independent loading caches, lazy reset hooks, and lookup-triggered loading routes are removed. Tests and current usage documentation reflect explicit startup initialization; no dormant lazy fallback remains.
 - Identical file content and protocol metadata produce the same compatibility checksum. Failed attempts leave no partial input capture or success marker.
-- Published collections and nested definition data cannot be mutated to invalidate registry guarantees. Dynamic runtime and network validation remains intact.
+- Published collections and nested definition data cannot be mutated to invalidate definition-set guarantees. Dynamic runtime and network validation remains intact.
+- Shared definition sets preserve input order and ordinal IDs, reject blank or duplicate IDs, and expose no mutable backing arrays or source mappings. Empty specialized collection types and forwarding facades are removed; only `AbilityDefinitions` extends `DefinitionSet<T>` for additional behavior.
 - No YAML parsing, schema validation, initialization allocations, or plan preparation enter the 60 FPS frame loop or 30 Hz network tick.
 
 Run from the repository root:
@@ -191,13 +198,13 @@ dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-restore --verbosity minimal
 git diff --check
 ```
 
-The test project runs its Godot-tagged cases through `GodotIntegrationTests`. Preserve that integration coverage, especially preparation failure/retry, item creation and equipment, and ship creation. Relevant existing tests include `DefinitionPreparationTests`, `CatalogueDiagnosticsTests`, `DefinitionVersionTests`, `ItemRegistryTests`, `ItemDefinitionSchemaTests`, `ItemDescriptionTests`, `ShipDefinitionTests`, `ShipRegistryTests`, `EquipmentDefinitionValidationTests`, and ability preparation/architecture tests.
+The test project runs its Godot-tagged cases through `GodotIntegrationTests`. Preserve that integration coverage, especially preparation failure/retry, item creation and equipment, and ship creation. Relevant tests include `DefinitionSetTests`, `DefinitionPreparationTests`, `CatalogueDiagnosticsTests`, `DefinitionVersionTests`, `ItemRegistryTests`, `ItemDefinitionSchemaTests`, `ItemDescriptionTests`, `ShipDefinitionTests`, `ShipRegistryTests`, `EquipmentDefinitionValidationTests`, and ability preparation/architecture tests.
 
 The JSON Schema library has a validation quota. Reuse already-validated unchanged test fixtures and avoid repeated tests of identical schema branches. Keep all mutated data validation intact and do not treat quota errors as expected schema rejection.
 
 Follow the repository's test-support markers for any new test-only production hooks. Prefer testing real production loading components with injected file/asset access over introducing test-specific alternate loaders.
 
-## Implementation and verification record
+## Initial implementation and verification record (historical)
 
 - `DefinitionStartup` runs after configuration and icons and before Steam/UI autoload consumers in both the game and the Godot integration project. It explicitly calls `GameplayDefinitions.Initialize()`.
 - One initialization attempt reads all 22 documents through the common catalogue pipeline: categories, eleven item files, ships, and nine gameplay catalogues. Typed registries, cross-reference checks, equipment/starter validation, item precompilation, ability plans, and support diagnostics are completed before publication.
@@ -208,6 +215,16 @@ Follow the repository's test-support markers for any new test-only production ho
 - Regression coverage verifies dependency order and one read per document, item order/types/defaults, duplicate/version provenance, identity-field parsing, immutable collections, missing starter definitions, startup-only publication, failed preparation and explicit retry, idempotence, and the unchanged 45 compatibility inputs (22 definitions, 22 schemas, and protocol metadata).
 - The allocation regression test now warms the same record-equality comparison used in its measured loop, eliminating first-use comparer allocations from the measurement without changing runtime code or weakening its zero-allocation assertion.
 - Final verification: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-restore --verbosity minimal` passed all 535 reported tests, including `GodotIntegrationTests`; `git diff --check` passed. The existing `UiIcon.Size` member-hiding warning remains. No interactive Steam multiplayer session was exercised.
+
+## DefinitionSet follow-up implementation record
+
+- Replaced the generic registry base and empty subclasses with concrete `DefinitionSet<T>` collections, preserving ordered enumeration and efficient ID lookup and exposing enumeration through `All`.
+- Moved source provenance into the shared set: single-source collections retain their catalogue source, while items retain a copied per-definition source mapping. Sets copy their supplied arrays. Removed `ItemDefinitions`, `ItemCategoryDefinitions`, and `ShipDefinitions` wrappers.
+- Retained ability-specific behavior through `AbilityDefinitions : DefinitionSet<AbilityDefinition>`, including prepared plans, support checks, and diagnostics.
+- Removed `ItemRegistry` and `ShipRegistry`; runtime, UI, networking, and test consumers access the completed sets on `GameplayDefinitions.Current` directly. Removed obsolete class files and their Godot metadata.
+- Preserved the explicit startup boundary, complete-dataset publication, failure/retry behavior, validation, and compatibility input/checksum contracts from the initial implementation.
+- Added shared-collection coverage for ownership, ordering, ordinal lookup, invalid identities, missing identities, read-only access, and copied provenance.
+- Verification: the baseline passed 535 tests; the follow-up full run passed all 543 reported tests, including ability preparation and `GodotIntegrationTests`. `git diff --check` passed. The existing `UiIcon.Size` warning remains; no interactive Steam multiplayer session was exercised.
 
 ## Excluded
 

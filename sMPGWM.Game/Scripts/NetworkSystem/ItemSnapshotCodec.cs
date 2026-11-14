@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.InventorySystem;
@@ -86,7 +87,7 @@ internal static class ItemSnapshotCodec
             var definitionId = row[1].AsString();
             var count = row[2].AsInt64();
             if (id <= 0 || !identities.Add(id) || definitionId.Length > 128 ||
-                !ItemRegistry.TryGetById(definitionId, out var definition) || count <= 0 || count > definition.StackLimit) return false;
+                !GameplayDefinitions.Current.Items.TryGetById(definitionId, out var definition) || count <= 0 || count > definition.StackLimit) return false;
             slots[i] = new(ItemEntityId.FromNetwork(id), definition, (int)count);
         }
         return true;

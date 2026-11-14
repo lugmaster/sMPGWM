@@ -21,7 +21,7 @@ public sealed class EquipmentDefinitionValidationTests
             if (items[i] is EngineItemDefinition engine) items[i] = engine with { Speed = float.MaxValue };
         var document = GameplayTestData.Read("Ships.yml", "ShipsSchema.yml");
         foreach (var ship in document["ships"]!) ship["stat_modifiers"]!["Speed"] = float.MaxValue;
-        var ships = ShipCatalogueLoader.Load(_ => document, _ => true).GetAll();
+        var ships = ShipCatalogueLoader.Load(_ => document, _ => true).All;
         var error = Assert.Catch<ArgumentException>(() => EquipmentDefinitionValidator.Validate(ships, items));
         Assert.That(error!.Message, Does.Contain("ship").And.Contain("item").And.Contain("Movement"));
     }
@@ -87,7 +87,7 @@ public sealed class EquipmentDefinitionValidationTests
 
     private static ShipData[] Ships()
     {
-        var ships = ShipCatalogueLoader.Load(_ => GameplayTestData.Read("Ships.yml", "ShipsSchema.yml"), _ => true).GetAll();
+        var ships = ShipCatalogueLoader.Load(_ => GameplayTestData.Read("Ships.yml", "ShipsSchema.yml"), _ => true).All;
         var result = new ShipData[ships.Count];
         var index = 0;
         foreach (var ship in ships) result[index++] = ship;

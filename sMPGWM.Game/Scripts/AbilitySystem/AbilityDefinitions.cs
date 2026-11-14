@@ -5,9 +5,9 @@ using sMPGWM.Scripts.ItemSystem;
 
 namespace sMPGWM.Scripts.AbilitySystem;
 
-public sealed class AbilityRegistry : DefinitionRegistry<AbilityDefinition>
+public sealed class AbilityDefinitions : DefinitionSet<AbilityDefinition>
 {
-    internal AbilityRegistry(IEnumerable<AbilityDefinition> definitions) : base(definitions, "AbilityDefinitions.yml") { }
+    internal AbilityDefinitions(AbilityDefinition[] definitions, CatalogueSource source) : base(definitions, source) { }
     private readonly Dictionary<string, AbilityExecutionPlan> _plans = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _unsupported = new(StringComparer.Ordinal);
     private bool _prepared;
@@ -15,7 +15,7 @@ public sealed class AbilityRegistry : DefinitionRegistry<AbilityDefinition>
     {
         if (_prepared) throw new InvalidOperationException("Abilities already prepared.");
         _prepared = true;
-        foreach (var ability in definitions.Abilities.GetAll())
+        foreach (var ability in definitions.Abilities.All)
         {
             var reason = AbilityPreparer.Prepare(definitions, ability, out var plan);
             if (reason == null) _plans.Add(ability.Id, plan!);

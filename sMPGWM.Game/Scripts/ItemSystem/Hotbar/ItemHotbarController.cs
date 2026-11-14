@@ -128,7 +128,7 @@ public sealed class ItemHotbarController : IDisposable
         if (_restored) throw new InvalidOperationException("Hotbar state is already restored.");
         foreach (var binding in snapshot.Entries)
         {
-            if (binding is ConsumableHotbarBinding consumable && !ItemRegistry.TryGetById(consumable.DefinitionId, out _))
+            if (binding is ConsumableHotbarBinding consumable && !GameplayDefinitions.Current.Items.TryGetById(consumable.DefinitionId, out _))
                 throw new ArgumentException("Unknown restored hotbar item: " + consumable.DefinitionId);
             var slotKey = binding switch
             {
@@ -322,7 +322,7 @@ public sealed class ItemHotbarController : IDisposable
                 long quantity = 0;
                 foreach (var entity in inventorySnapshot.Slots)
                     if (entity?.DefinitionId == consumable.DefinitionId) quantity = checked(quantity + entity.Count);
-                return new(consumable.DefinitionId, quantity, ItemRegistry.GetById(consumable.DefinitionId).DisplayName, quantity > 0);
+                return new(consumable.DefinitionId, quantity, GameplayDefinitions.Current.Items.GetById(consumable.DefinitionId).DisplayName, quantity > 0);
             case WeaponHotbarBinding weapon:
                 var index = FindEquipmentSlot(weapon.SlotKey);
                 if (index < 0) return new(null, null, weapon.SlotKey, false);

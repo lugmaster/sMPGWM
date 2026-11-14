@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
@@ -51,13 +52,13 @@ public class EquipmentTransferTests
     [Test]
     public void AllCategorySlotCombinations_UseCategoryIdentity()
     {
-        foreach (var category in ItemRegistry.GetAllCategories())
+        foreach (var category in GameplayDefinitions.Current.ItemCategories.All)
         foreach (var slot in EquipmentSlotDefinition.Defaults)
         {
             using var inventory = new InventoryController();
             using var equipment = new EquipmentController(inventory.Items);
             using var transfers = new InventoryEquipmentTransferService(inventory, equipment);
-            var definition = ItemRegistry.GetAll().First(d => d.CategoryName == category.DisplayName);
+            var definition = GameplayDefinitions.Current.Items.All.First(d => d.CategoryName == category.DisplayName);
             inventory.Items.CreateItems(inventory.Container, definition.Id, 1);
             var before = inventory.Snapshot;
             var equipmentBefore = equipment.Snapshot;

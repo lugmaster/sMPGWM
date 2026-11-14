@@ -34,9 +34,9 @@ public sealed class UnifiedCatalogueTests
         Assert.That(sources[12], Is.EqualTo(ShipCatalogueLoader.Source));
         var paths = new HashSet<string>(StringComparer.Ordinal);
         foreach (var source in sources) Assert.That(paths.Add(source.UserPath), Is.True, source.UserPath);
-        Assert.That(data.Items.GetAll(), Is.Not.Empty);
-        Assert.That(data.ItemCategories.GetAll(), Is.Not.Empty);
-        Assert.That(data.Ships.GetAll(), Is.Not.Empty);
+        Assert.That(data.Items.All, Is.Not.Empty);
+        Assert.That(data.ItemCategories.All, Is.Not.Empty);
+        Assert.That(data.Ships.All, Is.Not.Empty);
         Assert.That(data.Abilities.TryGetPlan("shieldCapacityBoost", out _), Is.True);
         Assert.That(data.SupportDiagnostics, Is.Not.Empty);
     }

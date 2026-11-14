@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.UtilitySystem;
@@ -51,7 +52,7 @@ public sealed class ItemStore
             {
                 if (state.Slots[slot] is not { } item) continue;
                 if (item.Id.Value == 0 || item.Id.Value >= long.MaxValue || !restoredIds.Add(item.Id.Value) ||
-                    !ItemRegistry.TryGetById(item.DefinitionId, out var definition))
+                    !GameplayDefinitions.Current.Items.TryGetById(item.DefinitionId, out var definition))
                     throw new ArgumentException("Invalid, duplicate, or unknown restored item identity/definition.", nameof(batch));
                 slots[slot] = new ItemEntity(item.Id, definition, item.Count);
                 maximumId = Math.Max(maximumId, item.Id.Value);
@@ -112,7 +113,7 @@ public sealed class ItemStore
         if (Publishing) return InventoryResult.PublicationInProgress;
         if (quantity < 0) return InventoryResult.NegativeQuantity;
         if (quantity == 0) return InventoryResult.NoChange;
-        if (!ItemRegistry.TryGetById(definitionId, out var definition)) return InventoryResult.UnknownDefinition;
+        if (!GameplayDefinitions.Current.Items.TryGetById(definitionId, out var definition)) return InventoryResult.UnknownDefinition;
         if (destination.Revision == long.MaxValue) return InventoryResult.CapacityExceeded;
         var remaining = quantity;
         foreach (var item in destination.Entities)

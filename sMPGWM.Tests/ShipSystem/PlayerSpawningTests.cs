@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using Godot;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.ShipSystem;
@@ -71,7 +72,7 @@ public class PlayerSpawningTests
         var world = new Node2D();
         var host = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests");
         host.AddChild(world);
-        var ship = ShipFactory.Create(ShipRegistry.GetById("fighter"), Guid.NewGuid().ToString("N"),
+        var ship = ShipFactory.Create(GameplayDefinitions.Current.Ships.GetById("fighter"), Guid.NewGuid().ToString("N"),
             Vector2.Zero, 0, Vector2.Zero);
         world.AddChild(ship);
         try
@@ -109,7 +110,7 @@ public class PlayerSpawningTests
         var world = new Node2D();
         var first = new PlayerSession { ControllingPeerId = 1 };
         var second = new PlayerSession { ControllingPeerId = 2 };
-        var ship = ShipFactory.Create(ShipRegistry.GetById("fighter"), Guid.NewGuid().ToString("N"), new Vector2(20, 30), 0, Vector2.Zero);
+        var ship = ShipFactory.Create(GameplayDefinitions.Current.Ships.GetById("fighter"), Guid.NewGuid().ToString("N"), new Vector2(20, 30), 0, Vector2.Zero);
         var changes = 0;
         first.ControlledShipChanged += (_, _) => changes++;
         try

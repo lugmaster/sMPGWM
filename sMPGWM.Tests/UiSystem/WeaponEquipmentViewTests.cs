@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.ItemSystem;
@@ -32,7 +33,7 @@ public sealed class WeaponEquipmentViewTests
             Assert.That(counter.Text, Is.EqualTo("0/0"));
             Assert.That(grid.GetCombinedMinimumSize().Y, Is.Zero);
             Assert.That(view.GetNode<Control>("Weapons/Capacity").SizeFlagsHorizontal, Is.EqualTo(Control.SizeFlags.ShrinkCenter));
-            var fixture = (WeaponFixtureItemDefinition)ItemRegistry.GetById("mock_standard_weapon_fixture") with { WeaponSlots = capacity };
+            var fixture = (WeaponFixtureItemDefinition)GameplayDefinitions.Current.Items.GetById("mock_standard_weapon_fixture") with { WeaponSlots = capacity };
             slots[equipment.FindSlot("weapon_fixture")] = new ItemEntity(ItemEntityId.Create(), fixture, 1);
             view.Render(equipment.Definitions, new EquipmentSnapshot(1, slots), new ItemVisuals());
             Assert.That(VisibleCount(grid), Is.EqualTo(1));
@@ -43,7 +44,7 @@ public sealed class WeaponEquipmentViewTests
             for (var index = 1; index <= capacity; index++)
             {
                 var key = $"weapon_{index}";
-                slots[equipment.FindSlot(key)] = new ItemEntity(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_light_weapon"), 1);
+                slots[equipment.FindSlot(key)] = new ItemEntity(ItemEntityId.Create(), GameplayDefinitions.Current.Items.GetById("mock_standard_light_weapon"), 1);
                 view.Render(equipment.Definitions, new EquipmentSnapshot(index + 1, slots), new ItemVisuals());
                 Assert.That(VisibleCount(grid), Is.EqualTo(index < capacity ? index + 1 : index));
                 Assert.That(counter.Text, Is.EqualTo($"{capacity - index}/{capacity}"));
@@ -69,9 +70,9 @@ public sealed class WeaponEquipmentViewTests
         try
         {
             var slots = new ItemEntity?[equipment.Definitions.Count];
-            slots[equipment.FindSlot("weapon_fixture")] = new ItemEntity(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_weapon_fixture"), 1);
+            slots[equipment.FindSlot("weapon_fixture")] = new ItemEntity(ItemEntityId.Create(), GameplayDefinitions.Current.Items.GetById("mock_standard_weapon_fixture"), 1);
             foreach (var key in new[] { "weapon_1", "weapon_2", "weapon_9" })
-                slots[equipment.FindSlot(key)] = new ItemEntity(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_heavy_weapon"), 1);
+                slots[equipment.FindSlot(key)] = new ItemEntity(ItemEntityId.Create(), GameplayDefinitions.Current.Items.GetById("mock_standard_heavy_weapon"), 1);
             view.Render(equipment.Definitions, new EquipmentSnapshot(1, slots), new ItemVisuals());
             var grid = view.GetNode<GridContainer>("Weapons/Slots/SlotGrid");
             var counter = view.GetNode<Label>("Weapons/Capacity/Value");

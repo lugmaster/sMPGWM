@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UtilitySystem.Mocks;
@@ -92,7 +93,7 @@ public class InventoryControllerTests
     public void BulkAddition_CrossesStackBoundariesWithoutLosingQuantity()
     {
         using var inventory = new InventoryController();
-        var limit = ItemRegistry.GetById(Resource).StackLimit;
+        var limit = GameplayDefinitions.Current.Items.GetById(Resource).StackLimit;
         var quantity = (long)limit * 2 + 3;
         inventory.Items.CreateItems(inventory.Container, Resource, quantity);
         Assert.That(inventory.Snapshot.Occupied.Select(entry => entry.Entity.Count),

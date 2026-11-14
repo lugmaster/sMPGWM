@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using Godot;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.InventorySystem;
@@ -34,7 +35,7 @@ public class ShipFactoryTests
     public void FailureBeforeLoadoutPreservesCauseAndReleasesNode()
     {
         GamePlayProvider.CreateShip().Free();
-        var data = ShipRegistry.GetById("fighter");
+        var data = GameplayDefinitions.Current.Ships.GetById("fighter");
         var store = new ItemStore();
         using var inventory = new InventoryController(store);
         InvalidOperationException? failure = null;
@@ -54,7 +55,7 @@ public class ShipFactoryTests
     public void FailureAfterLoadoutReleasesStoreAndAllowsRetry()
     {
         GamePlayProvider.CreateShip().Free();
-        var data = ShipRegistry.GetById("fighter");
+        var data = GameplayDefinitions.Current.Ships.GetById("fighter");
         var invalid = new ShipData(new ShipDefinition { Name = "invalid-texture", Description = data.Description, Health = data.Health, TexturePath = "res://scenes/game/game_objects/ship.tscn" }, Array.Empty<Vector2>(), data.Stats);
         var store = new ItemStore();
         var orphanCount = Performance.GetMonitor(Performance.Monitor.ObjectOrphanNodeCount);

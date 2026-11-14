@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 
 
 using System.Globalization;
@@ -17,7 +18,7 @@ internal static class ItemDisplayFormatter
 
     internal static IconDisplayData Create(string definitionId, long? quantity)
     {
-        return Create(ItemRegistry.GetById(definitionId), quantity);
+        return Create(GameplayDefinitions.Current.Items.GetById(definitionId), quantity);
     }
 
     private static IconDisplayData Create(ItemDefinition data, long? quantity)

@@ -70,20 +70,20 @@ public class ShipDefinitionTests
         Assert.That(result.Error.ToDisplayString(), Does.Contain("unknown_member"));
     }
 
-    private static LoadResult<ShipDefinitions> Convert(JObject document)
+    private static LoadResult<DefinitionSet<ShipData>> Convert(JObject document)
     {
-        try { return LoadResult<ShipDefinitions>.Success(ShipCatalogueLoader.Load(_ => document, _ => true)); }
+        try { return LoadResult<DefinitionSet<ShipData>>.Success(ShipCatalogueLoader.Load(_ => document, _ => true)); }
         catch (CatalogueLoadException error)
         {
-            return LoadResult<ShipDefinitions>.Failure(new DataLoadError("Invalid ship definitions", error.Message,
+            return LoadResult<DefinitionSet<ShipData>>.Failure(new DataLoadError("Invalid ship definitions", error.Message,
                 "Ships.yml", "ShipsSchema.yml", error));
         }
     }
 
-    private static LoadResult<ShipDefinitions> Parse(string yaml)
+    private static LoadResult<DefinitionSet<ShipData>> Parse(string yaml)
     {
         var result = YamlParser.ValidateAndReturn(yaml, Read("ShipsSchema.yml"), "Ships.yml", "ShipsSchema.yml");
-        if (!result.IsSuccess) return LoadResult<ShipDefinitions>.Failure(result.Error!);
+        if (!result.IsSuccess) return LoadResult<DefinitionSet<ShipData>>.Failure(result.Error!);
         return Convert((JObject)result.Value!);
     }
 

@@ -20,9 +20,9 @@ public class DefinitionPreparationTests
     public void StartupPublishesAllDefinitionsAndCompatibleSourceCapture()
     {
         Assert.DoesNotThrow(GameConfig.EnsureCompatibilityData);
-        Assert.That(ItemRegistry.GetAll(), Is.Not.Empty);
-        Assert.That(ItemRegistry.GetAllCategories(), Is.Not.Empty);
-        Assert.That(ShipRegistry.GetAll(), Is.Not.Empty);
+        Assert.That(GameplayDefinitions.Current.Items.All, Is.Not.Empty);
+        Assert.That(GameplayDefinitions.Current.ItemCategories.All, Is.Not.Empty);
+        Assert.That(GameplayDefinitions.Current.Ships.All, Is.Not.Empty);
         var inputs = GetInputs();
         Assert.That(inputs, Has.Count.EqualTo(45));
         Assert.That(inputs["GameplayProtocol"], Is.EqualTo("6:complete-initial-state-readiness"));
@@ -109,9 +109,9 @@ public class DefinitionPreparationTests
     {
         Assert.That(GameConfig.GameDataChecksum, Is.Empty);
         Assert.Throws<InvalidOperationException>(() => _ = GameplayDefinitions.Current);
-        Assert.Throws<InvalidOperationException>(() => ItemRegistry.GetAll());
-        Assert.Throws<InvalidOperationException>(() => ItemRegistry.GetAllCategories());
-        Assert.Throws<InvalidOperationException>(() => ShipRegistry.GetAll());
+        Assert.Throws<InvalidOperationException>(() => _ = GameplayDefinitions.Current.Items.All);
+        Assert.Throws<InvalidOperationException>(() => _ = GameplayDefinitions.Current.ItemCategories.All);
+        Assert.Throws<InvalidOperationException>(() => _ = GameplayDefinitions.Current.Ships.All);
         Assert.Throws<InvalidOperationException>(GameConfig.EnsureCompatibilityData);
     }
 }

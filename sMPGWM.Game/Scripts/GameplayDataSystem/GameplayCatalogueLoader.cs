@@ -75,15 +75,15 @@ public static class GameplayCatalogueLoader
         var items = ItemCatalogueLoader.LoadItems(read, categories, resolveIcon);
         var ships = ShipCatalogueLoader.Load(read, textureAvailable);
         return new GameplayCatalogues(
-            new AbilityRegistry(CatalogueParser.Load(Abilities, read)),
-            new EffectRegistry(CatalogueParser.Load(Effects, read)),
-            new BehaviourRegistry(CatalogueParser.Load(Behaviours, read)),
-            new TargetingRegistry(CatalogueParser.Load(Targeting, read)),
-            new BehaviourClassificationRegistry(CatalogueParser.Load(Classifications, read)),
-            new StatRegistry(CatalogueParser.Load(Stats, read)),
-            new ConditionRegistry(CatalogueParser.Load(Conditions, read)),
-            new ProjectileRegistry(CatalogueParser.Load(Projectiles, read)),
-            new DamageSourceRegistry(CatalogueParser.Load(DamageSources, read)), categories, items, ships);
+            new AbilityDefinitions(CatalogueParser.Load(Abilities, read), Abilities.Source),
+            new DefinitionSet<EffectDefinition>(CatalogueParser.Load(Effects, read), Effects.Source),
+            new DefinitionSet<BehaviourDefinition>(CatalogueParser.Load(Behaviours, read), Behaviours.Source),
+            new DefinitionSet<TargetingDefinition>(CatalogueParser.Load(Targeting, read), Targeting.Source),
+            new DefinitionSet<BehaviourClassificationDefinition>(CatalogueParser.Load(Classifications, read), Classifications.Source),
+            new DefinitionSet<StatDefinition>(CatalogueParser.Load(Stats, read), Stats.Source),
+            new DefinitionSet<ConditionDefinition>(CatalogueParser.Load(Conditions, read), Conditions.Source),
+            new DefinitionSet<ProjectileDefinition>(CatalogueParser.Load(Projectiles, read), Projectiles.Source),
+            new DefinitionSet<DamageSourceDefinition>(CatalogueParser.Load(DamageSources, read), DamageSources.Source), categories, items, ships);
     }
 
 }

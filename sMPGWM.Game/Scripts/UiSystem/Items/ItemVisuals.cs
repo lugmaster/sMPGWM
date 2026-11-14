@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 
 
 using Godot;
@@ -30,7 +31,7 @@ internal sealed class ItemVisuals
             icon.SetDisplay(showPlaceholder ? ItemIconResolver.Placeholder() : null, new IconDisplayData(label));
         else
         {
-            var definition = ItemRegistry.GetById(definitionId);
+            var definition = GameplayDefinitions.Current.Items.GetById(definitionId);
             icon.SetDisplay(ItemIconResolver.Item(definition),
                 ItemDisplayFormatter.Create(definition.Id, quantity));
         }

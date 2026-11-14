@@ -12,39 +12,39 @@ namespace sMPGWM.Scripts.GameplayDataSystem;
 
 public sealed class GameplayCatalogues
 {
-    public ItemCategoryDefinitions ItemCategories { get; }
-    public ItemDefinitions Items { get; }
-    public ShipDefinitions Ships { get; }
+    public DefinitionSet<ItemCategoryDefinition> ItemCategories { get; }
+    public DefinitionSet<ItemDefinition> Items { get; }
+    public DefinitionSet<ShipData> Ships { get; }
     public IReadOnlyList<string> SupportDiagnostics { get; }
-    public AbilityRegistry Abilities { get; }
-    public EffectRegistry Effects { get; }
-    public BehaviourRegistry Behaviours { get; }
-    public TargetingRegistry Targeting { get; }
-    public BehaviourClassificationRegistry Classifications { get; }
-    public StatRegistry Stats { get; }
-    public ConditionRegistry Conditions { get; }
-    public ProjectileRegistry Projectiles { get; }
-    public DamageSourceRegistry DamageSources { get; }
+    public AbilityDefinitions Abilities { get; }
+    public DefinitionSet<EffectDefinition> Effects { get; }
+    public DefinitionSet<BehaviourDefinition> Behaviours { get; }
+    public DefinitionSet<TargetingDefinition> Targeting { get; }
+    public DefinitionSet<BehaviourClassificationDefinition> Classifications { get; }
+    public DefinitionSet<StatDefinition> Stats { get; }
+    public DefinitionSet<ConditionDefinition> Conditions { get; }
+    public DefinitionSet<ProjectileDefinition> Projectiles { get; }
+    public DefinitionSet<DamageSourceDefinition> DamageSources { get; }
 
-    internal GameplayCatalogues(AbilityRegistry abilities, EffectRegistry effects, BehaviourRegistry behaviours,
-        TargetingRegistry targeting, BehaviourClassificationRegistry classifications, StatRegistry stats,
-        ConditionRegistry conditions, ProjectileRegistry projectiles, DamageSourceRegistry damageSources,
-        ItemCategoryDefinitions itemCategories, ItemDefinitions items, ShipDefinitions ships)
+    internal GameplayCatalogues(AbilityDefinitions abilities, DefinitionSet<EffectDefinition> effects, DefinitionSet<BehaviourDefinition> behaviours,
+        DefinitionSet<TargetingDefinition> targeting, DefinitionSet<BehaviourClassificationDefinition> classifications, DefinitionSet<StatDefinition> stats,
+        DefinitionSet<ConditionDefinition> conditions, DefinitionSet<ProjectileDefinition> projectiles, DefinitionSet<DamageSourceDefinition> damageSources,
+        DefinitionSet<ItemCategoryDefinition> itemCategories, DefinitionSet<ItemDefinition> items, DefinitionSet<ShipData> ships)
     {
         ItemCategories = itemCategories; Items = items; Ships = ships;
         Abilities = abilities; Effects = effects; Behaviours = behaviours; Targeting = targeting;
         Classifications = classifications; Stats = stats; Conditions = conditions;
         Projectiles = projectiles; DamageSources = damageSources;
         GameplayCatalogueValidator.Validate(this);
-        GameplayCatalogueValidator.ValidateItems(this, Items.GetAll());
+        GameplayCatalogueValidator.ValidateItems(this, Items.All);
         CatalogueParser.WithSource(ShipCatalogueLoader.Source, () =>
         {
-            EquipmentDefinitionValidator.Validate(Ships.GetAll(), Items.GetAll());
+            EquipmentDefinitionValidator.Validate(Ships.All, Items.All);
             return true;
         });
         StarterLoadout.ValidateDefinitions(Items);
-        foreach (var item in Items.GetAll()) EquipmentStatCalculator.Precompile(item);
+        foreach (var item in Items.All) EquipmentStatCalculator.Precompile(item);
         Abilities.Prepare(this);
-        SupportDiagnostics = Abilities.GetSupportDiagnostics(Items.GetAll());
+        SupportDiagnostics = Abilities.GetSupportDiagnostics(Items.All);
     }
 }

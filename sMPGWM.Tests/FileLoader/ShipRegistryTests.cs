@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using Godot;
 using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.ShipSystem;
@@ -17,14 +18,14 @@ public class ShipRegistryTests
         var definition = Definition();
         var data = ShipDefinitionParser.Create(definition, _ => true);
         var rows = new[] { data, ShipDefinitionParser.Create(Definition("Fighter"), _ => true) };
-        var registry = new ShipDefinitions(rows);
+        var registry = new DefinitionSet<ShipData>(rows, ShipCatalogueLoader.Source);
         rows[0] = rows[1];
         definition.ColliderPoints[0][0] = 99;
         definition.Health = 99;
         definition.Mass = 99;
         definition.Description = "Changed after loading.";
         definition.Stats = definition.Stats with { Speed = 99 };
-        Assert.That(registry.GetAll(), Has.Count.EqualTo(2));
+        Assert.That(registry.All, Has.Count.EqualTo(2));
         Assert.That(registry.TryGetById("FIGHTER", out _), Is.False);
         Assert.That(registry.GetById("fighter").ColliderPoints[0], Is.EqualTo(Vector2.Zero));
         Assert.That(registry.GetById("fighter").Health, Is.EqualTo(150));
@@ -32,7 +33,7 @@ public class ShipRegistryTests
         Assert.That(registry.GetById("fighter").StatModifiers.Speed, Is.Zero);
         Assert.That(registry.GetById("fighter").Description, Is.EqualTo("A test ship."));
         Assert.Throws<NotSupportedException>(() => ((IList<Vector2>)data.ColliderPoints)[0] = Vector2.One);
-        Assert.Throws<NotSupportedException>(() => ((IList<ShipData>)registry.GetAll())[0] = rows[1]);
+        Assert.Throws<NotSupportedException>(() => ((IList<ShipData>)registry.All)[0] = rows[1]);
     }
     [TestCase(double.NaN)]
     [TestCase(double.PositiveInfinity)]

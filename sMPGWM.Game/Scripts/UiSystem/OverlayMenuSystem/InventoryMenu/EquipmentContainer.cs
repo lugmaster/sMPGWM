@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 
 
 using Godot;
@@ -32,10 +33,10 @@ public partial class EquipmentContainer : TabContainer
         _weaponSlots = GetNode<ItemGrid>("Weapons/Slots");
         var capacity = GetNode<Control>("Weapons/Capacity");
         capacity.TooltipText = "Free weapon slots / fixture capacity";
-        capacity.GetNode<TextureRect>("Icon").Texture = ItemIconResolver.Category(ItemRegistry.GetCategoryById("weapon_fixture"));
+        capacity.GetNode<TextureRect>("Icon").Texture = ItemIconResolver.Category(GameplayDefinitions.Current.ItemCategories.GetById("weapon_fixture"));
         _weaponCapacity = capacity.GetNode<Label>("Value");
-        SetTabIcon(0, ItemIconResolver.Category(ItemRegistry.GetCategoryById("hull")));
-        SetTabIcon(1, ItemIconResolver.Category(ItemRegistry.GetCategoryById("light_weapon")));
+        SetTabIcon(0, ItemIconResolver.Category(GameplayDefinitions.Current.ItemCategories.GetById("hull")));
+        SetTabIcon(1, ItemIconResolver.Category(GameplayDefinitions.Current.ItemCategories.GetById("light_weapon")));
         SetTabIcon(2, Icons.Travel.PersonPeopleThree.IconTexture);
         for (var index = 0; index < GetTabCount(); index++) SetTabIconMaxWidth(index, 14);
         TabChanged += OnTabChanged;

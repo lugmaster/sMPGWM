@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -177,7 +178,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             RejectJoin(peer, "Player join timed out.");
             return;
         }
-        if (!PlayerStartupData.TryFromVariant(payload, out var data) || !ShipRegistry.TryGetById(data.ShipId, out _))
+        if (!PlayerStartupData.TryFromVariant(payload, out var data) || !GameplayDefinitions.Current.Ships.TryGetById(data.ShipId, out _))
         {
             RejectJoin(peer, "Invalid player startup payload.");
             return;

@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System.Reflection;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
@@ -41,8 +42,8 @@ public class LocalCameraTests
         player.Initialize(canvas, transfer, _ => { }, world);
         host.AddChild(player);
         var participant = new PlayerSession { ControllingPeerId = 1 };
-        var ship = ShipFactory.Create(ShipRegistry.GetById("fighter"), "first", new Vector2(100, 200), 0, Vector2.Zero);
-        var replacement = ShipFactory.Create(ShipRegistry.GetById("fighter"), "second", new Vector2(800, 400), 0, Vector2.Zero);
+        var ship = ShipFactory.Create(GameplayDefinitions.Current.Ships.GetById("fighter"), "first", new Vector2(100, 200), 0, Vector2.Zero);
+        var replacement = ShipFactory.Create(GameplayDefinitions.Current.Ships.GetById("fighter"), "second", new Vector2(800, 400), 0, Vector2.Zero);
         try
         {
             world.AddChild(ship);

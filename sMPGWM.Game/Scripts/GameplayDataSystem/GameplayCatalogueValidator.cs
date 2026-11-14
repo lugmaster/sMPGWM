@@ -7,7 +7,7 @@ namespace sMPGWM.Scripts.GameplayDataSystem;
 
 public static class GameplayCatalogueValidator
 {
-    private static T Reference<T>(DefinitionRegistry<T> registry, string id, string owner, string field)
+    private static T Reference<T>(DefinitionSet<T> registry, string id, string owner, string field)
         where T : GameplayDefinition => registry.TryGetById(id, out var definition) ? definition :
         throw new ArgumentException($"{owner}, {field}: unknown reference '{id}'.");
 
@@ -25,8 +25,9 @@ public static class GameplayCatalogueValidator
 
                 return true;
             }
-            if (data.Items.TryGetById(item.Id, out var registered) && ReferenceEquals(registered, item))
-                CatalogueParser.WithSource(data.Items.SourceFor(item.Id), ValidateItem);
+            if (data.Items.TryGetById(item.Id, out var registered) && ReferenceEquals(registered, item) &&
+                data.Items.SourceFor(item.Id) is { } source)
+                CatalogueParser.WithSource(source, ValidateItem);
             else
                 ValidateItem();
         }
@@ -50,7 +51,7 @@ public static class GameplayCatalogueValidator
             if (modifier.ValueKind == ModifierValueKind.Maximum && !stat.IsResource)
                 throw new ArgumentException($"{owner}, Modifiers.ValueKind: Maximum requires a resource pool ('{stat.Id}').");
         }
-        foreach (var ability in data.Abilities.GetAll())
+        foreach (var ability in data.Abilities.All)
         {
             CatalogueParser.WithSource(new CatalogueSource("AbilityDefinitions.yml", "AbilitySchema.yml", "AbilityDefinitions"), () =>
             {
@@ -68,7 +69,7 @@ public static class GameplayCatalogueValidator
                 return true;
             });
         }
-        foreach (var effect in data.Effects.GetAll())
+        foreach (var effect in data.Effects.All)
         {
             CatalogueParser.WithSource(new CatalogueSource("EffectDefinitions.yml", "EffectDefinitionSchema.yml", "EffectDefinitions"), () =>
             {
@@ -115,7 +116,7 @@ public static class GameplayCatalogueValidator
             });
         }
         var modifierTotals = new Dictionary<(string StatId, ModifierValueKind ValueKind, ModifierOperation Operation), double>();
-        foreach (var behaviour in data.Behaviours.GetAll())
+        foreach (var behaviour in data.Behaviours.All)
         {
             CatalogueParser.WithSource(new CatalogueSource("BehaviourDefinitions.yml", "BehaviourSchema.yml", "BehaviourDefinitions"), () =>
             {

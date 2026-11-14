@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System.Collections.Generic;
 using System.Linq;
 using sMPGWM.Scripts.InventorySystem;
@@ -15,7 +16,7 @@ internal sealed class InventoryViewState
         get
         {
             var index = 1;
-            foreach (var category in ItemRegistry.GetAllCategories())
+            foreach (var category in GameplayDefinitions.Current.ItemCategories.All)
             {
                 if (category.Id is "medium_weapon" or "heavy_weapon") continue;
                 if (index++ == SelectedTab) return category.Id;

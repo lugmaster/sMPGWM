@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
@@ -15,7 +16,7 @@ internal sealed class ShipItemTestContext : IDisposable
     public ShipItemTestContext()
     {
         var store = new ItemStore();
-        _ship = ShipFactory.Create(ShipRegistry.GetById("fighter"), "11111111111111111111111111111111", Vector2.Zero, 0, Vector2.Zero, store, false);
+        _ship = ShipFactory.Create(GameplayDefinitions.Current.Ships.GetById("fighter"), "11111111111111111111111111111111", Vector2.Zero, 0, Vector2.Zero, store, false);
         Player = new(store) { ControllingPeerId = 1 };
         Player.AssignShip(_ship);
     }

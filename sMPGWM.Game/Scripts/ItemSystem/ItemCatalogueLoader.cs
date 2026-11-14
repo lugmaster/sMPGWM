@@ -21,21 +21,21 @@ internal static class ItemCatalogueLoader
     private static CatalogueSource Source(string category) =>
         new(category + ".yml", category + ".schema.yml", "Items", UserDirectory: "items/", DefaultDirectory: "items/");
 
-    internal static ItemCategoryDefinitions LoadCategories(Func<CatalogueSource, JObject> read,
+    internal static DefinitionSet<ItemCategoryDefinition> LoadCategories(Func<CatalogueSource, JObject> read,
         Func<string, IconDefinition> resolveIcon)
     {
         var catalogue = new Catalogue<ItemCategoryDefinition>(CategorySource,
             row => ItemDefinitionParser.ParseCategory(row, resolveIcon));
-        return new ItemCategoryDefinitions(CatalogueParser.Load(catalogue, source =>
+        return new DefinitionSet<ItemCategoryDefinition>(CatalogueParser.Load(catalogue, source =>
         {
             var document = read(source);
             RequireVersion(document);
             return document;
-        }));
+        }), CategorySource);
     }
 
-    internal static ItemDefinitions LoadItems(Func<CatalogueSource, JObject> read,
-        ItemCategoryDefinitions categories, Func<string, IconDefinition> resolveIcon)
+    internal static DefinitionSet<ItemDefinition> LoadItems(Func<CatalogueSource, JObject> read,
+        DefinitionSet<ItemCategoryDefinition> categories, Func<string, IconDefinition> resolveIcon)
     {
         var definitions = new List<ItemDefinition>();
         var sources = new Dictionary<string, CatalogueSource>(StringComparer.Ordinal);
@@ -65,7 +65,7 @@ internal static class ItemCatalogueLoader
                 return true;
             });
         }
-        return new ItemDefinitions(definitions.ToArray(), sources);
+        return new DefinitionSet<ItemDefinition>(definitions.ToArray(), "items", sources);
     }
 
     private static void RequireVersion(JObject document)

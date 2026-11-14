@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UtilitySystem;
 
@@ -9,7 +10,7 @@ public sealed class ItemRestorationTests
     [Test]
     public void RestorePreservesIdentityRevisionLocationsAndReservesFutureIds()
     {
-        var definition = ItemRegistry.GetById("mock_standard_engine");
+        var definition = GameplayDefinitions.Current.Items.GetById("mock_standard_engine");
         var highest = checked((long)ItemEntityId.Create().Value + 1000);
         var firstId = new ItemContainerId((ulong)highest - 2);
         var secondId = new ItemContainerId((ulong)highest - 1);
@@ -69,7 +70,7 @@ public sealed class ItemRestorationTests
     [TestCase("prepare")]
     public void InvalidRestorePreservesEveryTargetAndRetainedItem(string reason)
     {
-        var definition = ItemRegistry.GetById("mock_standard_engine");
+        var definition = GameplayDefinitions.Current.Items.GetById("mock_standard_engine");
         var store = new ItemStore();
         var retained = store.CreateContainer(1);
         Assert.That(store.CreateItems(retained, definition.Id, 1), Is.EqualTo(InventoryResult.Success));
@@ -114,7 +115,7 @@ public sealed class ItemRestorationTests
         using var equipment = new sMPGWM.Scripts.EquipmentSystem.EquipmentController(store);
         var oldInventory = inventory.Snapshot;
         var oldEquipment = equipment.Snapshot;
-        var definition = ItemRegistry.GetById("mock_standard_engine");
+        var definition = GameplayDefinitions.Current.Items.GetById("mock_standard_engine");
         var inventoryItem = new ItemEntity(ItemEntityId.Create(), definition, 1);
         var equippedItem = new ItemEntity(ItemEntityId.Create(), definition, 1);
         var inventorySlots = new ItemEntity?[inventory.Capacity];

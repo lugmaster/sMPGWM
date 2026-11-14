@@ -19,9 +19,9 @@ public sealed class ItemCatalogueLoadingTests
             documents.Add(source.FileName, document);
             return document;
         }, categories, _ => null!);
-        Assert.That(items.GetAll().Count, Is.EqualTo(23));
-        Assert.That(items.GetAll()[0].Id, Is.EqualTo("mock_standard_engine"));
-        Assert.That(items.GetAll()[^1].Id, Is.EqualTo("mock_standard_weapon_fixture"));
+        Assert.That(items.All.Count, Is.EqualTo(23));
+        Assert.That(items.All[0].Id, Is.EqualTo("mock_standard_engine"));
+        Assert.That(items.All[^1].Id, Is.EqualTo("mock_standard_weapon_fixture"));
         Assert.That(items.GetById("mock_standard_engine"), Is.TypeOf<EngineItemDefinition>());
         Assert.That(items.GetById("mock_standard_consumable").StackLimit, Is.EqualTo(10));
         Assert.That(reads, Is.EqualTo(new[]
@@ -33,7 +33,7 @@ public sealed class ItemCatalogueLoadingTests
         }));
         foreach (var source in ItemCatalogueLoader.ItemSources)
             Assert.That(JToken.DeepEquals(documents[source.FileName], Read(source)), Is.True, source.FileName);
-        Assert.Throws<NotSupportedException>(() => ((IList<ItemDefinition>)items.GetAll()).Clear());
+        Assert.Throws<NotSupportedException>(() => ((IList<ItemDefinition>)items.All).Clear());
     }
 
     [Test]

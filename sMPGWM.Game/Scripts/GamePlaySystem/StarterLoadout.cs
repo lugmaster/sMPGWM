@@ -9,7 +9,7 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 
 public static class StarterLoadout
 {
-    public static void ValidateDefinitions(ItemDefinitions items)
+    public static void ValidateDefinitions(DefinitionSet<ItemDefinition> items)
     {
         foreach (var slot in EquipmentSlotDefinition.Defaults)
         {
@@ -18,8 +18,11 @@ public static class StarterLoadout
             if (!items.TryGetById(definitionId, out var definition))
                 throw new ArgumentException($"Starter loadout slot '{slot.Key}': missing required item '{definitionId}'.");
             if (slot.IsWeaponSlot ? WeaponSlotPolicy.GetCost(definition.CategoryId) == 0 : definition.CategoryId != slot.AcceptedCategory)
-                throw new CatalogueLoadException(items.SourceFor(definition.Id),
-                    $"Starter equipment '{definition.Id}', CategoryId: does not fit '{slot.Key}'.");
+            {
+                var message = $"Starter equipment '{definition.Id}', CategoryId: does not fit '{slot.Key}'.";
+                if (items.SourceFor(definition.Id) is { } source) throw new CatalogueLoadException(source, message);
+                throw new ArgumentException(message);
+            }
         }
     }
 

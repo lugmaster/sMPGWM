@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +30,7 @@ public sealed record WorldTopology(ParticipantBinding[] Participants, EntitySpaw
         var peers = new HashSet<int>(); var bindings = new HashSet<string>(); var entities = new HashSet<string>();
         foreach (var e in Entities)
             if (!Guid.TryParseExact(e.EntityId, "N", out _) || !entities.Add(e.EntityId) ||
-                !ShipRegistry.TryGetById(e.ShipId, out _) || !e.Position.IsFinite() ||
+                !GameplayDefinitions.Current.Ships.TryGetById(e.ShipId, out _) || !e.Position.IsFinite() ||
                 !float.IsFinite(e.Rotation) || !e.Velocity.IsFinite()) return false;
         foreach (var p in Participants)
             if (p.Peer <= 0 || !peers.Add(p.Peer) || p.Generation < 0 || p.Generation > MovementWire.MaxTick ||

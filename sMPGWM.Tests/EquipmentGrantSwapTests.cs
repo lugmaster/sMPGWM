@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.ItemSystem;
@@ -19,12 +20,12 @@ public sealed class EquipmentGrantSwapTests
             world.ApproveSpawn(1, new("fighter"));
             var items = world.Players[1];
             var grants = world.Players[1].ControlledShip!.Runtime.Grants;
-            var weapon = (WeaponItemDefinition)ItemRegistry.GetById("mock_standard_light_weapon") with
+            var weapon = (WeaponItemDefinition)GameplayDefinitions.Current.Items.GetById("mock_standard_light_weapon") with
                 { AbilityIds = Array.AsReadOnly(new[] { "shieldCapacityBoost" }) };
             var first = new ItemEntity(ItemEntityId.Create(), weapon, 1);
             var second = new ItemEntity(ItemEntityId.Create(), weapon, 1);
             var equipment = new ItemEntity?[items.ControlledShip!.Equipment.Definitions.Count];
-            equipment[items.ControlledShip!.Equipment.FindSlot("weapon_fixture")] = new(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_weapon_fixture"), 1);
+            equipment[items.ControlledShip!.Equipment.FindSlot("weapon_fixture")] = new(ItemEntityId.Create(), GameplayDefinitions.Current.Items.GetById("mock_standard_weapon_fixture"), 1);
             equipment[items.ControlledShip!.Equipment.FindSlot("weapon_1")] = first;
             equipment[items.ControlledShip!.Equipment.FindSlot("weapon_2")] = second;
             Assert.That(items.Inventory.Items.Confirm(items.Inventory.Container, new ItemEntity?[items.Inventory.Capacity], 1,

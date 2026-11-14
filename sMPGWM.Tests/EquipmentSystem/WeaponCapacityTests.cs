@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
@@ -141,9 +142,9 @@ public sealed class WeaponCapacityTests
         using var equipment = new EquipmentController(inventory.Items);
         var slots = new ItemEntity?[equipment.Definitions.Count];
         if (includeFixture)
-            slots[equipment.FindSlot("weapon_fixture")] = new(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_weapon_fixture"), 1);
+            slots[equipment.FindSlot("weapon_fixture")] = new(ItemEntityId.Create(), GameplayDefinitions.Current.Items.GetById("mock_standard_weapon_fixture"), 1);
         for (var i = 1; i <= (includeFixture ? 4 : 1); i++)
-            slots[equipment.FindSlot("weapon_" + i)] = new(ItemEntityId.Create(), ItemRegistry.GetById("mock_standard_heavy_weapon"), 1);
+            slots[equipment.FindSlot("weapon_" + i)] = new(ItemEntityId.Create(), GameplayDefinitions.Current.Items.GetById("mock_standard_heavy_weapon"), 1);
         var before = equipment.Snapshot;
         Assert.That(inventory.Items.Confirm(new[] { new ItemContainerConfirmation(equipment.Container, slots, 1) }), Is.False);
         Assert.That(equipment.Snapshot, Is.SameAs(before));
@@ -163,7 +164,7 @@ public sealed class WeaponCapacityTests
 
     private static ItemEntity AddFixture(InventoryController inventory, int capacity)
     {
-        var definition = (WeaponFixtureItemDefinition)ItemRegistry.GetById("mock_standard_weapon_fixture") with
+        var definition = (WeaponFixtureItemDefinition)GameplayDefinitions.Current.Items.GetById("mock_standard_weapon_fixture") with
         {
             WeaponSlots = capacity, Mass = 1
         };

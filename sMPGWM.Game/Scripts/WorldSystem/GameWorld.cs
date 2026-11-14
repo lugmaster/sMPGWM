@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,7 +62,7 @@ public partial class GameWorld : Node
 
     public ShipSpawnRecord ApproveSpawn(int peerId, PlayerStartupData data)
     {
-        if (!ShipRegistry.TryGetById(data.ShipId, out _)) throw new ArgumentException("Unknown ship: " + data.ShipId);
+        if (!GameplayDefinitions.Current.Ships.TryGetById(data.ShipId, out _)) throw new ArgumentException("Unknown ship: " + data.ShipId);
         if (_records.TryGetValue(peerId, out var existing))
         {
             if (existing.ShipId != data.ShipId) throw new InvalidOperationException("Conflicting ship request.");
@@ -155,7 +156,7 @@ public partial class GameWorld : Node
     {
         if (_entities.ContainsKey(record.EntityId))
             throw new InvalidOperationException("Duplicate entity ID.");
-        var ship = ShipFactory.Create(ShipRegistry.GetById(record.ShipId), record.EntityId,
+        var ship = ShipFactory.Create(GameplayDefinitions.Current.Ships.GetById(record.ShipId), record.EntityId,
             record.Position, record.Rotation, record.Velocity, Items, AuthoritativeItems);
         try
         {

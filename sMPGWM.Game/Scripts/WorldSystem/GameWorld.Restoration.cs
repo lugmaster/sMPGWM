@@ -66,7 +66,7 @@ public partial class GameWorld
             for (var i = 0; i < entities.Length; i++)
             {
                 var record = entities[i];
-                var ship = ShipFactory.Create(ShipRegistry.GetById(record.ShipId), record.EntityId,
+                var ship = ShipFactory.Create(GameplayDefinitions.Current.Ships.GetById(record.ShipId), record.EntityId,
                     record.Position, record.Rotation, record.Velocity, store, true);
                 ships.Add(record.EntityId, ship);
                 containers[i] = new ItemContainerRestoration(ship.Equipment.Container, state.Ships[i].Equipment);

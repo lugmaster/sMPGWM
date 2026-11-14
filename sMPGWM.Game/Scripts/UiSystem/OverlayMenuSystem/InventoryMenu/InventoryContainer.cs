@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 
 
 using Godot;
@@ -40,7 +41,7 @@ public partial class InventoryContainer : VBoxContainer
         _grid.CellCreated += OnCellCreated;
         _tabs.ClearTabs();
         _tabs.AddTab("All");
-        foreach (var category in ItemRegistry.GetAllCategories())
+        foreach (var category in GameplayDefinitions.Current.ItemCategories.All)
         {
             if (category.Id is "medium_weapon" or "heavy_weapon") continue;
             _tabs.AddTab("", ItemIconResolver.Category(category));

@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
@@ -19,7 +20,7 @@ internal static class ItemFixture
     internal static ItemEntity Place(ItemStore items, ItemContainer destination, int slot, string definitionId, int count = 1)
     {
         if (destination.Slots[slot] is not null) throw new InvalidOperationException("Fixture slot must be empty.");
-        if (count <= 0 || count > ItemRegistry.GetById(definitionId).StackLimit)
+        if (count <= 0 || count > GameplayDefinitions.Current.Items.GetById(definitionId).StackLimit)
             throw new ArgumentOutOfRangeException(nameof(count));
         var staging = items.CreateContainer(1);
         var creation = items.CreateItems(staging, definitionId, count);

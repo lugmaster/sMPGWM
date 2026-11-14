@@ -112,7 +112,7 @@ public sealed class ShipRuntime : IDisposable
                 string.IsNullOrWhiteSpace(instance.DefinitionId) || !identities.Add(instance.RuntimeId) || !behaviourIds.Add(instance.DefinitionId))
                 throw new ArgumentException("Invalid or duplicate restored behaviour instance.");
             SupportedBehaviour? supported = null;
-            foreach (var ability in definitions.Abilities.GetAll())
+            foreach (var ability in definitions.Abilities.All)
                 if (definitions.Abilities.TryGetPlan(ability.Id, out var plan) && plan.Behaviour.Definition.Id == instance.DefinitionId)
                 {
                     supported = plan.Behaviour;

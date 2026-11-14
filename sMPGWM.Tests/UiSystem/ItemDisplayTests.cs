@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.UiSystem.Items;
 using sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
@@ -67,7 +68,7 @@ public class ItemDisplayTests
     [Category("Godot")]
     public void Tooltip_PreservesExactAggregateQuantityBeyondIndividualStackLimit()
     {
-        var definition = ItemRegistry.GetById("mock_advanced_resource");
+        var definition = GameplayDefinitions.Current.Items.GetById("mock_advanced_resource");
         var display = ItemDisplayFormatter.Create(definition.Id, int.MaxValue);
         Assert.That(display.Tooltip, Does.Contain("2147483647"));
     }
@@ -77,7 +78,7 @@ public class ItemDisplayTests
     [Category("Godot")]
     public void HotbarTooltipSupportsZeroAndAggregateQuantities(long quantity)
     {
-        var definition = ItemRegistry.GetById("mock_standard_consumable");
+        var definition = GameplayDefinitions.Current.Items.GetById("mock_standard_consumable");
         var display = ItemDisplayFormatter.Create( definition.Id, quantity);
         Assert.That(display.Quantity, Is.EqualTo(quantity));
         Assert.That(display.Tooltip, Does.Contain($"Quantity: {quantity}").And.Contain("Stack limit: 10"));

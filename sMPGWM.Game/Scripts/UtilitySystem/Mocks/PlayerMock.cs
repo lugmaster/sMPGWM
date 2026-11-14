@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.InventorySystem;
@@ -53,7 +54,7 @@ public partial class PlayerMock: AbstractSingleton<PlayerMock>
     internal static void ValidateInventoryDefinitions()
     {
         foreach (var (id, _) in InventoryExamples)
-            ItemRegistry.GetById(id);
+            GameplayDefinitions.Current.Items.GetById(id);
     }
 
     public void PopulateInventory(InventoryController inventory)

@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System;
 using System.Collections.Generic;
 using sMPGWM.Scripts.ItemSystem;
@@ -34,7 +35,7 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
         if (ReferenceEquals(definitions, EquipmentSlotDefinition.Defaults))
         {
             for (var i = 0; i < definitions.Count; i++)
-                if (definitions[i].AcceptedCategory != "weapon") ItemRegistry.GetCategoryById(definitions[i].AcceptedCategory);
+                if (definitions[i].AcceptedCategory != "weapon") GameplayDefinitions.Current.ItemCategories.GetById(definitions[i].AcceptedCategory);
             Definitions = definitions;
         }
         else
@@ -47,7 +48,7 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
                 var definition = definitions[i];
                 if (definition == null || string.IsNullOrWhiteSpace(definition.Key) || definition.Key.Length > 64 || !keys.Add(definition.Key))
                     throw new ArgumentException("Invalid or duplicate equipment slot key.", nameof(definitions));
-                if (definition.AcceptedCategory != "weapon") ItemRegistry.GetCategoryById(definition.AcceptedCategory);
+                if (definition.AcceptedCategory != "weapon") GameplayDefinitions.Current.ItemCategories.GetById(definition.AcceptedCategory);
                 if (definition.AcceptedCategory is "engine" or "hull" or "shield_generator" or "reactor" or "battery" or "weapon_fixture" &&
                     !singletonCategories.Add(definition.AcceptedCategory))
                     throw new ArgumentException("Duplicate singleton component category.", nameof(definitions));
@@ -72,7 +73,7 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
     public bool CanPlace(string key, string definitionId)
     {
         var index = FindSlot(key);
-        return index >= 0 && Definitions[index].Accepts(ItemRegistry.GetById(definitionId).CategoryId);
+        return index >= 0 && Definitions[index].Accepts(GameplayDefinitions.Current.Items.GetById(definitionId).CategoryId);
     }
 
     private void PrepareTransfer(Dictionary<ItemContainer, ItemEntity?[]> changes, ItemContainer storage)

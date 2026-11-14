@@ -1,3 +1,4 @@
+using sMPGWM.Scripts.GameplayDataSystem;
 using System.Collections;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
@@ -93,7 +94,7 @@ public class ItemHotbarTests
     {
         Assign(0);
         ItemFixture.MoveAway(_inventory.Items, _inventory.Container, 0, 1);
-        Assert.That(_controller.Resolve(0), Is.EqualTo(new HotbarAvailability("mock_standard_consumable", 0, ItemRegistry.GetById("mock_standard_consumable").DisplayName, false)));
+        Assert.That(_controller.Resolve(0), Is.EqualTo(new HotbarAvailability("mock_standard_consumable", 0, GameplayDefinitions.Current.Items.GetById("mock_standard_consumable").DisplayName, false)));
         Assert.That(_state.Entries[0], Is.TypeOf<ConsumableHotbarBinding>());
         using var inventory = new InventoryController();
         using var equipment = new EquipmentController(inventory.Items);
@@ -101,7 +102,7 @@ public class ItemHotbarTests
         using var state = new ItemHotbarState();
         var session = transfers.OpenEditSession();
         state.SetEditSession(session);
-        var quantity = (long)ItemRegistry.GetById("mock_advanced_consumable").StackLimit * 2;
+        var quantity = (long)GameplayDefinitions.Current.Items.GetById("mock_advanced_consumable").StackLimit * 2;
         inventory.Items.CreateItems(inventory.Container, "mock_advanced_consumable", quantity);
         var controller = new ItemHotbarController(state, inventory, equipment, transfers);
         controller.Assign(new HotbarAssignmentRequest(session, 0, 0, ItemCellAddress.Inventory(0), inventory.Snapshot.Slots[0]!.Id, inventory.Revision, 0));
