@@ -1,7 +1,7 @@
 extends SceneTree
 
 var failures := 0
-const SLOT_LABELS := [["Engine", "Hull", "Shield Generator", "Reactor", "Battery", "Weapon Fixture"], ["Weapon 1", "Weapon 2", "Weapon 3", "Weapon 4", "Weapon 5", "Weapon 6", "Weapon 7", "Weapon 8", "Weapon 9"], []] # TEST-SUPPORT: EQUIP-TABS-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+const SLOT_LABELS := [["Engine", "Hull", "Shield Generator", "Reactor", "Battery", "Weapon Fixture"], ["Weapon 1", "Weapon 2", "Weapon 3", "Weapon 4", "Weapon 5", "Weapon 6", "Weapon 7", "Weapon 8", "Weapon 9"], []]
 
 func _initialize() -> void:
     run.call_deferred()
@@ -27,16 +27,16 @@ func capture_visual(name: String) -> void:
     expect(root.get_texture().get_image().save_png(path) == OK, "Visual evidence must save: %s" % path)
 
 func verify_cells(menu: Node, pointer_overlay: Control) -> void:
-    var equipment := menu.get_node("%EquipmentContainer") as TabContainer # TEST-SUPPORT: EQUIP-TABS-SMOKE-002 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    var equipment := menu.get_node("%EquipmentContainer") as TabContainer
     var bag := menu.get_node("%InventoryContainer").get_node("%ItemGrid")
     var grid := bag.get_node("%SlotGrid")
-    expect(equipment.get_tab_count() == 3, "Equipment must have Ship, Weapons, and Crew tabs") # TEST-SUPPORT: EQUIP-TABS-SMOKE-003 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    expect(equipment.get_tab_count() == 3, "Equipment must have Ship, Weapons, and Crew tabs")
     expect(grid.get_child_count() == 128, "Bag must replace previews with 128 cells")
     expect(grid.columns == 8, "Bag must retain eight columns")
     var tabs := menu.get_node("%InventoryContainer").get_node("%CategoryTabs") as TabBar
-    expect(tabs.tab_count == 10 and tabs.get_tab_icon(0) == null, "Categories must use native tabs with a text-only All tab") # TEST-SUPPORT: WEAPON-GRID-SMOKE-006 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-    expect(equipment.get_node("Weapons/Slots/SlotGrid").columns == 3, "Weapons must use three columns for nine UI cells") # TEST-SUPPORT: WEAPON-GRID-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-    expect(equipment.get_node("Weapons/Capacity/Value").text == "0/0", "Missing fixture must show zero free and maximum capacity") # TEST-SUPPORT: WEAPON-GRID-SMOKE-002 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    expect(tabs.tab_count == 10 and tabs.get_tab_icon(0) == null, "Categories must use native tabs with a text-only All tab")
+    expect(equipment.get_node("Weapons/Slots/SlotGrid").columns == 3, "Weapons must use three columns for nine UI cells")
+    expect(equipment.get_node("Weapons/Capacity/Value").text == "0/0", "Missing fixture must show zero free and maximum capacity")
     for index in range(1, tabs.tab_count):
         expect(tabs.get_tab_metadata(index) is String and not tabs.get_tab_metadata(index).is_empty(), "Tabs must retain stable category IDs")
     expect(not menu.has_node("ItemPointerPreview") and not menu.has_node("ItemPointerFeedback"), "Inventory must not own pointer presentation nodes")
@@ -45,30 +45,30 @@ func verify_cells(menu: Node, pointer_overlay: Control) -> void:
     expect(pointer_overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE and pointer_overlay.get_node("%ItemPointerFeedback").mouse_filter == Control.MOUSE_FILTER_IGNORE,
         "Shared pointer presentation must pass mouse input through")
     expect(pointer_overlay.get_canvas() == menu.get_canvas() and pointer_overlay.get_index() == pointer_overlay.get_parent().get_child_count() - 1, "Pointer presentation must render last in the shared UI canvas")
-    var equipment_size := equipment.size # TEST-SUPPORT: EQUIP-TABS-SMOKE-004 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-    for tab_index in range(3): # TEST-SUPPORT: EQUIP-TABS-SMOKE-005 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        expect(equipment.get_tab_title(tab_index) == ["Ship", "Weapons", "Crew"][tab_index], "Equipment tabs must retain their labels") # TEST-SUPPORT: EQUIP-TABS-SMOKE-006 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        expect(equipment.get_tab_icon(tab_index) != null, "Equipment tabs must have icons") # TEST-SUPPORT: EQUIP-TABS-SMOKE-007 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        equipment.current_tab = tab_index # TEST-SUPPORT: EQUIP-TABS-SMOKE-008 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        await settle() # TEST-SUPPORT: EQUIP-TABS-SMOKE-009 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        expect(equipment.size == equipment_size, "Switching equipment tabs must preserve panel size") # TEST-SUPPORT: EQUIP-TABS-SMOKE-010 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        var page := equipment.get_tab_control(tab_index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-011 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        expect(page.visible, "Selected equipment page must be visible") # TEST-SUPPORT: EQUIP-TABS-SMOKE-012 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        var slots := page.get_node("Slots/SlotGrid") if tab_index == 1 else page # TEST-SUPPORT: WEAPON-GRID-SMOKE-003 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        expect(slots.get_child_count() == SLOT_LABELS[tab_index].size(), "Equipment slots must be grouped by tab, leaving Crew empty") # TEST-SUPPORT: EQUIP-TABS-SMOKE-013 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        for other_index in range(3): # TEST-SUPPORT: EQUIP-TABS-SMOKE-014 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-            expect(equipment.get_tab_control(other_index).visible == (other_index == tab_index), "Only the selected equipment page must be visible") # TEST-SUPPORT: EQUIP-TABS-SMOKE-015 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-        for index in range(slots.get_child_count()): # TEST-SUPPORT: EQUIP-TABS-SMOKE-016 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-            var cell := slots.get_child(index) # TEST-SUPPORT: EQUIP-TABS-SMOKE-017 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-            if tab_index == 1: # TEST-SUPPORT: WEAPON-DYNAMIC-SMOKE-001 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-                expect(not cell.visible and cell.icon == null, "Without a fixture, all retained weapon cells must be hidden") # TEST-SUPPORT: WEAPON-DYNAMIC-SMOKE-002 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-                continue # TEST-SUPPORT: WEAPON-DYNAMIC-SMOKE-003 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-            var label := cell.get_node("%Label") as Label # TEST-SUPPORT: EQUIP-TABS-SMOKE-018 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-            expect(label.text == SLOT_LABELS[tab_index][index], "Equipment labels must follow domain order within their tab") # TEST-SUPPORT: EQUIP-TABS-SMOKE-019 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-            expect(label.size.y >= label.get_minimum_size().y, "Equipment labels must fit their cells") # TEST-SUPPORT: EQUIP-TABS-SMOKE-020 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-            expect(cell.get_node("%ClickableIcon").icon == null, "Empty equipment must have no mock texture") # TEST-SUPPORT: EQUIP-TABS-SMOKE-021 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-    equipment.current_tab = 0 # TEST-SUPPORT: EQUIP-TABS-SMOKE-022 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
-    await settle() # TEST-SUPPORT: EQUIP-TABS-SMOKE-023 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.verify_cells
+    var equipment_size := equipment.size
+    for tab_index in range(3):
+        expect(equipment.get_tab_title(tab_index) == ["Ship", "Weapons", "Crew"][tab_index], "Equipment tabs must retain their labels")
+        expect(equipment.get_tab_icon(tab_index) != null, "Equipment tabs must have icons")
+        equipment.current_tab = tab_index
+        await settle()
+        expect(equipment.size == equipment_size, "Switching equipment tabs must preserve panel size")
+        var page := equipment.get_tab_control(tab_index)
+        expect(page.visible, "Selected equipment page must be visible")
+        var slots := page.get_node("Slots/SlotGrid") if tab_index == 1 else page
+        expect(slots.get_child_count() == SLOT_LABELS[tab_index].size(), "Equipment slots must be grouped by tab, leaving Crew empty")
+        for other_index in range(3):
+            expect(equipment.get_tab_control(other_index).visible == (other_index == tab_index), "Only the selected equipment page must be visible")
+        for index in range(slots.get_child_count()):
+            var cell := slots.get_child(index)
+            if tab_index == 1:
+                expect(not cell.visible and cell.icon == null, "Without a fixture, all retained weapon cells must be hidden")
+                continue
+            var label := cell.get_node("%Label") as Label
+            expect(label.text == SLOT_LABELS[tab_index][index], "Equipment labels must follow domain order within their tab")
+            expect(label.size.y >= label.get_minimum_size().y, "Equipment labels must fit their cells")
+            expect(cell.get_node("%ClickableIcon").icon == null, "Empty equipment must have no mock texture")
+    equipment.current_tab = 0
+    await settle()
     for cell in grid.get_children():
         expect(cell.icon == null and cell.tooltip_text.is_empty(), "Empty bag cells must have no item texture or tooltip")
         var quantity := cell.get_node("QuantityLabel") as Label
@@ -129,12 +129,12 @@ func run() -> void:
     for cell in demo_grid.get_children():
         if cell.icon != null:
             occupied += 1
-    expect(demo_grid.get_child_count() == 128 and occupied == 40, "PlayerMock must seed examples while keeping free inventory slots") # TEST-SUPPORT: WEAPON-GRID-SMOKE-004 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.run
+    expect(demo_grid.get_child_count() == 128 and occupied == 40, "PlayerMock must seed examples while keeping free inventory slots")
     var demo_tabs := demo_container.get_node("%CategoryTabs") as TabBar
     for index in range(1, demo_tabs.tab_count):
         demo_tabs.current_tab = index
         await settle()
-        expect(demo_grid.get_child_count() >= 88, "Category filtering must preserve free inventory slots") # TEST-SUPPORT: WEAPON-GRID-SMOKE-005 | Tests: sMPGWM.Tests.UiSystem.inventory_smoke.run
+        expect(demo_grid.get_child_count() >= 88, "Category filtering must preserve free inventory slots")
     var demo_buttons := demo.get_node("UiCanvas").get_node("%PlayerHud").get_node("%HotbarControl").get_node("%ButtonContainer")
     expect(demo_buttons.get_child_count() == 10, "Default hotbar must retain ten empty slots")
     for cell in demo_buttons.get_children():

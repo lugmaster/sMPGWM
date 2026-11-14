@@ -15,6 +15,10 @@ internal sealed class ItemHotbarState : IDisposable
 
     public ItemHotbarState(Action<Exception>? reportError = null) : this(Array.Empty<HotbarBinding?>(), reportError) { }
 
+    // TEST-SUPPORT: HOTBAR-SEED-STATE-*
+    // Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests
+    // Tests: sMPGWM.Tests.UiSystem.ItemInteractionControllerTests
+    // Tests: sMPGWM.Tests.NetworkSystem.WeaponFixtureReplicationTests
     internal ItemHotbarState(IEnumerable<HotbarBinding?> initialBindings, Action<Exception>? reportError = null)
     {
         ArgumentNullException.ThrowIfNull(initialBindings);

@@ -34,7 +34,7 @@ public class GameSessionFactoryTests
         GameSession? session = null;
         try
         {
-            coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData); // TEST-SUPPORT: INIT-FACTORY-37 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.FailedStartupReleasesBindingsAndAllowsFreshConstruction
+            coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData);
             coordinator.Start(scope =>
             {
                 session = GameSessionFactory.Create(scope, parent, canvas, world,
@@ -57,7 +57,7 @@ public class GameSessionFactoryTests
             Assert.That(NetworkManager.Instance, Is.Null);
             Assert.That(world.GetChildCount(), Is.Zero);
             var fresh = new SessionCoordinator(() => { }, failures.Add, cleanupErrors.Add);
-            fresh.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData); // TEST-SUPPORT: INIT-FACTORY-60 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.FailedStartupReleasesBindingsAndAllowsFreshConstruction
+            fresh.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData);
             fresh.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
                 new NetworkStartupData(NetworkRole.Host, NetworkType.Lan, 10, 100), fresh, new EmptyGameFixture()));
             Assert.That(fresh.State, Is.EqualTo(SessionState.Starting));
@@ -102,7 +102,7 @@ public class GameSessionFactoryTests
                 port = ((System.Net.IPEndPoint)reservation.Client.LocalEndPoint!).Port;
             try
             {
-                coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData); // TEST-SUPPORT: INIT-FACTORY-105 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
+                coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData);
                 coordinator.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
                     new NetworkStartupData(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port),
                     coordinator, new EmptyGameFixture()));
@@ -158,7 +158,7 @@ public class GameSessionFactoryTests
         public InventoryController? Inventory { get; private set; }
         public IReadOnlyList<IconDefinition> Actions => failure == "actions"
             ? throw new InvalidOperationException("Action initialization failed") : Array.Empty<IconDefinition>();
-        public void Populate(InventoryController inventory, MessageController messages, bool includeItems) // TEST-SUPPORT: EQUIP-FIXTURE-001 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.FailedStartupReleasesBindingsAndAllowsFreshConstruction, sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
+        public void Populate(InventoryController inventory, MessageController messages, bool includeItems)
         {
             Inventory = inventory;
             if (failure == "populate") throw new InvalidOperationException("Fixture initialization failed");

@@ -1,64 +1,64 @@
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
 namespace sMPGWM.Tests.FileLoader;
-public class ShipRegistryTests // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-4 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
+public class ShipRegistryTests
 {
-    private static ShipDefinition Definition(string name = "fighter") => new() // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-6 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
+    private static ShipDefinition Definition(string name = "fighter") => new()
     {
-        Name = name, TexturePath = "texture", // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-8 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-        ColliderPoints = new() { new double[] {0, 0}, new double[] {10, 0}, new double[] {10, 10}, new double[] {5, 5}, new double[] {0, 10} }, // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-9 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-        Health = 150, // TEST-SUPPORT: SHIP-HEALTH-REG-001 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-        Mass = 1 // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-10 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
+        Name = name, TexturePath = "texture",
+        ColliderPoints = new() { new double[] {0, 0}, new double[] {10, 0}, new double[] {10, 10}, new double[] {5, 5}, new double[] {0, 10} },
+        Health = 150,
+        Mass = 1
     };
-    [Test] // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-12 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-    public void RegistryCopiesCollectionsAndUsesExactNames() // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-13 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
+    [Test]
+    public void RegistryCopiesCollectionsAndUsesExactNames()
     {
-        var definition = Definition(); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-15 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        var document = new ShipDefinitionsDocument { Ships = new() { definition, Definition("Fighter") } }; // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-16 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        var registry = ShipRegistry.Build(document, _ => true); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-17 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        definition.ColliderPoints[0][0] = 99; // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-18 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        definition.Health = 99; // TEST-SUPPORT: SHIP-HEALTH-REG-002 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames
-        definition.Mass = 99; // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-19 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.That(registry, Has.Count.EqualTo(2)); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-20 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.That(registry.ContainsKey("FIGHTER"), Is.False); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-21 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.That(registry["fighter"].ColliderPoints[0], Is.EqualTo(Vector2.Zero)); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-22 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.That(registry["fighter"].Health, Is.EqualTo(150)); // TEST-SUPPORT: SHIP-HEALTH-REG-003 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames
-        Assert.That(registry["fighter"].Mass, Is.EqualTo(1)); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-23 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.Throws<NotSupportedException>(() => ((IList<Vector2>)registry["fighter"].ColliderPoints)[0] = Vector2.One); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-24 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
+        var definition = Definition();
+        var document = new ShipDefinitionsDocument { Ships = new() { definition, Definition("Fighter") } };
+        var registry = ShipRegistry.Build(document, _ => true);
+        definition.ColliderPoints[0][0] = 99;
+        definition.Health = 99;
+        definition.Mass = 99;
+        Assert.That(registry, Has.Count.EqualTo(2));
+        Assert.That(registry.ContainsKey("FIGHTER"), Is.False);
+        Assert.That(registry["fighter"].ColliderPoints[0], Is.EqualTo(Vector2.Zero));
+        Assert.That(registry["fighter"].Health, Is.EqualTo(150));
+        Assert.That(registry["fighter"].Mass, Is.EqualTo(1));
+        Assert.Throws<NotSupportedException>(() => ((IList<Vector2>)registry["fighter"].ColliderPoints)[0] = Vector2.One);
     }
-    [TestCase(double.NaN)] // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-26 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-    [TestCase(double.PositiveInfinity)] // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-27 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-    [TestCase(double.MaxValue)] // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-28 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-    public void InvalidNumbersFail(double speed) // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-29 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
+    [TestCase(double.NaN)]
+    [TestCase(double.PositiveInfinity)]
+    [TestCase(double.MaxValue)]
+    public void InvalidNumbersFail(double speed)
     {
-        var definition = Definition(); definition.Stats.Speed = speed; // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-31 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { definition } }, _ => true)); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-32 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
+        var definition = Definition(); definition.Stats.Speed = speed;
+        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { definition } }, _ => true));
     }
-    [Test] // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-34 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-    public void DuplicateNamesAndUnavailableTexturesFail() // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-35 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
+    [Test]
+    public void DuplicateNamesAndUnavailableTexturesFail()
     {
-        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { Definition(), Definition() } }, _ => true)); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-37 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { Definition() } }, _ => false)); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-38 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        var definition = Definition(); definition.Mass = -1; // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-39 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { definition } }, _ => true)); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-40 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
+        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { Definition(), Definition() } }, _ => true));
+        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { Definition() } }, _ => false));
+        var definition = Definition(); definition.Mass = -1;
+        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { definition } }, _ => true));
     }
-    [Test] // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-42 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-    public void InvalidGeometryFails() // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-43 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
+    [Test]
+    public void InvalidGeometryFails()
     {
-        Assert.That(ShipRegistry.IsUsablePolygon(new[] { Vector2.Zero, Vector2.One, Vector2.Zero }), Is.False); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-45 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.That(ShipRegistry.IsUsablePolygon(new[] { Vector2.Zero, Vector2.One, Vector2.One * 2 }), Is.False); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-46 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
-        Assert.That(ShipRegistry.IsUsablePolygon(new[] { Vector2.Zero, new Vector2(10,10), new Vector2(0,10), new Vector2(10,0) }), Is.False); // TEST-SUPPORT: DATA-V2-SHIPREGISTRYTESTS-47 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.RegistryCopiesCollectionsAndUsesExactNames, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidNumbersFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.DuplicateNamesAndUnavailableTexturesFail, sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidGeometryFails
+        Assert.That(ShipRegistry.IsUsablePolygon(new[] { Vector2.Zero, Vector2.One, Vector2.Zero }), Is.False);
+        Assert.That(ShipRegistry.IsUsablePolygon(new[] { Vector2.Zero, Vector2.One, Vector2.One * 2 }), Is.False);
+        Assert.That(ShipRegistry.IsUsablePolygon(new[] { Vector2.Zero, new Vector2(10,10), new Vector2(0,10), new Vector2(10,0) }), Is.False);
     }
 
-    [TestCase(0d)] // TEST-SUPPORT: SHIP-HEALTH-REG-004 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-    [TestCase(-1d)] // TEST-SUPPORT: SHIP-HEALTH-REG-005 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-    [TestCase(double.NaN)] // TEST-SUPPORT: SHIP-HEALTH-REG-006 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-    [TestCase(double.PositiveInfinity)] // TEST-SUPPORT: SHIP-HEALTH-REG-007 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-    [TestCase(double.NegativeInfinity)] // TEST-SUPPORT: SHIP-HEALTH-REG-008 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-    public void InvalidHealthFails(double health) // TEST-SUPPORT: SHIP-HEALTH-REG-009 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
+    [TestCase(0d)]
+    [TestCase(-1d)]
+    [TestCase(double.NaN)]
+    [TestCase(double.PositiveInfinity)]
+    [TestCase(double.NegativeInfinity)]
+    public void InvalidHealthFails(double health)
     {
-        var definition = Definition(); // TEST-SUPPORT: SHIP-HEALTH-REG-010 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-        definition.Health = health; // TEST-SUPPORT: SHIP-HEALTH-REG-011 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
-        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { definition } }, _ => true)); // TEST-SUPPORT: SHIP-HEALTH-REG-012 | Tests: sMPGWM.Tests.FileLoader.ShipRegistryTests.InvalidHealthFails
+        var definition = Definition();
+        definition.Health = health;
+        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { definition } }, _ => true));
     }
 }

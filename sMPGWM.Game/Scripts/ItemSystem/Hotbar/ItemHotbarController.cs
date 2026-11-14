@@ -23,7 +23,10 @@ public sealed class ItemHotbarController : IDisposable
         Action<Exception>? reportError = null)
         : this(new ItemHotbarState(), inventory, equipment, transfers, reportError) { }
 
-    // Internal injection supports seeded fixture state; the controller owns its lifetime.
+    // TEST-SUPPORT: HOTBAR-SEED-CONTROLLER-*
+    // Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests
+    // Tests: sMPGWM.Tests.UiSystem.ItemInteractionControllerTests
+    // Tests: sMPGWM.Tests.NetworkSystem.WeaponFixtureReplicationTests
     internal ItemHotbarController(ItemHotbarState state, IInventoryView inventory, IEquipmentView equipment,
         IItemTransfers transfers, Action<Exception>? reportError = null)
     {
@@ -79,6 +82,8 @@ public sealed class ItemHotbarController : IDisposable
         _cachedHotbarRevision = -1;
         NotifyChanged();
     }
+    // TEST-SUPPORT: HOTBAR-BIND-ACTION-*
+    // Tests: sMPGWM.Tests.UiSystem.HotbarIconTests
     public void BindAction(int position, string key)
     {
         _state.SetEditSession(ulong.MaxValue);

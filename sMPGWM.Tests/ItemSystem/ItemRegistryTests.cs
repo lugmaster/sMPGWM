@@ -11,14 +11,14 @@ public class ItemRegistryTests
     [Test]
     public void PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons()
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: CLEANUP-CATEGORY-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var items = ItemRegistry.LoadItemDefinitions(Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
-        Assert.That(items.Count, Is.EqualTo(21)); // TEST-SUPPORT: WEAPON-REGISTRY-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
-        Assert.That(items["mock_standard_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon")); // TEST-SUPPORT: WEAPON-REGISTRY-002 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
-        Assert.That(items["mock_advanced_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon")); // TEST-SUPPORT: WEAPON-REGISTRY-003 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
-        Assert.That(Convert.ToInt32(items["mock_standard_weapon_fixture"].Values["WeaponSlots"]), Is.EqualTo(9)); // TEST-SUPPORT: WEAPON-REGISTRY-004 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
-        Assert.That(Convert.ToDouble(items["mock_standard_weapon_fixture"].Values["Mass"]), Is.EqualTo(1)); // TEST-SUPPORT: WEAPON-REGISTRY-005 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
-        Assert.That(items["mock_standard_weapon_fixture"].Values.ContainsKey("EnergyConsumption"), Is.False); // TEST-SUPPORT: WEAPON-REGISTRY-006 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons
+        Assert.That(items.Count, Is.EqualTo(21));
+        Assert.That(items["mock_standard_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon"));
+        Assert.That(items["mock_advanced_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon"));
+        Assert.That(Convert.ToInt32(items["mock_standard_weapon_fixture"].Values["WeaponSlots"]), Is.EqualTo(9));
+        Assert.That(Convert.ToDouble(items["mock_standard_weapon_fixture"].Values["Mass"]), Is.EqualTo(1));
+        Assert.That(items["mock_standard_weapon_fixture"].Values.ContainsKey("EnergyConsumption"), Is.False);
         Assert.That(items["mock_standard_engine"].CanStack, Is.False);
         Assert.That(items["mock_standard_engine"].StackLimit, Is.EqualTo(1));
         Assert.That(items["mock_standard_consumable"].CanStack, Is.True);
@@ -29,7 +29,7 @@ public class ItemRegistryTests
     [Test]
     public void MissingCategoryValuesAndMissingConsumableAbilitiesAreRejected()
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: CLEANUP-CATEGORY-002 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.MissingCategoryValuesAndMissingConsumableAbilitiesAreRejected
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var items = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
         ((JObject)items["Items"]![0]!["Values"]!).Remove("Speed");
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, categories, _ => null!));
@@ -44,15 +44,15 @@ public class ItemRegistryTests
     {
         var yaml = Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml");
         ((JArray)yaml["Categories"]!).Add(yaml["Categories"]![0]!.DeepClone());
-        Assert.Throws<ArgumentException>(() => ItemDefinitionParser.LoadItemCategoryDefinitions(yaml, _ => null!)); // TEST-SUPPORT: CLEANUP-CATEGORY-003 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.DuplicateIdsAndUnknownCategoriesAreRejected
+        Assert.Throws<ArgumentException>(() => ItemDefinitionParser.LoadItemCategoryDefinitions(yaml, _ => null!));
         var items = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
-        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, new(), _ => null!)); // TEST-SUPPORT: INIT-ITEM-UNKNOWN-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.DuplicateIdsAndUnknownCategoriesAreRejected
+        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, new(), _ => null!));
     }
 
     [Test]
     public void NonstackableItemsCannotDeclareMultipleItemsPerStack()
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: CLEANUP-CATEGORY-004 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.NonstackableItemsCannotDeclareMultipleItemsPerStack
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var yaml = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
         yaml["Items"]![0]!["StackLimit"] = 1;
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!));
@@ -89,7 +89,7 @@ public class ItemRegistryTests
         foreach (var itemSetting in new[] { "", "CanStack: false", "CanStack: true", "StackLimit: 2" })
         {
             string? iconKey = null;
-            var categories = ItemDefinitionParser.LoadItemCategoryDefinitions((JObject)YamlParser.ParseToken( // TEST-SUPPORT: CLEANUP-CATEGORY-005 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.DefaultsAndOverridesResolveBeforeUse
+            var categories = ItemDefinitionParser.LoadItemCategoryDefinitions((JObject)YamlParser.ParseToken(
                 "Categories:\n  - Id: test\n    DisplayName: Test\n    " + categorySetting, "test").Value!, key => { iconKey = key; return null!; });
             var items = ItemRegistry.LoadItemDefinitions((JObject)YamlParser.ParseToken(
                 "Items:\n  - Id: test\n    DisplayName: Test\n    CategoryId: test\n    " + itemSetting, "test").Value!, categories, _ => null!);
@@ -106,21 +106,21 @@ public class ItemRegistryTests
         }
     }
 
-    [TestCase(-1d)] // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-    [TestCase(1.5d)] // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-002 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-    [TestCase(10d)] // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-003 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-    public void InvalidFixtureCapacityIsRejected(double capacity) // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-004 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-    { // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-005 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!); // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-006 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-        var yaml = Read("ItemDefinitions.yml", "items/ItemSchema.yml"); // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-007 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-        foreach (var item in yaml["Items"]!) // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-008 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-            if ((string?)item["CategoryId"] == "weapon_fixture") item["Values"]!["WeaponSlots"] = capacity; // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-009 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!)); // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-010 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
-    } // TEST-SUPPORT: WEAPON-REGISTRY-CAPACITY-011 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+    [TestCase(-1d)]
+    [TestCase(1.5d)]
+    [TestCase(10d)]
+    public void InvalidFixtureCapacityIsRejected(double capacity)
+    {
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
+        var yaml = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
+        foreach (var item in yaml["Items"]!)
+            if ((string?)item["CategoryId"] == "weapon_fixture") item["Values"]!["WeaponSlots"] = capacity;
+        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!));
+    }
 
     private static JObject Read(string file, string schema)
     {
-        if (file == "ItemDefinitions.yml") return sMPGWM.Scripts.ItemSystem.ItemDefinitionDocuments.Load(part => Read(part, part.Replace(".yml", ".schema.yml"))); // TEST-SUPPORT: ITEM-SPLIT-ItemRegistryTests-001 | Tests: sMPGWM.Tests.ItemSystem.ItemRegistryTests.PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons, sMPGWM.Tests.ItemSystem.ItemRegistryTests.MissingCategoryValuesAndMissingConsumableAbilitiesAreRejected, sMPGWM.Tests.ItemSystem.ItemRegistryTests.DuplicateIdsAndUnknownCategoriesAreRejected, sMPGWM.Tests.ItemSystem.ItemRegistryTests.NonstackableItemsCannotDeclareMultipleItemsPerStack, sMPGWM.Tests.ItemSystem.ItemRegistryTests.StackingSchemas, sMPGWM.Tests.ItemSystem.ItemRegistryTests.DefaultsAndOverridesResolveBeforeUse, sMPGWM.Tests.ItemSystem.ItemRegistryTests.InvalidFixtureCapacityIsRejected
+        if (file == "ItemDefinitions.yml") return sMPGWM.Scripts.ItemSystem.ItemDefinitionDocuments.Load(part => Read(part, part.Replace(".yml", ".schema.yml")));
         var directory = Path.GetFullPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../sMPGWM.Game/assets/game_data"));
         var result = YamlParser.ValidateAndReturn(File.ReadAllText(Path.Combine(directory, file)),
             File.ReadAllText(Path.Combine(directory, schema)), file, schema);

@@ -5,17 +5,17 @@ namespace sMPGWM.Tests.FileLoader;
 public class DefinitionVersionTests
 {
     [TestCase("Ships.yml", "ShipsSchema.yml")]
-    [TestCase("items/engine.yml", "items/engine.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-000 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/hull.yml", "items/hull.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-001 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/shield_generator.yml", "items/shield_generator.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-002 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/reactor.yml", "items/reactor.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-003 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/light_weapon.yml", "items/light_weapon.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-004 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/medium_weapon.yml", "items/medium_weapon.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-005 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/heavy_weapon.yml", "items/heavy_weapon.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-006 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/consumable.yml", "items/consumable.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-007 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/resource.yml", "items/resource.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-008 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/battery.yml", "items/battery.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-009 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
-    [TestCase("items/weapon_fixture.yml", "items/weapon_fixture.schema.yml")] // TEST-SUPPORT: ITEM-SPLIT-VERSION-010 | Tests: sMPGWM.Tests.FileLoader.DefinitionVersionTests.VersionMetadataIsRequiredAndValidated
+    [TestCase("items/engine.yml", "items/engine.schema.yml")]
+    [TestCase("items/hull.yml", "items/hull.schema.yml")]
+    [TestCase("items/shield_generator.yml", "items/shield_generator.schema.yml")]
+    [TestCase("items/reactor.yml", "items/reactor.schema.yml")]
+    [TestCase("items/light_weapon.yml", "items/light_weapon.schema.yml")]
+    [TestCase("items/medium_weapon.yml", "items/medium_weapon.schema.yml")]
+    [TestCase("items/heavy_weapon.yml", "items/heavy_weapon.schema.yml")]
+    [TestCase("items/consumable.yml", "items/consumable.schema.yml")]
+    [TestCase("items/resource.yml", "items/resource.schema.yml")]
+    [TestCase("items/battery.yml", "items/battery.schema.yml")]
+    [TestCase("items/weapon_fixture.yml", "items/weapon_fixture.schema.yml")]
     [TestCase("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml")]
     public void VersionMetadataIsRequiredAndValidated(string file, string schema)
     {

@@ -1,75 +1,73 @@
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.ItemSystem; // TEST-SUPPORT: EQUIP-VERIFY-001 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-// TEST-SUPPORT: EQUIP-VERIFY-002 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-// TEST-SUPPORT: EQUIP-VERIFY-003 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-using sMPGWM.Scripts.NetworkSystem; // TEST-SUPPORT: EQUIP-VERIFY-004 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-using sMPGWM.Scripts.UtilitySystem.UiComponents; // TEST-SUPPORT: EQUIP-VERIFY-005 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.NetworkSystem;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
-namespace sMPGWM.Tests; // TEST-SUPPORT: EQUIP-VERIFY-007 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+namespace sMPGWM.Tests;
 
-[Category("Godot")] // TEST-SUPPORT: EQUIP-VERIFY-009 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-public sealed class EquipmentAbilityTests // TEST-SUPPORT: EQUIP-VERIFY-010 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+[Category("Godot")]
+public sealed class EquipmentAbilityTests
 {
-    [Test] // TEST-SUPPORT: EQUIP-VERIFY-012 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-    public void OwnerSnapshotsValidateAtomicallyAndPreserveIdentity() // TEST-SUPPORT: EQUIP-VERIFY-013 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+    [Test]
+    public void OwnerSnapshotsValidateAtomicallyAndPreserveIdentity()
     {
-        using var host = new ShipItemTestContext(); // TEST-SUPPORT: EQUIP-VERIFY-015 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        using var client = new ShipItemTestContext(); // TEST-SUPPORT: EQUIP-VERIFY-016 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        host.Store.CreateItems(host.Inventory.Container, "mock_standard_shield_generator", 2); // TEST-SUPPORT: EQUIP-VERIFY-017 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        var generator = host.Inventory.Snapshot.Slots[0]!; // TEST-SUPPORT: EQUIP-VERIFY-018 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        var initial = ItemSnapshotCodec.Encode(host.Player); // TEST-SUPPORT: EQUIP-VERIFY-019 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(ItemSnapshotCodec.Apply(initial, client.Player), Is.True); // TEST-SUPPORT: EQUIP-VERIFY-020 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(client.Inventory.Snapshot.Slots[0]!.Id, Is.EqualTo(generator.Id)); // TEST-SUPPORT: EQUIP-VERIFY-021 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        var transfer = new TransferRequest(0, ItemCellAddress.Inventory(0), generator.Id, // TEST-SUPPORT: EQUIP-VERIFY-022 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-            ItemCellAddress.Equipment("shield_generator"), null, host.Inventory.Revision, host.Equipment.Revision); // TEST-SUPPORT: EQUIP-VERIFY-023 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(host.Transfer(transfer), Is.EqualTo(TransferResult.Success)); // TEST-SUPPORT: EQUIP-VERIFY-024 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(host.Transfer(transfer), Is.EqualTo(TransferResult.StaleRevision)); // TEST-SUPPORT: EQUIP-VERIFY-025 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        var confirmed = ItemSnapshotCodec.Encode(host.Player); // TEST-SUPPORT: EQUIP-VERIFY-026 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(ItemSnapshotCodec.Apply(confirmed, client.Player), Is.True); // TEST-SUPPORT: EQUIP-VERIFY-027 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(client.Provides("shield_generator", (long)generator.Id.Value, "shieldCapacityBoost"), Is.True); // TEST-SUPPORT: EQUIP-VERIFY-028 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(client.Provides("shield_generator", (long)generator.Id.Value + 100000, "shieldCapacityBoost"), Is.False); // TEST-SUPPORT: EQUIP-VERIFY-029 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(ItemSnapshotCodec.Apply(initial, client.Player), Is.True); // TEST-SUPPORT: EQUIP-VERIFY-030 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(client.Provides("shield_generator", (long)generator.Id.Value, "shieldCapacityBoost"), Is.True); // TEST-SUPPORT: EQUIP-VERIFY-031 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        var malformed = confirmed.Duplicate(true); // TEST-SUPPORT: EQUIP-VERIFY-032 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        var inventory = malformed[7].AsGodotArray(); // TEST-SUPPORT: EQUIP-VERIFY-033 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        inventory[0] = new Godot.Collections.Array { (long)generator.Id.Value, generator.DefinitionId, 1 }; // TEST-SUPPORT: EQUIP-VERIFY-034 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(ItemSnapshotCodec.Apply(malformed, client.Player), Is.False); // TEST-SUPPORT: EQUIP-VERIFY-035 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(client.Inventory.Snapshot.Slots[0], Is.Null); // TEST-SUPPORT: EQUIP-VERIFY-036 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        malformed = confirmed.Duplicate(true); // TEST-SUPPORT: EQUIP-VERIFY-037 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        malformed[8].AsGodotArray()[host.Equipment.FindSlot("engine")] = // TEST-SUPPORT: EQUIP-VERIFY-038 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-            new Godot.Collections.Array { 999999L, generator.DefinitionId, 1 }; // TEST-SUPPORT: EQUIP-VERIFY-039 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(ItemSnapshotCodec.Apply(malformed, client.Player), Is.False); // TEST-SUPPORT: EQUIP-VERIFY-040 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        malformed = confirmed.Duplicate(true); // TEST-SUPPORT: EQUIP-VERIFY-041 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        malformed[7].AsGodotArray()[0] = new Godot.Collections.Array { 999998L, "unknown", 1 }; // TEST-SUPPORT: EQUIP-VERIFY-042 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(ItemSnapshotCodec.Apply(malformed, client.Player), Is.False); // TEST-SUPPORT: EQUIP-VERIFY-043 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+        using var host = new ShipItemTestContext();
+        using var client = new ShipItemTestContext();
+        host.Store.CreateItems(host.Inventory.Container, "mock_standard_shield_generator", 2);
+        var generator = host.Inventory.Snapshot.Slots[0]!;
+        var initial = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(initial, client.Player), Is.True);
+        Assert.That(client.Inventory.Snapshot.Slots[0]!.Id, Is.EqualTo(generator.Id));
+        var transfer = new TransferRequest(0, ItemCellAddress.Inventory(0), generator.Id,
+            ItemCellAddress.Equipment("shield_generator"), null, host.Inventory.Revision, host.Equipment.Revision);
+        Assert.That(host.Transfer(transfer), Is.EqualTo(TransferResult.Success));
+        Assert.That(host.Transfer(transfer), Is.EqualTo(TransferResult.StaleRevision));
+        var confirmed = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(confirmed, client.Player), Is.True);
+        Assert.That(client.Provides("shield_generator", (long)generator.Id.Value, "shieldCapacityBoost"), Is.True);
+        Assert.That(client.Provides("shield_generator", (long)generator.Id.Value + 100000, "shieldCapacityBoost"), Is.False);
+        Assert.That(ItemSnapshotCodec.Apply(initial, client.Player), Is.True);
+        Assert.That(client.Provides("shield_generator", (long)generator.Id.Value, "shieldCapacityBoost"), Is.True);
+        var malformed = confirmed.Duplicate(true);
+        var inventory = malformed[7].AsGodotArray();
+        inventory[0] = new Godot.Collections.Array { (long)generator.Id.Value, generator.DefinitionId, 1 };
+        Assert.That(ItemSnapshotCodec.Apply(malformed, client.Player), Is.False);
+        Assert.That(client.Inventory.Snapshot.Slots[0], Is.Null);
+        malformed = confirmed.Duplicate(true);
+        malformed[8].AsGodotArray()[host.Equipment.FindSlot("engine")] =
+            new Godot.Collections.Array { 999999L, generator.DefinitionId, 1 };
+        Assert.That(ItemSnapshotCodec.Apply(malformed, client.Player), Is.False);
+        malformed = confirmed.Duplicate(true);
+        malformed[7].AsGodotArray()[0] = new Godot.Collections.Array { 999998L, "unknown", 1 };
+        Assert.That(ItemSnapshotCodec.Apply(malformed, client.Player), Is.False);
     }
 
-    [Test] // TEST-SUPPORT: EQUIP-VERIFY-046 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-    public void CursorVariantsAreCachedTintedAndKeepAlpha() // TEST-SUPPORT: EQUIP-VERIFY-047 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+    [Test]
+    public void CursorVariantsAreCachedTintedAndKeepAlpha()
     {
-        var green = Cursors.GreenTargetCursor; // TEST-SUPPORT: CURSOR-CACHE-001 | Tests: sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        Assert.That(Cursors.GreenTargetCursor, Is.SameAs(green)); // TEST-SUPPORT: EQUIP-VERIFY-049 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        using var source = GD.Load<Texture2D>("res://assets/ui/cursors/crosshair.png").GetImage(); // TEST-SUPPORT: EQUIP-VERIFY-050 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        if (source.IsCompressed()) source.Decompress(); // TEST-SUPPORT: EQUIP-VERIFY-051 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        var textures = new[] { Cursors.RedTargetCursor, Cursors.GreenTargetCursor, Cursors.BlueTargetCursor }; // TEST-SUPPORT: EQUIP-VERIFY-052 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-        for (var variant = 0; variant < textures.Length; variant++) // TEST-SUPPORT: EQUIP-VERIFY-053 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+        var green = Cursors.GreenTargetCursor;
+        Assert.That(Cursors.GreenTargetCursor, Is.SameAs(green));
+        using var source = GD.Load<Texture2D>("res://assets/ui/cursors/crosshair.png").GetImage();
+        if (source.IsCompressed()) source.Decompress();
+        var textures = new[] { Cursors.RedTargetCursor, Cursors.GreenTargetCursor, Cursors.BlueTargetCursor };
+        for (var variant = 0; variant < textures.Length; variant++)
         {
-            using var tinted = textures[variant].GetImage(); // TEST-SUPPORT: EQUIP-VERIFY-055 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-            Assert.That(tinted.GetSize(), Is.EqualTo(source.GetSize())); // TEST-SUPPORT: EQUIP-VERIFY-056 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-            var visible = false; // TEST-SUPPORT: EQUIP-VERIFY-057 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-            for (var y = 0; y < source.GetHeight(); y++) // TEST-SUPPORT: EQUIP-VERIFY-058 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-                for (var x = 0; x < source.GetWidth(); x++) // TEST-SUPPORT: EQUIP-VERIFY-059 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+            using var tinted = textures[variant].GetImage();
+            Assert.That(tinted.GetSize(), Is.EqualTo(source.GetSize()));
+            var visible = false;
+            for (var y = 0; y < source.GetHeight(); y++)
+                for (var x = 0; x < source.GetWidth(); x++)
                 {
-                    var original = source.GetPixel(x, y); // TEST-SUPPORT: EQUIP-VERIFY-061 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-                    var pixel = tinted.GetPixel(x, y); // TEST-SUPPORT: EQUIP-VERIFY-062 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-                    Assert.That(pixel.A, Is.EqualTo(original.A).Within(.005)); // TEST-SUPPORT: EQUIP-VERIFY-063 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-                    if (original.A < .5f || original.R < .5f) continue; // TEST-SUPPORT: EQUIP-VERIFY-064 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-                    visible = true; // TEST-SUPPORT: EQUIP-VERIFY-065 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-                    Assert.That(variant == 0 ? pixel.R : variant == 1 ? pixel.G : pixel.B, Is.GreaterThan(0)); // TEST-SUPPORT: EQUIP-VERIFY-066 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
-                    Assert.That(variant == 0 ? pixel.G + pixel.B : variant == 1 ? pixel.R + pixel.B : pixel.R + pixel.G, Is.Zero); // TEST-SUPPORT: EQUIP-VERIFY-067 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+                    var original = source.GetPixel(x, y);
+                    var pixel = tinted.GetPixel(x, y);
+                    Assert.That(pixel.A, Is.EqualTo(original.A).Within(.005));
+                    if (original.A < .5f || original.R < .5f) continue;
+                    visible = true;
+                    Assert.That(variant == 0 ? pixel.R : variant == 1 ? pixel.G : pixel.B, Is.GreaterThan(0));
+                    Assert.That(variant == 0 ? pixel.G + pixel.B : variant == 1 ? pixel.R + pixel.B : pixel.R + pixel.G, Is.Zero);
                 }
-            Assert.That(visible, Is.True); // TEST-SUPPORT: EQUIP-VERIFY-069 | Tests: sMPGWM.Tests.EquipmentAbilityTests.OwnerSnapshotsValidateAtomicallyAndPreserveIdentity, sMPGWM.Tests.EquipmentAbilityTests.CursorVariantsAreCachedTintedAndKeepAlpha
+            Assert.That(visible, Is.True);
         }
     }
 }

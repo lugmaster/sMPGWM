@@ -7,6 +7,7 @@ using sMPGWM.Scripts.UiSystem.MessageStackSystem;
 
 namespace sMPGWM.Scripts.UtilitySystem.Mocks;
 
+// TEST-SUPPORT-CLASS: MESSAGE-SMOKE-FIXTURE-001 | Tests: sMPGWM.Tests/UiSystem/message_menu_smoke.gd
 public partial class MessageSmokeFixture : RefCounted
 {
     private GamePlayManager _game = null!;

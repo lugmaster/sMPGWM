@@ -1,94 +1,92 @@
-using Godot; // TEST-SUPPORT: SIMULATION-PHASE-1 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+using Godot;
 using sMPGWM.Scripts.AbilitySystem;
-using sMPGWM.Scripts.EquipmentSystem; // TEST-SUPPORT: SIMULATION-PHASE-2 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.ItemSystem;
-using sMPGWM.Scripts.ShipSystem; // TEST-SUPPORT: SIMULATION-PHASE-3 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-// TEST-SUPPORT: SIMULATION-PHASE-4 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-// TEST-SUPPORT: SIMULATION-PHASE-5 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-using sMPGWM.Scripts.StatSystem; // TEST-SUPPORT: SIMULATION-PHASE-6 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+using sMPGWM.Scripts.ShipSystem;
+using sMPGWM.Scripts.StatSystem;
 using sMPGWM.Scripts.WorldSystem;
-using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld; // TEST-SUPPORT: SIMULATION-PHASE-7 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 
-namespace sMPGWM.Tests; // TEST-SUPPORT: SIMULATION-PHASE-9 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+namespace sMPGWM.Tests;
 
-[Category("Godot")] // TEST-SUPPORT: SIMULATION-PHASE-11 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-public sealed class GameplaySimulationTests // TEST-SUPPORT: SIMULATION-PHASE-12 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-{ // TEST-SUPPORT: SIMULATION-PHASE-13 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-    [Test] // TEST-SUPPORT: SIMULATION-PHASE-14 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-    public void StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement() // TEST-SUPPORT: SIMULATION-PHASE-15 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-    { // TEST-SUPPORT: SIMULATION-PHASE-16 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        var world = new GameWorld(); // TEST-SUPPORT: SIMULATION-PHASE-17 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world); // TEST-SUPPORT: SIMULATION-PHASE-18 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        using var abilities = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: SIMULATION-PHASE-19 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        using var simulation = new GameplaySimulation(world, abilities); // TEST-SUPPORT: SIMULATION-PHASE-20 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        try // TEST-SUPPORT: SIMULATION-PHASE-21 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        { // TEST-SUPPORT: SIMULATION-PHASE-22 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            world.ApproveSpawn(1, new("fighter")); // TEST-SUPPORT: SIMULATION-PHASE-23 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            var owner = world.Players[1]; // TEST-SUPPORT: SIMULATION-PHASE-24 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            var ship = owner.ControlledShip!; // TEST-SUPPORT: SIMULATION-PHASE-25 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            ship.Runtime.ApplyEquipment(new ResolvedShipStats(100, 200, 1, 1, 2, 1, 0, 0, 0, 0, 10, 1, 10, true, false, false, true, true), 1); // TEST-SUPPORT: SIMULATION-PHASE-26 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            ship.Runtime.InitializeResources(); // TEST-SUPPORT: SIMULATION-PHASE-27 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            ship.Restore(new Vector2(5000, 5000), 0, new Vector2(60, 0), new(Vector2.Right, 0, false, false, false, false)); // TEST-SUPPORT: SIMULATION-PHASE-28 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            ship.Runtime.StageComponentChange(ShipComponentKind.Power, false); // TEST-SUPPORT: SIMULATION-PHASE-29 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            var transfer = new TransferRequest(0, ItemCellAddress.Inventory(0), default, ItemCellAddress.Inventory(1), null, 0, 0); // TEST-SUPPORT: SIMULATION-PHASE-30 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            var result = TransferResult.Pending; // TEST-SUPPORT: SIMULATION-PHASE-31 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(simulation.QueueTransfer(1, ship.EntityId, owner.ControlGeneration, transfer, value => result = value), Is.True); // TEST-SUPPORT: SIMULATION-PHASE-32 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            owner.AssignShip(null); // TEST-SUPPORT: SIMULATION-PHASE-33 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            owner.AssignShip(ship); // TEST-SUPPORT: SIMULATION-PHASE-34 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            simulation.Step(1, _ => true, (_, _, _) => { }); // TEST-SUPPORT: SIMULATION-PHASE-35 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(result, Is.EqualTo(TransferResult.InvalidSession)); // TEST-SUPPORT: SIMULATION-PHASE-36 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(ship.Runtime.Energy.Current, Is.Zero); // TEST-SUPPORT: SIMULATION-PHASE-37 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(ship.MovementConfiguration.Enabled, Is.False); // TEST-SUPPORT: SIMULATION-PHASE-38 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(ship.Velocity, Is.EqualTo(new Vector2(60, 0))); // TEST-SUPPORT: SIMULATION-PHASE-39 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(ship.GlobalPosition.X, Is.EqualTo(5001).Within(.001)); // TEST-SUPPORT: SIMULATION-PHASE-40 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.Throws<InvalidOperationException>(() => simulation.Step(1, _ => true, (_, _, _) => { })); // TEST-SUPPORT: SIMULATION-PHASE-41 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            var position = ship.GlobalPosition; // TEST-SUPPORT: SIMULATION-PHASE-42 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            owner.AssignShip(null); // TEST-SUPPORT: SIMULATION-PHASE-43 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            simulation.Step(2, _ => true, (_, _, _) => { }); // TEST-SUPPORT: SIMULATION-PHASE-44 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(ship.GlobalPosition, Is.EqualTo(position)); // TEST-SUPPORT: SIMULATION-PHASE-45 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(ship.Runtime.AuthoritativeTick, Is.EqualTo(2)); // TEST-SUPPORT: SIMULATION-PHASE-46 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        } // TEST-SUPPORT: SIMULATION-PHASE-47 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        finally { world.Free(); } // TEST-SUPPORT: SIMULATION-PHASE-48 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-    } // TEST-SUPPORT: SIMULATION-PHASE-49 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+[Category("Godot")]
+public sealed class GameplaySimulationTests
+{
+    [Test]
+    public void StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement()
+    {
+        var world = new GameWorld();
+        ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world);
+        using var abilities = new AbilityRuntime(GameplayTestData.Load());
+        using var simulation = new GameplaySimulation(world, abilities);
+        try
+        {
+            world.ApproveSpawn(1, new("fighter"));
+            var owner = world.Players[1];
+            var ship = owner.ControlledShip!;
+            ship.Runtime.ApplyEquipment(new ResolvedShipStats(100, 200, 1, 1, 2, 1, 0, 0, 0, 0, 10, 1, 10, true, false, false, true, true), 1);
+            ship.Runtime.InitializeResources();
+            ship.Restore(new Vector2(5000, 5000), 0, new Vector2(60, 0), new(Vector2.Right, 0, false, false, false, false));
+            ship.Runtime.StageComponentChange(ShipComponentKind.Power, false);
+            var transfer = new TransferRequest(0, ItemCellAddress.Inventory(0), default, ItemCellAddress.Inventory(1), null, 0, 0);
+            var result = TransferResult.Pending;
+            Assert.That(simulation.QueueTransfer(1, ship.EntityId, owner.ControlGeneration, transfer, value => result = value), Is.True);
+            owner.AssignShip(null);
+            owner.AssignShip(ship);
+            simulation.Step(1, _ => true, (_, _, _) => { });
+            Assert.That(result, Is.EqualTo(TransferResult.InvalidSession));
+            Assert.That(ship.Runtime.Energy.Current, Is.Zero);
+            Assert.That(ship.MovementConfiguration.Enabled, Is.False);
+            Assert.That(ship.Velocity, Is.EqualTo(new Vector2(60, 0)));
+            Assert.That(ship.GlobalPosition.X, Is.EqualTo(5001).Within(.001));
+            Assert.Throws<InvalidOperationException>(() => simulation.Step(1, _ => true, (_, _, _) => { }));
+            var position = ship.GlobalPosition;
+            owner.AssignShip(null);
+            simulation.Step(2, _ => true, (_, _, _) => { });
+            Assert.That(ship.GlobalPosition, Is.EqualTo(position));
+            Assert.That(ship.Runtime.AuthoritativeTick, Is.EqualTo(2));
+        }
+        finally { world.Free(); }
+    }
 
-    [Test] // TEST-SUPPORT: SIMULATION-PHASE-51 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-    public void QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands() // TEST-SUPPORT: SIMULATION-PHASE-52 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-    { // TEST-SUPPORT: SIMULATION-PHASE-53 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        var world = new GameWorld(); // TEST-SUPPORT: SIMULATION-PHASE-54 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        using var abilities = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: SIMULATION-PHASE-55 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        using var simulation = new GameplaySimulation(world, abilities); // TEST-SUPPORT: SIMULATION-PHASE-56 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        try // TEST-SUPPORT: SIMULATION-PHASE-57 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        { // TEST-SUPPORT: SIMULATION-PHASE-58 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            var request = new TransferRequest(0, ItemCellAddress.Inventory(0), default, ItemCellAddress.Inventory(1), null, 0, 0); // TEST-SUPPORT: SIMULATION-PHASE-59 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            var replies = 0; // TEST-SUPPORT: SIMULATION-PHASE-60 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            for (var i = 0; i < 32; i++) // TEST-SUPPORT: SIMULATION-PHASE-61 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-                Assert.That(simulation.QueueTransfer(i % 2, "", 0, request, _ => replies++), Is.True); // TEST-SUPPORT: SIMULATION-PHASE-62 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(simulation.QueueTransfer(0, "", 0, request, _ => replies++), Is.False); // TEST-SUPPORT: SIMULATION-PHASE-63 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            simulation.RemovePeer(0); // TEST-SUPPORT: SIMULATION-PHASE-64 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            simulation.Step(1, _ => true, (_, _, _) => { }); // TEST-SUPPORT: SIMULATION-PHASE-65 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(replies, Is.EqualTo(16)); // TEST-SUPPORT: SIMULATION-PHASE-66 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            simulation.Dispose(); // TEST-SUPPORT: SIMULATION-PHASE-67 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-            Assert.That(simulation.QueueTransfer(0, "", 0, request, _ => replies++), Is.False); // TEST-SUPPORT: SIMULATION-PHASE-68 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        } // TEST-SUPPORT: SIMULATION-PHASE-69 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-        finally { world.Free(); } // TEST-SUPPORT: SIMULATION-PHASE-70 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-    } // TEST-SUPPORT: SIMULATION-PHASE-71 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
-    [Test] // TEST-SUPPORT: SIMULATION-REENTRANT-1 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-    public void CommandsQueuedByCompletionWaitUntilNextAbilityPhase() // TEST-SUPPORT: SIMULATION-REENTRANT-2 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-    { // TEST-SUPPORT: SIMULATION-REENTRANT-3 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        var world = new GameWorld(); // TEST-SUPPORT: SIMULATION-REENTRANT-4 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        using var abilities = new AbilityRuntime(GameplayTestData.Load()); // TEST-SUPPORT: SIMULATION-REENTRANT-5 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        var commands = new AbilityCommandProcessor(); // TEST-SUPPORT: SIMULATION-REENTRANT-6 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        var command = (1, 1L, "missing", 0L, "missing", "shieldCapacityBoost", AbilitySource.AllShips); // TEST-SUPPORT: SIMULATION-REENTRANT-7 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        commands.Enqueue(command); // TEST-SUPPORT: SIMULATION-REENTRANT-8 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        var completed = 0; // TEST-SUPPORT: SIMULATION-REENTRANT-9 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        try // TEST-SUPPORT: SIMULATION-REENTRANT-10 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        { // TEST-SUPPORT: SIMULATION-REENTRANT-11 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-            commands.Step(1, world, abilities, _ => true, (_, _, _) => { completed++; commands.Enqueue(command); }); // TEST-SUPPORT: SIMULATION-REENTRANT-12 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-            Assert.That(completed, Is.EqualTo(1)); // TEST-SUPPORT: SIMULATION-REENTRANT-13 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-            Assert.That(commands.Count, Is.EqualTo(1)); // TEST-SUPPORT: SIMULATION-REENTRANT-14 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        } // TEST-SUPPORT: SIMULATION-REENTRANT-15 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-        finally { world.Free(); } // TEST-SUPPORT: SIMULATION-REENTRANT-16 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
-    } // TEST-SUPPORT: SIMULATION-REENTRANT-17 | Tests: sMPGWM.Tests.GameplaySimulationTests.CommandsQueuedByCompletionWaitUntilNextAbilityPhase
+    [Test]
+    public void QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands()
+    {
+        var world = new GameWorld();
+        using var abilities = new AbilityRuntime(GameplayTestData.Load());
+        using var simulation = new GameplaySimulation(world, abilities);
+        try
+        {
+            var request = new TransferRequest(0, ItemCellAddress.Inventory(0), default, ItemCellAddress.Inventory(1), null, 0, 0);
+            var replies = 0;
+            for (var i = 0; i < 32; i++)
+                Assert.That(simulation.QueueTransfer(i % 2, "", 0, request, _ => replies++), Is.True);
+            Assert.That(simulation.QueueTransfer(0, "", 0, request, _ => replies++), Is.False);
+            simulation.RemovePeer(0);
+            simulation.Step(1, _ => true, (_, _, _) => { });
+            Assert.That(replies, Is.EqualTo(16));
+            simulation.Dispose();
+            Assert.That(simulation.QueueTransfer(0, "", 0, request, _ => replies++), Is.False);
+        }
+        finally { world.Free(); }
+    }
+    [Test]
+    public void CommandsQueuedByCompletionWaitUntilNextAbilityPhase()
+    {
+        var world = new GameWorld();
+        using var abilities = new AbilityRuntime(GameplayTestData.Load());
+        var commands = new AbilityCommandProcessor();
+        var command = (1, 1L, "missing", 0L, "missing", "shieldCapacityBoost", AbilitySource.AllShips);
+        commands.Enqueue(command);
+        var completed = 0;
+        try
+        {
+            commands.Step(1, world, abilities, _ => true, (_, _, _) => { completed++; commands.Enqueue(command); });
+            Assert.That(completed, Is.EqualTo(1));
+            Assert.That(commands.Count, Is.EqualTo(1));
+        }
+        finally { world.Free(); }
+    }
 
-} // TEST-SUPPORT: SIMULATION-PHASE-72 | Tests: sMPGWM.Tests.GameplaySimulationTests.StepUsesCurrentBindingAndStopsRemovedPowerBeforeMovement, sMPGWM.Tests.GameplaySimulationTests.QueueIsBoundedAndPeerRemovalDiscardsOnlyItsCommands
+}

@@ -85,52 +85,52 @@ public class EquipmentTransferTests
     {
         Assert.That(_equipmentImpl.Definitions.Select(slot => slot.Key), Is.EqualTo(new[]
         {
-            "engine", "hull", "shield_generator", "reactor", "battery", "weapon_fixture", // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-1 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.SlotDefinitionsAndSnapshots_AreOrderedAndReadOnly
-            "weapon_1", "weapon_2", "weapon_3", "weapon_4", "weapon_5", "weapon_6", "weapon_7", "weapon_8", "weapon_9" // TEST-SUPPORT: EQUIPMENT-BATTERY-001 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.SlotDefinitionsAndSnapshots_AreOrderedAndReadOnly
+            "engine", "hull", "shield_generator", "reactor", "battery", "weapon_fixture",
+            "weapon_1", "weapon_2", "weapon_3", "weapon_4", "weapon_5", "weapon_6", "weapon_7", "weapon_8", "weapon_9"
         }));
         Assert.That(_equipmentImpl.Snapshot.Slots, Has.All.Null);
         Assert.Throws<NotSupportedException>(() => ((IList<EquipmentSlotDefinition>)_equipmentImpl.Definitions).Clear());
         Assert.Throws<NotSupportedException>(() => ((IList<ItemEntity?>)_equipmentImpl.Snapshot.Slots)[0] = null);
     }
 
-    [Test] // TEST-SUPPORT: EQUIP-CATEGORY-ID-001 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-    public void CategoryIdentityDoesNotDependOnDisplayNames() // TEST-SUPPORT: EQUIP-CATEGORY-ID-002 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+    [Test]
+    public void CategoryIdentityDoesNotDependOnDisplayNames()
     {
-        var categories = sMPGWM.Scripts.ItemSystem.ItemDefinitionParser.LoadItemCategoryDefinitions( // TEST-SUPPORT: EQUIP-CATEGORY-ID-003 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-            Newtonsoft.Json.Linq.JObject.Parse("{Categories:[{Id:'engine',DisplayName:'Component'},{Id:'hull',DisplayName:'Component'}]}"), _ => null!); // TEST-SUPPORT: EQUIP-CATEGORY-ID-004 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-        var items = sMPGWM.Scripts.ItemSystem.ItemDefinitionParser.LoadItemDefinitions( // TEST-SUPPORT: EQUIP-CATEGORY-ID-005 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-            Newtonsoft.Json.Linq.JObject.Parse("{Items:[{Id:'custom_engine',DisplayName:'Engine',CategoryId:'engine'},{Id:'custom_hull',DisplayName:'Hull',CategoryId:'hull'}]}"), categories, _ => null!); // TEST-SUPPORT: EQUIP-CATEGORY-ID-006 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-        var slot = _equipmentImpl.FindSlot("engine"); // TEST-SUPPORT: EQUIP-CATEGORY-ID-007 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-        Assert.That(items["custom_engine"].CategoryName, Is.EqualTo(items["custom_hull"].CategoryName)); // TEST-SUPPORT: EQUIP-CATEGORY-ID-008 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-        Assert.That(items["custom_engine"].CategoryId, Is.EqualTo("engine")); // TEST-SUPPORT: EQUIP-CATEGORY-ID-009 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_engine"], 1), Is.True); // TEST-SUPPORT: EQUIP-CATEGORY-ID-010 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_hull"], 1), Is.False); // TEST-SUPPORT: EQUIP-CATEGORY-ID-011 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_engine"], 2), Is.False); // TEST-SUPPORT: EQUIP-CATEGORY-ID-012 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
-        Assert.That(_equipmentImpl.Definitions, Is.SameAs(EquipmentSlotDefinition.Defaults)); // TEST-SUPPORT: EQUIP-CATEGORY-ID-013 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.CategoryIdentityDoesNotDependOnDisplayNames
+        var categories = sMPGWM.Scripts.ItemSystem.ItemDefinitionParser.LoadItemCategoryDefinitions(
+            Newtonsoft.Json.Linq.JObject.Parse("{Categories:[{Id:'engine',DisplayName:'Component'},{Id:'hull',DisplayName:'Component'}]}"), _ => null!);
+        var items = sMPGWM.Scripts.ItemSystem.ItemDefinitionParser.LoadItemDefinitions(
+            Newtonsoft.Json.Linq.JObject.Parse("{Items:[{Id:'custom_engine',DisplayName:'Engine',CategoryId:'engine'},{Id:'custom_hull',DisplayName:'Hull',CategoryId:'hull'}]}"), categories, _ => null!);
+        var slot = _equipmentImpl.FindSlot("engine");
+        Assert.That(items["custom_engine"].CategoryName, Is.EqualTo(items["custom_hull"].CategoryName));
+        Assert.That(items["custom_engine"].CategoryId, Is.EqualTo("engine"));
+        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_engine"], 1), Is.True);
+        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_hull"], 1), Is.False);
+        Assert.That(_equipmentImpl.Container.Accepts(slot, items["custom_engine"], 2), Is.False);
+        Assert.That(_equipmentImpl.Definitions, Is.SameAs(EquipmentSlotDefinition.Defaults));
     }
 
     [Test]
     public void EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity()
     {
-        ItemFixture.Place(_inventoryImpl.Items, _equipmentImpl.Container, _equipmentImpl.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture"); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-2 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        ItemFixture.Place(_inventoryImpl.Items, _equipmentImpl.Container, _equipmentImpl.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture");
         Seed((0, "mock_standard_light_weapon", 1), (1, "mock_standard_light_weapon", 1), (2, "mock_standard_heavy_weapon", 1), (3, "mock_standard_hull", 1));
-        Move(ItemCellAddress.Inventory(0), ItemCellAddress.Equipment("weapon_1")); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-3 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
-        Move(ItemCellAddress.Inventory(1), ItemCellAddress.Equipment("weapon_2")); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-4 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
-        Move(ItemCellAddress.Inventory(2), ItemCellAddress.Equipment("weapon_3")); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-5 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Move(ItemCellAddress.Inventory(0), ItemCellAddress.Equipment("weapon_1"));
+        Move(ItemCellAddress.Inventory(1), ItemCellAddress.Equipment("weapon_2"));
+        Move(ItemCellAddress.Inventory(2), ItemCellAddress.Equipment("weapon_3"));
         var before = _equipmentImpl.Snapshot;
         var inventoryBefore = _inventoryImpl.Snapshot;
-        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Inventory(3)), // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-6 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Inventory(3)),
             Is.EqualTo(TransferResult.IncompatiblePlacement));
         Assert.That(_equipmentImpl.Snapshot, Is.SameAs(before));
         Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
-        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Equipment("weapon_2")), // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-7 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Equipment("weapon_2")),
             Is.EqualTo(TransferResult.Success));
-        Assert.That(_equipmentImpl.Snapshot.Slots[6], Is.SameAs(before.Slots[7])); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-8 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
-        Assert.That(_equipmentImpl.Snapshot.Slots[7], Is.SameAs(before.Slots[6])); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-9 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Assert.That(_equipmentImpl.Snapshot.Slots[6], Is.SameAs(before.Slots[7]));
+        Assert.That(_equipmentImpl.Snapshot.Slots[7], Is.SameAs(before.Slots[6]));
         Assert.That(_equipmentImpl.Revision, Is.EqualTo(before.Revision + 1));
         Assert.That(_inventoryImpl.Snapshot, Is.SameAs(inventoryBefore));
-        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Inventory(0)), Is.EqualTo(TransferResult.Success)); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-10 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
-        Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.SameAs(before.Slots[7])); // TEST-SUPPORT: WEAPON-TRANSFER-MIGRATE-11 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests.EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity
+        Assert.That(Move(ItemCellAddress.Equipment("weapon_1"), ItemCellAddress.Inventory(0)), Is.EqualTo(TransferResult.Success));
+        Assert.That(_inventoryImpl.Snapshot.Slots[0], Is.SameAs(before.Slots[7]));
         Assert.That(_inventoryImpl.Capacity, Is.EqualTo(128));
     }
 

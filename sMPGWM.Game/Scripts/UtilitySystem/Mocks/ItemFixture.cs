@@ -7,6 +7,13 @@ using ItemLocation = sMPGWM.Scripts.ItemSystem.ItemLocation;
 namespace sMPGWM.Scripts.UtilitySystem.Mocks;
 
 /// <summary>Arranges smoke fixtures through gameplay commands, including separate partial stacks.</summary>
+// TEST-SUPPORT-CLASS: ITEM-FIXTURE-001 | Tests: sMPGWM.Tests.EquipmentSystem.EquipmentTransferTests
+// Tests: sMPGWM.Tests.InventorySystem.InventoryControllerTests
+// Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests
+// Tests: sMPGWM.Tests.LocalBindingTests
+// Tests: sMPGWM.Tests.NetworkSystem.WeaponFixtureReplicationTests
+// Tests: sMPGWM.Tests.UiSystem.InventoryProjectionTests
+// Tests: sMPGWM.Tests.UiSystem.ItemInteractionControllerTests
 internal static class ItemFixture
 {
     internal static ItemEntity Place(ItemStore items, ItemContainer destination, int slot, string definitionId, int count = 1)

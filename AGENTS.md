@@ -20,22 +20,22 @@ sMPGWM is a **2D top-down coop multiplayer space shooter** developed in **Godot 
 - Keep comments minimal and useful; never include icons or emojis in code comments.
 - Prefer `var` when type inference is possible and practical.
 - Avoid LINQ operations; prefer straightforward loops.
-- Prefer arrays and efficient, allocation-conscious implementations where appropriate.
-- Favor fast, clear implementations without unnecessary overhead.
-- Use one file per class/enum/record except for internal classes that are embedded in another class. Exception: Icons.*
-- Each file should reflect its namespace, so that it can be properly imported!
+- Prefer clear, efficient, allocation-conscious implementations and arrays where appropriate.
+- Use one file per class, enum, or record. Exceptions: nested internal classes and `Icons.*`.
+- Match namespaces to the directory structure and name files after their primary type.
+- Keep the 60 FPS game loop and 30 Hz network tick fast: avoid unnecessary per-frame and per-tick allocations and reuse buffers where practical.
+- Network payloads must contain only arrays and scalar values (numbers, booleans, and strings), using a predefined positional schema and numeric indices for game-object references; do not encode field names or key-value mappings.
 
 ## Traceability of test-support code
 
-Every line of executable code or declaration introduced solely to enable, drive, inspect, or verify tests must be marked with a unique traceability ID, followed by the fully qualified test method name(s) that use it. This includes test-only hooks, accessors, instrumentation, injected controls, and development helpers added to application code for automated or manual verification. Ordinary production code does not require a marker merely because tests exercise it.
-
-Use this comment format on each affected line, or immediately above it when an inline comment is impractical:
+- Mark test-support code in `sMPGWM.Game` so reviewers can identify non-production code and review it for removal or exclusion before shipping. No markers are needed inside `sMPGWM.Tests`.
+- Use `TEST-SUPPORT-CLASS` for an entirely test-only class, or `TEST-SUPPORT` above a test-support method, constructor, or isolated statement. 
+- Give each marker a unique ID and list each consuming test class once, fully qualified. For script-based tests, use the script path instead.
 
 ```csharp
-internal void SetShieldForTest(float value) // TEST-SUPPORT: <unique-id> | Tests: Namespace.Class.Method
-{
-    _shield = value; // TEST-SUPPORT: <different-unique-id> | Tests: Namespace.Class.Method
-}
+// TEST-SUPPORT: HOTBAR-SEED-STATE-*
+// Tests: sMPGWM.Tests.ItemSystem.ItemHotbarTests
+// Tests: sMPGWM.Tests.ItemSystem.SomeOtherTestClass
 ```
 
 ## Runtime and Networking
@@ -44,4 +44,4 @@ internal void SetShieldForTest(float value) // TEST-SUPPORT: <unique-id> | Tests
 - **Network tick interval:** Every second local physics step (30 Hz at 60 physics steps/second).
 - **Authority model:** Host-authoritative multiplayer.
 - **Session scale:** Co-op, typically 5 players and at most 10.
-- **Performance:** Keep the 30 Hz network cadence stable at this scale. Avoid unnecessary recurring allocations, reuse storage where useful, and do not explicitly force garbage collection. Measure timing and GC impact; an absolute absence of automatic GC is not required.
+- **Performance:** Keep the 30 Hz network cadence stable at this scale. Avoid unnecessary recurring allocations

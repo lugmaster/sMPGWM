@@ -6,6 +6,7 @@ using Godot;
 namespace sMPGWM.Scripts.UtilitySystem.Mocks;
 
 /// <summary>Hosts the NUnit integration suite inside the engine, without a test-specific registry.</summary>
+// TEST-SUPPORT-CLASS: HEADLESS-HOST-001 | Tests: sMPGWM.Tests.GodotIntegrationTests
 public partial class HeadlessTestHost : Node
 {
     public override void _Ready()

@@ -5,7 +5,7 @@ Install tools/gameplay-validation-requirements.txt, then run this file from any 
 from pathlib import Path
 import copy
 import sys
-import math # TEST-SUPPORT: DATA-VALIDATOR-V2-8 | Tests: tools.validate_gameplay_data.main
+import math # TEST-SUPPORT: DATA-VALIDATOR-V2-8 | Tests: tools/validate_gameplay_data.py
 
 import yaml
 from jsonschema import Draft7Validator
@@ -23,7 +23,7 @@ CATALOGUES = {
     'conditions': ('Conditions.yml', 'ConditionSchema.yml', 'Conditions'),
     'categories': ('items/ItemCategoryDefinitions.yml', 'items/ItemCategorySchema.yml', 'Categories'),
     'items': ('ItemDefinitions.yml', 'items/ItemSchema.yml', 'Items'),
-    'ships': ('Ships.yml', 'ShipsSchema.yml', 'ships'), # TEST-SUPPORT: DATA-VALIDATOR-V2-26 | Tests: tools.validate_gameplay_data.main
+    'ships': ('Ships.yml', 'ShipsSchema.yml', 'ships'), # TEST-SUPPORT: DATA-VALIDATOR-V2-26 | Tests: tools/validate_gameplay_data.py
     'damage': ('DamageSources.yml', 'DamageSourceSchema.yml', 'DamageSources'),
 }
 
@@ -46,13 +46,13 @@ UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, 
 
 
 def read(name):
-    if name == 'ItemDefinitions.yml': # TEST-SUPPORT: ITEM-SPLIT-PY-001 | Tests: tools.validate_gameplay_data.main
-        parts = [read('items/' + category + '.yml') for category in ['engine', 'hull', 'shield_generator', 'reactor', 'light_weapon', 'medium_weapon', 'heavy_weapon', 'consumable', 'resource', 'battery', 'weapon_fixture']] # TEST-SUPPORT: ITEM-SPLIT-PY-002 | Tests: tools.validate_gameplay_data.main
-        return {'Version': parts[0]['Version'], 'Items': [item for part in parts for item in part['Items']]} # TEST-SUPPORT: ITEM-SPLIT-PY-003 | Tests: tools.validate_gameplay_data.main
-    document = yaml.load((ROOT / name).read_text(encoding='utf-8'), Loader=UniqueKeyLoader) # TEST-SUPPORT: ITEM-SCHEMA-PY-001 | Tests: tools.validate_gameplay_data.main
-    if name.startswith('items/') and not name.endswith('.schema.yml') and 'Items' in document: # TEST-SUPPORT: ITEM-SCHEMA-PY-002 | Tests: tools.validate_gameplay_data.main
-        Draft7Validator(read(name.replace('.yml', '.schema.yml'))).validate(document) # TEST-SUPPORT: ITEM-SCHEMA-PY-003 | Tests: tools.validate_gameplay_data.main
-    return document # TEST-SUPPORT: ITEM-SCHEMA-PY-004 | Tests: tools.validate_gameplay_data.main
+    if name == 'ItemDefinitions.yml': # TEST-SUPPORT: ITEM-SPLIT-PY-001 | Tests: tools/validate_gameplay_data.py
+        parts = [read('items/' + category + '.yml') for category in ['engine', 'hull', 'shield_generator', 'reactor', 'light_weapon', 'medium_weapon', 'heavy_weapon', 'consumable', 'resource', 'battery', 'weapon_fixture']] # TEST-SUPPORT: ITEM-SPLIT-PY-002 | Tests: tools/validate_gameplay_data.py
+        return {'Version': parts[0]['Version'], 'Items': [item for part in parts for item in part['Items']]} # TEST-SUPPORT: ITEM-SPLIT-PY-003 | Tests: tools/validate_gameplay_data.py
+    document = yaml.load((ROOT / name).read_text(encoding='utf-8'), Loader=UniqueKeyLoader) # TEST-SUPPORT: ITEM-SCHEMA-PY-001 | Tests: tools/validate_gameplay_data.py
+    if name.startswith('items/') and not name.endswith('.schema.yml') and 'Items' in document: # TEST-SUPPORT: ITEM-SCHEMA-PY-002 | Tests: tools/validate_gameplay_data.py
+        Draft7Validator(read(name.replace('.yml', '.schema.yml'))).validate(document) # TEST-SUPPORT: ITEM-SCHEMA-PY-003 | Tests: tools/validate_gameplay_data.py
+    return document # TEST-SUPPORT: ITEM-SCHEMA-PY-004 | Tests: tools/validate_gameplay_data.py
 
 
 def validate(documents, schemas):
@@ -64,19 +64,19 @@ def validate(documents, schemas):
             errors.append(f'{filename}:{list(error.absolute_path)}: {error.message}')
         indices[kind] = {}
         for entry in document.get(key, []):
-            id = entry.get('name' if kind == 'ships' else 'Id') # TEST-SUPPORT: DATA-VALIDATOR-V2-61 | Tests: tools.validate_gameplay_data.main
+            id = entry.get('name' if kind == 'ships' else 'Id') # TEST-SUPPORT: DATA-VALIDATOR-V2-61 | Tests: tools/validate_gameplay_data.py
             if id in indices[kind]:
                 errors.append(f'{filename}: duplicate Id {id}')
             indices[kind][id] = entry
     if errors:
         return errors
 
-    for name, ship in indices['ships'].items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-68 | Tests: tools.validate_gameplay_data.main
-        if not math.isfinite(ship['health']) or ship['health'] <= 0: # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-001 | Tests: tools.validate_gameplay_data.main
-            errors.append(f'ships:{name}: health must be positive and finite') # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-002 | Tests: tools.validate_gameplay_data.main
-        for field, value in {'mass': ship['mass'], **ship['stat_modifiers']}.items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-69 | Tests: tools.validate_gameplay_data.main
-            if not math.isfinite(value) or abs(value) > 3.4028234663852886e38: # TEST-SUPPORT: DATA-VALIDATOR-V2-70 | Tests: tools.validate_gameplay_data.main
-                errors.append(f'ships:{name}: {field} must be a finite float-representable value') # TEST-SUPPORT: DATA-VALIDATOR-V2-71 | Tests: tools.validate_gameplay_data.main
+    for name, ship in indices['ships'].items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-68 | Tests: tools/validate_gameplay_data.py
+        if not math.isfinite(ship['health']) or ship['health'] <= 0: # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-001 | Tests: tools/validate_gameplay_data.py
+            errors.append(f'ships:{name}: health must be positive and finite') # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-002 | Tests: tools/validate_gameplay_data.py
+        for field, value in {'mass': ship['mass'], **ship['stat_modifiers']}.items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-69 | Tests: tools/validate_gameplay_data.py
+            if not math.isfinite(value) or abs(value) > 3.4028234663852886e38: # TEST-SUPPORT: DATA-VALIDATOR-V2-70 | Tests: tools/validate_gameplay_data.py
+                errors.append(f'ships:{name}: {field} must be a finite float-representable value') # TEST-SUPPORT: DATA-VALIDATOR-V2-71 | Tests: tools/validate_gameplay_data.py
 
     damage_ids = set(indices['damage'])
     category_ids = set(indices['categories'])
@@ -177,10 +177,10 @@ def validate(documents, schemas):
                 if value not in damage_ids: errors.append(f'{owner}: unknown damage source')
             elif isinstance(value, bool) or not isinstance(value, (int, float)):
                 errors.append(f'{owner}: {key} must be numeric')
-            elif not math.isfinite(value) or value < 0: # TEST-SUPPORT: DATA-VALIDATOR-V2-172 | Tests: tools.validate_gameplay_data.main
-                errors.append(f'{owner}: {key} must be finite and nonnegative') # TEST-SUPPORT: DATA-VALIDATOR-V2-173 | Tests: tools.validate_gameplay_data.main
-            elif key == 'RechargeTime' and value <= 0: # TEST-SUPPORT: DATA-VALIDATOR-V2-174 | Tests: tools.validate_gameplay_data.main
-                errors.append(f'{owner}: RechargeTime must be positive milliseconds') # TEST-SUPPORT: DATA-VALIDATOR-V2-175 | Tests: tools.validate_gameplay_data.main
+            elif not math.isfinite(value) or value < 0: # TEST-SUPPORT: DATA-VALIDATOR-V2-172 | Tests: tools/validate_gameplay_data.py
+                errors.append(f'{owner}: {key} must be finite and nonnegative') # TEST-SUPPORT: DATA-VALIDATOR-V2-173 | Tests: tools/validate_gameplay_data.py
+            elif key == 'RechargeTime' and value <= 0: # TEST-SUPPORT: DATA-VALIDATOR-V2-174 | Tests: tools/validate_gameplay_data.py
+                errors.append(f'{owner}: RechargeTime must be positive milliseconds') # TEST-SUPPORT: DATA-VALIDATOR-V2-175 | Tests: tools/validate_gameplay_data.py
         if set(values) - (required - {'AbilityIds'}): errors.append(f'{owner}: unexpected category values')
         refs('abilities', item.get('AbilityIds', []), owner)
         for grant in item.get('BehaviourGrants', []):
@@ -207,19 +207,19 @@ def validate(documents, schemas):
 
 def negative_checks(documents, schemas):
     cases = [
-        ('missing ship health', lambda d: d['ships']['ships'][0].pop('health')), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-003 | Tests: tools.validate_gameplay_data.main
-        ('zero ship health', lambda d: d['ships']['ships'][0].update(health=0)), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-004 | Tests: tools.validate_gameplay_data.main
-        ('negative ship health', lambda d: d['ships']['ships'][0].update(health=-1)), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-005 | Tests: tools.validate_gameplay_data.main
-        ('infinite ship health', lambda d: d['ships']['ships'][0].update(health=float('inf'))), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-006 | Tests: tools.validate_gameplay_data.main
-        ('NaN ship health', lambda d: d['ships']['ships'][0].update(health=float('nan'))), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-007 | Tests: tools.validate_gameplay_data.main
-        ('legacy ship_stats', lambda d: d['ships']['ships'][0].update(ship_stats={})), # TEST-SUPPORT: DATA-VALIDATOR-V2-202 | Tests: tools.validate_gameplay_data.main
-        ('legacy ShieldCurrent', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(ShieldCurrent=10)), # TEST-SUPPORT: DATA-VALIDATOR-V2-203 | Tests: tools.validate_gameplay_data.main
-        ('invalid intrinsic mass', lambda d: d['ships']['ships'][0].update(mass=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-204 | Tests: tools.validate_gameplay_data.main
-        ('infinite modifier', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(Speed=float('inf'))), # TEST-SUPPORT: DATA-VALIDATOR-V2-205 | Tests: tools.validate_gameplay_data.main
-        ('zero recharge time', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(RechargeTime=0)), # TEST-SUPPORT: DATA-VALIDATOR-V2-206 | Tests: tools.validate_gameplay_data.main
-        ('negative downtime', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(DownTime=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-207 | Tests: tools.validate_gameplay_data.main
-        ('legacy generator Shield', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(Shield=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-208 | Tests: tools.validate_gameplay_data.main
-        ('legacy reactor Energy', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='reactor')['Values'].update(Energy=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-209 | Tests: tools.validate_gameplay_data.main
+        ('missing ship health', lambda d: d['ships']['ships'][0].pop('health')), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-003 | Tests: tools/validate_gameplay_data.py
+        ('zero ship health', lambda d: d['ships']['ships'][0].update(health=0)), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-004 | Tests: tools/validate_gameplay_data.py
+        ('negative ship health', lambda d: d['ships']['ships'][0].update(health=-1)), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-005 | Tests: tools/validate_gameplay_data.py
+        ('infinite ship health', lambda d: d['ships']['ships'][0].update(health=float('inf'))), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-006 | Tests: tools/validate_gameplay_data.py
+        ('NaN ship health', lambda d: d['ships']['ships'][0].update(health=float('nan'))), # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-007 | Tests: tools/validate_gameplay_data.py
+        ('legacy ship_stats', lambda d: d['ships']['ships'][0].update(ship_stats={})), # TEST-SUPPORT: DATA-VALIDATOR-V2-202 | Tests: tools/validate_gameplay_data.py
+        ('legacy ShieldCurrent', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(ShieldCurrent=10)), # TEST-SUPPORT: DATA-VALIDATOR-V2-203 | Tests: tools/validate_gameplay_data.py
+        ('invalid intrinsic mass', lambda d: d['ships']['ships'][0].update(mass=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-204 | Tests: tools/validate_gameplay_data.py
+        ('infinite modifier', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(Speed=float('inf'))), # TEST-SUPPORT: DATA-VALIDATOR-V2-205 | Tests: tools/validate_gameplay_data.py
+        ('zero recharge time', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(RechargeTime=0)), # TEST-SUPPORT: DATA-VALIDATOR-V2-206 | Tests: tools/validate_gameplay_data.py
+        ('negative downtime', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(DownTime=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-207 | Tests: tools/validate_gameplay_data.py
+        ('legacy generator Shield', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(Shield=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-208 | Tests: tools/validate_gameplay_data.py
+        ('legacy reactor Energy', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='reactor')['Values'].update(Energy=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-209 | Tests: tools/validate_gameplay_data.py
         ('missing item value', lambda d: d['items']['Items'][0]['Values'].pop('Speed')),
         ('unknown field', lambda d: d['abilities']['AbilityDefinitions'][0].update(Typo=True)),
         ('dangling reference', lambda d: d['abilities']['AbilityDefinitions'][0].update(EffectId='missing')),

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
-using sMPGWM.Scripts.GamePlaySystem;
 using sMPGWM.Scripts.MovementSystem;
 using sMPGWM.Scripts.WorldSystem;
 using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
@@ -20,8 +19,8 @@ public partial class SynchronizationCoordinator : Node
     public Guid Session { get; private set; }
     public long CompletedTick { get; private set; }
     public long PredictionTick => _prediction.Tick;
-    public double Rtt => _clock.Rtt;
-    public double Jitter => _clock.Jitter;
+    public double Rtt => _clock.Rtt; // TEST-SUPPORT: NETWORK-METRICS-001 | Tests: sMPGWM.Tests.PerformanceProcessTests
+    public double Jitter => _clock.Jitter; // TEST-SUPPORT: NETWORK-METRICS-002 | Tests: sMPGWM.Tests.PerformanceProcessTests
     public int Lead => _clock.Lead;
     public double HostEstimate => _clock.HostEstimate;
     private bool _active;
