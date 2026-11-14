@@ -1,9 +1,27 @@
-# Hitscan combat and weapon systems — implementation handover
+# Hitscan combat and weapon systems - epic
 
 Date: 2026-11-14  
-Status: scope revised; implementation status must be rechecked against the latest increment.
+Status: planned epic, split into seven independently reviewable stories; implementation status must be rechecked against the latest increment.
 Repository inspected at: `a93ba62f76eb14669bc1124f109ee5117ce273b8`  
 Primary data entry point: [light_weapon.yml](../../sMPGWM.Game/assets/game_data/items/light_weapon.yml)
+
+## Story map and scope precedence
+
+This document is the parent epic and retained end-state design reference, not one implementation story. The seven linked stories define delivery boundaries and acceptance. Their explicit deferrals take precedence over end-state requirements below: data-only stories do not require firing or presentation, and supply/damage are intentionally absent from early playable slices. Existing technical findings must be rechecked before implementation.
+
+| Order | Story | Dependencies |
+| --- | --- | --- |
+| 1 | [Weapons | Refactor Schema](inc-01_weapons-refactor-schema.md) | None; independent of story 2. |
+| 2 | [Ships | Muzzle Offsets | Refactor Schema](inc-02_ships-muzzle-offsets-refactor-schema.md) | None; can proceed alongside story 1. |
+| 3 | [Weapons | Equipment Groups](inc-03_weapons-equipment-groups.md) | Story 1. |
+| 4 | [Weapons | Firing Visuals](inc-04_weapons-firing-visuals.md) | Stories 1, 2, and 3. |
+| 5 | [Weapons | Syncing Firing Action over Host](inc-05_weapons-sync-firing-action-over-host.md) | Story 4; uses group authority from story 3. |
+| 6 | [Weapons | EnergyPerShot and Reloading](inc-06_weapons-energy-per-shot-and-reloading.md) | Story 5. |
+| 7 | [Weapons | Damage](inc-07_weapons-damage.md) | Story 6. |
+
+Stories 1 and 2 are independent. Story 3 builds grouping on story 1; story 4 combines all three into local firing. Stories 5?7 progressively add host synchronization, synchronized supply mechanics, and synchronized damage/death. Each story owns lifecycle, validation, and recovery for the state it introduces; full-epic validation is completed in story 7.
+
+The equipment-group UI is a required design deliverable in story 3. Its proposed selector is a starting point, not a finalized visual design. Supply UI belongs to story 6. No gameplay implementation is requested by this extraction.
 
 ## Contents
 
@@ -407,16 +425,9 @@ Reuse fixed arrays and prepared lookups. Some physics/RPC allocations remain acc
 
 ## 12. Implementation sequence and acceptance gates
 
-| Phase | Deliverables | Required gate |
-| --- | --- | --- |
-| 1. Definitions and migration | Typed weapon metadata/stats, conditional schemas/parser, only Laser Mk1 and Vulcan Mk1 items, muzzle geometry, profiles, category/version and keybinding migration. | Only the two scoped weapons gain firing behavior; both prepare; invalid combinations fail clearly; out-of-scope definitions remain loadable without new combat behavior. |
-| 2. Combat/resources | Atomic energy spend, shield overflow, armor calculation, downtime integration, dead/inert state. | Resource/death tests pass; existing power, shield, movement, and resource snapshots still pass. |
-| 3. Host weapons | Per-item state ownership, transactional loadout bindings, groups, cadence/reload, fixed-forward alternating hitscan. | Single-host shots obey timing, supply, geometry, swap, and same-tick ordering rules. |
-| 4. Network state | Input codec, reliable reload/group requests, resource/weapon replication, join/recovery/restoration and compatibility bump. | Host/client resources converge under loss/reordering; stale identities cannot fire; join/reload recovery works. |
-| 5. Presentation/UI | Shot batches, pooled effects/audio, interpolated timeline, group/ammunition/reload UI. | Packet loss/pool exhaustion changes cosmetics only; no duplicate effects or movement-replay combat. |
-| 6. Full validation | Regression checks and five-/ten-player measured workloads on supported transports. | No unexplained gameplay regression or unbounded queue; cadence/GC/network evidence recorded with limitations. |
+Use the seven stories in the [story map](#story-map-and-scope-precedence), replacing the former six cross-cutting implementation phases. A story is complete when its own acceptance criteria and relevant regressions pass, not when every end-state requirement in this epic exists.
 
-Implement each phase as a coherent change, not a broad unfinished framework. Keep the existing session cleanup and readiness gates working after each phase. Do not enable fire input while weapon baselines/profile preparation are incomplete.
+Keep session cleanup and readiness working after each increment. Story 4 is local-host firing; story 5 enables multiplayer firing only after its baselines and profiles are ready. Story 6 adds supply state and its synchronization together. Story 7 adds damage/death and completes integrated performance validation. Do not pull later supply/damage requirements into schema or visual stories.
 
 ## 13. Test matrix
 
@@ -436,7 +447,7 @@ Implement each phase as a coherent change, not a broad unfinished framework. Kee
 
 Extend existing `CommandQueueTests`, movement synchronization tests, `HealthSnapshotTests`, `ResourceSnapshotTests`, `JoinProtocolTests`, weapon-fixture replication tests, restoration tests, and resource/equipment tests where relevant. Use real Godot integration tests for query geometry and presentation lifecycle; pure tests cover scheduling and damage arithmetic.
 
-All code introduced solely for test support must follow `AGENTS.md`: each executable/declaration line needs a unique `TEST-SUPPORT` ID and the fully qualified consuming test method(s). Do not add unmarked application hooks or manual-verification helpers. Production seams such as energy spending are production behavior, not test-only accessors.
+All code introduced solely for test support must follow `AGENTS.md`: use `TEST-SUPPORT-CLASS` for a test-only class or `TEST-SUPPORT` above a test-support method, constructor, or isolated statement, with a unique ID and each consuming fully qualified test class listed once (or script path). Do not add unmarked application hooks or manual-verification helpers. Production seams such as energy spending are production behavior, not test-only accessors.
 
 ## 14. Future projectile boundary
 
@@ -456,4 +467,4 @@ No projectile entities, generic strategy registry, rewind history, or unused pro
 - [ ] Record performance evidence and any untested transport/visual limitations.
 - [ ] Update this document's implementation status only with completed work and evidence.
 
-The Markdown plan is the only artifact created during this planning task. Gameplay code, schemas, and authored item data remain unchanged until implementation is requested.
+The epic and seven linked Markdown stories are the planning artifacts. Gameplay code, schemas, and authored item data remain unchanged until implementation is requested.
