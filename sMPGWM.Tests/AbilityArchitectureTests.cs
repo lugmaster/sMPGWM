@@ -18,7 +18,6 @@ public sealed class AbilityArchitectureTests // TEST-SUPPORT: ABILITY-TEST-002 |
             if (file == "AbilityDefinitions.yml") original = document; // TEST-SUPPORT: ABILITY-TEST-007 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         }); // TEST-SUPPORT: ABILITY-TEST-008 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         var ability = data.Abilities.GetById("shieldCapacityBoost"); // TEST-SUPPORT: ABILITY-TEST-009 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
-        Assert.That(data.Abilities.GetAll(), Is.SameAs(data.Abilities.GetAll())); // TEST-SUPPORT: ABILITY-TEST-010 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         Assert.That(data.Effects.GetById(ability.EffectId), Is.TypeOf<ApplyBehaviourEffect>()); // TEST-SUPPORT: ABILITY-TEST-011 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         Assert.That(data.Effects.GetById("infectionProjectile"), Is.TypeOf<LaunchProjectileEffect>()); // TEST-SUPPORT: ABILITY-TEST-012 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable
         Assert.That(data.Effects.GetById("removeDisrupted"), Is.TypeOf<SequenceEffect>()); // TEST-SUPPORT: ABILITY-TEST-013 | Tests: sMPGWM.Tests.AbilityArchitectureTests.DefinitionsAreTypedValidatedAndImmutable

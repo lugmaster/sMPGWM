@@ -22,28 +22,13 @@ public class GodotIntegrationTests
             CopyTree(Path.Combine(game, "assets/ui/cursors"), Path.Combine(staging, "assets/ui/cursors")); // TEST-SUPPORT: CURSOR-STAGE-001 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
             CopyTree(Path.Combine(game, "assets/game_data"), Path.Combine(staging, "assets/game_data"));
             CopyTree(Path.Combine(game, "assets/ui/icons/atlases"), Path.Combine(staging, "assets/ui/icons/atlases"));
-            foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "icons_0.png-*"))
-                Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
-            foreach (var file in new[] { "Scripts/UtilitySystem/AbstractSingleton.cs", "Scripts/UtilitySystem/Mocks/HeadlessTestHost.cs", "Scripts/UtilitySystem/UiComponents/IconDefinitions.cs", "Scripts/WorldSystem/GameWorld.cs", "Scripts/InputSystem/InputController.cs" })
-                Copy(Path.Combine(game, file), Path.Combine(staging, file));
-            CopyTree(Path.Combine(game, "Scripts/ShipSystem"), Path.Combine(staging, "Scripts/ShipSystem"));
-            foreach (var file in new[] { "Scripts/PlayerControllerSystem/PlayerController.cs", "Scripts/UiSystem/UiCanvas.cs",
-                         "Scripts/UiSystem/HudSystem/PlayerHud.cs", "Scripts/UiSystem/HudSystem/Hotbar/HotbarControl.cs",
-                         "Scripts/UiSystem/OverlayMenuSystem/UiWindowManager.cs" })
-                Copy(Path.Combine(game, file), Path.Combine(staging, file));
             Copy(Path.Combine(game, "scenes/game/game_objects/ship.tscn"), Path.Combine(staging, "scenes/game/game_objects/ship.tscn"));
-            // Session construction tests exercise the real canvas and runtime node composition.
-            foreach (var directory in new[] { "Scripts/UiSystem", "Scripts/UtilitySystem/UiComponents", "Scripts/NetworkSystem", "Scripts/MovementSystem", "Scripts/GamePlaySystem", "Scripts/GameConfigSystem", "scenes/ui" })
-                CopyTree(Path.Combine(game, directory), Path.Combine(staging, directory));
+            CopyTree(Path.Combine(game, "scenes/ui"), Path.Combine(staging, "scenes/ui")); // TEST-SUPPORT: CLEANUP-STAGE-001 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot
             Copy(Path.Combine(game, "config/config.cfg"), Path.Combine(staging, "config/config.cfg"));
             Copy(Path.Combine(game, "scenes/game/ui_canvas.tscn"), Path.Combine(staging, "scenes/game/ui_canvas.tscn"));
             CopyTree(Path.Combine(game, "assets/world"), Path.Combine(staging, "assets/world"));
             CopyTree(Path.Combine(game, ".godot/imported"), Path.Combine(staging, ".godot/imported"));
             CopyTree(Path.Combine(game, "assets/mocks"), Path.Combine(staging, "assets/mocks"));
-            foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "radar_mock.png-*"))
-                Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
-            foreach (var source in Directory.GetFiles(Path.Combine(game, ".godot/imported"), "ship_fighter_reference.png-*"))
-                Copy(source, Path.Combine(staging, ".godot/imported", Path.GetFileName(source)));
             File.WriteAllText(Path.Combine(staging, "project.godot"), """
                 config_version=5
                 [application]
