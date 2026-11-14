@@ -26,13 +26,89 @@ public sealed class InitialPlayerStateTests
                 world.ApproveSpawn(peer, PlayerStartupData.Create());
                 var owner = world.Players[peer];
                 var snapshot = owner.Inventory.Snapshot;
-                Assert.That(snapshot.Occupied.Count, Is.EqualTo(development ? 1 : 0));
-                if (development) Assert.That(snapshot.Slots[0]!.DefinitionId, Is.EqualTo("laser_mk1"));
+                if (development) AssertDevelopmentInventory(snapshot);
+                else Assert.That(snapshot.Occupied, Is.Empty);
+                var ship = owner.ControlledShip!;
+                var equipment = ship.Equipment.Snapshot;
+                Assert.That(equipment.UsedWeaponSlots, Is.EqualTo(development ? 6 : 1));
+                Assert.That(equipment.Slots[ship.Equipment.FindSlot("weapon_1")]!.DefinitionId, Is.EqualTo("vulcan_mk1"));
+                Assert.That(equipment.Slots[ship.Equipment.FindSlot("weapon_2")]?.DefinitionId,
+                    Is.EqualTo(development ? "mock_standard_medium_weapon" : null));
+                Assert.That(equipment.Slots[ship.Equipment.FindSlot("weapon_3")]?.DefinitionId,
+                    Is.EqualTo(development ? "mock_standard_heavy_weapon" : null));
+                ship.Runtime.SetShieldCurrent(37);
                 world.InitializePlayerLoadout(peer);
                 Assert.That(owner.Inventory.Snapshot, Is.SameAs(snapshot));
+                Assert.That(ship.Equipment.Snapshot, Is.SameAs(equipment));
+                var spare = world.SpawnEntity(new EntitySpawnRecord(Guid.NewGuid().ToString("N"), "fighter", default, 0, default));
+                owner.AssignShip(spare);
+                world.InitializePlayerLoadout(peer);
+                Assert.That(owner.Inventory.Snapshot, Is.SameAs(snapshot));
+                foreach (var item in spare.Equipment.Snapshot.Slots) Assert.That(item, Is.Null);
+                owner.AssignShip(ship);
+                Assert.That(ship.Equipment.Snapshot, Is.SameAs(equipment));
+                Assert.That(ship.Runtime.Shield.Current, Is.EqualTo(37));
             }
         }
         finally { world.Clear(); world.Free(); }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void RestorationPreservesLoadoutWhenPresetChanges(bool development)
+    {
+        var source = new GameWorld { AuthoritativeItems = true,
+            InitializeLoadout = development ? DevelopmentLoadout.Equip : StartLoadout.Equip };
+        var restored = new GameWorld { AuthoritativeItems = true,
+            InitializeLoadout = development ? StartLoadout.Equip : DevelopmentLoadout.Equip };
+        try
+        {
+            var host = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests");
+            host.AddChild(source);
+            host.AddChild(restored);
+            source.ApproveSpawn(1, PlayerStartupData.Create());
+            source.Players[1].ControlledShip!.Runtime.SetShieldCurrent(37);
+            var saved = source.CaptureState(0, 0);
+            restored.RestoreState(saved);
+            restored.InitializePlayerLoadout(1);
+            var owner = restored.Players[1];
+            Assert.That(owner.Inventory.Snapshot.Slots, Is.EqualTo(saved.Players[0].Inventory.Slots));
+            Assert.That(owner.ControlledShip!.Equipment.Snapshot.Slots, Is.EqualTo(saved.Ships[0].Equipment.Slots));
+            Assert.That(owner.ControlledShip.Runtime.Shield.Current, Is.EqualTo(37));
+        }
+        finally { source.Clear(); source.Free(); restored.Clear(); restored.Free(); }
+    }
+
+    private static void AssertDevelopmentInventory(InventorySnapshot snapshot)
+    {
+        Assert.That(snapshot.Occupied.Count, Is.EqualTo(32));
+        AssertStacks(snapshot, "mock_standard_engine", 1);
+        AssertStacks(snapshot, "mock_advanced_engine", 1, 1);
+        AssertStacks(snapshot, "mock_standard_hull", 1);
+        AssertStacks(snapshot, "mock_advanced_hull", 1, 1);
+        AssertStacks(snapshot, "mock_standard_shield_generator", 1);
+        AssertStacks(snapshot, "mock_advanced_shield_generator", 1, 1);
+        AssertStacks(snapshot, "mock_standard_reactor", 1);
+        AssertStacks(snapshot, "mock_advanced_reactor", 1, 1);
+        AssertStacks(snapshot, "mock_standard_weapon_fixture", 1);
+        AssertStacks(snapshot, "vulcan_mk1", 1);
+        AssertStacks(snapshot, "laser_mk1", 1, 1);
+        AssertStacks(snapshot, "mock_standard_medium_weapon", 1);
+        AssertStacks(snapshot, "mock_advanced_medium_weapon", 1, 1);
+        AssertStacks(snapshot, "mock_standard_heavy_weapon", 1);
+        AssertStacks(snapshot, "mock_advanced_heavy_weapon", 1, 1);
+        AssertStacks(snapshot, "mock_standard_consumable", 10, 10, 7);
+        AssertStacks(snapshot, "mock_advanced_consumable", 1000, 250);
+        AssertStacks(snapshot, "mock_standard_resource", 10, 10, 7);
+        AssertStacks(snapshot, "mock_advanced_resource", 1000, 250);
+    }
+
+    private static void AssertStacks(InventorySnapshot inventory, string definition, params int[] expected)
+    {
+        var counts = new List<int>();
+        foreach (var item in inventory.Slots)
+            if (item?.DefinitionId == definition) counts.Add(item.Count);
+        Assert.That(counts, Is.EquivalentTo(expected), definition);
     }
 
     [Test]
