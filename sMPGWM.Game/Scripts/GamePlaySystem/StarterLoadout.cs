@@ -57,7 +57,7 @@ public static class StarterLoadout
     private static string? GetStarterItem(EquipmentSlotDefinition slot) => slot.IsWeaponSlot
         ? slot.Key switch
         {
-            "weapon_1" => "mock_standard_light_weapon",
+            "weapon_1" => "vulcan_mk1",
             "weapon_2" => "mock_standard_medium_weapon",
             "weapon_3" => "mock_standard_heavy_weapon",
             _ => null

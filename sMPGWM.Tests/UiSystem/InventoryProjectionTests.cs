@@ -105,7 +105,7 @@ public class InventoryProjectionTests
         using var inventory = new InventoryController();
         inventory.Items.CreateItems(inventory.Container, "mock_standard_heavy_weapon", 1);
         inventory.Items.CreateItems(inventory.Container, "mock_standard_medium_weapon", 1);
-        inventory.Items.CreateItems(inventory.Container, "mock_standard_light_weapon", 1);
+        inventory.Items.CreateItems(inventory.Container, "vulcan_mk1", 1);
         inventory.Items.CreateItems(inventory.Container, "mock_standard_engine", 1);
         var before = inventory.Snapshot;
         var state = new InventoryViewState { WeaponFilter = filter, SelectedTab = 1 };

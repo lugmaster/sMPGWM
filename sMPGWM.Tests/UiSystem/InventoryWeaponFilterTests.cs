@@ -16,7 +16,7 @@ public sealed class InventoryWeaponFilterTests
         using var inventory = new InventoryController();
         inventory.Items.CreateItems(inventory.Container, "mock_standard_medium_weapon", 1);
         inventory.Items.CreateItems(inventory.Container, "mock_advanced_medium_weapon", 1);
-        inventory.Items.CreateItems(inventory.Container, "mock_standard_light_weapon", 1);
+        inventory.Items.CreateItems(inventory.Container, "vulcan_mk1", 1);
         inventory.Items.CreateItems(inventory.Container, "mock_standard_heavy_weapon", 1);
         var before = inventory.Snapshot;
         var state = new InventoryViewState { SelectedTab = 1 };
@@ -81,7 +81,7 @@ public sealed class InventoryWeaponFilterTests
         using var inventory = new InventoryController();
         inventory.Items.CreateItems(inventory.Container, "mock_standard_heavy_weapon", 1);
         inventory.Items.CreateItems(inventory.Container, "mock_advanced_heavy_weapon", 1);
-        inventory.Items.CreateItems(inventory.Container, "mock_standard_light_weapon", 1);
+        inventory.Items.CreateItems(inventory.Container, "vulcan_mk1", 1);
         var before = inventory.Snapshot;
         var state = new InventoryViewState { SelectedTab = 1 };
         while (state.SelectedCategoryId != "light_weapon") state.SelectedTab++;

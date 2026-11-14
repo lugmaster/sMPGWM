@@ -374,7 +374,7 @@ public class ItemInteractionControllerTests
     [TestCase(true, true)]
     public void HotbarNoOpsRetainClickPickupAndEndNativeDrag(bool weapon, bool move)
     {
-        Seed(("mock_standard_consumable", 3), ("mock_standard_consumable", 4), ("mock_standard_light_weapon", 1));
+        Seed(("mock_standard_consumable", 3), ("mock_standard_consumable", 4), ("vulcan_mk1", 1));
         using var hotbar = ConfigureHotbar();
         if (weapon)
         {

@@ -21,7 +21,7 @@ public sealed class WeaponCapacityTests
     {
         using var inventory = new InventoryController();
         using var equipment = new EquipmentController(inventory.Items);
-        var weapon = Add(inventory, "mock_standard_light_weapon");
+        var weapon = Add(inventory, "vulcan_mk1");
         var before = inventory.Snapshot;
         Assert.That(Equip(inventory, equipment, weapon, "weapon_1"), Is.EqualTo(TransferResult.IncompatiblePlacement));
         Assert.That(inventory.Snapshot, Is.SameAs(before));
@@ -41,7 +41,7 @@ public sealed class WeaponCapacityTests
         using var equipment = new EquipmentController(inventory.Items);
         Assert.That(Equip(inventory, equipment, Add(inventory, "mock_standard_weapon_fixture"), "weapon_fixture"), Is.EqualTo(TransferResult.Success));
         for (var i = 1; i <= count; i++)
-            Assert.That(Equip(inventory, equipment, Add(inventory, "mock_standard_" + category), "weapon_" + i), Is.EqualTo(TransferResult.Success));
+            Assert.That(Equip(inventory, equipment, Add(inventory, category == "light_weapon" ? "vulcan_mk1" : "mock_standard_" + category), "weapon_" + i), Is.EqualTo(TransferResult.Success));
         Assert.That(equipment.Snapshot.UsedWeaponSlots, Is.EqualTo(9));
         Assert.That(equipment.Snapshot.FreeWeaponSlots, Is.Zero);
         var extra = Add(inventory, "mock_standard_heavy_weapon");
@@ -57,14 +57,14 @@ public sealed class WeaponCapacityTests
         using var equipment = new EquipmentController(inventory.Items);
         var fixture = AddFixture(inventory, 6);
         Assert.That(Equip(inventory, equipment, fixture, "weapon_fixture"), Is.EqualTo(TransferResult.Success));
-        var light = Add(inventory, "mock_standard_light_weapon");
+        var light = Add(inventory, "vulcan_mk1");
         var medium = Add(inventory, "mock_standard_medium_weapon");
         var heavy = Add(inventory, "mock_standard_heavy_weapon");
         Assert.That(Equip(inventory, equipment, light, "weapon_1"), Is.EqualTo(TransferResult.Success));
         Assert.That(Equip(inventory, equipment, medium, "weapon_2"), Is.EqualTo(TransferResult.Success));
         Assert.That(Equip(inventory, equipment, heavy, "weapon_3"), Is.EqualTo(TransferResult.Success));
         Assert.That(equipment.Snapshot.FreeWeaponSlots, Is.Zero);
-        var replacement = Add(inventory, "mock_standard_light_weapon");
+        var replacement = Add(inventory, "vulcan_mk1");
         Assert.That(Equip(inventory, equipment, replacement, "weapon_3"), Is.EqualTo(TransferResult.Success));
         Assert.That(inventory.Items.GetLocation(heavy.Id).ContainerId, Is.EqualTo(inventory.Container.Id));
         Assert.That(equipment.Snapshot.UsedWeaponSlots, Is.EqualTo(4));
@@ -83,7 +83,7 @@ public sealed class WeaponCapacityTests
         using var equipment = new EquipmentController(inventory.Items);
         var fixture = Add(inventory, "mock_standard_weapon_fixture");
         Assert.That(Equip(inventory, equipment, fixture, "weapon_fixture"), Is.EqualTo(TransferResult.Success));
-        var weapons = new[] { Add(inventory, "mock_standard_light_weapon"), Add(inventory, "mock_standard_medium_weapon"), Add(inventory, "mock_standard_heavy_weapon") };
+        var weapons = new[] { Add(inventory, "vulcan_mk1"), Add(inventory, "mock_standard_medium_weapon"), Add(inventory, "mock_standard_heavy_weapon") };
         for (var i = 0; i < weapons.Length; i++)
             Assert.That(Equip(inventory, equipment, weapons[i], "weapon_" + (i + 1)), Is.EqualTo(TransferResult.Success));
         Assert.That(inventory.Items.CreateItems(inventory.Container, "mock_standard_engine", 127), Is.EqualTo(InventoryResult.Success));
@@ -119,7 +119,7 @@ public sealed class WeaponCapacityTests
         using var inventory = new InventoryController();
         using var equipment = new EquipmentController(inventory.Items);
         Assert.That(Equip(inventory, equipment, Add(inventory, "mock_standard_weapon_fixture"), "weapon_fixture"), Is.EqualTo(TransferResult.Success));
-        var light = Add(inventory, "mock_standard_light_weapon");
+        var light = Add(inventory, "vulcan_mk1");
         var medium = Add(inventory, "mock_standard_medium_weapon");
         var heavy = Add(inventory, "mock_standard_heavy_weapon");
         Assert.That(Equip(inventory, equipment, light, "weapon_1"), Is.EqualTo(TransferResult.Success));

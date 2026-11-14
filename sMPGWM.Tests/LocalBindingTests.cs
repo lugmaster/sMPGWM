@@ -16,11 +16,11 @@ public sealed class LocalBindingTests
         using var second = new EquipmentController(store);
         sMPGWM.Scripts.UtilitySystem.Mocks.ItemFixture.Place(store, first.Container, first.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture");
         sMPGWM.Scripts.UtilitySystem.Mocks.ItemFixture.Place(store, second.Container, second.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture");
-        store.CreateItems(inventory.Container, "mock_standard_light_weapon", 1);
+        store.CreateItems(inventory.Container, "vulcan_mk1", 1);
         var a = inventory.Snapshot.Slots[0]!;
         var slot = first.FindSlot("weapon_1");
         Assert.That(store.TransferItem(a.Id, store.GetLocation(a.Id), new(first.Container.Id, slot), inventory.Revision, first.Revision), Is.EqualTo(TransferResult.Success));
-        store.CreateItems(inventory.Container, "mock_advanced_light_weapon", 1);
+        store.CreateItems(inventory.Container, "laser_mk1", 1);
         var b = inventory.Snapshot.Slots[0]!;
         Assert.That(store.TransferItem(b.Id, store.GetLocation(b.Id), new(second.Container.Id, slot), inventory.Revision, second.Revision), Is.EqualTo(TransferResult.Success));
         Assert.That(first.Revision, Is.EqualTo(second.Revision));

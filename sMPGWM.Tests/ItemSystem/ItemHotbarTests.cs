@@ -35,7 +35,7 @@ public class ItemHotbarTests
         ItemFixture.Place(_inventory.Items, _inventory.Container, 0, "mock_standard_consumable", 7);
         ItemFixture.Place(_inventory.Items, _inventory.Container, 1, "mock_standard_consumable", 8);
         ItemFixture.Place(_inventory.Items, _inventory.Container, 2, "mock_advanced_consumable", 9);
-        ItemFixture.Place(_inventory.Items, _inventory.Container, 3, "mock_standard_light_weapon");
+        ItemFixture.Place(_inventory.Items, _inventory.Container, 3, "vulcan_mk1");
         ItemFixture.Place(_inventory.Items, _inventory.Container, 4, "mock_standard_engine");
     }
 
@@ -129,7 +129,7 @@ public class ItemHotbarTests
             ItemCellAddress.Inventory(3), null, _inventory.Revision, _equipment.Revision));
         Assert.That(_controller.Resolve(0).Available, Is.False);
         Assert.That(_controller.Entries[0], Is.Null);
-        _inventory.Items.CreateItems(_inventory.Container, "mock_standard_light_weapon", 1);
+        _inventory.Items.CreateItems(_inventory.Container, "vulcan_mk1", 1);
         Equip(5);
         Assert.That(_controller.Resolve(0).Available, Is.False);
         Assert.That(_controller.Entries[0], Is.Null);
@@ -415,7 +415,7 @@ public class ItemHotbarTests
         ItemFixture.MoveAway(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1"));
         Assert.That(_inventory.Revision, Is.EqualTo(inventoryRevision));
         Assert.That(_controller.Resolve(0).Available, Is.False);
-        ItemFixture.Place(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1"), "mock_standard_light_weapon");
+        ItemFixture.Place(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1"), "vulcan_mk1");
         Assert.That(_controller.Resolve(0).Available, Is.False);
         Assert.That(_controller.Entries[0], Is.Null);
     }
@@ -470,7 +470,7 @@ public class ItemHotbarTests
         Assert.That(changes, Is.EqualTo(1));
         ItemFixture.Place(_inventory.Items, _inventory.Container, 8, "mock_standard_consumable", 1);
         Assert.That(changes, Is.EqualTo(2));
-        ItemFixture.Place(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1"), "mock_standard_light_weapon");
+        ItemFixture.Place(_inventory.Items, _equipment.Container, _equipment.FindSlot("weapon_1"), "vulcan_mk1");
         Assert.That(changes, Is.EqualTo(3));
 
         _controller.Changed -= Observe;

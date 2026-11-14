@@ -149,7 +149,7 @@ public class EquipmentTransferTests
     public void EquipmentSwap_ValidatesReversePlacementAndPreservesIdentity()
     {
         ItemFixture.Place(_inventoryImpl.Items, _equipmentImpl.Container, _equipmentImpl.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture");
-        Seed((0, "mock_standard_light_weapon", 1), (1, "mock_standard_light_weapon", 1), (2, "mock_standard_heavy_weapon", 1), (3, "mock_standard_hull", 1));
+        Seed((0, "vulcan_mk1", 1), (1, "vulcan_mk1", 1), (2, "mock_standard_heavy_weapon", 1), (3, "mock_standard_hull", 1));
         Move(ItemCellAddress.Inventory(0), ItemCellAddress.Equipment("weapon_1"));
         Move(ItemCellAddress.Inventory(1), ItemCellAddress.Equipment("weapon_2"));
         Move(ItemCellAddress.Inventory(2), ItemCellAddress.Equipment("weapon_3"));

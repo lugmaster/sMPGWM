@@ -13,7 +13,7 @@ public class ItemRegistryTests
     {
         var categories = ItemTestData.ParseCategories(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var items = ItemTestData.ParseItems(Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
-        Assert.That(items.Count, Is.EqualTo(23));
+        Assert.That(items.Count, Is.EqualTo(21));
         Assert.That(items["mock_standard_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon"));
         Assert.That(items["mock_advanced_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon"));
         Assert.That(((WeaponFixtureItemDefinition)items["mock_standard_weapon_fixture"]).WeaponSlots, Is.EqualTo(9));

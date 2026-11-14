@@ -1,39 +1,5 @@
 Version: 3.0.0
 Items:
-- Id: mock_standard_light_weapon
-  DisplayName: Standard Light Weapon
-  CategoryId: light_weapon
-  Description: PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.
-  DamageSource: physical
-  Damage: 1
-  AttackSpeed: 1
-  EnergyConsumption: 1
-  Mass: 1
-  Archetype: SMG
-  DeliveryType: HitScan
-  PresentationId: smg_standard
-  Range: 800
-  Supply:
-    Mode: Ammunition
-    AmmoCapacity: 1
-    ReloadDuration: 1
-- Id: mock_advanced_light_weapon
-  DisplayName: Advanced Light Weapon
-  CategoryId: light_weapon
-  Description: PlayerMock alternate example for equipment swaps and separate item stacks.
-  DamageSource: physical
-  Damage: 1
-  AttackSpeed: 1
-  EnergyConsumption: 1
-  Mass: 1
-  Archetype: SMG
-  DeliveryType: HitScan
-  PresentationId: smg_standard
-  Range: 800
-  Supply:
-    Mode: Ammunition
-    AmmoCapacity: 1
-    ReloadDuration: 1
 - Id: vulcan_mk1
   DisplayName: Vulcan Mk1
   CategoryId: light_weapon

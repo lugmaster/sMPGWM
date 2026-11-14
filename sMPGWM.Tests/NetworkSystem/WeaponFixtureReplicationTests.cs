@@ -18,7 +18,7 @@ public sealed class WeaponFixtureReplicationTests
         var fixtureSlot = host.Equipment.FindSlot("weapon_fixture");
         var mediumSlot = host.Equipment.FindSlot("weapon_2");
         var fixture = ItemFixture.Place(host.Store, host.Equipment.Container, fixtureSlot, "mock_standard_weapon_fixture");
-        ItemFixture.Place(host.Store, host.Equipment.Container, host.Equipment.FindSlot("weapon_1"), "mock_standard_light_weapon");
+        ItemFixture.Place(host.Store, host.Equipment.Container, host.Equipment.FindSlot("weapon_1"), "vulcan_mk1");
         var medium = ItemFixture.Place(host.Store, host.Equipment.Container, mediumSlot, "mock_standard_medium_weapon");
         ItemFixture.Place(host.Store, host.Equipment.Container, host.Equipment.FindSlot("weapon_3"), "mock_standard_heavy_weapon");
         using var initial = ItemSnapshotCodec.Encode(host.Player);
@@ -65,7 +65,7 @@ public sealed class WeaponFixtureReplicationTests
     {
         using var host = new ShipItemTestContext();
         var fixture = ItemFixture.Place(host.Store, host.Equipment.Container, host.Equipment.FindSlot("weapon_fixture"), "mock_standard_weapon_fixture");
-        ItemFixture.Place(host.Store, host.Equipment.Container, host.Equipment.FindSlot("weapon_1"), "mock_standard_light_weapon");
+        ItemFixture.Place(host.Store, host.Equipment.Container, host.Equipment.FindSlot("weapon_1"), "vulcan_mk1");
         using var transfers = new InventoryEquipmentTransferService(host.Inventory, host.Equipment);
         using var state = new ItemHotbarState(new HotbarBinding[]
         {

@@ -76,7 +76,7 @@ public sealed class ItemDefinitionSchemaTests
         foreach (var category in new[] { "light_weapon", "medium_weapon", "heavy_weapon" })
         foreach (var variant in new[] { "standard", "advanced" })
         {
-            var id = $"mock_{variant}_{category}";
+            var id = category == "light_weapon" ? (variant == "standard" ? "vulcan_mk1" : "laser_mk1") : $"mock_{variant}_{category}";
             Assert.That(definitions[id], Is.TypeOf<WeaponItemDefinition>(), id);
             Assert.That(definitions[id].CategoryId, Is.EqualTo(category));
         }

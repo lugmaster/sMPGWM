@@ -20,7 +20,7 @@ public sealed class EquipmentGrantSwapTests
             world.ApproveSpawn(1, new("fighter"));
             var items = world.Players[1];
             var grants = world.Players[1].ControlledShip!.Runtime.Grants;
-            var weapon = (WeaponItemDefinition)GameplayDefinitions.Current.Items.GetById("mock_standard_light_weapon") with
+            var weapon = (WeaponItemDefinition)GameplayDefinitions.Current.Items.GetById("vulcan_mk1") with
                 { AbilityIds = Array.AsReadOnly(new[] { "shieldCapacityBoost" }) };
             var first = new ItemEntity(ItemEntityId.Create(), weapon, 1);
             var second = new ItemEntity(ItemEntityId.Create(), weapon, 1);

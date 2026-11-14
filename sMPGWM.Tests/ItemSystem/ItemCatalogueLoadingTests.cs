@@ -19,7 +19,7 @@ public sealed class ItemCatalogueLoadingTests
             documents.Add(source.FileName, document);
             return document;
         }, categories, _ => null!);
-        Assert.That(items.All.Count, Is.EqualTo(23));
+        Assert.That(items.All.Count, Is.EqualTo(21));
         Assert.That(items.All[0].Id, Is.EqualTo("mock_standard_engine"));
         Assert.That(items.All[^1].Id, Is.EqualTo("mock_standard_weapon_fixture"));
         Assert.That(items.GetById("mock_standard_engine"), Is.TypeOf<EngineItemDefinition>());

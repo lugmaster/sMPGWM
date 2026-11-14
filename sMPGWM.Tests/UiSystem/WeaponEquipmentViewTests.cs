@@ -44,7 +44,7 @@ public sealed class WeaponEquipmentViewTests
             for (var index = 1; index <= capacity; index++)
             {
                 var key = $"weapon_{index}";
-                slots[equipment.FindSlot(key)] = new ItemEntity(ItemEntityId.Create(), GameplayDefinitions.Current.Items.GetById("mock_standard_light_weapon"), 1);
+                slots[equipment.FindSlot(key)] = new ItemEntity(ItemEntityId.Create(), GameplayDefinitions.Current.Items.GetById("vulcan_mk1"), 1);
                 view.Render(equipment.Definitions, new EquipmentSnapshot(index + 1, slots), new ItemVisuals());
                 Assert.That(VisibleCount(grid), Is.EqualTo(index < capacity ? index + 1 : index));
                 Assert.That(counter.Text, Is.EqualTo($"{capacity - index}/{capacity}"));
