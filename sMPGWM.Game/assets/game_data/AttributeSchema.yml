@@ -7,7 +7,7 @@ required:
 properties:
   Version:
     type: string
-    minLength: 1
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+(?![\s\S])
   Stats:
     type: array
     items:
@@ -20,11 +20,13 @@ properties:
       properties:
         Id:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
         DisplayName:
           type: string
           minLength: 1
+          pattern: \S
         Description:
           type: string
           minLength: 1
+          pattern: \S
     minItems: 1

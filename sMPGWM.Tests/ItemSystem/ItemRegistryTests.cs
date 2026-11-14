@@ -90,9 +90,9 @@ public class ItemRegistryTests
         {
             string? iconKey = null;
             var categories = ItemDefinitionParser.LoadItemCategoryDefinitions((JObject)YamlParser.ParseToken(
-                "Version: 3.0.0\nCategories:\n  - Id: resource\n    DisplayName: Test\n    " + categorySetting, "test").Value!, key => { iconKey = key; return null!; });
+                "Version: 3.0.0\nCategories:\n  - Id: resource\n    DisplayName: Test\n    Description: Resource category\n    " + categorySetting, "test").Value!, key => { iconKey = key; return null!; });
             var items = ItemRegistry.LoadItemDefinitions((JObject)YamlParser.ParseToken(
-                "Version: 3.0.0\nItems:\n  - Id: test\n    DisplayName: Test\n    CategoryId: resource\n    Mass: 1\n    " + itemSetting, "test").Value!, categories, _ => null!);
+                "Version: 3.0.0\nItems:\n  - Id: test\n    DisplayName: Test\n    Description: Resource item\n    CategoryId: resource\n    Mass: 1\n    " + itemSetting, "test").Value!, categories, _ => null!);
             var expected = itemSetting switch
             {
                 "CanStack: false" => 1,

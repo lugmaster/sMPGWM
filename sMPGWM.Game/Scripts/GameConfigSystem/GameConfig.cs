@@ -67,7 +67,8 @@ public static class GameConfig
             _ = ItemRegistry.GetAll();
             _ = ShipRegistry.GetAll();
             _ = GameplayDefinitions.Current;
-            sMPGWM.Scripts.GamePlaySystem.StarterLoadout.ValidateDefinitions();
+            StatSystem.EquipmentDefinitionValidator.Validate(ShipRegistry.GetAll(), ItemRegistry.GetAll());
+            GamePlaySystem.StarterLoadout.ValidateDefinitions();
             var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoader.CapturedInputs);
             inputs.Add("GameplayProtocol", "6:complete-initial-state-readiness");
             var checksum = ChecksumGenerator.Compute(inputs);

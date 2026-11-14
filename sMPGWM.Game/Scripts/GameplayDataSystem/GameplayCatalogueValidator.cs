@@ -95,6 +95,7 @@ public static class GameplayCatalogueValidator
                     break;
             }
         }
+        var modifierTotals = new Dictionary<(string StatId, ModifierValueKind ValueKind, ModifierOperation Operation), double>();
         foreach (var behaviour in data.Behaviours.GetAll())
         {
             var owner = $"BehaviourDefinitions.yml: behaviour '{behaviour.Id}'";
@@ -102,7 +103,17 @@ public static class GameplayCatalogueValidator
             Conditions(behaviour.GrantedConditions, owner, "GrantedConditions");
             Conditions(behaviour.GrantedConditionsAfterFirstTick, owner, "GrantedConditionsAfterFirstTick");
             Conditions(behaviour.BlockedByConditions, owner, "BlockedByConditions");
-            foreach (var modifier in behaviour.Modifiers) Modifier(modifier, owner);
+            modifierTotals.Clear();
+            foreach (var modifier in behaviour.Modifiers)
+            {
+                Modifier(modifier, owner);
+                var key = (modifier.StatId, modifier.ValueKind, modifier.Operation);
+                modifierTotals.TryGetValue(key, out var total);
+                total += modifier.Value;
+                if (!double.IsFinite(total))
+                    throw new ArgumentException($"{owner}, Modifiers: sum overflows for '{modifier.StatId}' ({modifier.ValueKind}, {modifier.Operation}).");
+                modifierTotals[key] = total;
+            }
             if (behaviour.PeriodicAccumulator is { } periodic)
             {
                 Modifier(periodic.Modifier, owner);

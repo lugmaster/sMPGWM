@@ -7,6 +7,8 @@ public sealed class ShipDefinition
 {
     [JsonProperty("name", Required = Required.Always)]
     public string Name { get; set; } = "";
+    [JsonProperty("description", Required = Required.Always)]
+    public string Description { get; set; } = "";
     [JsonProperty("texture_path", Required = Required.Always)]
     public string TexturePath { get; set; } = "";
     [JsonProperty("collider_points", Required = Required.Always)]

@@ -7,7 +7,7 @@ required:
 properties:
   Version:
     type: string
-    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+(?![\s\S])
   BehaviourDefinitions:
     type: array
     items:
@@ -24,13 +24,16 @@ properties:
       properties:
         Id:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         DisplayName:
           type: string
           minLength: 1
+          pattern: \S
         Description:
           type: string
           minLength: 1
+          pattern: \S
         Disposition:
           type: string
           enum:
@@ -110,6 +113,7 @@ properties:
                 MaxStacks:
                   type: integer
                   minimum: 1
+                  maximum: 2147483647
                 Overflow:
                   type: string
                   enum:
@@ -121,7 +125,7 @@ properties:
           type: array
           items:
             type: string
-            pattern: ^[a-z][A-Za-z0-9_]*$
+            pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
           minItems: 1
         Modifiers:
           type: array
@@ -136,7 +140,7 @@ properties:
             properties:
               StatId:
                 type: string
-                pattern: ^[a-z][A-Za-z0-9_]*$
+                pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
               ValueKind:
                 type: string
                 enum:
@@ -154,19 +158,22 @@ properties:
           type: array
           items:
             type: string
-            pattern: ^[a-z][A-Za-z0-9_]*$
+            pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+            maxLength: 64
           minItems: 1
         GrantedConditionsAfterFirstTick:
           type: array
           items:
             type: string
-            pattern: ^[a-z][A-Za-z0-9_]*$
+            pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+            maxLength: 64
           minItems: 1
         BlockedByConditions:
           type: array
           items:
             type: string
-            pattern: ^[a-z][A-Za-z0-9_]*$
+            pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+            maxLength: 64
           minItems: 1
         BlockedPolicy:
           type: string
@@ -193,10 +200,10 @@ properties:
           minItems: 1
         OnApplyEffectId:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
         OnExpireEffectId:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
         OnRemove:
           type: object
           additionalProperties: false
@@ -217,7 +224,7 @@ properties:
               minItems: 0
             EffectId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
         LethalProtection:
           type: object
           additionalProperties: false
@@ -262,7 +269,7 @@ properties:
               properties:
                 StatId:
                   type: string
-                  pattern: ^[a-z][A-Za-z0-9_]*$
+                  pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
                 ValueKind:
                   type: string
                   enum:
@@ -279,7 +286,8 @@ properties:
               type: array
               items:
                 type: string
-                pattern: ^[a-z][A-Za-z0-9_]*$
+                pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+                maxLength: 64
               minItems: 0
             BlockedTickPolicy:
               type: string
@@ -287,8 +295,14 @@ properties:
                 - Skip
         Icon:
           type: string
-          pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$
+          pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       dependencies:
+        OnExpireEffectId:
+          properties:
+            Lifetime:
+              properties:
+                Kind:
+                  const: Timed
         BlockedByConditions:
           - BlockedPolicy
         BlockedPolicy:

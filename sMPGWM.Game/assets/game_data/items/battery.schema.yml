@@ -16,6 +16,7 @@ properties:
       required:
       - Id
       - DisplayName
+      - Description
       - CategoryId
       - EnergyStorage
       - EnergyConsumption
@@ -35,12 +36,14 @@ properties:
           const: battery
         Description:
           type: string
+          pattern: \S
         CanStack:
           type: boolean
         Icon:
           type:
           - string
           - 'null'
+          pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
         StackLimit:
           type: integer
           minimum: 2
@@ -49,7 +52,8 @@ properties:
           type: array
           items:
             type: string
-            pattern: ^[a-z][A-Za-z0-9_]*$
+            pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+            maxLength: 64
           minItems: 1
         BehaviourGrants:
           type: array
@@ -63,7 +67,8 @@ properties:
             properties:
               BehaviourId:
                 type: string
-                pattern: ^[a-z][A-Za-z0-9_]*$
+                pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+                maxLength: 64
               While:
                 type: string
                 enum:
@@ -77,9 +82,12 @@ properties:
         EnergyStorage:
           type: number
           minimum: 0
+          maximum: 1.7976931348623157e+308
         EnergyConsumption:
           type: number
           minimum: 0
+          maximum: 1.7976931348623157e+308
         Mass:
           type: number
           minimum: 0
+          maximum: 1.7014117331926443e+38

@@ -16,7 +16,7 @@ public sealed record ShipData : GameplayDefinition
     public double Health { get; }
 
     internal ShipData(ShipDefinition definition, Vector2[] points, ShipStats stats)
-        : base(definition.Name, definition.Name, "", null)
+        : base(definition.Name, definition.Name, definition.Description, null)
     {
         Name = definition.Name;
         TexturePath = definition.TexturePath;

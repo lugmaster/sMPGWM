@@ -7,7 +7,7 @@ required:
 properties:
   Version:
     type: string
-    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+(?![\s\S])
   TargetingDefinitions:
     type: array
     items:
@@ -23,13 +23,15 @@ properties:
       properties:
         Id:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
         DisplayName:
           type: string
           minLength: 1
+          pattern: \S
         Description:
           type: string
           minLength: 1
+          pattern: \S
         Relation:
           type: string
           enum:
@@ -47,6 +49,7 @@ properties:
         MaxRange:
           type: number
           exclusiveMinimum: 0
+          maximum: 1.3407807929942596e154
         Radius:
           type: number
           exclusiveMinimum: 0

@@ -23,7 +23,7 @@ internal static class ItemDisplayFormatter
     private static IconDisplayData Create(ItemDefinition data, long? quantity)
     {
         var tooltip = new StringBuilder(data.DisplayName).Append('\n').Append(data.CategoryName);
-        if (data.Description.Length > 0) tooltip.Append('\n').Append(data.Description);
+        tooltip.Append('\n').Append(data.Description);
         AppendNumber(tooltip, nameof(data.Mass), data.Mass);
         switch (data)
         {

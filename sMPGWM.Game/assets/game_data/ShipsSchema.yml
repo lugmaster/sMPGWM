@@ -8,7 +8,7 @@ required:
 properties:
   Version:
     type: string
-    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+(?![\s\S])'
   ships:
     type: array
     items:
@@ -16,6 +16,7 @@ properties:
       additionalProperties: false
       required:
         - name
+        - description
         - texture_path
         - collider_points
         - mass
@@ -23,6 +24,9 @@ properties:
         - stat_modifiers
       properties:
         name:
+          type: string
+          pattern: '\S'
+        description:
           type: string
           pattern: '\S'
         texture_path:
@@ -37,14 +41,17 @@ properties:
             maxItems: 2
             items:
               type: number
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
         mass:
           type: number
           minimum: 0
-          maximum: 3.4028234663852886e+38
+          maximum: 1.7014117331926443e+38
         health:
           description: Ship-defined maximum health, independent of installed equipment.
           type: number
           exclusiveMinimum: 0
+          maximum: 1.7976931348623157e+308
         stat_modifiers:
           description: Flat adjustments to installed equipment; omitted fields are zero. Legacy ship_stats and ShieldCurrent are no longer supported.
           type: object

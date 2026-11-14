@@ -1,6 +1,7 @@
 Version: 2.0.0
 ships:
   - name: "fighter"
+    description: "An agile combat ship with bonuses to speed, acceleration, and handling."
     texture_path: "res://assets/mocks/ship_fighter_reference.png"
     collider_points:
       - [27, -1]

@@ -17,6 +17,7 @@ properties:
       required:
       - Id
       - DisplayName
+      - Description
       not:
         required:
         - CanStack
@@ -30,9 +31,10 @@ properties:
           pattern: \S
         Icon:
           type: string
-          pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$
+          pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
         Description:
           type: string
+          pattern: \S
         CanStack:
           type: boolean
         StackLimit:

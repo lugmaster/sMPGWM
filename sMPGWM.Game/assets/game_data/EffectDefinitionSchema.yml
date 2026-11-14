@@ -7,7 +7,7 @@ required:
 properties:
   Version:
     type: string
-    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+(?![\s\S])
   EffectDefinitions:
     type: array
     items:
@@ -23,13 +23,15 @@ properties:
           properties:
             Id:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             DisplayName:
               type: string
               minLength: 1
+              pattern: \S
             Description:
               type: string
               minLength: 1
+              pattern: \S
             Kind:
               type: string
               enum:
@@ -49,20 +51,22 @@ properties:
           properties:
             Id:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             DisplayName:
               type: string
               minLength: 1
+              pattern: \S
             Description:
               type: string
               minLength: 1
+              pattern: \S
             Kind:
               type: string
               enum:
                 - RestoreResource
             StatId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             Amount:
               oneOf:
                 - type: object
@@ -96,7 +100,8 @@ properties:
               type: array
               items:
                 type: string
-                pattern: ^[a-z][A-Za-z0-9_]*$
+                pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+                maxLength: 64
               minItems: 0
         - type: object
           additionalProperties: false
@@ -110,13 +115,15 @@ properties:
           properties:
             Id:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             DisplayName:
               type: string
               minLength: 1
+              pattern: \S
             Description:
               type: string
               minLength: 1
+              pattern: \S
             Kind:
               type: string
               enum:
@@ -130,7 +137,7 @@ properties:
                   type: array
                   items:
                     type: string
-                    pattern: ^[a-z][A-Za-z0-9_]*$
+                    pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
                   minItems: 1
                 Disposition:
                   type: string
@@ -141,12 +148,13 @@ properties:
                   type: array
                   items:
                     type: string
-                    pattern: ^[a-z][A-Za-z0-9_]*$
+                    pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
                   minItems: 1
               minProperties: 1
             MaxCount:
               type: integer
               minimum: 1
+              maximum: 2147483647
             Order:
               type: string
               enum:
@@ -163,13 +171,15 @@ properties:
           properties:
             Id:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             DisplayName:
               type: string
               minLength: 1
+              pattern: \S
             Description:
               type: string
               minLength: 1
+              pattern: \S
             Kind:
               type: string
               enum:
@@ -178,7 +188,7 @@ properties:
               type: array
               items:
                 type: string
-                pattern: ^[a-z][A-Za-z0-9_]*$
+                pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
               minItems: 1
             ContinueOnFailure:
               type: boolean
@@ -194,20 +204,22 @@ properties:
           properties:
             Id:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             DisplayName:
               type: string
               minLength: 1
+              pattern: \S
             Description:
               type: string
               minLength: 1
+              pattern: \S
             Kind:
               type: string
               enum:
                 - DealDamage
             DamageSourceId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             Amount:
               type: number
               exclusiveMinimum: 0
@@ -223,23 +235,25 @@ properties:
           properties:
             Id:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             DisplayName:
               type: string
               minLength: 1
+              pattern: \S
             Description:
               type: string
               minLength: 1
+              pattern: \S
             Kind:
               type: string
               enum:
                 - SearchArea
             TargetingId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             EffectId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
         - type: object
           additionalProperties: false
           required:
@@ -251,20 +265,23 @@ properties:
           properties:
             Id:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             DisplayName:
               type: string
               minLength: 1
+              pattern: \S
             Description:
               type: string
               minLength: 1
+              pattern: \S
             Kind:
               type: string
               enum:
                 - ApplyBehaviour
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
         - type: object
           additionalProperties: false
           required:
@@ -277,21 +294,23 @@ properties:
           properties:
             Id:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             DisplayName:
               type: string
               minLength: 1
+              pattern: \S
             Description:
               type: string
               minLength: 1
+              pattern: \S
             Kind:
               type: string
               enum:
                 - LaunchProjectile
             ProjectileId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
             ImpactEffectId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
     minItems: 1

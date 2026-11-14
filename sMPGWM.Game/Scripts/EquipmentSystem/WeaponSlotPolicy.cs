@@ -20,10 +20,7 @@ public static class WeaponSlotPolicy
     {
         if (fixture is not WeaponFixtureItemDefinition definition)
             throw new ArgumentException($"Item '{fixture.Id}' is not a weapon fixture.");
-        var capacity = definition.WeaponSlots;
-        if (capacity < 0 || capacity > MaxSlots)
-            throw new ArgumentException($"Weapon fixture '{fixture.Id}' requires an integer WeaponSlots between 0 and {MaxSlots}.");
-        return capacity;
+        return definition.WeaponSlots;
     }
 
     public static int Capacity(IReadOnlyList<ItemEntity?> slots)

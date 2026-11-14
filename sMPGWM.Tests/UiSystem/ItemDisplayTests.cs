@@ -38,6 +38,9 @@ public class ItemDisplayTests
         var ammunition = ItemDisplayFormatter.Create(new ItemEntity(ItemEntityId.FromNetwork(1), definitions["vulcan_mk1"], 1));
         var energy = ItemDisplayFormatter.Create(new ItemEntity(ItemEntityId.FromNetwork(2), definitions["laser_mk1"], 1));
 
+        Assert.That(ammunition.Tooltip, Does.Contain("\n" + definitions["vulcan_mk1"].Description + "\n"));
+        Assert.That(energy.Tooltip, Does.Contain("\n" + definitions["laser_mk1"].Description + "\n"));
+
         Assert.That(ammunition.Tooltip, Does.Contain("Mass: 1").And.Contain("Supply: Ammunition")
             .And.Contain("AmmoCapacity: 60").And.Contain("ReloadDuration: 1500 ms")
             .And.Contain("EnergyConsumption: 1 /s").And.Not.Contain("EnergyPerShot:"));

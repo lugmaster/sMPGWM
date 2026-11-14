@@ -5,7 +5,7 @@ public class ShipRegistryTests
 {
     private static ShipDefinition Definition(string name = "fighter") => new()
     {
-        Name = name, TexturePath = "texture",
+        Name = name, Description = "A test ship.", TexturePath = "texture",
         ColliderPoints = new() { new double[] {0, 0}, new double[] {10, 0}, new double[] {10, 10}, new double[] {5, 5}, new double[] {0, 10} },
         Health = 150,
         Mass = 1
@@ -19,11 +19,13 @@ public class ShipRegistryTests
         definition.ColliderPoints[0][0] = 99;
         definition.Health = 99;
         definition.Mass = 99;
+        definition.Description = "Changed after loading.";
         Assert.That(registry, Has.Count.EqualTo(2));
         Assert.That(registry.ContainsKey("FIGHTER"), Is.False);
         Assert.That(registry["fighter"].ColliderPoints[0], Is.EqualTo(Vector2.Zero));
         Assert.That(registry["fighter"].Health, Is.EqualTo(150));
         Assert.That(registry["fighter"].Mass, Is.EqualTo(1));
+        Assert.That(registry["fighter"].Description, Is.EqualTo("A test ship."));
         Assert.Throws<NotSupportedException>(() => ((IList<Vector2>)registry["fighter"].ColliderPoints)[0] = Vector2.One);
     }
     [TestCase(double.NaN)]
@@ -60,5 +62,16 @@ public class ShipRegistryTests
         var definition = Definition();
         definition.Health = health;
         Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { definition } }, _ => true));
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase(" \t\r\n")]
+    public void InvalidDescriptionsFailBeforeRegistryCreation(string? description)
+    {
+        var definition = Definition();
+        definition.Description = description!;
+        var error = Assert.Throws<ArgumentException>(() => ShipRegistry.Build(new() { Ships = new() { definition } }, _ => true));
+        Assert.That(error!.Message, Does.Contain("description"));
     }
 }

@@ -14,6 +14,8 @@ internal static class GameplayTestData
         return GameplayCatalogueLoader.Load(source =>
         {
             var document = Read(source.FileName, source.SchemaName);
+            if (!variants && edit == null) return document;
+            var originalDocument = document.DeepClone();
             if (variants)
             {
                 if (source.RootKey == "AbilityDefinitions")
@@ -42,6 +44,7 @@ internal static class GameplayTestData
                 }
             }
             edit?.Invoke(source.FileName, document);
+            if (JToken.DeepEquals(document, originalDocument)) return document;
             var schema = File.ReadAllText(Path.Combine(DirectoryPath, source.SchemaName));
             var result = YamlParser.ValidateAndReturn(document.ToString(), schema, source.FileName, source.SchemaName);
             if (!result.IsSuccess) throw new ArgumentException(result.Error!.ToDisplayString());

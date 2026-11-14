@@ -2,6 +2,7 @@ Version: 3.0.0
 Items:
 - Id: mock_standard_weapon_fixture
   DisplayName: Standard Weapon Fixture
+  Description: Provides nine shared weapon slots for light, medium, and heavy weapons.
   CategoryId: weapon_fixture
   WeaponSlots: 9
   Mass: 1

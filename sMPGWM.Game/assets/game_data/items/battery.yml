@@ -2,6 +2,7 @@ Version: 3.0.0
 Items:
 - Id: mock_standard_battery
   DisplayName: Standard Battery
+  Description: Stores energy to power ship systems when demand exceeds reactor output.
   CategoryId: battery
   EnergyStorage: 100
   EnergyConsumption: 1

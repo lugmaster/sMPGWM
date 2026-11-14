@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.UtilitySystem.UiComponents;
@@ -37,9 +38,9 @@ public static class ItemDefinitionParser
             var id = RequiredString(row, "Id");
             var (canStack, limit) = ResolveStacking(row, false, 1);
             return new ItemCategoryDefinition(id, RequiredString(row, "DisplayName"),
-                resolveIcon(row["Icon"] is null ? "Software.WarningSignCircleQuestionMarkHelp" : RequiredString(row, "Icon")))
+                resolveIcon(row["Icon"] is null ? "Software.WarningSignCircleQuestionMarkHelp" : IconKey(row)))
             {
-                Description = OptionalString(row, "Description", ""),
+                Description = RequiredString(row, "Description"),
                 CanStack = canStack,
                 StackLimit = limit
             };
@@ -61,20 +62,20 @@ public static class ItemDefinitionParser
             var (canStack, limit) = ResolveStacking(row, category.CanStack, category.StackLimit);
             var id = RequiredString(row, "Id");
             var name = RequiredString(row, "DisplayName");
-            var description = OptionalString(row, "Description", "");
+            var description = RequiredString(row, "Description");
             var icon = row["Icon"] is null || row["Icon"]!.Type == JTokenType.Null
                 ? category.Icon!
-                : resolveIcon(RequiredString(row, "Icon"));
-            var mass = Number(row, "Mass");
+                : resolveIcon(IconKey(row));
+            var mass = BoundedNumber(row, "Mass", float.MaxValue / 2);
             var abilities = ReadAbilities(row, categoryId == "consumable");
             var grants = ReadGrants(row);
             ItemDefinition item = categoryId switch
             {
                 "engine" => new EngineItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
                 {
-                    Mass = mass, Speed = Number(row, "Speed"), AfterBurnerSpeed = Number(row, "AfterBurnerSpeed"),
-                    RotationSpeed = Number(row, "RotationSpeed"), Acceleration = Number(row, "Acceleration"),
-                    AfterBurnerAcceleration = Number(row, "AfterBurnerAcceleration"), EnergyConsumption = Number(row, "EnergyConsumption")
+                    Mass = mass, Speed = BoundedNumber(row, "Speed", float.MaxValue), AfterBurnerSpeed = BoundedNumber(row, "AfterBurnerSpeed", float.MaxValue),
+                    RotationSpeed = BoundedNumber(row, "RotationSpeed", float.MaxValue), Acceleration = BoundedNumber(row, "Acceleration", float.MaxValue),
+                    AfterBurnerAcceleration = BoundedNumber(row, "AfterBurnerAcceleration", float.MaxValue), EnergyConsumption = Number(row, "EnergyConsumption")
                 },
                 "hull" => new HullItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
                 {
@@ -83,7 +84,7 @@ public static class ItemDefinitionParser
                 "shield_generator" => new ShieldGeneratorItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
                 {
                     Mass = mass, ShieldCapacity = Number(row, "ShieldCapacity"), RechargeTime = Number(row, "RechargeTime", positive: true),
-                    DownTime = Number(row, "DownTime"), EnergyConsumption = Number(row, "EnergyConsumption")
+                    DownTime = BoundedNumber(row, "DownTime", long.MaxValue / 60d), EnergyConsumption = Number(row, "EnergyConsumption")
                 },
                 "reactor" => new ReactorItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
                 {
@@ -163,11 +164,19 @@ public static class ItemDefinitionParser
         return (string)row[field]!;
     }
 
-    private static string OptionalString(JToken row, string field, string fallback)
+    private static string IconKey(JToken row)
     {
-        if (row[field] is null) return fallback;
-        if (row[field]!.Type != JTokenType.String) throw new ArgumentException($"{field}: expected a string.");
-        return (string)row[field]!;
+        var key = RequiredString(row, "Icon");
+        if (!Regex.IsMatch(key, @"\A[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*\z"))
+            throw new ArgumentException("Icon: expected a Group.Name icon key.");
+        return key;
+    }
+
+    private static double BoundedNumber(JToken row, string field, double maximum)
+    {
+        var value = Number(row, field);
+        if (value > maximum) throw new ArgumentException($"{field}: exceeds the runtime maximum {maximum}.");
+        return value;
     }
 
     private static double Number(JToken row, string field, bool positive = false)
@@ -288,6 +297,7 @@ public static class ItemDefinitionParser
         if (token?.Type != JTokenType.String || string.IsNullOrEmpty((string?)token))
             throw new ArgumentException($"{field}: required identifier.");
         var id = (string)token!;
+        if (id.Length > 64) throw new ArgumentException($"{field}: identifier exceeds 64 characters.");
         if (id[0] is < 'a' or > 'z') throw new ArgumentException($"{field}: invalid identifier '{id}'.");
         for (var i = 1; i < id.Length; i++)
             if (id[i] is not (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_'))

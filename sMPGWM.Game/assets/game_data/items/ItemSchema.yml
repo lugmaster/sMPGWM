@@ -1,3 +1,4 @@
+# Aggregate authoring schema. Runtime loading validates each category's .schema.yml.
 $schema: http://json-schema.org/draft-07/schema#
 type: object
 additionalProperties: false
@@ -30,6 +31,7 @@ definitions:
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - EnergyConsumption
     - Speed
@@ -53,12 +55,14 @@ definitions:
         const: engine
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -67,7 +71,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -81,7 +86,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -95,30 +101,38 @@ definitions:
       EnergyConsumption:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       Speed:
         type: number
         minimum: 0
+        maximum: 3.4028234663852886e+38
       AfterBurnerSpeed:
         type: number
         minimum: 0
+        maximum: 3.4028234663852886e+38
       RotationSpeed:
         type: number
         minimum: 0
+        maximum: 3.4028234663852886e+38
       Acceleration:
         type: number
         minimum: 0
+        maximum: 3.4028234663852886e+38
       AfterBurnerAcceleration:
         type: number
         minimum: 0
+        maximum: 3.4028234663852886e+38
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
   hull:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - Armor
     - Mass
@@ -137,12 +151,14 @@ definitions:
         const: hull
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -151,7 +167,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -165,7 +182,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -179,15 +197,18 @@ definitions:
       Armor:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
   shield_generator:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - ShieldCapacity
     - RechargeTime
@@ -209,12 +230,14 @@ definitions:
         const: shield_generator
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -223,7 +246,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -237,7 +261,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -251,24 +276,30 @@ definitions:
       ShieldCapacity:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       RechargeTime:
         type: number
         exclusiveMinimum: 0
+        maximum: 1.7976931348623157e+308
       DownTime:
         type: number
         minimum: 0
+        maximum: 1.5372286728091293e+17
       EnergyConsumption:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
   reactor:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - Mass
     - EnergyProduction
@@ -287,12 +318,14 @@ definitions:
         const: reactor
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -301,7 +334,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -315,7 +349,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -329,15 +364,18 @@ definitions:
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
       EnergyProduction:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
   light_weapon:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - DamageSource
     - Damage
@@ -364,12 +402,14 @@ definitions:
         const: light_weapon
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -378,7 +418,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -392,7 +433,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -409,15 +451,19 @@ definitions:
       Damage:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       AttackSpeed:
         type: number
         exclusiveMinimum: 0
+        maximum: 1.7976931348623157e+308
       EnergyConsumption:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
       Archetype:
         type: string
         pattern: \S
@@ -432,6 +478,7 @@ definitions:
       Range:
         type: number
         exclusiveMinimum: 0
+        maximum: 1.7976931348623157e+308
       SpreadDegrees:
         type: number
         minimum: 0
@@ -455,6 +502,7 @@ definitions:
             ReloadDuration:
               type: number
               exclusiveMinimum: 0
+              maximum: 1.7976931348623157e+308
         - type: object
           additionalProperties: false
           required:
@@ -466,12 +514,14 @@ definitions:
             EnergyPerShot:
               type: number
               exclusiveMinimum: 0
+              maximum: 1.7976931348623157e+308
   medium_weapon:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - DamageSource
     - Damage
@@ -498,12 +548,14 @@ definitions:
         const: medium_weapon
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -512,7 +564,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -526,7 +579,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -543,15 +597,19 @@ definitions:
       Damage:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       AttackSpeed:
         type: number
         exclusiveMinimum: 0
+        maximum: 1.7976931348623157e+308
       EnergyConsumption:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
       Archetype:
         type: string
         pattern: \S
@@ -566,6 +624,7 @@ definitions:
       Range:
         type: number
         exclusiveMinimum: 0
+        maximum: 1.7976931348623157e+308
       SpreadDegrees:
         type: number
         minimum: 0
@@ -589,6 +648,7 @@ definitions:
             ReloadDuration:
               type: number
               exclusiveMinimum: 0
+              maximum: 1.7976931348623157e+308
         - type: object
           additionalProperties: false
           required:
@@ -600,12 +660,14 @@ definitions:
             EnergyPerShot:
               type: number
               exclusiveMinimum: 0
+              maximum: 1.7976931348623157e+308
   heavy_weapon:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - DamageSource
     - Damage
@@ -632,12 +694,14 @@ definitions:
         const: heavy_weapon
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -646,7 +710,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -660,7 +725,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -677,15 +743,19 @@ definitions:
       Damage:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       AttackSpeed:
         type: number
         exclusiveMinimum: 0
+        maximum: 1.7976931348623157e+308
       EnergyConsumption:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
       Archetype:
         type: string
         pattern: \S
@@ -700,6 +770,7 @@ definitions:
       Range:
         type: number
         exclusiveMinimum: 0
+        maximum: 1.7976931348623157e+308
       SpreadDegrees:
         type: number
         minimum: 0
@@ -723,6 +794,7 @@ definitions:
             ReloadDuration:
               type: number
               exclusiveMinimum: 0
+              maximum: 1.7976931348623157e+308
         - type: object
           additionalProperties: false
           required:
@@ -734,12 +806,14 @@ definitions:
             EnergyPerShot:
               type: number
               exclusiveMinimum: 0
+              maximum: 1.7976931348623157e+308
   consumable:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - AbilityIds
     - Mass
@@ -758,12 +832,14 @@ definitions:
         const: consumable
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -772,7 +848,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -786,7 +863,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -800,12 +878,14 @@ definitions:
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
   resource:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - Mass
     not:
@@ -823,12 +903,14 @@ definitions:
         const: resource
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -837,7 +919,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -851,7 +934,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -865,12 +949,14 @@ definitions:
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
   battery:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - EnergyStorage
     - EnergyConsumption
@@ -890,12 +976,14 @@ definitions:
         const: battery
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -904,7 +992,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -918,7 +1007,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -932,18 +1022,22 @@ definitions:
       EnergyStorage:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       EnergyConsumption:
         type: number
         minimum: 0
+        maximum: 1.7976931348623157e+308
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38
   weapon_fixture:
     type: object
     additionalProperties: false
     required:
     - Id
     - DisplayName
+    - Description
     - CategoryId
     - WeaponSlots
     - Mass
@@ -962,12 +1056,14 @@ definitions:
         const: weapon_fixture
       Description:
         type: string
+        pattern: \S
       CanStack:
         type: boolean
       Icon:
         type:
         - string
         - 'null'
+        pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*(?![\s\S])
       StackLimit:
         type: integer
         minimum: 2
@@ -976,7 +1072,8 @@ definitions:
         type: array
         items:
           type: string
-          pattern: ^[a-z][A-Za-z0-9_]*$
+          pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+          maxLength: 64
         minItems: 1
       BehaviourGrants:
         type: array
@@ -990,7 +1087,8 @@ definitions:
           properties:
             BehaviourId:
               type: string
-              pattern: ^[a-z][A-Za-z0-9_]*$
+              pattern: ^[a-z][A-Za-z0-9_]*(?![\s\S])
+              maxLength: 64
             While:
               type: string
               enum:
@@ -1008,3 +1106,4 @@ definitions:
       Mass:
         type: number
         minimum: 0
+        maximum: 1.7014117331926443e+38

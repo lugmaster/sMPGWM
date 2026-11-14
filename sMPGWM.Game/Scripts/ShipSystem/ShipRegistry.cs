@@ -58,6 +58,7 @@ public static class ShipRegistry
                 return (float)value;
             }
             Require(!string.IsNullOrWhiteSpace(name) && !result.ContainsKey(name), "name (blank or duplicate)");
+            Require(!string.IsNullOrWhiteSpace(definition.Description), "description (blank)");
             Require(textureAvailable(definition.TexturePath), "texture_path (unavailable texture)");
             var points = definition.ColliderPoints.Select(pair =>
             {
@@ -72,7 +73,7 @@ public static class ShipRegistry
             Number(s.DownTime, "DownTime");
             Number(s.EnergyProduction, "EnergyProduction");
             Number(s.EnergyStorage, "EnergyStorage");
-            Require(definition.Mass >= 0, "mass");
+            Require(definition.Mass >= 0 && definition.Mass <= float.MaxValue / 2, "mass");
             Require(double.IsFinite(definition.Health) && definition.Health > 0, "health");
             var stats = new ShipStats(Number(s.Speed, "Speed"), Number(s.AfterBurnerSpeed, "AfterBurnerSpeed"),
                 Number(s.RotationSpeed, "RotationSpeed"), Number(s.Acceleration, "Acceleration"),

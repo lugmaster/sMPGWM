@@ -101,8 +101,8 @@ public class EquipmentTransferTests
                 {
                   "Version": "3.0.0",
                   "Categories": [
-                    { "Id": "engine", "DisplayName": "Component" },
-                    { "Id": "hull", "DisplayName": "Component" }
+                    { "Id": "engine", "DisplayName": "Component", "Description": "Engine category" },
+                    { "Id": "hull", "DisplayName": "Component", "Description": "Hull category" }
                   ]
                 }
                 """), _ => null!);
@@ -113,6 +113,7 @@ public class EquipmentTransferTests
                   "Items": [
                     {
                       "Id": "custom_engine",
+                      "Description": "Custom engine",
                       "DisplayName": "Engine",
                       "CategoryId": "engine",
                       "Mass": 1,
@@ -125,6 +126,7 @@ public class EquipmentTransferTests
                     },
                     {
                       "Id": "custom_hull",
+                      "Description": "Custom hull",
                       "DisplayName": "Hull",
                       "CategoryId": "hull",
                       "Mass": 1,
