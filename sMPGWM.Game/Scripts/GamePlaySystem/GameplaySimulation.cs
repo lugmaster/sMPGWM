@@ -1,11 +1,11 @@
 using System;
-using sMPGWM.Scripts.WeaponSystem;
 using System.Collections.Generic;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.WorldSystem;
+using sMPGWM.Scripts.WeaponSystem;
 using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
@@ -25,13 +25,11 @@ public sealed class GameplaySimulation : IDisposable
     private bool _stepping;
     public AbilityCommandProcessor AbilityCommands { get; } = new();
     public sMPGWM.Scripts.WeaponSystem.WeaponSystem Weapons { get; } = new();
-    private readonly PendingWeapon[] _completedWeapons = new PendingWeapon[32];
-    private readonly int[] _weaponResults = new int[32];
-    private readonly Queue<PendingWeapon> _weaponCommands = new(32);
-    public bool QueueWeaponCommand(int peer, string entity, long generation, long revision, string slot, ItemEntityId item, byte group, Action<int> complete)
+    private readonly WeaponCommandProcessor _weaponCommands = new();
+    public bool QueueWeaponCommand(int peer, string entity, long generation, long revision, WeaponCommandKind kind,
+        string slot, ItemEntityId item, byte group, Action<WeaponCommandResult> complete)
     {
-        if (_disposed || _weaponCommands.Count >= 32) return false;
-        _weaponCommands.Enqueue(new(peer, entity, generation, revision, slot, item, group, complete)); return true;
+        return !_disposed && _weaponCommands.Enqueue(peer, entity, generation, revision, kind, slot, item, group, complete);
     }
     public long CompletedTick { get; private set; } = -1;
 
@@ -90,20 +88,7 @@ public sealed class GameplaySimulation : IDisposable
                 ship.Runtime.AdvanceResources(tick);
                 ship.RefreshMovementConfiguration();
             }
-            var weaponCount = _weaponCommands.Count;
-            for (var weaponIndex = 0; weaponIndex < weaponCount; weaponIndex++)
-            {
-                var command = _weaponCommands.Dequeue();
-                var result = 1;
-                if (ready(command.Peer) && _world.Players.TryGetValue(command.Peer, out var owner) && owner.ControlGeneration == command.Generation &&
-                    owner.ControlledShip is { } ship && ship.EntityId == command.Entity && ship.Runtime.IsAlive && ship.Loadout.Weapons.ConfigurationRevision == command.Revision)
-                {
-                    if (command.Slot.Length == 0 && command.Item == default) { ship.Loadout.Weapons.ReloadAll(tick); result = 0; }
-                    else if (ship.Loadout.Weapons.AssignGroup(ship.Equipment.FindSlot(command.Slot), command.Item, command.Revision, command.Group)) result = 0;
-                }
-                _completedWeapons[weaponIndex] = command;
-                _weaponResults[weaponIndex] = result;
-            }
+            _weaponCommands.Step(tick, _world, ready);
             foreach (var player in _world.Players.Values) player.ControlledShip?.Simulate(1.0 / 60);
             Weapons.Step(tick, _world, ready);
             foreach (var ship in _world.Entities.Values)
@@ -113,12 +98,7 @@ public sealed class GameplaySimulation : IDisposable
                 ship.CaptureState();
             }
             CompletedTick = tick;
-            for (var i = 0; i < weaponCount; i++)
-            {
-                var command = _completedWeapons[i];
-                _completedWeapons[i] = default;
-                command.Complete(_weaponResults[i]);
-            }
+            _weaponCommands.PublishResults();
             for (var i = 0; i < count; i++)
             {
                 var command = _completedTransfers[i];
@@ -140,12 +120,7 @@ public sealed class GameplaySimulation : IDisposable
     public void RemovePeer(int peer)
     {
         AbilityCommands.RemovePeer(peer);
-        var weapons = _weaponCommands.Count;
-        for (var i = 0; i < weapons; i++)
-        {
-            var command = _weaponCommands.Dequeue();
-            if (command.Peer != peer) _weaponCommands.Enqueue(command);
-        }
+        _weaponCommands.RemovePeer(peer);
         var count = _transfers.Count;
         for (var i = 0; i < count; i++)
         {
@@ -164,8 +139,6 @@ public sealed class GameplaySimulation : IDisposable
         Array.Clear(_completedTransfers);
         AbilityCommands.Clear();
     }
-
-    private readonly record struct PendingWeapon(int Peer, string Entity, long Generation, long Revision, string Slot, ItemEntityId Item, byte Group, Action<int> Complete);
 
     private readonly record struct PendingTransfer(int Peer, string Entity, long Generation,
         TransferRequest Request, Action<TransferResult> Completed);

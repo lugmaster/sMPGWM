@@ -25,6 +25,15 @@ public sealed class WeaponSystem : IDisposable
 
     public void Step(long tick, GameWorld world, Func<int, bool> ready)
     {
+        var count = CollectShooters(tick, world, ready);
+        var accepted = ResolveShots(tick, world, count);
+        ApplyDamage(tick, accepted);
+        RefreshShooters(count);
+        PublishShots(accepted);
+    }
+
+    private int CollectShooters(long tick, GameWorld world, Func<int, bool> ready)
+    {
         var count = 0;
         foreach (var ship in world.Entities.Values)
         {
@@ -39,6 +48,11 @@ public sealed class WeaponSystem : IDisposable
             { _shooters[index] = _shooters[index - 1]; index--; }
             _shooters[index] = ship;
         }
+        return count;
+    }
+
+    private int ResolveShots(long tick, GameWorld world, int count)
+    {
         var accepted = 0;
         for (var i = 0; i < count; i++)
         {
@@ -84,6 +98,11 @@ public sealed class WeaponSystem : IDisposable
                 if (!controller.Available) controller.AdvanceReloads(tick);
             }
         }
+        return accepted;
+    }
+
+    private void ApplyDamage(long tick, int accepted)
+    {
         for (var i = 0; i < accepted; i++)
         {
             var shot = _shots[i];
@@ -106,7 +125,19 @@ public sealed class WeaponSystem : IDisposable
             _targets[i] = null;
             _shots[i] = shot;
         }
-        for (var i = 0; i < count; i++) { _shooters[i]!.RefreshMovementConfiguration(); _shooters[i] = null; }
+    }
+
+    private void RefreshShooters(int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            _shooters[i]!.RefreshMovementConfiguration();
+            _shooters[i] = null;
+        }
+    }
+
+    private void PublishShots(int accepted)
+    {
         for (var i = 0; i < accepted; i++) ShotProduced?.Invoke(_shots[i]);
     }
 

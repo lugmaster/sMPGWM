@@ -16,13 +16,13 @@ public partial class NetworkManager
     private bool _hasWeaponBaseline;
     private long _shotCutoff = -1;
     private long _weaponRequest;
-    private readonly Dictionary<ItemEntityId, (ulong Sequence, ulong Window)> _shotWindows = new();
-    private readonly Dictionary<int, Queue<(long Request, int Result)>> _weaponHistory = new();
+    private readonly ShotHistory _shotWindows = new(1024);
+    private readonly Dictionary<int, Queue<(long Request, WeaponCommandResult Result)>> _weaponHistory = new();
     private readonly Dictionary<int, long> _latestWeaponRequest = new();
     private readonly HashSet<(int Peer, long Request)> _pendingWeapons = new();
     public bool WeaponBaselineReady => IsHost() || _hasWeaponBaseline;
     public event Action<AcceptedShot>? ShotReceived;
-    public event Action<int>? WeaponFeedback;
+    public event Action<WeaponCommandResult>? WeaponFeedback;
 
     internal void AdvanceWeaponPresentation(double tick) => TickWeaponPresentation(tick);
     internal void BindWeaponEvents()
@@ -57,25 +57,7 @@ public partial class NetworkManager
         foreach (var shot in shots)
         {
             if (shot.Tick <= _shotCutoff || shot.Tick < Synchronization.CompletedTick - 120 || shot.Tick > Synchronization.CompletedTick + 120) continue;
-            if (_shotWindows.TryGetValue(shot.ItemId, out var previous))
-            {
-                if (shot.Sequence > previous.Sequence)
-                {
-                    var shift = shot.Sequence - previous.Sequence;
-                    _shotWindows[shot.ItemId] = (shot.Sequence, shift >= 64 ? 1UL : (previous.Window << (int)shift) | 1UL);
-                }
-                else
-                {
-                    var distance = previous.Sequence - shot.Sequence;
-                    if (distance >= 64 || (previous.Window & (1UL << (int)distance)) != 0) continue;
-                    _shotWindows[shot.ItemId] = (previous.Sequence, previous.Window | (1UL << (int)distance));
-                }
-            }
-            else
-            {
-                if (_shotWindows.Count >= 1024) continue;
-                _shotWindows.Add(shot.ItemId, (shot.Sequence, 1));
-            }
+            if (!_shotWindows.TryAccept(shot.ItemId, shot.Sequence, shot.Tick)) continue;
             PresentShot(shot); ShotReceived?.Invoke(shot);
         }
     }
@@ -104,29 +86,32 @@ public partial class NetworkManager
         if (_weaponHistory.TryGetValue(peer, out var history))
             foreach (var entry in history) if (entry.Request == request) { ReplyWeapon(peer, request, entry.Result); return; }
         if (_pendingWeapons.Contains((peer, request))) return;
-        if (_latestWeaponRequest.TryGetValue(peer, out var last) && request <= last) { ReplyWeapon(peer, request, 1); return; }
+        if (_latestWeaponRequest.TryGetValue(peer, out var last) && request <= last) { ReplyWeapon(peer, request, WeaponCommandResult.Rejected); return; }
         _latestWeaponRequest[peer] = request;
-        if (_pendingWeapons.Count >= 32) { CompleteWeapon(peer, request, 2); return; }
+        if (_pendingWeapons.Count >= 32) { CompleteWeapon(peer, request, WeaponCommandResult.QueueFull); return; }
         _pendingWeapons.Add((peer, request));
-        if (!Simulation.QueueWeaponCommand(peer, entity, generation, revision, slot, item == 0 ? default : ItemEntityId.FromNetwork(item), (byte)group,
-            result => CompleteWeapon(peer, request, result))) CompleteWeapon(peer, request, 2);
+        var kind = slot.Length == 0 && item == 0 ? WeaponCommandKind.Reload : WeaponCommandKind.AssignGroup;
+        if (!Simulation.QueueWeaponCommand(peer, entity, generation, revision, kind, slot, item == 0 ? default : ItemEntityId.FromNetwork(item), (byte)group,
+            result => CompleteWeapon(peer, request, result))) CompleteWeapon(peer, request, WeaponCommandResult.QueueFull);
     }
-    private void CompleteWeapon(int peer, long request, int result)
+    private void CompleteWeapon(int peer, long request, WeaponCommandResult result)
     {
         _pendingWeapons.Remove((peer, request));
         if (!_weaponHistory.TryGetValue(peer, out var history)) _weaponHistory.Add(peer, history = new());
         if (history.Count == 32) history.Dequeue();
         history.Enqueue((request, result)); ReplyWeapon(peer, request, result);
     }
-    private void ReplyWeapon(int peer, long request, int result)
+    private void ReplyWeapon(int peer, long request, WeaponCommandResult result)
     {
         if (peer == 1) WeaponFeedback?.Invoke(result);
-        else RpcId(peer, nameof(ReceiveWeaponResult), Synchronization!.Session.ToString("N"), request, result);
+        else RpcId(peer, nameof(ReceiveWeaponResult), Synchronization!.Session.ToString("N"), request, (int)result);
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveWeaponResult(string session, long request, int result)
     {
-        if (IsHostMessage() && session == Synchronization!.Session.ToString("N") && request == _weaponRequest && result >= 0 && result <= 2) WeaponFeedback?.Invoke(result);
+        if (IsHostMessage() && session == Synchronization!.Session.ToString("N") && request == _weaponRequest &&
+            result >= (int)WeaponCommandResult.Accepted && result <= (int)WeaponCommandResult.QueueFull)
+            WeaponFeedback?.Invoke((WeaponCommandResult)result);
     }
     private ulong WeaponRevision(PlayerSession owner)
     {

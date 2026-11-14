@@ -13,10 +13,12 @@ public partial class ShotPresentationController : Node2D
     private const int DedupCapacity = 512;
     private readonly AcceptedShot[] _pending = new AcceptedShot[QueueCapacity];
     private readonly ItemEntityId[] _items = new ItemEntityId[DedupCapacity];
-    private readonly ulong[] _sequences = new ulong[DedupCapacity];
-    private readonly ulong[] _windows = new ulong[DedupCapacity];
+    private readonly ShotSequenceWindow[] _windows = new ShotSequenceWindow[DedupCapacity];
     private readonly long[] _seenTicks = new long[DedupCapacity];
     private readonly Effect[] _effects = new Effect[1152];
+    private readonly int[][] _freeEffects = [new int[128], new int[256], new int[128], new int[128], new int[256], new int[128], new int[128]];
+    private readonly int[] _freeCounts = new int[7];
+    private readonly int[] _activeEffects = new int[1152];
     private readonly AudioStreamPlayer2D[] _voices = new AudioStreamPlayer2D[24];
     private readonly long[] _voiceTicks = new long[24];
     private WeaponPresentationProfile[] _profiles = null!;
@@ -54,7 +56,9 @@ public partial class ShotPresentationController : Node2D
         node.Visible = false;
         node.ProcessMode = ProcessModeEnum.Disabled;
         AddChild(node);
-        _effects[index] = new Effect(node, node.GetNodeOrNull<AnimatedSprite2D>("Visual"), profile, kind);
+        var pool = GetPool(profile, kind);
+        _effects[index] = new Effect(node, node.GetNodeOrNull<AnimatedSprite2D>("Visual"), pool, kind);
+        _freeEffects[pool][_freeCounts[pool]++] = index;
     }
 
     public void Enqueue(AcceptedShot shot)
@@ -71,29 +75,18 @@ public partial class ShotPresentationController : Node2D
         var replacement = 0;
         for (var i = 0; i < _items.Length; i++)
         {
-            if (_items[i] == shot.ItemId && _sequences[i] != 0)
+            if (_items[i] == shot.ItemId && _items[i] != default)
             {
-                if (shot.Sequence > _sequences[i])
-                {
-                    var delta = shot.Sequence - _sequences[i];
-                    _windows[i] = delta >= 64 ? 1UL : (_windows[i] << (int)delta) | 1;
-                    _sequences[i] = shot.Sequence;
-                }
-                else
-                {
-                    var delta = _sequences[i] - shot.Sequence;
-                    if (delta >= 64 || (_windows[i] & (1UL << (int)delta)) != 0) return false;
-                    _windows[i] |= 1UL << (int)delta;
-                }
+                if (!_windows[i].TryAccept(shot.Sequence)) return false;
                 _seenTicks[i] = Math.Max(_seenTicks[i], shot.Tick);
                 return true;
             }
-            if (_sequences[i] == 0) replacement = i;
-            else if (_sequences[replacement] != 0 && _seenTicks[i] < _seenTicks[replacement]) replacement = i;
+            if (_items[i] == default) replacement = i;
+            else if (_items[replacement] != default && _seenTicks[i] < _seenTicks[replacement]) replacement = i;
         }
         _items[replacement] = shot.ItemId;
-        _sequences[replacement] = shot.Sequence;
-        _windows[replacement] = 1;
+        _windows[replacement] = default;
+        _windows[replacement].TryAccept(shot.Sequence);
         _seenTicks[replacement] = shot.Tick;
         return true;
     }
@@ -111,19 +104,18 @@ public partial class ShotPresentationController : Node2D
             if (shot.Tick <= _cutoff || shot.Tick < presentationTick - 30) continue;
             Play(shot, local ? presentationTick : shot.Tick);
         }
-        for (var i = 0; i < _effects.Length; i++)
+        var retained = 0;
+        for (var i = 0; i < _activeCount; i++)
         {
-            var effect = _effects[i];
-            if (!effect.Active) continue;
+            var index = _activeEffects[i];
+            var effect = _effects[index];
             var age = (float)((presentationTick - effect.StartTick) / 60);
             if (age >= effect.Duration)
             {
-                effect.Active = false;
-                effect.Node.Visible = false;
-                effect.Ship = null;
-                _activeCount--;
+                Release(index);
                 continue;
             }
+            _activeEffects[retained++] = index;
             age = Math.Max(0, age);
             if (effect.Kind == 0 && GodotObject.IsInstanceValid(effect.Ship))
             {
@@ -140,6 +132,7 @@ public partial class ShotPresentationController : Node2D
             }
             effect.Node.Modulate = new Color(1, 1, 1, 1 - age / effect.Duration);
         }
+        _activeCount = retained;
     }
 
     private void Play(AcceptedShot shot, double startTick)
@@ -175,26 +168,36 @@ public partial class ShotPresentationController : Node2D
     private Effect? Acquire(int profile, int kind, double tick, float duration, Vector2 position, float angle)
     {
         if (_presentationTick - tick >= duration * 60) return null;
-        for (var i = 0; i < _effects.Length; i++)
+        var pool = GetPool(profile, kind);
+        if (_freeCounts[pool] == 0)
         {
-            var effect = _effects[i];
-            if (effect.Active || effect.Profile != profile || effect.Kind != kind) continue;
-            effect.Active = true;
-            effect.StartTick = tick;
-            effect.Duration = duration;
-            effect.Ship = null;
-            effect.Node.Transform = Transform2D.Identity;
-            effect.Node.GlobalPosition = position;
-            effect.Node.GlobalRotation = angle;
-            effect.Node.Modulate = Colors.White;
-            effect.Node.Visible = true;
-            if (effect.Animation != null) { effect.Animation.Stop(); effect.Animation.Frame = 0; }
-            _activeCount++;
-            HighWater = Math.Max(HighWater, _activeCount);
-            return effect;
+            DroppedEffects++;
+            return null;
         }
-        DroppedEffects++;
-        return null;
+        var index = _freeEffects[pool][--_freeCounts[pool]];
+        var effect = _effects[index];
+        effect.StartTick = tick;
+        effect.Duration = duration;
+        effect.Ship = null;
+        effect.Node.Transform = Transform2D.Identity;
+        effect.Node.GlobalPosition = position;
+        effect.Node.GlobalRotation = angle;
+        effect.Node.Modulate = Colors.White;
+        effect.Node.Visible = true;
+        if (effect.Animation != null) { effect.Animation.Stop(); effect.Animation.Frame = 0; }
+        _activeEffects[_activeCount++] = index;
+        HighWater = Math.Max(HighWater, _activeCount);
+        return effect;
+    }
+
+    private static int GetPool(int profile, int kind) => kind == 3 ? 6 : profile * 3 + kind;
+
+    private void Release(int index)
+    {
+        var effect = _effects[index];
+        effect.Node.Visible = false;
+        effect.Ship = null;
+        _freeEffects[effect.Pool][_freeCounts[effect.Pool]++] = index;
     }
 
     public void Clear(long cutoffTick)
@@ -202,21 +205,18 @@ public partial class ShotPresentationController : Node2D
         _cutoff = cutoffTick;
         _presentationTick = cutoffTick;
         _pendingCount = 0;
-        _activeCount = 0;
-        Array.Clear(_sequences);
+        while (_activeCount > 0) Release(_activeEffects[--_activeCount]);
+        Array.Clear(_items);
         Array.Clear(_windows);
-        foreach (var effect in _effects)
-            if (effect != null) { effect.Active = false; effect.Node.Visible = false; effect.Ship = null; }
         foreach (var voice in _voices) voice?.Stop();
     }
 
-    internal sealed class Effect(Node2D node, AnimatedSprite2D? animation, int profile, int kind)
+    internal sealed class Effect(Node2D node, AnimatedSprite2D? animation, int pool, int kind)
     {
         public readonly Node2D Node = node;
         public readonly AnimatedSprite2D? Animation = animation;
-        public readonly int Profile = profile;
+        public readonly int Pool = pool;
         public readonly int Kind = kind;
-        public bool Active;
         public double StartTick;
         public float Duration;
         public Vector2 Origin;
