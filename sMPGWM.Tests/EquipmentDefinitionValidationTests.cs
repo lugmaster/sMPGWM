@@ -19,9 +19,10 @@ public sealed class EquipmentDefinitionValidationTests
         var items = Items();
         for (var i = 0; i < items.Length; i++)
             if (items[i] is EngineItemDefinition engine) items[i] = engine with { Speed = float.MaxValue };
-        var ships = Ships();
-        foreach (var ship in ships) ship.StatModifiers.Speed = float.MaxValue;
-        var error = Assert.Throws<ArgumentException>(() => EquipmentDefinitionValidator.Validate(ships, items));
+        var document = GameplayTestData.Read("Ships.yml", "ShipsSchema.yml");
+        foreach (var ship in document["ships"]!) ship["stat_modifiers"]!["Speed"] = float.MaxValue;
+        var ships = ShipCatalogueLoader.Load(_ => document, _ => true).GetAll();
+        var error = Assert.Catch<ArgumentException>(() => EquipmentDefinitionValidator.Validate(ships, items));
         Assert.That(error!.Message, Does.Contain("ship").And.Contain("item").And.Contain("Movement"));
     }
 
@@ -32,7 +33,7 @@ public sealed class EquipmentDefinitionValidationTests
         for (var i = 0; i < items.Length; i++)
             if (items[i] is EngineItemDefinition or HullItemDefinition)
                 items[i] = items[i] with { Mass = (double)float.MaxValue / 3 };
-        var error = Assert.Throws<ArgumentException>(() => EquipmentDefinitionValidator.Validate(Ships(), items));
+        var error = Assert.Catch<ArgumentException>(() => EquipmentDefinitionValidator.Validate(Ships(), items));
         Assert.That(error!.Message, Does.Contain("combined equipment mass"));
     }
 
@@ -42,7 +43,7 @@ public sealed class EquipmentDefinitionValidationTests
         var items = Items();
         for (var i = 0; i < items.Length; i++)
             if (items[i] is WeaponItemDefinition) items[i] = items[i] with { Mass = (double)float.MaxValue / 10 };
-        var error = Assert.Throws<ArgumentException>(() => EquipmentDefinitionValidator.Validate(Ships(), items));
+        var error = Assert.Catch<ArgumentException>(() => EquipmentDefinitionValidator.Validate(Ships(), items));
         Assert.That(error!.Message, Does.Contain("combined equipment mass with fixture"));
         for (var i = 0; i < items.Length; i++)
             if (items[i] is WeaponFixtureItemDefinition fixture) items[i] = fixture with { WeaponSlots = 1 };
@@ -58,7 +59,7 @@ public sealed class EquipmentDefinitionValidationTests
             if (items[i] is EngineItemDefinition engine) items[i] = engine with { EnergyConsumption = double.MaxValue / 2 };
             if (items[i] is BatteryItemDefinition battery) items[i] = battery with { EnergyConsumption = double.MaxValue / 2 };
         }
-        var error = Assert.Throws<ArgumentException>(() => EquipmentDefinitionValidator.Validate(Ships(), items));
+        var error = Assert.Catch<ArgumentException>(() => EquipmentDefinitionValidator.Validate(Ships(), items));
         Assert.That(error!.Message, Does.Contain("combined energy demand with afterburner"));
     }
 
@@ -76,9 +77,9 @@ public sealed class EquipmentDefinitionValidationTests
 
     private static ItemDefinition[] Items()
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(
+        var categories = ItemTestData.ParseCategories(
             GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
-        var items = ItemRegistry.LoadItemDefinitions(GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
+        var items = ItemTestData.ParseItems(GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
         var result = new ItemDefinition[items.Count];
         items.Values.CopyTo(result, 0);
         return result;
@@ -86,11 +87,10 @@ public sealed class EquipmentDefinitionValidationTests
 
     private static ShipData[] Ships()
     {
-        var document = ShipDefinitionLoader.Load(GameplayTestData.Read("Ships.yml", "ShipsSchema.yml"), "Ships.yml", "ShipsSchema.yml");
-        var ships = ShipRegistry.Build(document.Value!, _ => true);
+        var ships = ShipCatalogueLoader.Load(_ => GameplayTestData.Read("Ships.yml", "ShipsSchema.yml"), _ => true).GetAll();
         var result = new ShipData[ships.Count];
         var index = 0;
-        foreach (var ship in ships.Values) result[index++] = ship;
+        foreach (var ship in ships) result[index++] = ship;
         return result;
     }
 }

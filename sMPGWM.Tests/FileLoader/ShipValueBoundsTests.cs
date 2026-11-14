@@ -12,13 +12,10 @@ public sealed class ShipValueBoundsTests
         var document = GameplayTestData.Read("Ships.yml", "ShipsSchema.yml");
         document["ships"]![0]!["mass"] = (double)float.MaxValue;
         AssertSchema(document, false);
-        var parsed = ShipDefinitionLoader.Load(document, "test", "ShipsSchema.yml");
-        Assert.That(parsed.IsSuccess, Is.True);
-        Assert.Throws<ArgumentException>(() => ShipRegistry.Build(parsed.Value!, _ => true));
+        Assert.Catch<ArgumentException>(() => ShipCatalogueLoader.Load(_ => document, _ => true));
         document["ships"]![0]!["mass"] = (double)(float.MaxValue / 2);
         AssertSchema(document, true);
-        parsed = ShipDefinitionLoader.Load(document, "test", "ShipsSchema.yml");
-        Assert.DoesNotThrow(() => ShipRegistry.Build(parsed.Value!, _ => true));
+        Assert.DoesNotThrow(() => ShipCatalogueLoader.Load(_ => document, _ => true));
     }
 
     [TestCase(1e100)]

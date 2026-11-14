@@ -34,8 +34,8 @@ public sealed class AbilityArchitectureTests
         Assert.That(ability.DisplayName, Is.EqualTo("Shield Capacity Boost"));
         Assert.Throws<NotSupportedException>(() => ((IList<string>)ability.BlockedByConditions).Add("dead"));
 
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
-        var items = ItemRegistry.LoadItemDefinitions(GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
+        var categories = ItemTestData.ParseCategories(GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
+        var items = ItemTestData.ParseItems(GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
         var all = new List<ItemDefinition>(items.Values);
         GameplayCatalogueValidator.ValidateItems(data, all);
         Assert.That(items["infectedCargo"].BehaviourGrants[0], Is.EqualTo(new ItemBehaviourGrant("infection", BehaviourGrantWhile.Carried, BehaviourGrantLifetime.WhileSourceActive)));
@@ -44,38 +44,38 @@ public sealed class AbilityArchitectureTests
             CategoryId = "resource", Mass = 1,
             BehaviourGrants = new[] { new ItemBehaviourGrant("missing", BehaviourGrantWhile.Carried, BehaviourGrantLifetime.WhileSourceActive) }
         };
-        Assert.Throws<ArgumentException>(() => GameplayCatalogueValidator.ValidateItems(data, new[] { invalidItem }));
+        Assert.Catch<ArgumentException>(() => GameplayCatalogueValidator.ValidateItems(data, new[] { invalidItem }));
 
-        var error = Assert.Throws<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
+        var error = Assert.Catch<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
         {
             if (file == "AbilityDefinitions.yml")
                 GameplayTestData.Find((JArray)document["AbilityDefinitions"]!, "shieldCapacityBoost")["EffectId"] = "missingEffect";
         }));
         Assert.That(error!.Message, Does.Contain("AbilityDefinitions.yml").And.Contain("shieldCapacityBoost").And.Contain("EffectId").And.Contain("missingEffect"));
-        Assert.Throws<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
+        Assert.Catch<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
         {
             if (file == "EffectDefinitions.yml") ((JArray)document["EffectDefinitions"]!).Add(document["EffectDefinitions"]![0]!.DeepClone());
         }));
-        Assert.Throws<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
+        Assert.Catch<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
         {
             if (file == "BehaviourDefinitions.yml")
                 GameplayTestData.Find((JArray)document["BehaviourDefinitions"]!, "infection")["OnExpireEffectId"] = "infection";
         }));
-        Assert.Throws<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
+        Assert.Catch<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
         {
             if (file == "BehaviourDefinitions.yml")
                 GameplayTestData.Find((JArray)document["BehaviourDefinitions"]!, "infection")["Modifiers"]![0]!["ValueKind"] = "Maximum";
         }));
-        Assert.Throws<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
+        Assert.Catch<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
         {
             if (file == "AbilityDefinitions.yml") document["AbilityDefinitions"]![0]!["UnknownField"] = true;
         }));
-        Assert.Throws<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
+        Assert.Catch<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
         {
             if (file == "EffectDefinitions.yml")
                 GameplayTestData.Find((JArray)document["EffectDefinitions"]!, "shieldCapacityBoost")["Kind"] = "DealDamage";
         }));
-        Assert.Throws<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
+        Assert.Catch<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
         {
             if (file == "EffectDefinitions.yml")
                 GameplayTestData.Find((JArray)document["EffectDefinitions"]!, "disruptionArea")["TargetingId"] = "self";

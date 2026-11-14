@@ -20,6 +20,7 @@ run/max_fps=60
 GameFlowManager="*uid://dnk44tr6vs3ar"
 ConfigLoader="*res://Scripts/GameConfigSystem/ConfigLoader.cs"
 IconDefinitions="*res://Scripts/UtilitySystem/UiComponents/IconDefinitions.cs"
+DefinitionStartup="*res://Scripts/GameplayDataSystem/DefinitionStartup.cs"
 SteamworksHelper="*uid://cwgdwq3g3khns"
 ModalController="*res://Scripts/UtilitySystem/UiComponents/ModalController.cs"
 

@@ -1,6 +1,7 @@
 using Godot;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using sMPGWM.Scripts.GameConfigSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -8,29 +9,25 @@ namespace sMPGWM.Scripts.FileLoadingSystem;
 
 public static class FileLoader
 {
-    internal static readonly System.Collections.Generic.Dictionary<string, string> CapturedInputs = new();
-
-    private static LoadResult<JToken> LoadYamlAndValidate(
-        string userPath,
-        string defaultPath,
-        string schemaPath)
-    {
-        var filesResult = PrepareAndReadFiles(
-            userPath, defaultPath, schemaPath, "YAML", "YAML schema");
-
-        if (!filesResult.IsSuccess)
-            return LoadResult<JToken>.Failure(filesResult.Error!);
-
-        var files = filesResult.Value!;
-        return YamlParser.ValidateAndReturn(
-            files.DefinitionText, files.SchemaText, userPath, schemaPath);
-    }
-
     public static JObject LoadYaml(string userPath, string defaultPath, string schemaPath)
     {
-        var result = LoadYamlAndValidate(userPath, defaultPath, schemaPath);
-        if (result.IsSuccess) return (JObject)result.Value!;
-        throw new InvalidOperationException(result.Error!.ToDisplayString());
+        return LoadYaml(userPath, defaultPath, schemaPath, null);
+    }
+
+    internal static JObject LoadYaml(string userPath, string defaultPath, string schemaPath,
+        Dictionary<string, string>? capture)
+    {
+        var filesResult = PrepareAndReadFiles(userPath, defaultPath, schemaPath, "YAML", "YAML schema");
+        if (!filesResult.IsSuccess) throw new InvalidOperationException(filesResult.Error!.ToDisplayString());
+        var files = filesResult.Value!;
+        var result = YamlParser.ValidateAndReturn(files.DefinitionText, files.SchemaText, userPath, schemaPath);
+        if (!result.IsSuccess) throw new InvalidOperationException(result.Error!.ToDisplayString());
+        if (capture != null)
+        {
+            capture[defaultPath.GetFile()] = files.DefinitionText;
+            capture[schemaPath.GetFile()] = files.SchemaText;
+        }
+        return (JObject)result.Value!;
     }
 
     
@@ -63,8 +60,6 @@ public static class FileLoader
         if (!schemaResult.IsSuccess)
             return LoadResult<DefinitionFileContents>.Failure(schemaResult.Error!);
 
-        CapturedInputs[defaultPath.GetFile()] = definitionResult.Value!;
-        CapturedInputs[schemaPath.GetFile()] = schemaResult.Value!;
         return LoadResult<DefinitionFileContents>.Success(
             new DefinitionFileContents(definitionResult.Value!, schemaResult.Value!));
     }

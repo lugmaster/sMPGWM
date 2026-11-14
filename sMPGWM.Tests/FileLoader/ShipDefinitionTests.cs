@@ -24,20 +24,20 @@ public class ShipDefinitionTests
     {
         var result = Parse(Read("Ships.yml"));
         Assert.That(result.IsSuccess, Is.True, result.Error?.ToDisplayString());
-        var ship = result.Value!.Ships.Single();
+        var ship = result.Value!.GetById("fighter");
         Assert.Multiple(() =>
         {
-            Assert.That(result.Value.Version, Is.EqualTo("2.0.0"));
+            Assert.That((string)GameplayTestData.Read("Ships.yml", "ShipsSchema.yml")["Version"]!, Is.EqualTo("2.0.0"));
             Assert.That(ship.Name, Is.EqualTo("fighter"));
             Assert.That(ship.Description, Is.EqualTo("An agile combat ship with bonuses to speed, acceleration, and handling."));
             Assert.That(ship.TexturePath, Is.EqualTo("res://assets/mocks/ship_fighter_reference.png"));
             Assert.That(ship.ColliderPoints, Has.Count.EqualTo(20));
-            Assert.That(ship.ColliderPoints[0], Is.EqualTo(new double[] {27, -1}));
-            Assert.That(ship.Stats.Speed, Is.EqualTo(50));
-            Assert.That(ship.Stats.AfterBurnerSpeed, Is.EqualTo(50));
-            Assert.That(ship.Stats.RotationSpeed, Is.EqualTo(2));
-            Assert.That(ship.Stats.Acceleration, Is.EqualTo(0.1));
-            Assert.That(ship.Stats.AfterBurnerAcceleration, Is.EqualTo(0.1));
+            Assert.That(ship.ColliderPoints[0], Is.EqualTo(new Godot.Vector2(27, -1)));
+            Assert.That(ship.StatModifiers.Speed, Is.EqualTo(50));
+            Assert.That(ship.StatModifiers.AfterBurnerSpeed, Is.EqualTo(50));
+            Assert.That(ship.StatModifiers.RotationSpeed, Is.EqualTo(2));
+            Assert.That(ship.StatModifiers.Acceleration, Is.EqualTo(0.1));
+            Assert.That(ship.StatModifiers.AfterBurnerAcceleration, Is.EqualTo(0.1));
             Assert.That(ship.Health, Is.EqualTo(150));
             Assert.That(ship.Mass, Is.EqualTo(1));
         });
@@ -63,18 +63,28 @@ public class ShipDefinitionTests
     {
         var token = (JObject)YamlParser.ParseToken(Read("Ships.yml"), "Ships.yml").Value!;
         token["ships"]![0]!["unknown_member"] = 1;
-        var result = ShipDefinitionLoader.Load(token, "Ships.yml", "ShipsSchema.yml");
+        var result = Convert(token);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.SourcePath, Is.EqualTo("Ships.yml"));
         Assert.That(result.Error.SchemaPath, Is.EqualTo("ShipsSchema.yml"));
         Assert.That(result.Error.ToDisplayString(), Does.Contain("unknown_member"));
     }
 
-    private static LoadResult<ShipDefinitionsDocument> Parse(string yaml)
+    private static LoadResult<ShipDefinitions> Convert(JObject document)
+    {
+        try { return LoadResult<ShipDefinitions>.Success(ShipCatalogueLoader.Load(_ => document, _ => true)); }
+        catch (CatalogueLoadException error)
+        {
+            return LoadResult<ShipDefinitions>.Failure(new DataLoadError("Invalid ship definitions", error.Message,
+                "Ships.yml", "ShipsSchema.yml", error));
+        }
+    }
+
+    private static LoadResult<ShipDefinitions> Parse(string yaml)
     {
         var result = YamlParser.ValidateAndReturn(yaml, Read("ShipsSchema.yml"), "Ships.yml", "ShipsSchema.yml");
-        if (!result.IsSuccess) return LoadResult<ShipDefinitionsDocument>.Failure(result.Error!);
-        return ShipDefinitionLoader.Load((JObject)result.Value!, "Ships.yml", "ShipsSchema.yml");
+        if (!result.IsSuccess) return LoadResult<ShipDefinitions>.Failure(result.Error!);
+        return Convert((JObject)result.Value!);
     }
 
     [TestCase("missing")]
@@ -96,6 +106,6 @@ public class ShipDefinitionTests
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.ToDisplayString(), Does.Contain("description"));
         if (mutation is "missing" or "null")
-            Assert.That(ShipDefinitionLoader.Load(document, "Ships.yml", "ShipsSchema.yml").IsSuccess, Is.False);
+            Assert.That(Convert(document).IsSuccess, Is.False);
     }
 }

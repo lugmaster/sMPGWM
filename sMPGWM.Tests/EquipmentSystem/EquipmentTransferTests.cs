@@ -96,7 +96,7 @@ public class EquipmentTransferTests
     [Test]
     public void CategoryIdentityDoesNotDependOnDisplayNames()
     {
-        var categories = sMPGWM.Scripts.ItemSystem.ItemDefinitionParser.LoadItemCategoryDefinitions(
+        var categories = ItemTestData.ParseCategories(
             Newtonsoft.Json.Linq.JObject.Parse("""
                 {
                   "Version": "3.0.0",
@@ -106,7 +106,7 @@ public class EquipmentTransferTests
                   ]
                 }
                 """), _ => null!);
-        var items = sMPGWM.Scripts.ItemSystem.ItemDefinitionParser.LoadItemDefinitions(
+        var items = ItemTestData.ParseItems(
             Newtonsoft.Json.Linq.JObject.Parse("""
                 {
                   "Version": "3.0.0",

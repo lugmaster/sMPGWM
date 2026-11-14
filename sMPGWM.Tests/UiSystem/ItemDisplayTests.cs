@@ -31,9 +31,9 @@ public class ItemDisplayTests
     [Test]
     public void WeaponTooltipsShowOnlyTheirTypedSupplyFields()
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(
+        var categories = ItemTestData.ParseCategories(
             GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
-        var definitions = ItemRegistry.LoadItemDefinitions(
+        var definitions = ItemTestData.ParseItems(
             GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
         var ammunition = ItemDisplayFormatter.Create(new ItemEntity(ItemEntityId.FromNetwork(1), definitions["vulcan_mk1"], 1));
         var energy = ItemDisplayFormatter.Create(new ItemEntity(ItemEntityId.FromNetwork(2), definitions["laser_mk1"], 1));
@@ -53,9 +53,9 @@ public class ItemDisplayTests
     [TestCase("mock_standard_consumable")]
     public void StackableItemTooltipsShowPerItemMassAndQuantity(string id)
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(
+        var categories = ItemTestData.ParseCategories(
             GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
-        var definitions = ItemRegistry.LoadItemDefinitions(
+        var definitions = ItemTestData.ParseItems(
             GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
         var display = ItemDisplayFormatter.Create(new ItemEntity(ItemEntityId.FromNetwork(1), definitions[id], 3));
 

@@ -11,8 +11,8 @@ public class ItemRegistryTests
     [Test]
     public void PackagedYamlLoadsFinalDefinitionsWithResolvedCategoryNamesAndIcons()
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
-        var items = ItemRegistry.LoadItemDefinitions(Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
+        var categories = ItemTestData.ParseCategories(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
+        var items = ItemTestData.ParseItems(Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
         Assert.That(items.Count, Is.EqualTo(23));
         Assert.That(items["mock_standard_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon"));
         Assert.That(items["mock_advanced_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon"));
@@ -29,14 +29,14 @@ public class ItemRegistryTests
     [Test]
     public void MissingCategoryValuesAndMissingConsumableAbilitiesAreRejected()
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
+        var categories = ItemTestData.ParseCategories(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var items = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
         ((JObject)items["Items"]![0]!).Remove("Speed");
-        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, categories, _ => null!));
+        Assert.Catch<ArgumentException>(() => ItemTestData.ParseItems(items, categories, _ => null!));
         items = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
         foreach (var item in items["Items"]!)
             if ((string?)item["CategoryId"] == "consumable") ((JObject)item).Remove("AbilityIds");
-        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, categories, _ => null!));
+        Assert.Catch<ArgumentException>(() => ItemTestData.ParseItems(items, categories, _ => null!));
     }
 
     [Test]
@@ -44,18 +44,18 @@ public class ItemRegistryTests
     {
         var yaml = Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml");
         ((JArray)yaml["Categories"]!).Add(yaml["Categories"]![0]!.DeepClone());
-        Assert.Throws<ArgumentException>(() => ItemDefinitionParser.LoadItemCategoryDefinitions(yaml, _ => null!));
+        Assert.Catch<ArgumentException>(() => ItemTestData.ParseCategories(yaml, _ => null!));
         var items = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
-        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, new(), _ => null!));
+        Assert.Catch<ArgumentException>(() => ItemTestData.ParseItems(items, new(), _ => null!));
     }
 
     [Test]
     public void NonstackableItemsCannotDeclareMultipleItemsPerStack()
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
+        var categories = ItemTestData.ParseCategories(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var yaml = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
         yaml["Items"]![0]!["StackLimit"] = 1;
-        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!));
+        Assert.Catch<ArgumentException>(() => ItemTestData.ParseItems(yaml, categories, _ => null!));
     }
 
     [TestCase("", true)]
@@ -89,9 +89,9 @@ public class ItemRegistryTests
         foreach (var itemSetting in new[] { "", "CanStack: false", "CanStack: true", "StackLimit: 2" })
         {
             string? iconKey = null;
-            var categories = ItemDefinitionParser.LoadItemCategoryDefinitions((JObject)YamlParser.ParseToken(
+            var categories = ItemTestData.ParseCategories((JObject)YamlParser.ParseToken(
                 "Version: 3.0.0\nCategories:\n  - Id: resource\n    DisplayName: Test\n    Description: Resource category\n    " + categorySetting, "test").Value!, key => { iconKey = key; return null!; });
-            var items = ItemRegistry.LoadItemDefinitions((JObject)YamlParser.ParseToken(
+            var items = ItemTestData.ParseItems((JObject)YamlParser.ParseToken(
                 "Version: 3.0.0\nItems:\n  - Id: test\n    DisplayName: Test\n    Description: Resource item\n    CategoryId: resource\n    Mass: 1\n    " + itemSetting, "test").Value!, categories, _ => null!);
             var expected = itemSetting switch
             {
@@ -111,11 +111,11 @@ public class ItemRegistryTests
     [TestCase(10d)]
     public void InvalidFixtureCapacityIsRejected(double capacity)
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
+        var categories = ItemTestData.ParseCategories(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var yaml = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
         foreach (var item in yaml["Items"]!)
             if ((string?)item["CategoryId"] == "weapon_fixture") item["WeaponSlots"] = capacity;
-        Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!));
+        Assert.Catch<ArgumentException>(() => ItemTestData.ParseItems(yaml, categories, _ => null!));
     }
 
     private static JObject Read(string file, string schema) => GameplayTestData.Read(file, schema);

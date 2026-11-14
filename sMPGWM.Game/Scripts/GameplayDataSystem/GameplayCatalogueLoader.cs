@@ -7,6 +7,9 @@ using sMPGWM.Scripts.CombatSystem;
 using sMPGWM.Scripts.ConditionSystem;
 using sMPGWM.Scripts.ProjectileSystem;
 using sMPGWM.Scripts.StatSystem;
+using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.ShipSystem;
+using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
 using static sMPGWM.Scripts.GameplayDataSystem.GameplayDefinitionParser;
 
@@ -14,22 +17,20 @@ namespace sMPGWM.Scripts.GameplayDataSystem;
 
 public static class GameplayCatalogueLoader
 {
-    public static LoadResult<GameplayCatalogues> TryLoad(Func<CatalogueSource, JObject> read)
+    internal static LoadResult<GameplayCatalogues> TryLoad(Func<CatalogueSource, JObject> read,
+        Func<string, IconDefinition> resolveIcon, Func<string, bool> textureAvailable)
     {
-        try { return LoadResult<GameplayCatalogues>.Success(Load(read)); }
+        try { return LoadResult<GameplayCatalogues>.Success(Load(read, resolveIcon, textureAvailable)); }
+        catch (CatalogueLoadException error)
+        {
+            return LoadResult<GameplayCatalogues>.Failure(new DataLoadError("Invalid gameplay definitions",
+                error.Message, error.CatalogueSource.UserPath, error.CatalogueSource.SchemaPath, error));
+        }
         catch (ArgumentException error)
         {
-            foreach (var source in Sources)
-                if (error.Message.Contains(source.FileName, StringComparison.Ordinal))
-                    return LoadResult<GameplayCatalogues>.Failure(new DataLoadError("Invalid gameplay definitions",
-                        error.Message, "user://config/gameplay/" + source.FileName,
-                        "res://assets/game_data/" + source.SchemaName, error));
             return LoadResult<GameplayCatalogues>.Failure(new DataLoadError("Invalid gameplay definitions", error.Message, Exception: error));
         }
     }
-
-    private static T[] Load<T>(Catalogue<T> catalogue, Func<CatalogueSource, JObject> read) =>
-        CatalogueParser.Parse(read(catalogue.Source), catalogue.Source, catalogue.ParseDefinition);
 
     private static readonly Catalogue<AbilityDefinition> Abilities = new(
         new("AbilityDefinitions.yml", "AbilitySchema.yml", "AbilityDefinitions"), Ability);
@@ -67,18 +68,22 @@ public static class GameplayCatalogueLoader
     });
 
     // The reader validates each document against its schema before returning it.
-    public static GameplayCatalogues Load(Func<CatalogueSource, JObject> read)
+    internal static GameplayCatalogues Load(Func<CatalogueSource, JObject> read,
+        Func<string, IconDefinition> resolveIcon, Func<string, bool> textureAvailable)
     {
+        var categories = ItemCatalogueLoader.LoadCategories(read, resolveIcon);
+        var items = ItemCatalogueLoader.LoadItems(read, categories, resolveIcon);
+        var ships = ShipCatalogueLoader.Load(read, textureAvailable);
         return new GameplayCatalogues(
-            new AbilityRegistry(Load(Abilities, read)),
-            new EffectRegistry(Load(Effects, read)),
-            new BehaviourRegistry(Load(Behaviours, read)),
-            new TargetingRegistry(Load(Targeting, read)),
-            new BehaviourClassificationRegistry(Load(Classifications, read)),
-            new StatRegistry(Load(Stats, read)),
-            new ConditionRegistry(Load(Conditions, read)),
-            new ProjectileRegistry(Load(Projectiles, read)),
-            new DamageSourceRegistry(Load(DamageSources, read)));
+            new AbilityRegistry(CatalogueParser.Load(Abilities, read)),
+            new EffectRegistry(CatalogueParser.Load(Effects, read)),
+            new BehaviourRegistry(CatalogueParser.Load(Behaviours, read)),
+            new TargetingRegistry(CatalogueParser.Load(Targeting, read)),
+            new BehaviourClassificationRegistry(CatalogueParser.Load(Classifications, read)),
+            new StatRegistry(CatalogueParser.Load(Stats, read)),
+            new ConditionRegistry(CatalogueParser.Load(Conditions, read)),
+            new ProjectileRegistry(CatalogueParser.Load(Projectiles, read)),
+            new DamageSourceRegistry(CatalogueParser.Load(DamageSources, read)), categories, items, ships);
     }
 
 }

@@ -16,7 +16,7 @@ public sealed class InitialPlayerStateTests
     [Test]
     public void ProductionStartupCanMoveAndActivateEquippedAbility()
     {
-        StarterLoadout.ValidateDefinitions();
+        StarterLoadout.ValidateDefinitions(GameplayDefinitions.Current.Items);
         using var initial = new InventoryController();
         var world = new GameWorld { AuthoritativeItems = true, InitialInventory = initial.Snapshot, InitializeLoadout = StarterLoadout.Equip };
         try

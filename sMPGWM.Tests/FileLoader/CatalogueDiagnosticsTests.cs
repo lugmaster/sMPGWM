@@ -12,8 +12,7 @@ public class CatalogueDiagnosticsTests
     [TestCase("stacking", "StackLimit", "inconsistent")]
     public void ItemFailuresPreserveSourceDefinitionAndField(string mutation, string field, string detail)
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
-        var document = GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml");
+        var document = GameplayTestData.Read("items/engine.yml", "items/engine.schema.yml");
         var row = document["Items"]![0]!;
         var id = (string)row["Id"]!;
         switch (mutation)
@@ -23,11 +22,11 @@ public class CatalogueDiagnosticsTests
             case "numeric": row["Speed"] = -1; break;
             case "stacking": ((JObject)row).Remove("CanStack"); row["StackLimit"] = 1; break;
         }
-        var result = CatalogueParser.Load(() => ItemDefinitionParser.LoadItemDefinitions(document, categories, _ => null!),
-            "user://custom/ItemDefinitions.yml", "res://assets/game_data/items/ItemSchema.yml");
+        var result = GameplayCatalogueLoader.TryLoad(source => source.FileName == "engine.yml" ? document : Read(source),
+            _ => null!, _ => true);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Error!.SourcePath, Is.EqualTo("user://custom/ItemDefinitions.yml"));
-        Assert.That(result.Error.SchemaPath, Is.EqualTo("res://assets/game_data/items/ItemSchema.yml"));
+        Assert.That(result.Error!.SourcePath, Is.EqualTo("user://config/items/engine.yml"));
+        Assert.That(result.Error.SchemaPath, Is.EqualTo("res://assets/game_data/items/engine.schema.yml"));
         Assert.That(result.Error.Message, Does.Contain(id).And.Contain(field).And.Contain(detail));
     }
 
@@ -37,7 +36,7 @@ public class CatalogueDiagnosticsTests
         var document = GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml");
         var row = document["Categories"]![0]!;
         ((JArray)document["Categories"]!).Add(row.DeepClone());
-        var error = Assert.Throws<ArgumentException>(() => ItemDefinitionParser.LoadItemCategoryDefinitions(document, _ => null!));
+        var error = Assert.Catch<ArgumentException>(() => ItemTestData.ParseCategories(document, _ => null!));
         Assert.That(error!.Message, Does.Contain("items/ItemCategoryDefinitions.yml").And.Contain("items/ItemCategorySchema.yml").And.Contain((string)row["Id"]!).And.Contain("duplicate"));
     }
 
@@ -46,10 +45,10 @@ public class CatalogueDiagnosticsTests
     {
         var result = GameplayCatalogueLoader.TryLoad(source =>
         {
-            var document = GameplayTestData.Read(source.FileName, source.SchemaName);
+            var document = Read(source);
             if (source.RootKey == "AbilityDefinitions") document[source.RootKey]![0]!["TargetingId"] = "missing_targeting";
             return document;
-        });
+        }, _ => null!, _ => true);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.SourcePath, Is.EqualTo("user://config/gameplay/AbilityDefinitions.yml"));
         Assert.That(result.Error.SchemaPath, Is.EqualTo("res://assets/game_data/AbilitySchema.yml"));
@@ -59,6 +58,11 @@ public class CatalogueDiagnosticsTests
     [Test]
     public void ProgrammingFailuresAreNotReportedAsContentErrors()
     {
-        Assert.Throws<InvalidOperationException>(() => CatalogueParser.Load<int>(() => throw new InvalidOperationException("bug"), "source", "schema"));
+        var catalogue = new Catalogue<int>(new CatalogueSource("source", "schema", "Rows"), _ => 1);
+        Assert.Throws<InvalidOperationException>(() => CatalogueParser.Load(catalogue,
+            _ => throw new InvalidOperationException("bug")));
     }
+
+    private static JObject Read(CatalogueSource source) =>
+        GameplayTestData.Read(source.DefaultDirectory + source.FileName, source.DefaultDirectory + source.SchemaName);
 }

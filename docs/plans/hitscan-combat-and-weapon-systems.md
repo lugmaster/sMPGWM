@@ -117,7 +117,7 @@ Paths below are relative to `sMPGWM.Game/Scripts/` unless noted otherwise.
 | `StatSystem/EquipmentStatCalculator.cs` | Equipped weapon `EnergyConsumption` already contributes continuous demand. Keep this meaning. `Armor` already represents hull protection. |
 | `ItemSystem/ItemEntity.cs`, `ItemStore.cs` | Items have identity, shared definitions, and counts; no ammunition state. Add explicit per-item weapon-state ownership without using stack count as ammunition. |
 | `ItemSystem/ItemDefinitionParser.cs` | Category `Values` is currently an exact required list; extra fields are rejected. Conditional weapon fields require parser changes, not merely schema edits. |
-| `ItemSystem/ItemRegistry.cs`, `ItemDefinitionDocuments.cs` | Validate category documents, merge them, and require matching versions across eleven files. |
+| `ItemSystem/ItemCatalogueLoader.cs`, `GameplayDataSystem/GameplayCatalogueLoader.cs` | Load eleven item documents through the shared typed pipeline during startup and require matching versions; `ItemRegistry` exposes the prepared dataset. |
 | `FileLoadingSystem/YamlParser.cs`, `FileLoader.cs` | Do not assume cross-file schema references work automatically. Existing user definitions can outlive packaged-default changes. |
 | `CombatSystem/`, `ProjectileSystem/`, `AbilitySystem/AbilityPreparer.cs` | Definitions exist; hitscan, projectile simulation, and general damage-effect execution do not. Do not route firing through an unsupported ability plan. |
 | `MovementSystem/CommandQueue.cs`, `MovementWire.cs` | Bounded tick input, six-command redundancy, expiry after more than six missing ticks, and strict payload limits. Extend these intentionally. |

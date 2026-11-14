@@ -37,6 +37,7 @@ public class GodotIntegrationTests
                 [autoload]
                 ConfigLoader="*res://Scripts/GameConfigSystem/ConfigLoader.cs"
                 IconDefinitions="*res://Scripts/UtilitySystem/UiComponents/IconDefinitions.cs"
+                DefinitionStartup="*res://Scripts/GameplayDataSystem/DefinitionStartup.cs"
                 [dotnet]
                 project/assembly_name="sMPGWM"
                 [rendering]

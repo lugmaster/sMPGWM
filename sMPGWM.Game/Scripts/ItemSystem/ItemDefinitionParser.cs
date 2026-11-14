@@ -2,17 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
-using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.UtilitySystem.UiComponents;
 
 namespace sMPGWM.Scripts.ItemSystem;
 
 public static class ItemDefinitionParser
 {
-    private static readonly CatalogueSource ItemCategorySource =
-        new("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml", "Categories");
-    private static readonly CatalogueSource ItemSource =
-        new("ItemDefinitions.yml", "items/ItemSchema.yml", "Items");
     private static readonly string[] CommonFields =
         ["Id", "DisplayName", "CategoryId", "Description", "Icon", "CanStack", "StackLimit", "Mass", "AbilityIds", "BehaviourGrants"];
     private static readonly string[] CategoryFields = ["Id", "DisplayName", "Description", "Icon", "CanStack", "StackLimit"];
@@ -27,112 +22,83 @@ public static class ItemDefinitionParser
     private static readonly string[] EnergyFields = ["Mode", "EnergyPerShot"];
     private static readonly string[] GrantFields = ["BehaviourId", "While", "Lifetime"];
 
-    public static Dictionary<string, ItemCategoryDefinition> LoadItemCategoryDefinitions(
-        JObject yaml, Func<string, IconDefinition> resolveIcon)
+    internal static ItemCategoryDefinition ParseCategory(JToken row, Func<string, IconDefinition> resolveIcon)
     {
-        ValidateDocument(yaml, "Categories", ItemCategorySource.FileName);
-        var definitions = new Dictionary<string, ItemCategoryDefinition>(StringComparer.Ordinal);
-        foreach (var definition in CatalogueParser.Parse(yaml, ItemCategorySource, row =>
+        CheckFields((JObject)row, CategoryFields);
+        var id = RequiredString(row, "Id");
+        var (canStack, limit) = ResolveStacking(row, false, 1);
+        return new ItemCategoryDefinition(id, RequiredString(row, "DisplayName"),
+            resolveIcon(row["Icon"] is null ? "Software.WarningSignCircleQuestionMarkHelp" : IconKey(row)))
         {
-            CheckFields((JObject)row, CategoryFields);
-            var id = RequiredString(row, "Id");
-            var (canStack, limit) = ResolveStacking(row, false, 1);
-            return new ItemCategoryDefinition(id, RequiredString(row, "DisplayName"),
-                resolveIcon(row["Icon"] is null ? "Software.WarningSignCircleQuestionMarkHelp" : IconKey(row)))
-            {
-                Description = RequiredString(row, "Description"),
-                CanStack = canStack,
-                StackLimit = limit
-            };
-        })) definitions.Add(definition.Id, definition);
-        return definitions;
+            Description = RequiredString(row, "Description"),
+            CanStack = canStack,
+            StackLimit = limit
+        };
     }
 
-    public static Dictionary<string, ItemDefinition> LoadItemDefinitions(JObject yaml,
-        Dictionary<string, ItemCategoryDefinition> categories, Func<string, IconDefinition> resolveIcon)
+    internal static ItemDefinition ParseItem(JToken row,
+        Func<string, ItemCategoryDefinition> resolveCategory, Func<string, IconDefinition> resolveIcon)
     {
-        ValidateDocument(yaml, "Items", ItemSource.FileName);
-        var definitions = new Dictionary<string, ItemDefinition>(StringComparer.Ordinal);
-        foreach (var definition in CatalogueParser.Parse(yaml, ItemSource, row =>
+        var categoryId = RequiredString(row, "CategoryId");
+        ItemCategoryDefinition category;
+        try { category = resolveCategory(categoryId); }
+        catch (KeyNotFoundException error)
         {
-            var categoryId = RequiredString(row, "CategoryId");
-            if (!categories.TryGetValue(categoryId, out var category))
-                throw new ArgumentException($"CategoryId: unknown category '{categoryId}'.");
-            CheckFields((JObject)row, CommonFields, FieldsFor(categoryId));
-            var (canStack, limit) = ResolveStacking(row, category.CanStack, category.StackLimit);
-            var id = RequiredString(row, "Id");
-            var name = RequiredString(row, "DisplayName");
-            var description = RequiredString(row, "Description");
-            var icon = row["Icon"] is null || row["Icon"]!.Type == JTokenType.Null
-                ? category.Icon!
-                : resolveIcon(IconKey(row));
-            var mass = BoundedNumber(row, "Mass", float.MaxValue / 2);
-            var abilities = ReadAbilities(row, categoryId == "consumable");
-            var grants = ReadGrants(row);
-            ItemDefinition item = categoryId switch
-            {
-                "engine" => new EngineItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
-                {
-                    Mass = mass, Speed = BoundedNumber(row, "Speed", float.MaxValue), AfterBurnerSpeed = BoundedNumber(row, "AfterBurnerSpeed", float.MaxValue),
-                    RotationSpeed = BoundedNumber(row, "RotationSpeed", float.MaxValue), Acceleration = BoundedNumber(row, "Acceleration", float.MaxValue),
-                    AfterBurnerAcceleration = BoundedNumber(row, "AfterBurnerAcceleration", float.MaxValue), EnergyConsumption = Number(row, "EnergyConsumption")
-                },
-                "hull" => new HullItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
-                {
-                    Mass = mass, Armor = Number(row, "Armor")
-                },
-                "shield_generator" => new ShieldGeneratorItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
-                {
-                    Mass = mass, ShieldCapacity = Number(row, "ShieldCapacity"), RechargeTime = Number(row, "RechargeTime", positive: true),
-                    DownTime = BoundedNumber(row, "DownTime", long.MaxValue / 60d), EnergyConsumption = Number(row, "EnergyConsumption")
-                },
-                "reactor" => new ReactorItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
-                {
-                    Mass = mass, EnergyProduction = Number(row, "EnergyProduction")
-                },
-                "battery" => new BatteryItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
-                {
-                    Mass = mass, EnergyStorage = Number(row, "EnergyStorage"), EnergyConsumption = Number(row, "EnergyConsumption")
-                },
-                "weapon_fixture" => new WeaponFixtureItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
-                {
-                    Mass = mass, WeaponSlots = Integer(row, "WeaponSlots", 0, 9)
-                },
-                "light_weapon" or "medium_weapon" or "heavy_weapon" => new WeaponItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
-                {
-                    Mass = mass, Archetype = RequiredString(row, "Archetype"), DeliveryType = ReadDelivery(row),
-                    PresentationId = RequiredString(row, "PresentationId"), DamageSource = RequiredString(row, "DamageSource"),
-                    Damage = Number(row, "Damage"), AttackSpeed = Number(row, "AttackSpeed", positive: true),
-                    Range = Number(row, "Range", positive: true), SpreadDegrees = ReadSpread(row),
-                    EnergyConsumption = Number(row, "EnergyConsumption"), Supply = ReadSupply(row)
-                },
-                "consumable" => new ConsumableItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon) { Mass = mass },
-                "resource" => new ResourceItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon) { Mass = mass },
-                _ => throw new ArgumentException($"CategoryId: unsupported category '{categoryId}'.")
-            };
-            return item with { CategoryId = category.Id, AbilityIds = abilities, BehaviourGrants = grants };
-        })) definitions.Add(definition.Id, definition);
-        return definitions;
-    }
-
-    private static void ValidateDocument(JObject document, string root, string source)
-    {
-        foreach (var property in document.Properties())
-            if (property.Name != "Version" && property.Name != root)
-                throw new ArgumentException($"{source}: unexpected field '{property.Name}'.");
-        if (document["Version"]?.Type != JTokenType.String || (string?)document["Version"] != "3.0.0")
-            throw new ArgumentException($"{source}: Version must be 3.0.0; migrate legacy item data to flat properties and typed Supply.");
-        if (document[root] is not JArray rows)
-            throw new ArgumentException($"{source}: {root}: expected an array.");
-        if (root == "Categories" && rows.Count == 0)
-            throw new ArgumentException($"{source}: Categories: expected at least one category.");
-        for (var i = 0; i < rows.Count; i++)
-        {
-            if (rows[i] is not JObject)
-                throw new ArgumentException($"{source}: {root}[{i}]: expected an object.");
-            if (rows[i]["Id"]?.Type != JTokenType.String)
-                throw new ArgumentException($"{source}: {root}[{i}].Id: required nonempty string.");
+            throw new ArgumentException($"CategoryId: unknown category '{categoryId}'.", error);
         }
+        CheckFields((JObject)row, CommonFields, FieldsFor(categoryId));
+        var (canStack, limit) = ResolveStacking(row, category.CanStack, category.StackLimit);
+        var id = RequiredString(row, "Id");
+        var name = RequiredString(row, "DisplayName");
+        var description = RequiredString(row, "Description");
+        var icon = row["Icon"] is null || row["Icon"]!.Type == JTokenType.Null
+            ? category.Icon!
+            : resolveIcon(IconKey(row));
+        var mass = BoundedNumber(row, "Mass", float.MaxValue / 2);
+        var abilities = ReadAbilities(row, categoryId == "consumable");
+        var grants = ReadGrants(row);
+        ItemDefinition item = categoryId switch
+        {
+            "engine" => new EngineItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
+            {
+                Mass = mass, Speed = BoundedNumber(row, "Speed", float.MaxValue), AfterBurnerSpeed = BoundedNumber(row, "AfterBurnerSpeed", float.MaxValue),
+                RotationSpeed = BoundedNumber(row, "RotationSpeed", float.MaxValue), Acceleration = BoundedNumber(row, "Acceleration", float.MaxValue),
+                AfterBurnerAcceleration = BoundedNumber(row, "AfterBurnerAcceleration", float.MaxValue), EnergyConsumption = Number(row, "EnergyConsumption")
+            },
+            "hull" => new HullItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
+            {
+                Mass = mass, Armor = Number(row, "Armor")
+            },
+            "shield_generator" => new ShieldGeneratorItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
+            {
+                Mass = mass, ShieldCapacity = Number(row, "ShieldCapacity"), RechargeTime = Number(row, "RechargeTime", positive: true),
+                DownTime = BoundedNumber(row, "DownTime", long.MaxValue / 60d), EnergyConsumption = Number(row, "EnergyConsumption")
+            },
+            "reactor" => new ReactorItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
+            {
+                Mass = mass, EnergyProduction = Number(row, "EnergyProduction")
+            },
+            "battery" => new BatteryItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
+            {
+                Mass = mass, EnergyStorage = Number(row, "EnergyStorage"), EnergyConsumption = Number(row, "EnergyConsumption")
+            },
+            "weapon_fixture" => new WeaponFixtureItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
+            {
+                Mass = mass, WeaponSlots = Integer(row, "WeaponSlots", 0, 9)
+            },
+            "light_weapon" or "medium_weapon" or "heavy_weapon" => new WeaponItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon)
+            {
+                Mass = mass, Archetype = RequiredString(row, "Archetype"), DeliveryType = ReadDelivery(row),
+                PresentationId = RequiredString(row, "PresentationId"), DamageSource = RequiredString(row, "DamageSource"),
+                Damage = Number(row, "Damage"), AttackSpeed = Number(row, "AttackSpeed", positive: true),
+                Range = Number(row, "Range", positive: true), SpreadDegrees = ReadSpread(row),
+                EnergyConsumption = Number(row, "EnergyConsumption"), Supply = ReadSupply(row)
+            },
+            "consumable" => new ConsumableItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon) { Mass = mass },
+            "resource" => new ResourceItemDefinition(id, name, category.DisplayName, description, canStack, limit, icon) { Mass = mass },
+            _ => throw new ArgumentException($"CategoryId: unsupported category '{categoryId}'.")
+        };
+        return item with { CategoryId = category.Id, AbilityIds = abilities, BehaviourGrants = grants };
     }
 
     private static string[] FieldsFor(string categoryId) => categoryId switch

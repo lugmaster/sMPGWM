@@ -1,12 +1,14 @@
 # Unified catalogue loading refactor
 
-Status: planned; implementation requires a separate request.  
+Status: implemented and verified on 2026-11-14.
 Scope: gameplay definitions, item categories, items, and ships.  
 Primary reference: [Catalogue.cs](../../sMPGWM.Game/Scripts/GameplayDataSystem/Catalogue.cs).
 
 ## Outcome and agreed architecture
 
 Use the existing gameplay catalogue pipeline for all production definition loading. Keep `Catalogue<T>` as a loading specification containing source metadata and a type-specific row parser. It must not become a container of loaded definitions, a registry, or a mutable initialization object.
+
+Load, assemble, validate, and prepare all active definition catalogues explicitly during application startup, before definition-dependent UI, compatibility checks, or gameplay can use them. Remove lazy definition loading entirely. Lookups only read the completed published dataset and never initiate loading or preparation.
 
 ```text
 Catalogue<TDefinition>
@@ -34,7 +36,7 @@ The shared pipeline owns loading mechanics. Type-specific parsers own constructi
 
 Schema and conversion validity are established before registry construction. Complete domain validity, cross-catalogue consistency, and preparation are established before publication. Constructing a registry internally does not make it available to gameplay. This entire process is definition initialization, including item initialization.
 
-## Current implementation
+## Pre-refactor implementation (historical)
 
 | Component | Current responsibility | Required direction |
 | --- | --- | --- |
@@ -45,16 +47,16 @@ Schema and conversion validity are established before registry construction. Com
 | `GameplayCatalogueLoader` | Assemble nine gameplay registries | Also assemble item categories, items, and ships through the same pipeline. |
 | `ItemDefinitionParser` | Parse categories and items, resolve defaults/icons, choose typed subtypes | Retain domain conversion; move document iteration into the common parser. |
 | `ItemDefinitionDocuments` | Merge eleven item documents as JSON and check versions | Replace the production JSON merge with typed assembly retaining source provenance. |
-| `ItemRegistry` | Independently lazy-load categories/items and precompile item values | Retain lookup APIs, backed by the shared prepared dataset. |
+| `ItemRegistry` | Independently lazy-load categories/items and precompile item values | Retain lookup APIs, backed by the shared dataset prepared explicitly at startup. |
 | `ShipDefinitionLoader` / `ShipRegistry.Build` | Deserialize a document, validate assets/geometry, construct `ShipData` | Adapt row conversion to `Catalogue<ShipData>`; remove the separate production loading route. |
 | `GameplayCatalogues` | Own gameplay registries, validate their relationships, prepare abilities | Own the complete collection of registries and its final preparation. |
-| `GameplayDefinitions` / `GameConfig.EnsureCompatibilityData` | Coordinate multiple lazy caches, validation, checksums, and retry resets | Publish one completed definition dataset and preserve compatibility behavior. |
+| `GameplayDefinitions` / `GameConfig.EnsureCompatibilityData` | Coordinate multiple lazy caches, validation, checksums, and retry resets | Explicitly prepare and publish one completed definition dataset at startup; remove lazy initialization and preserve compatibility behavior. |
 
 Relevant sources are under `sMPGWM.Game/Scripts/GameplayDataSystem`, `FileLoadingSystem`, `ItemSystem`, `ShipSystem`, and `GameConfigSystem`.
 
 ## Contracts to preserve
 
-- Preserve existing YAML structure, filenames, IDs, values, versions, item order, and lookup behavior. This is a loading refactor, not a schema-format migration.
+- Preserve existing YAML structure, filenames, IDs, values, versions, item order, and lookup results after initialization. Loading timing deliberately changes to explicit startup initialization; lookups before publication must fail clearly without triggering loading. This is a loading refactor, not a schema-format migration.
 - Preserve all recent schema and loading fixes: required nonblank descriptions for items, categories, and ships; identifier and numeric bounds; icon syntax; integer bounds; lifetime constraints; and strict identifier/version patterns.
 - Preserve typed item subclasses and `WeaponSupplyDefinition` variants. Keep category defaults, stack semantics, icon inheritance, and explicit nullable fields where the schema permits them.
 - Preserve ship texture checks, polygon validation, float conversion rules, descriptions, health, mass, and stat modifiers.
@@ -65,7 +67,7 @@ Relevant sources are under `sMPGWM.Game/Scripts/GameplayDataSystem`, `FileLoadin
 - Preserve deterministic order and ordinal identity comparison. Check item identity uniqueness across all eleven files.
 - Keep runtime checks for network input, restored state, dynamic stat changes, and custom equipment layouts. These are separate from validation of static definition fields.
 
-The working tree already contains schema, description, validator, and test changes from preceding work. Treat those changes as the baseline; do not revert or recreate them from an older commit. The last full run before this plan passed 525 tests, including the Godot integration runner. Recheck the current baseline before implementation.
+The schema, description, validator, and test changes from preceding work were retained as the baseline. The full baseline run before implementation passed 525 tests, including the Godot integration runner.
 
 ## Loading specifications and source metadata
 
@@ -87,23 +89,23 @@ Prefer existing delegates and explicit dependencies. Category lookup and icon/te
 
 ## Initialization and publication order
 
-1. Create a private preparation attempt with its source-input capture and temporary definitions. None of its partially built registries are publicly accessible.
+1. Invoke the shared initialization operation explicitly from application startup, after required configuration and asset services are available and before any definition consumer runs. Create a private preparation attempt with its source-input capture and temporary definitions. None of its partially built registries are publicly accessible.
 2. Load and parse item categories through `Catalogue<ItemCategoryDefinition>`, then construct their registry. Pass this local registry or an equivalent read-only lookup into item row conversion.
 3. Load each item document through `Catalogue<ItemDefinition>`. Validate each against its own category schema, preserve the existing file order, require matching item-document versions, and combine typed results. Check duplicates across source files before constructing the item registry.
 4. Load ships through `Catalogue<ShipData>`. A ship row parser may use an internal DTO as an implementation detail, but the common pipeline must produce `ShipData[]` before constructing the ship registry. Copy owned data so later DTO changes cannot alter registered definitions.
 5. Load the existing nine gameplay catalogues using the same mechanics and construct their specific registries. Keep cross-catalogue references as typed definition fields during conversion; do not require global registry access from row parsers.
 6. Assemble `GameplayCatalogues` with all local registries. Validate gameplay references and cycles, item references, ship/equipment combinations, and starter loadout requirements. Precompile item values, prepare ability plans, and produce support diagnostics before publication. Preserve meaningful diagnostic order where tests or callers depend on it.
-7. Finalize compatibility inputs and publish only the successfully prepared dataset. Read-only lookup facades then expose that dataset. On failure, discard the attempt and its partial capture; a repaired input must support a clean retry under the existing preparation/reset contract.
+7. Finalize compatibility inputs and publish only the successfully prepared dataset. Read-only lookup facades then expose that dataset and startup may proceed to definition consumers. On failure, discard the attempt and its partial capture and prevent startup from proceeding to those consumers; repaired input must support a clean explicit initialization retry. A lookup must never initiate that retry.
 
 Category-dependent construction is an explicit dependency: item categories must be available locally before items are converted. This does not require publishing categories early or changing the agreed pipeline.
 
-### Avoid recursive loading
+### Explicit startup ownership and lookup access
 
-If the existing static `ItemRegistry` and `ShipRegistry` APIs delegate to `GameplayDefinitions.Current`, initialization must never call those facades while constructing `Current`. Otherwise `Lazy<T>` will reenter its own factory.
+Use a single owner with an explicit initialization operation for prepared definitions and reset/retry. Remove `Lazy<T>` from `GameplayDefinitions`, `ItemRegistry`, and `ShipRegistry`, including their factories and reset mechanisms that recreate lazy wrappers. `GameplayDefinitions.Current` and retained registry facades must only read already-published data. Before successful initialization, access must report a clear not-initialized error without file I/O, assembly, or preparation.
 
 Pass staged registry instances or typed collections explicitly into item conversion, `ValidateItems`, equipment validation, starter validation, and support diagnostics. Change `StarterLoadout.ValidateDefinitions` to consume prepared data rather than initiating static lookups during preparation. Keep runtime starter-equipping behavior unchanged.
 
-Use a single owner for prepared definitions and reset/retry. Remove independent item/ship loading caches once their facades delegate to that owner. Ensure startup callers do not expose a completed checksum for a failed definition attempt.
+All supported startup paths must call and complete the same initialization boundary. Replace calls that force initialization by touching `Current`, `GetAll()`, or another lookup with explicit startup initialization. Compatibility consumers use the completed dataset and checksum; they must not serve as a fallback loading path. Repeated initialization after success must reuse the prepared dataset without reloading or rebuilding. Ensure startup callers do not expose a completed checksum for a failed definition attempt.
 
 ### What sealing means
 
@@ -120,7 +122,7 @@ Only remove redundant required-field checks from consumers when all their defini
 - Read `AGENTS.md` and applicable refactoring/testing skills before semantic edits.
 - Inspect current working changes and run the existing test command.
 - Record shipped definition IDs, ordering, representative values, current input-capture keys, and registry lookup behavior for comparison.
-- Inventory every production entry point and direct parser/build caller. Include compatibility preparation, startup equipment, tests, and UI consumers.
+- Inventory every production entry point and direct parser/build caller. Include compatibility preparation, startup equipment, tests, and UI consumers. Identify all lazy wrappers, lazy factories, lookup-triggered initialization, and reset/retry hooks so their replacements and removal are accounted for.
 
 ### 2 Generalize the common parser and loader
 
@@ -150,13 +152,15 @@ Only remove redundant required-field checks from consumers when all their defini
 
 - Extend `GameplayCatalogues` to own category, item, and ship registries alongside gameplay registries.
 - Move the distributed cross-catalogue validation and preparation into one private build operation in the agreed order.
-- Adapt `GameplayDefinitions`, lookup facades, `GameConfig.EnsureCompatibilityData`, and starter validation to use the single prepared dataset without lazy recursion.
-- Preserve retry and checksum semantics; eliminate partial-cache visibility.
+- Add explicit startup initialization and wire every supported startup path to complete it before definition consumers run. Adapt `GameplayDefinitions`, lookup facades, `GameConfig.EnsureCompatibilityData`, and starter validation to use the single dataset prepared at startup.
+- Make lookup access fail clearly before publication without triggering initialization. Preserve clean explicit retry and checksum semantics; eliminate partial-cache visibility.
 
 ### 6 Remove superseded paths and verify
 
-- Remove unused independent lazy factories, JSON merge code, obsolete path constants, and adapters that would permit an alternate production loading path.
-- Update direct-loader tests to exercise the common pipeline or focused domain factories. Preserve tests for supported manual construction where needed.
+- Fully remove legacy lazy-loading infrastructure: all definition `Lazy<T>` fields and factories, independent item/ship caches, reset methods that recreate lazy wrappers, lookup-triggered loading, and compatibility or startup code that initializes data by accessing a lookup. Retain only reset/retry logic needed by the single explicit initialization owner.
+- Remove superseded JSON merge code, obsolete path constants, and adapters that would permit an alternate production loading path. Do not leave dormant lazy-loading implementations, fallback routes, or obsolete wrappers behind.
+- Update direct-loader tests to exercise the common pipeline or focused domain factories. Update fixtures and consumers that relied on first-access loading to initialize explicitly, and replace lazy-loading tests and documentation with the startup contract. Preserve tests for supported manual construction where needed.
+- Search production code, tests, and documentation for legacy lazy-loading references and inspect remaining callers to verify cleanup is complete; historical descriptions of the previous implementation may remain clearly labeled.
 - Keep useful context-specific errors and inspect the final diff for unrelated changes.
 - Record the completed verification and any remaining limitations in this plan when implementation is performed.
 
@@ -173,7 +177,9 @@ The refactor is complete when all the following hold:
 - Registry lookups return the correct typed definitions with unchanged IDs, ordering, values, defaults, and descriptions. Item instances, equipment, tooltips, and ship creation retain behavior.
 - Unsupported abilities remain unavailable with diagnostics, while malformed definition data fails loading. Prepared plans remain owned by the prepared dataset and reusable by independent sessions.
 - A failure after several registries have been constructed exposes none of those partial results. Fixing the input allows a clean retry. Repeated successful access does not reload files or rebuild plans.
-- Preparation works when first reached through any retained static lookup facade, without recursion. All supported startup paths pass the same preparation boundary.
+- All active definitions are loaded, assembled, validated, and prepared during explicit startup initialization before any definition-dependent UI, compatibility consumer, or gameplay runs. All supported startup paths pass the same preparation boundary.
+- Access through `GameplayDefinitions.Current` or any retained registry facade before publication fails clearly and performs no loading or preparation. Lookup access after failed initialization does not implicitly retry. Explicit retry after input repair succeeds, and repeated initialization after success performs no additional loading or preparation.
+- Legacy definition lazy wrappers, factories, independent loading caches, lazy reset hooks, and lookup-triggered loading routes are removed. Tests and current usage documentation reflect explicit startup initialization; no dormant lazy fallback remains.
 - Identical file content and protocol metadata produce the same compatibility checksum. Failed attempts leave no partial input capture or success marker.
 - Published collections and nested definition data cannot be mutated to invalidate registry guarantees. Dynamic runtime and network validation remains intact.
 - No YAML parsing, schema validation, initialization allocations, or plan preparation enter the 60 FPS frame loop or 30 Hz network tick.
@@ -190,6 +196,18 @@ The test project runs its Godot-tagged cases through `GodotIntegrationTests`. Pr
 The JSON Schema library has a validation quota. Reuse already-validated unchanged test fixtures and avoid repeated tests of identical schema branches. Keep all mutated data validation intact and do not treat quota errors as expected schema rejection.
 
 Follow the repository's test-support markers for any new test-only production hooks. Prefer testing real production loading components with injected file/asset access over introducing test-specific alternate loaders.
+
+## Implementation and verification record
+
+- `DefinitionStartup` runs after configuration and icons and before Steam/UI autoload consumers in both the game and the Godot integration project. It explicitly calls `GameplayDefinitions.Initialize()`.
+- One initialization attempt reads all 22 documents through the common catalogue pipeline: categories, eleven item files, ships, and nine gameplay catalogues. Typed registries, cross-reference checks, equipment/starter validation, item precompilation, ability plans, and support diagnostics are completed before publication.
+- `GameplayDefinitions` publishes one object containing the completed catalogues, compatibility checksum, and read-only captured inputs. Failure leaves no published data or captured-input cache; repaired input requires an explicit retry. Successful repeated initialization reuses the published data.
+- `ItemRegistry`, `ShipRegistry`, and `GameplayDefinitions.Current` only expose initialized data. `GameConfig.EnsureCompatibilityData()` checks readiness and never initiates loading.
+- Removed all three definition lazy caches and their reset factories, `ItemDefinitionDocuments`, `ShipDefinitionLoader`, `ShipDefinitionsDocument`, the old registry build/loading methods, obsolete file-path constants, unused parser adapters, and deleted-script metadata. Aggregate item fixture assembly now exists only in the test project.
+- Source metadata carries user/default/schema paths and the identity field. Conversion and cross-reference errors retain source context without recovering filenames from exception text. Item duplicates across files name both sources. Published ship stat modifiers are immutable.
+- Regression coverage verifies dependency order and one read per document, item order/types/defaults, duplicate/version provenance, identity-field parsing, immutable collections, missing starter definitions, startup-only publication, failed preparation and explicit retry, idempotence, and the unchanged 45 compatibility inputs (22 definitions, 22 schemas, and protocol metadata).
+- The allocation regression test now warms the same record-equality comparison used in its measured loop, eliminating first-use comparer allocations from the measurement without changing runtime code or weakening its zero-allocation assertion.
+- Final verification: `dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-restore --verbosity minimal` passed all 535 reported tests, including `GodotIntegrationTests`; `git diff --check` passed. The existing `UiIcon.Size` member-hiding warning remains. No interactive Steam multiplayer session was exercised.
 
 ## Excluded
 

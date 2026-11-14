@@ -12,7 +12,7 @@ public sealed class AbilityPreparationTests
     [TestCase("AddBaselineFraction", true)]
     public void OverflowingDefinitionModifierSumsFailLoading(string operation, bool unsupported)
     {
-        var error = Assert.Throws<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
+        var error = Assert.Catch<ArgumentException>(() => GameplayTestData.Load(edit: (file, document) =>
         {
             if (unsupported && file == "AbilityDefinitions.yml")
                 GameplayTestData.Find((JArray)document["AbilityDefinitions"]!, "shieldCapacityBoost")["CooldownMs"] = 1;

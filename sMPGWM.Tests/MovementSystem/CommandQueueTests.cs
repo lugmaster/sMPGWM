@@ -62,14 +62,14 @@ public sealed class CommandQueueTests
     {
         var queue = new CommandQueue();
         var input = new ShipInputState(Vector2.Right, 0, true, true, false, true);
-        for (var tick = 1L; tick <= 1000; tick++)
-        {
-            queue.Accept(new(tick, input), tick - 1);
-            queue.Consume(tick);
-        }
-        var before = GC.GetAllocatedBytesForCurrentThread();
         var accepted = true;
         var consumed = true;
+        for (var tick = 1L; tick <= 1000; tick++)
+        {
+            accepted &= queue.Accept(new(tick, input), tick - 1);
+            consumed &= queue.Consume(tick) == input;
+        }
+        var before = GC.GetAllocatedBytesForCurrentThread();
         for (var tick = 1001L; tick <= 61000; tick++)
         {
             accepted &= queue.Accept(new(tick, input), tick - 1);

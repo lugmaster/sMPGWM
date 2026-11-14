@@ -1,4 +1,7 @@
+using System.Reflection;
+using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
+using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.NetworkSystem;
 
 namespace sMPGWM.Tests.NetworkSystem;
@@ -9,17 +12,18 @@ public class CompatibilityTests
     [NonParallelizable]
     public void CaptureRequiresExplicitDefinitionPreparation()
     {
-        var checksum = typeof(sMPGWM.Scripts.GameConfigSystem.GameConfig).GetProperty("GameDataChecksum")!;
-        var previous = checksum.GetValue(null);
+        var preparedData = typeof(GameplayDefinitions).GetField("Data", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var previous = preparedData.GetValue(null);
         try
         {
-            checksum.SetValue(null, string.Empty);
+            preparedData.SetValue(null, null);
             Assert.Throws<InvalidOperationException>(() => Compatibility.Capture());
-            Assert.That(checksum.GetValue(null), Is.EqualTo(string.Empty));
+            Assert.That(GameConfig.GameDataChecksum, Is.Empty);
+            Assert.That(preparedData.GetValue(null), Is.Null);
         }
         finally
         {
-            checksum.SetValue(null, previous);
+            preparedData.SetValue(null, previous);
         }
     }
 

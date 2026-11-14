@@ -13,7 +13,7 @@ internal static class GameplayTestData
     {
         return GameplayCatalogueLoader.Load(source =>
         {
-            var document = Read(source.FileName, source.SchemaName);
+            var document = Read(source.DefaultDirectory + source.FileName, source.DefaultDirectory + source.SchemaName);
             if (!variants && edit == null) return document;
             var originalDocument = document.DeepClone();
             if (variants)
@@ -45,11 +45,11 @@ internal static class GameplayTestData
             }
             edit?.Invoke(source.FileName, document);
             if (JToken.DeepEquals(document, originalDocument)) return document;
-            var schema = File.ReadAllText(Path.Combine(DirectoryPath, source.SchemaName));
+            var schema = File.ReadAllText(Path.Combine(DirectoryPath, source.DefaultDirectory + source.SchemaName));
             var result = YamlParser.ValidateAndReturn(document.ToString(), schema, source.FileName, source.SchemaName);
             if (!result.IsSuccess) throw new ArgumentException(result.Error!.ToDisplayString());
             return (JObject)result.Value!;
-        });
+        }, _ => null!, _ => true);
     }
     internal static string DirectoryPath => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(GameplayTestData).Assembly.Location)!,
         "../../../../sMPGWM.Game/assets/game_data"));
@@ -61,7 +61,17 @@ internal static class GameplayTestData
             if (!Documents.TryGetValue(key, out var document))
             {
                 if (file == "ItemDefinitions.yml")
-                    document = sMPGWM.Scripts.ItemSystem.ItemDefinitionDocuments.Load(part => Read(part, part.Replace(".yml", ".schema.yml")));
+                    {
+                    var rows = new JArray();
+                    string? version = null;
+                    foreach (var source in sMPGWM.Scripts.ItemSystem.ItemCatalogueLoader.ItemSources)
+                    {
+                        var part = Read(source.DefaultDirectory + source.FileName, source.DefaultDirectory + source.SchemaName);
+                        version ??= (string?)part["Version"];
+                        foreach (var row in (JArray)part["Items"]!) rows.Add(row.DeepClone());
+                    }
+                    document = new JObject { ["Version"] = version, ["Items"] = rows };
+                }
                 else
                 {
                     var result = YamlParser.ValidateAndReturn(File.ReadAllText(Path.Combine(DirectoryPath, file)),

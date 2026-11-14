@@ -1,10 +1,7 @@
-using sMPGWM.Scripts.ShipSystem;
-using sMPGWM.Scripts.FileLoadingSystem;
 using System;
 using Godot;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.GameplayDataSystem;
-using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.InputSystem;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 
@@ -24,7 +21,7 @@ public static class GameConfig
     public static int ConnectionTimeout { get; private set; }
     public static bool ReloadConfigOnStart { get; private set; }
     public static bool Development { get; private set; }
-    public static string GameDataChecksum { get; private set; } = string.Empty;
+    public static string GameDataChecksum => GameplayDefinitions.Checksum;
     public static string ConfigDataChecksum { get; private set; } = string.Empty;
     
     public static void Load()
@@ -59,31 +56,10 @@ public static class GameConfig
     
     public static void EnsureCompatibilityData()
     {
-        if (!string.IsNullOrEmpty(GameDataChecksum)) return;
         if (string.IsNullOrEmpty(ConfigDataChecksum))
             throw new InvalidOperationException("Configuration is not loaded.");
-        try
-        {
-            _ = ItemRegistry.GetAll();
-            _ = ShipRegistry.GetAll();
-            _ = GameplayDefinitions.Current;
-            StatSystem.EquipmentDefinitionValidator.Validate(ShipRegistry.GetAll(), ItemRegistry.GetAll());
-            GamePlaySystem.StarterLoadout.ValidateDefinitions();
-            var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoader.CapturedInputs);
-            inputs.Add("GameplayProtocol", "6:complete-initial-state-readiness");
-            var checksum = ChecksumGenerator.Compute(inputs);
-            foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
-            Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={checksum}");
-            GameDataChecksum = checksum;
-        }
-        catch
-        {
-            GameplayDefinitions.ResetPreparation();
-            ShipRegistry.ResetPreparation();
-            ItemRegistry.ResetPreparation();
-            FileLoader.CapturedInputs.Clear();
-            throw;
-        }
+        if (string.IsNullOrEmpty(GameDataChecksum))
+            throw new InvalidOperationException("Definitions have not been initialized. Complete definition startup before checking compatibility.");
     }
 
     public static Error SaveKeyBindings(InputEvent?[,] bindings)

@@ -37,17 +37,17 @@ public sealed class ItemDescriptionTests
     public void ParsersRejectInvalidDescriptionsAtTheLoadingBoundary(string mutation)
     {
         var categoryDocument = GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml");
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(categoryDocument, _ => null!);
+        var categories = ItemTestData.ParseCategories(categoryDocument, _ => null!);
         Invalidate((JObject)categoryDocument["Categories"]![0]!, mutation);
         AssertRejected(categoryDocument, "items/ItemCategorySchema.yml");
-        var categoryError = Assert.Throws<ArgumentException>(() => ItemDefinitionParser.LoadItemCategoryDefinitions(categoryDocument, _ => null!));
+        var categoryError = Assert.Catch<ArgumentException>(() => ItemTestData.ParseCategories(categoryDocument, _ => null!));
         Assert.That(categoryError!.Message, Does.Contain("Description"));
 
         var document = GameplayTestData.Read("items/resource.yml", "items/resource.schema.yml");
         Invalidate((JObject)document["Items"]![0]!, mutation);
         AssertRejected(document, "items/resource.schema.yml");
         AssertRejected(document, "items/ItemSchema.yml");
-        var itemError = Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(document, categories, _ => null!));
+        var itemError = Assert.Catch<ArgumentException>(() => ItemTestData.ParseItems(document, categories, _ => null!));
         Assert.That(itemError!.Message, Does.Contain("Description"));
     }
 

@@ -267,7 +267,7 @@ public sealed class ItemDefinitionSchemaTests
         var categories = GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml");
         categories["Categories"]![0]!["Values"] = "Mass,Speed";
         AssertSchema(categories, "items/ItemCategorySchema.yml", false);
-        Assert.Throws<ArgumentException>(() => ItemDefinitionParser.LoadItemCategoryDefinitions(categories, _ => null!));
+        Assert.Catch<ArgumentException>(() => ItemTestData.ParseCategories(categories, _ => null!));
         var document = WeaponDocument();
         document["Version"] = "2.0.0";
         AssertSchemaAndParser(document, "light_weapon", false);
@@ -299,7 +299,7 @@ public sealed class ItemDefinitionSchemaTests
         {
             var document = WeaponDocument();
             document["Items"]![0]![field] = value;
-            Assert.Throws<ArgumentException>(() => Parse(document), field);
+            Assert.Catch<ArgumentException>(() => Parse(document), field);
         }
         foreach (var mode in new[] { "Ammunition", "Energy" })
         {
@@ -307,7 +307,7 @@ public sealed class ItemDefinitionSchemaTests
             document["Items"]![0]!["Supply"] = mode == "Energy"
                 ? new JObject { ["Mode"] = mode, ["EnergyPerShot"] = value }
                 : new JObject { ["Mode"] = mode, ["AmmoCapacity"] = 60, ["ReloadDuration"] = value };
-            Assert.Throws<ArgumentException>(() => Parse(document), mode);
+            Assert.Catch<ArgumentException>(() => Parse(document), mode);
         }
     }
 
@@ -322,9 +322,9 @@ public sealed class ItemDefinitionSchemaTests
 
     private static Dictionary<string, ItemDefinition> Parse(JObject document)
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(
+        var categories = ItemTestData.ParseCategories(
             GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
-        return ItemRegistry.LoadItemDefinitions(document, categories, _ => null!);
+        return ItemTestData.ParseItems(document, categories, _ => null!);
     }
 
     private static void AssertSchemaAndParser(JObject document, string category, bool valid)
@@ -332,7 +332,7 @@ public sealed class ItemDefinitionSchemaTests
         AssertSchema(document, $"items/{category}.schema.yml", valid);
         AssertSchema(document, "items/ItemSchema.yml", valid);
         if (valid) Assert.DoesNotThrow(() => Parse(document), document.ToString());
-        else Assert.Throws<ArgumentException>(() => Parse(document), document.ToString());
+        else Assert.Catch<ArgumentException>(() => Parse(document), document.ToString());
     }
 
     private static void AssertSchema(JObject document, string schema, bool valid)

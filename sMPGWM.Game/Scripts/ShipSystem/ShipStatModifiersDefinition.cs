@@ -2,15 +2,15 @@ namespace sMPGWM.Scripts.ShipSystem;
 
 public sealed record ShipStatModifiersDefinition
 {
-    public double ShieldCapacity { get; set; }
-    public double Speed { get; set; }
-    public double AfterBurnerSpeed { get; set; }
-    public double RotationSpeed { get; set; }
-    public double Acceleration { get; set; }
-    public double AfterBurnerAcceleration { get; set; }
-    public double Armor { get; set; }
-    public double RechargeTime { get; set; }
-    public double DownTime { get; set; }
-    public double EnergyProduction { get; set; }
-    public double EnergyStorage { get; set; }
+    public double ShieldCapacity { get; init; }
+    public double Speed { get; init; }
+    public double AfterBurnerSpeed { get; init; }
+    public double RotationSpeed { get; init; }
+    public double Acceleration { get; init; }
+    public double AfterBurnerAcceleration { get; init; }
+    public double Armor { get; init; }
+    public double RechargeTime { get; init; }
+    public double DownTime { get; init; }
+    public double EnergyProduction { get; init; }
+    public double EnergyStorage { get; init; }
 }

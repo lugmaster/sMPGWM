@@ -112,7 +112,7 @@ public sealed class DefinitionValueBoundsTests
     private static void AssertRejected(JObject document, string category)
     {
         AssertSchemas(document, category, false);
-        Assert.Throws<ArgumentException>(() => Parse(document));
+        Assert.Catch<ArgumentException>(() => Parse(document));
     }
 
     private static void AssertSchemas(JObject document, string category, bool valid)
@@ -127,8 +127,8 @@ public sealed class DefinitionValueBoundsTests
 
     private static void Parse(JObject document)
     {
-        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(
+        var categories = ItemTestData.ParseCategories(
             GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
-        ItemDefinitionParser.LoadItemDefinitions(document, categories, _ => null!);
+        ItemTestData.ParseItems(document, categories, _ => null!);
     }
 }

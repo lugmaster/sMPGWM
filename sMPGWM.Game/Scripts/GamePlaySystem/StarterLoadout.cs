@@ -3,20 +3,23 @@ using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.EquipmentSystem;
+using sMPGWM.Scripts.GameplayDataSystem;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
 public static class StarterLoadout
 {
-    public static void ValidateDefinitions()
+    public static void ValidateDefinitions(ItemDefinitions items)
     {
         foreach (var slot in EquipmentSlotDefinition.Defaults)
         {
             var definitionId = GetStarterItem(slot);
             if (definitionId == null) continue;
-            var definition = ItemRegistry.GetById(definitionId);
+            if (!items.TryGetById(definitionId, out var definition))
+                throw new ArgumentException($"Starter loadout slot '{slot.Key}': missing required item '{definitionId}'.");
             if (slot.IsWeaponSlot ? WeaponSlotPolicy.GetCost(definition.CategoryId) == 0 : definition.CategoryId != slot.AcceptedCategory)
-                throw new InvalidOperationException($"Starter equipment '{definition.Id}' does not fit '{slot.Key}'.");
+                throw new CatalogueLoadException(items.SourceFor(definition.Id),
+                    $"Starter equipment '{definition.Id}', CategoryId: does not fit '{slot.Key}'.");
         }
     }
 
