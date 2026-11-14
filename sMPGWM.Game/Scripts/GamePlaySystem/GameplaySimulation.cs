@@ -24,7 +24,7 @@ public sealed class GameplaySimulation : IDisposable
     private bool _disposed;
     private bool _stepping;
     public AbilityCommandProcessor AbilityCommands { get; } = new();
-    public sMPGWM.Scripts.WeaponSystem.WeaponSystem Weapons { get; } = new();
+    public sMPGWM.Scripts.WeaponSystem.WeaponSystem Weapons { get; }
     private readonly WeaponCommandProcessor _weaponCommands = new();
     public bool QueueWeaponCommand(int peer, string entity, long generation, long revision, WeaponCommandKind kind,
         string slot, ItemEntityId item, byte group, Action<WeaponCommandResult> complete)
@@ -33,8 +33,10 @@ public sealed class GameplaySimulation : IDisposable
     }
     public long CompletedTick { get; private set; } = -1;
 
-    public GameplaySimulation(GameWorld world, AbilityRuntime abilities)
+    // Direct callers retain the default disabled rule; each session captures its own value.
+    public GameplaySimulation(GameWorld world, AbilityRuntime abilities, bool friendlyFire = false)
     {
+        Weapons = new(friendlyFire);
         _world = world;
         _abilities = abilities;
         _recordAbility = RecordAbility;

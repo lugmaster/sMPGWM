@@ -6,6 +6,10 @@ namespace sMPGWM.Scripts.CollisionSystem;
 
 public sealed class HitscanQuery : System.IDisposable
 {
+    private readonly bool _friendlyFire;
+    // Capture the rule once; direct callers default to ally pass-through.
+    public HitscanQuery(bool friendlyFire = false) => _friendlyFire = friendlyFire;
+
     private readonly PhysicsRayQueryParameters2D _query = new()
     {
         CollisionMask = (1u << 0) | (1u << 1) | (1u << 3) | (1u << 4),
@@ -19,7 +23,7 @@ public sealed class HitscanQuery : System.IDisposable
     {
         _excluded.Clear();
         foreach (var ship in world.Entities.Values)
-            if (ship == shooter || ship.Runtime.IsAlive && shooter.Runtime.IsAllyOf(ship.Runtime)) _excluded.Add(ship.GetRid());
+            if (ship == shooter || !_friendlyFire && ship.Runtime.IsAlive && shooter.Runtime.IsAllyOf(ship.Runtime)) _excluded.Add(ship.GetRid());
         _query.From = origin; _query.To = endpoint; _query.Exclude = _excluded;
         var hit = shooter.GetWorld2D().DirectSpaceState.IntersectRay(_query);
         blocked = hit.Count != 0;

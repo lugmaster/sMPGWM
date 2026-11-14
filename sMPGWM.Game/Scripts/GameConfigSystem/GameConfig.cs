@@ -23,6 +23,7 @@ public static class GameConfig
     public static string Version { get; private set; } = string.Empty;
     public static int ConnectionTimeout { get; private set; }
     public static bool ReloadConfigOnStart { get; private set; }
+    public static bool FriendlyFire { get; private set; }
     public static bool Development { get; private set; }
     public static string GameDataChecksum { get; private set; } = string.Empty;
     public static string ConfigDataChecksum { get; private set; } = string.Empty;
@@ -44,6 +45,10 @@ public static class GameConfig
             Development = GetConfigValue("general", "development").AsBool();
             LobbyGameId = GetConfigValue("general", "lobby_game_id").AsString();
             MaxPlayers = GetConfigValue("general", "max_players").AsInt32();
+            var friendlyFire = GetConfigValue("combat", "friendly_fire");
+            if (friendlyFire.VariantType != Variant.Type.Bool)
+                throw new InvalidOperationException("[combat] friendly_fire must be a boolean.");
+            FriendlyFire = friendlyFire.AsBool();
             KeyBindingSettings.LoadConfiguration(
                 ConfigLoader.Instance.GetDefaultValue(KeyBindingSettings.ConfigSection, KeyBindingSettings.ConfigKey),
                 GetConfigValue(KeyBindingSettings.ConfigSection, KeyBindingSettings.ConfigKey),
@@ -70,7 +75,7 @@ public static class GameConfig
             sMPGWM.Scripts.GamePlaySystem.StarterLoadout.ValidateDefinitions();
             var inputs = new System.Collections.Generic.Dictionary<string, string>(FileLoader.CapturedInputs);
             sMPGWM.Scripts.VfxSystem.WeaponPresentationCompatibility.Capture(inputs);
-            inputs.Add("GameplayProtocol", "7:hitscan-weapons-and-combat-state");
+            inputs.Add("GameplayProtocol", "8:configurable-friendly-fire");
             var checksum = ChecksumGenerator.Compute(inputs);
             foreach (var input in inputs) Logger.Info($"Compatibility file={input.Key} hash={ChecksumGenerator.Hash(input.Value)}");
             Logger.Info($"Compatibility development={Development} config={ConfigDataChecksum} data={checksum}");

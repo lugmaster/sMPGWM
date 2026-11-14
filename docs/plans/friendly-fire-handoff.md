@@ -1,7 +1,7 @@
 # Friendly fire implementation handoff
 
 Date: 2026-11-14  
-Status: planned; implementation not started  
+Status: production implementation complete; acceptance validation partial  
 Repository inspected at: `0b925811af992c891b25e507901171e390f4a653`
 
 Add a configurable friendly-fire rule for the existing host-authoritative hitscan weapons. The proposed first slice defaults to disabled, captures the rule when a session is created, and retains the existing requirement that peers have matching effective configuration. These are implementation defaults based on the preceding scope discussion; this handoff does not authorize implementation by itself.
@@ -104,3 +104,11 @@ Preserve 60 Hz physics and the 30 Hz publication cadence. The new condition must
 - [ ] Fresh and restored-session behavior verified under the stated restoration policy.
 - [ ] Focused tests, Godot integration, and multiplayer checks completed with evidence.
 - [ ] Previous hitscan handoff updated to point to the configurable rule.
+
+## Implementation evidence (2026-11-14)
+
+Implemented strict boolean loading, packaged false default, constructor capture through the session factory, conditional living-ally exclusion, and gameplay compatibility marker 8. Existing direct constructors default to false. Fresh and restored sessions share the factory path. No damage ordering or wire payload changes were needed.
+
+`dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-restore` passed (378 tests, including the Godot wrapper). Geometry coverage now runs with both rule values for living allies, self exclusion, wrecks, and world blockers.
+
+Remaining validation: dedicated configuration/hash cases, friendly damage and weapon-mode cases, session/restoration acceptance cases, two-peer friendly-hit convergence, and supported-scale timing/allocation measurements. Headless geometry coverage does not establish Steam or rendered-client behavior.

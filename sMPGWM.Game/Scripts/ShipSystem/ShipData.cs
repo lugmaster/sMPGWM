@@ -10,6 +10,7 @@ public sealed record ShipData : GameplayDefinition
     public string Name { get; }
     public string TexturePath { get; }
     public IReadOnlyList<Vector2> ColliderPoints { get; }
+    public ShieldGeometry? ShieldGeometry { get; }
     public IReadOnlyList<Vector2> MuzzleOffsets { get; }
     public ShipStats Stats { get; }
     public ShipStatModifiersDefinition StatModifiers { get; }
@@ -22,6 +23,15 @@ public sealed record ShipData : GameplayDefinition
         Name = definition.Name;
         TexturePath = definition.TexturePath;
         ColliderPoints = Array.AsReadOnly((Vector2[])points.Clone());
+        if (definition.ShieldGeometry is { } shield)
+        {
+            var circle = shield.Shape == "circle";
+            ShieldGeometry = new(circle ? ShieldGeometryShape.Circle : ShieldGeometryShape.Ellipse,
+                new((float)shield.Center[0], (float)shield.Center[1]),
+                circle ? new((float)shield.Radius!.Value, (float)shield.Radius.Value) :
+                    new((float)shield.Radii![0], (float)shield.Radii[1]),
+                circle ? 0 : (float)shield.RotationDegrees!.Value);
+        }
         var muzzles = new Vector2[definition.MuzzleOffsets.Count];
         for (var i = 0; i < muzzles.Length; i++)
             muzzles[i] = new((float)definition.MuzzleOffsets[i][0], (float)definition.MuzzleOffsets[i][1]);

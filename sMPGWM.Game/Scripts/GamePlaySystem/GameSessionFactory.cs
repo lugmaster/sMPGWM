@@ -82,7 +82,7 @@ internal static class GameSessionFactory
         participants.LocalPlayer = player;
         participants.AddChild(new ParallaxMotion { Name = nameof(ParallaxMotion) });
         world.AddChild(participants);
-        var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities, Simulation = scope.Own(new GameplaySimulation(participants, abilities)) };
+        var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities, Simulation = scope.Own(new GameplaySimulation(participants, abilities, sMPGWM.Scripts.GameConfigSystem.GameConfig.FriendlyFire)) };
         scope.Defer(() => ReleaseNode(network));
         scope.Defer(network.StopSession);
         var synchronization = new SynchronizationCoordinator

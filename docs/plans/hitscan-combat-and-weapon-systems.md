@@ -61,7 +61,7 @@ This document authorizes no implementation by itself. It records the agreed requ
 | Power | Both weapon types require existing powered-system availability. Laser additionally requires the full stored-energy cost. Preserve energy-empty initialization. |
 | Shield availability | Use existing `ShieldProtectionAvailable`, including power and downtime, rather than positive stored charge alone. |
 | Damage types | Physical and laser initially use the same shield/hull effectiveness. Hull mitigates both. No new type-specific multipliers in this slice. |
-| Friendly fire | Off. Allied ship bodies do not intercept these hitscan rays. World blockers and hostile bodies do. This is a co-op accessibility choice, not an inferred universal game rule. |
+| Friendly fire | Configurable per session, default off. Living allies pass through when disabled and receive normal hits when enabled. Self is always excluded; wrecks and world blockers always intercept. See [friendly-fire handoff](friendly-fire-handoff.md). |
 | Death | One authoritative transition; stop and retain the ship as an inert wreck. No respawn/despawn. Wrecks block rays as world obstacles but take no more damage. |
 | Simultaneous attacks | Admit all eligible shots before applying damage, allowing same-tick trades. Resolve accepted damage in stable order. |
 | Visual latency | Host-confirmed effects initially; no client damage prediction and no lag compensation. |

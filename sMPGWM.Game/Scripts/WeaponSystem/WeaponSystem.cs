@@ -14,7 +14,9 @@ public sealed class WeaponSystem : IDisposable
     private readonly AcceptedShot[] _shots = new AcceptedShot[MaxShotsPerTick];
     private readonly ShipController?[] _targets = new ShipController?[MaxShotsPerTick];
     private readonly double[] _damage = new double[MaxShotsPerTick];
-    private readonly HitscanQuery _query = new();
+    private readonly HitscanQuery _query;
+    // Omitted rules preserve friendly-fire-disabled behavior for direct callers.
+    public WeaponSystem(bool friendlyFire = false) => _query = new(friendlyFire);
     public event Action<AcceptedShot>? ShotProduced;
     public void Dispose()
     {

@@ -65,6 +65,28 @@ public static class ShipRegistry
                 return new Vector2((float)pair[0], (float)pair[1]);
             }).ToArray();
             Require(IsUsablePolygon(points), "collider_points (duplicate, degenerate or intersecting polygon)");
+            if (definition.ShieldGeometry is { } shield)
+            {
+                Require(shield.Shape is "circle" or "ellipse", "shield_geometry.shape");
+                Require(shield.Center is { Length: 2 }, "shield_geometry.center");
+                Number(shield.Center![0], "shield_geometry.center");
+                Number(shield.Center[1], "shield_geometry.center");
+                if (shield.Shape == "circle")
+                {
+                    Require(shield.Radius.HasValue && shield.Radii == null && shield.RotationDegrees == null,
+                        "shield_geometry (circle requires radius and forbids radii/rotation_degrees)");
+                    Number(shield.Radius!.Value, "shield_geometry.radius", true);
+                }
+                else
+                {
+                    Require(shield.Radius == null && shield.Radii is { Length: 2 } && shield.RotationDegrees.HasValue,
+                        "shield_geometry (ellipse requires radii/rotation_degrees and forbids radius)");
+                    Number(shield.Radii![0], "shield_geometry.radii", true);
+                    Number(shield.Radii[1], "shield_geometry.radii", true);
+                    Require(shield.Radii[0] >= shield.Radii[1], "shield_geometry.radii (major radius must precede minor radius)");
+                    Number(shield.RotationDegrees!.Value, "shield_geometry.rotation_degrees");
+                }
+            }
             Require(definition.MuzzleOffsets.Count == 2, "muzzle_offsets (format 3.0.0 requires two authored offsets, e.g. [[1,-15],[1,15]])");
             foreach (var pair in definition.MuzzleOffsets)
             {

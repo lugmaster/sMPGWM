@@ -1,6 +1,11 @@
 Version: 3.0.0
 ships:
   - name: "fighter"
+    shield_geometry:
+      shape: ellipse
+      center: [-5.0, 0.0]
+      radii: [33.5, 32.1]
+      rotation_degrees: 90.0
     texture_path: "res://assets/mocks/ship_fighter_reference.png"
     muzzle_offsets:
       - [1, -15]

@@ -37,6 +37,50 @@ properties:
             maxItems: 2
             items:
               type: number
+        shield_geometry:
+          description: Baked shield boundary in centered ship-local sprite pixels. Ellipse radii are semi-major then semi-minor; rotation is clockwise in degrees.
+          type: object
+          additionalProperties: false
+          required: [shape, center]
+          properties:
+            shape:
+              enum: [circle, ellipse]
+            center:
+              type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                type: number
+                minimum: -3.4028234663852886e+38
+                maximum: 3.4028234663852886e+38
+            radius:
+              type: number
+              exclusiveMinimum: 0
+              maximum: 3.4028234663852886e+38
+            radii:
+              type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                type: number
+                exclusiveMinimum: 0
+                maximum: 3.4028234663852886e+38
+            rotation_degrees:
+              type: number
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
+          oneOf:
+          - properties:
+              shape:
+                const: circle
+              radii: false
+              rotation_degrees: false
+            required: [radius]
+          - properties:
+              shape:
+                const: ellipse
+              radius: false
+            required: [radii, rotation_degrees]
         mass:
           type: number
           minimum: 0
