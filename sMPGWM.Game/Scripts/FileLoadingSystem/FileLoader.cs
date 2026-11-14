@@ -41,7 +41,7 @@ public static class FileLoader
     {
         var reloadConfig = GameConfig.ReloadConfigOnStart;
 
-        if (reloadConfig || !FileAccess.FileExists(userPath))
+        if (reloadConfig || !AtomicTextFile.Exists(ProjectSettings.GlobalizePath(userPath)))
         {
             Logger.Info(
                 $"{(reloadConfig ? "Forced reload" : "Missing file")} — " +
@@ -114,33 +114,15 @@ public static class FileLoader
                 defaultPath));
         }
 
-        using var targetFile = FileAccess.Open(userPath, FileAccess.ModeFlags.Write);
-        if (targetFile is null)
+        try
         {
-            return LoadResult<bool>.Failure(new DataLoadError(
-                "User file could not be created",
-                $"Godot error: {FileAccess.GetOpenError()}",
-                userPath));
+            AtomicTextFile.WriteAllText(ProjectSettings.GlobalizePath(userPath), content);
         }
-
-        targetFile.StoreString(content);
-        targetFile.Flush();
-
-        var writeError = targetFile.GetError();
-        if (writeError != Error.Ok)
+        catch (Exception error) when (error is System.IO.IOException or UnauthorizedAccessException)
         {
             return LoadResult<bool>.Failure(new DataLoadError(
                 "User file could not be written",
-                $"Godot error: {writeError}",
-                userPath));
-        }
-
-        if (!FileAccess.FileExists(userPath))
-        {
-            return LoadResult<bool>.Failure(new DataLoadError(
-                "User file missing after copy",
-                "The write operation reported no error, but the destination file does not exist.",
-                userPath));
+                error.Message, userPath, Exception: error));
         }
 
         Logger.Info($"Copied default {dataFormat} file to {userPath}");
@@ -149,7 +131,7 @@ public static class FileLoader
 
     private static LoadResult<string> ReadTextFile(string path, string description)
     {
-        if (!FileAccess.FileExists(path))
+        if (path.StartsWith("res://", StringComparison.Ordinal) && !FileAccess.FileExists(path))
         {
             return LoadResult<string>.Failure(new DataLoadError(
                 $"{description} not found",
@@ -157,23 +139,27 @@ public static class FileLoader
                 path));
         }
 
-        using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-        if (file is null)
+        string content;
+        if (!path.StartsWith("res://", StringComparison.Ordinal))
         {
-            return LoadResult<string>.Failure(new DataLoadError(
-                $"{description} could not be opened",
-                $"Godot error: {FileAccess.GetOpenError()}",
-                path));
+            try { content = AtomicTextFile.ReadAllText(ProjectSettings.GlobalizePath(path)); }
+            catch (Exception error) when (error is System.IO.IOException or UnauthorizedAccessException)
+            {
+                return LoadResult<string>.Failure(new DataLoadError(
+                    $"{description} could not be read", error.Message, path, Exception: error));
+            }
         }
-
-        var content = file.GetAsText();
-        var readError = file.GetError();
-        if (readError != Error.Ok)
+        else
         {
-            return LoadResult<string>.Failure(new DataLoadError(
-                $"{description} could not be read",
-                $"Godot error: {readError}",
-                path));
+            using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file is null)
+                return LoadResult<string>.Failure(new DataLoadError(
+                    $"{description} could not be opened", $"Godot error: {FileAccess.GetOpenError()}", path));
+            content = file.GetAsText();
+            var readError = file.GetError();
+            if (readError != Error.Ok)
+                return LoadResult<string>.Failure(new DataLoadError(
+                    $"{description} could not be read", $"Godot error: {readError}", path));
         }
 
         if (string.IsNullOrWhiteSpace(content))

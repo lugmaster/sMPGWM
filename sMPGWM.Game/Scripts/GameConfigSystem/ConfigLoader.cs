@@ -65,14 +65,14 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
         }
         
         // If user config doesn't exist, copy from default
-        if (!FileAccess.FileExists(FilePaths.UserConfigPath))
+        if (!AtomicTextFile.Exists(ProjectSettings.GlobalizePath(FilePaths.UserConfigPath)))
         {
             Logger.Info("User config not found. Copying default to user://");
             return CopyDefaultToUserConfig();
         }
         
         // Load user config
-        var userError = _userConfig.Load(FilePaths.UserConfigPath);
+        var userError = LoadUserConfig();
         if (userError != Error.Ok)
         {
             Logger.Error($"Failed to load user config: {userError}");
@@ -92,11 +92,9 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
             DirAccess.MakeDirRecursiveAbsolute(FilePaths.UserConfigDirectory);
             
             using var defaultFile = FileAccess.Open(FilePaths.SystemConfigPath, FileAccess.ModeFlags.Read);
-            using var userFile = FileAccess.Open(FilePaths.UserConfigPath, FileAccess.ModeFlags.Write);
-            userFile.StoreString(defaultFile.GetAsText());
-            userFile.Flush();
+            AtomicTextFile.WriteAllText(ProjectSettings.GlobalizePath(FilePaths.UserConfigPath), defaultFile.GetAsText());
             
-            var loaded = _userConfig.Load(FilePaths.UserConfigPath);
+            var loaded = LoadUserConfig();
             if (loaded != Error.Ok)
             {
                 Logger.Error($"Failed to load copied user config: {loaded}");
@@ -110,6 +108,21 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
         {
             Logger.Error($"Error copying default config: {e.Message}");
             return (Error.CantOpen, ConfigSource.None);
+        }
+    }
+
+    private Error LoadUserConfig()
+    {
+        try
+        {
+            var content = AtomicTextFile.ReadAllText(ProjectSettings.GlobalizePath(FilePaths.UserConfigPath));
+            _userConfig.Clear();
+            return _userConfig.Parse(content);
+        }
+        catch (Exception error) when (error is System.IO.IOException or UnauthorizedAccessException)
+        {
+            Logger.Error($"Failed to read {FilePaths.UserConfigPath}: {error.Message}");
+            return Error.CantOpen;
         }
     }
 
@@ -185,16 +198,17 @@ public partial class ConfigLoader : AbstractSingleton<ConfigLoader>
 
     public Error TrySave()
     {
-        var error = _userConfig.Save(FilePaths.UserConfigPath);
-        if (error != Error.Ok)
+        try
         {
-            Logger.Error($"Failed to save config to {FilePaths.UserConfigPath}: {error}");
-        }
-        else
-        {
+            AtomicTextFile.WriteAllText(ProjectSettings.GlobalizePath(FilePaths.UserConfigPath), _userConfig.EncodeToText());
             Logger.Info($"Config saved to {FilePaths.UserConfigPath}");
+            return Error.Ok;
         }
-        return error;
+        catch (Exception error) when (error is System.IO.IOException or UnauthorizedAccessException)
+        {
+            Logger.Error($"Failed to save config to {FilePaths.UserConfigPath}: {error.Message}");
+            return Error.FileCantWrite;
+        }
     }
 
     private void ValidateUserKeys()
