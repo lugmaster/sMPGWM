@@ -20,7 +20,7 @@ public class CatalogueDiagnosticsTests
         {
             case "category": row["CategoryId"] = "missing_category"; break;
             case "duplicate": ((JArray)document["Items"]!).Add(row.DeepClone()); break;
-            case "numeric": row["Values"]!["Speed"] = -1; break;
+            case "numeric": row["Speed"] = -1; break;
             case "stacking": ((JObject)row).Remove("CanStack"); row["StackLimit"] = 1; break;
         }
         var result = CatalogueParser.Load(() => ItemDefinitionParser.LoadItemDefinitions(document, categories, _ => null!),

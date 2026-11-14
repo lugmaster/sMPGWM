@@ -163,9 +163,9 @@ public sealed class WeaponCapacityTests
 
     private static ItemEntity AddFixture(InventoryController inventory, int capacity)
     {
-        var definition = ItemRegistry.GetById("mock_standard_weapon_fixture") with
+        var definition = (WeaponFixtureItemDefinition)ItemRegistry.GetById("mock_standard_weapon_fixture") with
         {
-            Values = new Dictionary<string, object> { ["WeaponSlots"] = capacity, ["Mass"] = 1d }
+            WeaponSlots = capacity, Mass = 1
         };
         var fixture = new ItemEntity(ItemEntityId.Create(), definition, 1);
         var slots = (ItemEntity?[])inventory.Container.Entities.Clone();

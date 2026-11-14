@@ -32,7 +32,7 @@ public sealed class WeaponEquipmentViewTests
             Assert.That(counter.Text, Is.EqualTo("0/0"));
             Assert.That(grid.GetCombinedMinimumSize().Y, Is.Zero);
             Assert.That(view.GetNode<Control>("Weapons/Capacity").SizeFlagsHorizontal, Is.EqualTo(Control.SizeFlags.ShrinkCenter));
-            var fixture = ItemRegistry.GetById("mock_standard_weapon_fixture") with { Values = new Dictionary<string, object> { ["WeaponSlots"] = capacity } };
+            var fixture = (WeaponFixtureItemDefinition)ItemRegistry.GetById("mock_standard_weapon_fixture") with { WeaponSlots = capacity };
             slots[equipment.FindSlot("weapon_fixture")] = new ItemEntity(ItemEntityId.Create(), fixture, 1);
             view.Render(equipment.Definitions, new EquipmentSnapshot(1, slots), new ItemVisuals());
             Assert.That(VisibleCount(grid), Is.EqualTo(1));

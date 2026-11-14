@@ -39,8 +39,9 @@ public sealed class AbilityArchitectureTests
         var all = new List<ItemDefinition>(items.Values);
         GameplayCatalogueValidator.ValidateItems(data, all);
         Assert.That(items["infectedCargo"].BehaviourGrants[0], Is.EqualTo(new ItemBehaviourGrant("infection", BehaviourGrantWhile.Carried, BehaviourGrantLifetime.WhileSourceActive)));
-        var invalidItem = new ItemDefinition("invalid", "Invalid", "Resource", "", false, 1, null!)
+        var invalidItem = new ResourceItemDefinition("invalid", "Invalid", "Resource", "", false, 1, null!)
         {
+            CategoryId = "resource", Mass = 1,
             BehaviourGrants = new[] { new ItemBehaviourGrant("missing", BehaviourGrantWhile.Carried, BehaviourGrantLifetime.WhileSourceActive) }
         };
         Assert.Throws<ArgumentException>(() => GameplayCatalogueValidator.ValidateItems(data, new[] { invalidItem }));

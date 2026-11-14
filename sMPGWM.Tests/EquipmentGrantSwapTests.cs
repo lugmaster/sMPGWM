@@ -19,8 +19,8 @@ public sealed class EquipmentGrantSwapTests
             world.ApproveSpawn(1, new("fighter"));
             var items = world.Players[1];
             var grants = world.Players[1].ControlledShip!.Runtime.Grants;
-            var weapon = new ItemDefinition("mock_standard_light_weapon", "Fixture weapon", ItemRegistry.GetCategoryById("light_weapon").DisplayName, "", false, 1, null!)
-                { CategoryId = "light_weapon", AbilityIds = Array.AsReadOnly(new[] { "shieldCapacityBoost" }) };
+            var weapon = (WeaponItemDefinition)ItemRegistry.GetById("mock_standard_light_weapon") with
+                { AbilityIds = Array.AsReadOnly(new[] { "shieldCapacityBoost" }) };
             var first = new ItemEntity(ItemEntityId.Create(), weapon, 1);
             var second = new ItemEntity(ItemEntityId.Create(), weapon, 1);
             var equipment = new ItemEntity?[items.ControlledShip!.Equipment.Definitions.Count];

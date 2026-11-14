@@ -7,7 +7,7 @@ required:
 properties:
   Version:
     type: string
-    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+    const: 3.0.0
   Items:
     type: array
     items:
@@ -17,7 +17,13 @@ properties:
       - Id
       - DisplayName
       - CategoryId
-      - Values
+      - EnergyConsumption
+      - Speed
+      - AfterBurnerSpeed
+      - RotationSpeed
+      - Acceleration
+      - AfterBurnerAcceleration
+      - Mass
       not:
         required:
         - CanStack
@@ -43,39 +49,6 @@ properties:
           type: integer
           minimum: 2
           maximum: 2147483646
-        Values:
-          type: object
-          additionalProperties: false
-          properties:
-            EnergyConsumption:
-              type: number
-              minimum: 0
-            Speed:
-              type: number
-              minimum: 0
-            AfterBurnerSpeed:
-              type: number
-              minimum: 0
-            RotationSpeed:
-              type: number
-              minimum: 0
-            Acceleration:
-              type: number
-              minimum: 0
-            AfterBurnerAcceleration:
-              type: number
-              minimum: 0
-            Mass:
-              type: number
-              minimum: 0
-          required:
-          - EnergyConsumption
-          - Speed
-          - AfterBurnerSpeed
-          - RotationSpeed
-          - Acceleration
-          - AfterBurnerAcceleration
-          - Mass
         AbilityIds:
           type: array
           items:
@@ -105,3 +78,24 @@ properties:
                 enum:
                 - WhileSourceActive
           minItems: 1
+        EnergyConsumption:
+          type: number
+          minimum: 0
+        Speed:
+          type: number
+          minimum: 0
+        AfterBurnerSpeed:
+          type: number
+          minimum: 0
+        RotationSpeed:
+          type: number
+          minimum: 0
+        Acceleration:
+          type: number
+          minimum: 0
+        AfterBurnerAcceleration:
+          type: number
+          minimum: 0
+        Mass:
+          type: number
+          minimum: 0

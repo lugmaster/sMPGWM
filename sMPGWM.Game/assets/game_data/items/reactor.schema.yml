@@ -7,7 +7,7 @@ required:
 properties:
   Version:
     type: string
-    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+    const: 3.0.0
   Items:
     type: array
     items:
@@ -17,7 +17,8 @@ properties:
       - Id
       - DisplayName
       - CategoryId
-      - Values
+      - Mass
+      - EnergyProduction
       not:
         required:
         - CanStack
@@ -43,19 +44,6 @@ properties:
           type: integer
           minimum: 2
           maximum: 2147483646
-        Values:
-          type: object
-          additionalProperties: false
-          properties:
-            Mass:
-              type: number
-              minimum: 0
-            EnergyProduction:
-              type: number
-              minimum: 0
-          required:
-          - Mass
-          - EnergyProduction
         AbilityIds:
           type: array
           items:
@@ -85,3 +73,9 @@ properties:
                 enum:
                 - WhileSourceActive
           minItems: 1
+        Mass:
+          type: number
+          minimum: 0
+        EnergyProduction:
+          type: number
+          minimum: 0

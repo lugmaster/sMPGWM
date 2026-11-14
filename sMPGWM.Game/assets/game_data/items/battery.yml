@@ -1,9 +1,8 @@
-Version: 2.0.0
+Version: 3.0.0
 Items:
-  - Id: mock_standard_battery
-    DisplayName: Standard Battery
-    CategoryId: battery
-    Values:
-      EnergyStorage: 100
-      EnergyConsumption: 1
-      Mass: 1
+- Id: mock_standard_battery
+  DisplayName: Standard Battery
+  CategoryId: battery
+  EnergyStorage: 100
+  EnergyConsumption: 1
+  Mass: 1

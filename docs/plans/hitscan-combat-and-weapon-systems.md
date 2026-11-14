@@ -9,6 +9,8 @@ Primary data entry point: [light_weapon.yml](../../sMPGWM.Game/assets/game_data/
 
 This document is the parent epic and retained end-state design reference, not one implementation story. The seven linked stories define delivery boundaries and acceptance. Their explicit deferrals take precedence over end-state requirements below: data-only stories do not require firing or presentation, and supply/damage are intentionally absent from early playable slices. Existing technical findings must be rechecked before implementation.
 
+The item-format migration is completed in story 1 for every existing item and weapon. Later-story deferrals apply to gameplay execution and presentation, never to keeping a legacy schema, parser, or definition model valid. All subsequent stories consume the same new typed item contract.
+
 | Order | Story | Dependencies |
 | --- | --- | --- |
 | 1 | [Weapons | Refactor Schema](inc-01_weapons-refactor-schema.md) | None; independent of story 2. |
@@ -44,7 +46,7 @@ The equipment-group UI is a required design deliverable in story 3. Its proposed
 
 Implement only `laser_mk1` and `vulcan_mk1` as host-authoritative automatic hitscan weapons, ammunition magazines, discrete energy costs, shield/health damage with hull mitigation, two fire groups, synchronized combat state, and pooled presentation. Preserve 60 physics steps/second and publish networking every second step at 30 Hz. Support five typical players and ten maximum, including all nine permitted weapon slots per ship.
 
-Heavy weapons, medium weapons, additional weapon variants, and separate shield-impact effects are outside this slice. Use only the two specified muzzle-flash, tracer, and impact profiles below. Shield damage absorption remains in scope; shield-specific presentation does not. Existing out-of-scope weapon data does not authorize implementing its firing behavior.
+Heavy/medium weapon execution, additional playable weapon variants, and separate shield-impact effects are outside this slice. The item-format migration covers all categories, including medium/heavy definitions, resources, and consumables. Use only the two specified muzzle-flash, tracer, and impact profiles below. Shield damage absorption remains in scope; shield-specific presentation does not. Existing out-of-scope weapon data does not authorize implementing its firing behavior.
 
 The design leaves a delivery boundary for future projectiles. Projectile motion, projectile replication, historical hit rewind, speculative local shooting, ammunition inventory items, new AI, loot-on-death, despawn/respawn, and a general effect-execution framework are outside this slice. Existing projectile and damage-effect definitions are not evidence that those executors already work.
 
@@ -56,9 +58,14 @@ This document authorizes no implementation by itself. It records the agreed requ
 
 | Topic | Decision |
 | --- | --- |
-| Scope limit | Only Laser Mk1 and Vulcan Mk1 are implemented. No heavy or medium weapon behavior or additional variants. |
+| Combat scope limit | Laser Mk1 and Vulcan Mk1 are the playable combat slice. This limit does not exclude any existing weapon from the schema and definition migration. |
 | Impact presentation | Use each weapon's specified existing impact for every hit, including shield-only hits; no separate shield effect or doubled overflow effect. |
-| Initial weapons | `vulcan_mk1`: automatic physical SMG; `laser_mk1`: automatic laser pulses. Both use `Delivery: HitScan`. |
+| Initial weapons | `vulcan_mk1`: automatic physical SMG; `laser_mk1`: automatic laser pulses. Both use `DeliveryType: HitScan`. |
+| Item shape | Shared fields and typed subtype properties are authored at item level; remove the generic `Values` bag and the split `Weapon` metadata object. |
+| Item mass | `Mass` is explicitly required on every item, including consumables and resources. |
+| Migration completion | Port every existing light, medium, and heavy weapon to the new contract, preserving their IDs. Story 1 ends with one accepted item format and one typed definition path; no parallel valid legacy path remains. |
+| Weapon composition | Required `DeliveryType` (`HitScan` or `Projectile`) and `SupplyMode` (`Ammunition` or `Energy`) are independent. Ammunition requires `AmmoCapacity`; energy requires `EnergyPerShot`. |
+| Weapon spread | `SpreadDegrees` is optional and defaults to `0`. |
 | Defense order | Shields absorb first. Excess damage reaches health immediately, after hull mitigation. |
 | Hull | Percentage mitigation with diminishing increases in reduction per added armor point, using the positive League-style armor curve. |
 | Ammunition reserve | Unlimited. Magazine capacity and reload time still apply. |
@@ -120,13 +127,13 @@ Paths below are relative to `sMPGWM.Game/Scripts/` unless noted otherwise.
 | `ShipSystem/ShipPresentation.cs` | Visual transforms are separate from authoritative transforms. Effects must use the appropriate timeline. |
 | `InputSystem/`, `PlayerControllerSystem/` | LMB input exists but is not passed to shooting. RMB aim currently controls ship rotation; preserve that semantic. |
 
-The checked-in `light_weapon.yml` still contains mock weapons with `MagazinSize`, not the proposed Vulcan/Laser definitions. Treat the YAML below as the migration target, not as already implemented data.
+The checked-in `light_weapon.yml` still contains mock weapons with `MagazinSize`, not the proposed Vulcan/Laser definitions. Port those existing weapons as well as the medium/heavy weapons. The YAML below shows two additional target definitions, not a replacement catalogue or permission to drop existing items.
 
 ## 4. Definitions and schema
 
 ### 4.1 Target weapon examples
 
-Use item document version `3.0.0` for the breaking weapon format, migrating all eleven item document version headers together. Reconcile this version with any intervening changes before implementing.
+Use item document version `3.0.0` for the breaking item format: flatten subtype properties and require explicit `Mass` on every item. Migrate all category schemas/content and all eleven item document version headers together. Reconcile this version with any intervening changes before implementing. YAML field spelling is `Archetype`; discriminator values use `HitScan`, `Projectile`, `Ammunition`, and `Energy` consistently.
 
 ```yaml
 Version: 3.0.0
@@ -135,68 +142,65 @@ Items:
     DisplayName: Vulcan Mk1
     CategoryId: light_weapon
     Description: Fast-firing physical SMG with a reloadable magazine.
-    Weapon:
-      Archetype: SMG
-      Delivery: HitScan
-      FireMode: Automatic
-      SupplyMode: Ammunition
-      PresentationId: smg_standard
-    Values:
-      DamageSource: physical
-      Damage: 1.8
-      AttackSpeed: 15
-      Range: 800
-      SpreadDegrees: 6
-      EnergyConsumption: 1
-      MagazineCapacity: 60
-      ReloadDuration: 1500
-      Mass: 1
+    Mass: 1
+    Archetype: SMG
+    DeliveryType: HitScan
+    SupplyMode: Ammunition
+    PresentationId: smg_standard
+    DamageSource: physical
+    Damage: 1.8
+    AttackSpeed: 15
+    Range: 800
+    SpreadDegrees: 6
+    EnergyConsumption: 1
+    AmmoCapacity: 60
+    ReloadDuration: 1500
 
   - Id: laser_mk1
     DisplayName: Laser Mk1
     CategoryId: light_weapon
     Description: Precise laser firing repeated energy-powered pulses.
-    Weapon:
-      Archetype: Laser
-      Delivery: HitScan
-      FireMode: Automatic
-      SupplyMode: Energy
-      PresentationId: laser_standard
-    Values:
-      DamageSource: laser
-      Damage: 9
-      AttackSpeed: 3
-      Range: 1200
-      SpreadDegrees: 0
-      EnergyConsumption: 2
-      EnergyPerShot: 4
-      Mass: 1
+    Mass: 1
+    Archetype: Laser
+    DeliveryType: HitScan
+    SupplyMode: Energy
+    PresentationId: laser_standard
+    DamageSource: laser
+    Damage: 9
+    AttackSpeed: 3
+    Range: 1200
+    EnergyConsumption: 2
+    EnergyPerShot: 4
 ```
 
 ### 4.2 Composition and validation
 
-- Implement only the two supplied `light_weapon` definitions. Preserve existing category identities and capacity costs; do not implement or migrate medium/heavy weapon behavior. Existing medium/heavy definitions remain outside combat bindings and firing admission. Do not create categories for archetype/delivery/supply combinations.
-- Add an immutable typed `WeaponDefinition` component to `ItemDefinition`. Keep `Archetype` as a validated descriptive identifier, not an execution switch. Delivery/fire/supply use explicitly supported discriminators.
-- Retain numeric authored baselines in `Values` for existing data/UI conventions; compile them into `ResolvedWeaponStats` during preparation or loadout/stat changes. Do not read strings/dictionaries per shot.
-- Common required values: `DamageSource`, `Damage`, `AttackSpeed`, `Range`, `SpreadDegrees`, `EnergyConsumption`, `Mass`.
-- `SupplyMode: Ammunition`: require `MagazineCapacity` and `ReloadDuration`; reject `EnergyPerShot`.
-- `SupplyMode: Energy`: require `EnergyPerShot`; reject magazine/reload fields.
-- Allow only implemented delivery/fire combinations (`HitScan` + `Automatic`) now. Reserve the architecture, not silently accepted unsupported data, for future modes.
+- Migrate every existing weapon, including light, medium, and heavy mocks, to the same authored contract and typed definition path. Preserve item IDs, category identities, and capacity costs. The two named weapons define the playable combat slice; this does not create a separate format or model for the other weapons. Do not create categories for archetype/delivery/supply combinations.
+- Use immutable typed subtype definitions: a shared `ItemDefinition` owns identity, display metadata, stacking, abilities, behaviour grants, and required `Mass`; `WeaponItemDefinition` adds weapon properties. Battery, engine, and other subtypes likewise expose their explicit properties instead of a dictionary. Category metadata selects the supported subtype; light/medium/heavy categories share the weapon subtype. No redundant per-item `Type` selector is needed.
+- Author subtype fields at item level. Remove both `Values` and the separate `Weapon` object. Keep `Archetype` as a validated descriptive identifier, not an execution switch; delivery and supply are independent typed discriminators. Compile typed authored baselines into `ResolvedWeaponStats` during preparation or loadout/stat changes. Do not read strings/dictionaries per shot.
+- Every item requires `Id`, `DisplayName`, `CategoryId`, and finite nonnegative `Mass`, including resources and consumables. Missing mass is an error, not an implicit zero. Mass describes one item unit; this schema change does not introduce new cargo-weight gameplay.
+- Every weapon additionally requires `Archetype`, `DeliveryType`, `SupplyMode`, `PresentationId`, `DamageSource`, `Damage`, `AttackSpeed`, `Range`, and `EnergyConsumption`. Validate identifiers as nonempty and resolve references at the appropriate preparation stage.
+- `SpreadDegrees` is optional; omission resolves to `0` in the typed definition. Explicit invalid values still fail validation.
+- `SupplyMode: Ammunition`: require `AmmoCapacity` and `ReloadDuration`; reject `EnergyPerShot`. Retain the existing reload-duration requirement for reloadable ammunition weapons.
+- `SupplyMode: Energy`: require `EnergyPerShot`; reject `AmmoCapacity` and `ReloadDuration`.
+- Parse validated supply fields into immutable typed supply variants (`AmmunitionSupplyDefinition` or `EnergySupplyDefinition`) so consumers do not rely on unrelated nullable properties or sentinel values. The YAML remains flat; `SupplyMode` selects the variant.
+- The definition contract accepts `DeliveryType: HitScan` or `Projectile` and either supply mode, independently of archetype. Projectile execution remains deferred: definition acceptance does not authorize binding an unsupported delivery to the hitscan executor. Keep an explicit capability check at combat binding. Automatic firing is fixed behavior for this slice; do not author a redundant `FireMode` field.
 - Require weapons to be nonstackable. Individual magazine/cadence state must not become ambiguous through merging/splitting weapon stacks.
 - Validate damage-source and presentation-profile references during catalogue preparation, before compatibility/readiness succeeds.
-- Update category required/allowed value handling, generic `ItemSchema.yml`, the light-weapon schema, and semantic parsing together. Keep medium/heavy schemas and content unchanged apart from document version headers required by the shared version contract. Use local schema definitions/conditionals where practical; shared external `$ref` files require explicit resolver and checksum work.
+- Remove the comma-separated category `Values` lists and their parser-driven field enumeration. Update every item schema, the generic `ItemSchema.yml`, subtype parsing, equipment/stat consumers, and tooltip readers together. Schemas validate required/allowed fields, supply conditionals, and bounds; typed preparation enforces semantic invariants and references. Reject unknown fields and obsolete wrappers. Use local schema definitions/conditionals where practical; shared external `$ref` files require explicit resolver and checksum work.
+- Remove legacy success paths from loading, parsing, registry preparation, and definition consumers by the end of story 1. Do not retain a legacy dictionary model, old-format schema branch, field alias, fallback loader, or adapter that accepts old input. Category-specific schemas may remain, but every category enforces the new format. Old-format detection exists only to reject input with an actionable error.
 
 | Value | Contract |
 | --- | --- |
 | `Damage` | Finite, nonnegative; zero-damage shots still consume supply. |
 | `AttackSpeed` | Finite, `0 < value <= 60` logical shots/second. At most one shot per weapon per physics tick. |
 | `Range` | Finite, positive, representable in the existing world coordinate model. Validate computed endpoints as finite. |
-| `SpreadDegrees` | Finite, `0..180`, full cone width; `6` means uniform angular deviation in `[-3°, +3°]`. |
+| `SpreadDegrees` | Optional, defaults to `0`; finite, `0..180`, full cone width; `6` means uniform angular deviation in `[-3°, +3°]`. |
 | `EnergyConsumption` | Finite, nonnegative units/second while equipped. |
 | `EnergyPerShot` | Finite and positive for energy supply. Full stored-energy payment is required. |
-| `MagazineCapacity` | Integer, `1..65535`; use a compatible count representation. |
+| `AmmoCapacity` | Required for ammunition only; integer, `1..65535`; use a compatible count representation. |
 | `ReloadDuration` | Positive finite milliseconds, converted once using `ceil(ms * 60 / 1000)` with a minimum of one tick and checked deadline bounds. |
-| `Mass` | Existing finite nonnegative item-mass contract. |
+| `Mass` | Explicitly required on every item; finite and nonnegative. |
 
 Validate compiled/resolved values as well as source values. Bound identifiers and arrays using existing catalogue/network conventions. A higher future rate limit requires revisiting shot queues, wire budgets, and presentation capacity.
 
@@ -227,9 +231,15 @@ Use the listed impact scene for every contact, including shield-only, hull, worl
 
 ### 4.4 Migration behavior
 
-Update the light-weapon document, starter loadout references, examples, relevant tests, and tooltip labels for only Laser Mk1 and Vulcan Mk1. Remove replaced light-weapon mock IDs only after their consumers are migrated. Do not convert medium/heavy mock items into functioning weapons. Preserve unrelated categories' semantics when advancing their version headers.
+Migrate all item documents and schemas to flat typed properties and universal required `Mass`, including explicit authored mass for resources and consumables. Preserve existing numeric baselines where present. Update stat and tooltip consumers of the removed dictionary without changing their aggregation rules. The schema migration does not add inventory/cargo mass to ship calculations.
 
-Never silently replace a user's authored `user://` data. Detect the old weapon format with an actionable item/file/field error and an explicit migration example. Reloading packaged defaults remains an explicit existing development/user workflow. A general save-file migration system is outside scope.
+Port every existing light, medium, and heavy weapon in place, preserving its ID and category capacity cost. Add Laser Mk1 and Vulcan Mk1 alongside those migrated definitions; they are not replacements for the existing light weapons. Update demonstration references where the playable slice needs the named weapons, while retaining valid references to migrated items elsewhere.
+
+All existing weapons need valid explicit weapon metadata and one supply mode: their old mixed energy/magazine fields cannot be copied unchanged. Author missing required fields deliberately; do not infer supply or delivery from archetype/category or silently provide parser defaults. Record the chosen migration values for review rather than treating unspecified metadata as agreed. Migrate production data, positive test fixtures, examples, and all definition consumers together. Legacy-shaped fixtures may remain only as rejection tests. No migrated item uses a legacy execution or definition adapter.
+
+Never silently replace a user's authored `user://` data. Detect the old item format (`Values`, `Weapon`, `MagazinSize`, `MagazineCapacity`, or missing required mass) with an actionable item/file/field error and an explicit migration example. Reloading packaged defaults remains an explicit existing development/user workflow. A general save-file migration system is outside scope.
+
+Old user-authored data must be migrated before loading succeeds. Do not fall back to accepting it or silently load packaged defaults in its place. Completion requires all shipped definitions to pass the new contract, all pre-migration weapon IDs to remain present, and old-format documents to fail even when supplied under the new version header. Version checks alone do not establish removal of the legacy path.
 
 Also advance the ship format from inspected `2.0.0` to `3.0.0` when introducing required `muzzle_offsets`. Update the ship schema/loader, packaged fighter, ship fixtures, and version diagnostics together. Existing user-authored ships must add their own offsets; do not silently apply the fighter geometry to every ship. Provide a clear missing-field migration error and preserve the explicit default-reload workflow.
 
@@ -239,8 +249,13 @@ Merge newly introduced keybinding defaults into saved user settings without over
 
 ```text
 Scripts/
+  ItemSystem/
+    ItemDefinition.cs
+    WeaponItemDefinition.cs
+    ...individual typed item subtype files
   WeaponSystem/
-    WeaponDefinition.cs
+    AmmunitionSupplyDefinition.cs
+    EnergySupplyDefinition.cs
     ResolvedWeaponStats.cs
     WeaponRuntimeState.cs
     WeaponStateStore.cs
@@ -276,7 +291,7 @@ Names describe intended responsibilities; avoid scaffolding unused strategies or
 
 Expose weapon availability through the existing ship component-presence lifecycle if weapons are detachable as a system. Add a `Weapons` component flag and update its serialized presence validation consistently; do not make removal equivalent to destroying item state. Detached/disabled weapon systems cannot fire or reload, while cooldown time continues to pass.
 
-Definitions are immutable. Weapon state is mutable authoritative item state. Equipment bindings are a projection of item placement. Presentation is disposable. Do not put loaded rounds in `ItemDefinition.Values`, item stack counts, or scene nodes.
+Definitions are immutable. Weapon state is mutable authoritative item state. Equipment bindings are a projection of item placement. Presentation is disposable. Do not put loaded rounds in item definitions, item stack counts, or scene nodes.
 
 ## 6. Weapon state, groups, and supply
 
@@ -429,11 +444,14 @@ Use the seven stories in the [story map](#story-map-and-scope-precedence), repla
 
 Keep session cleanup and readiness working after each increment. Story 4 is local-host firing; story 5 enables multiplayer firing only after its baselines and profiles are ready. Story 6 adds supply state and its synchronization together. Story 7 adds damage/death and completes integrated performance validation. Do not pull later supply/damage requirements into schema or visual stories.
 
+Story 1 is a complete item-format migration, not a transition period with two supported formats. Verify the entire shipped catalogue and all existing weapon IDs before proceeding to its dependent stories. Later gameplay work cannot be used to defer migration of legacy weapons or consumers.
+
 ## 13. Test matrix
 
 | Area | Required cases |
 | --- | --- |
-| Data | Supply-dependent required/forbidden fields; nonstackable weapons; finite bounds; old `MagazinSize`; item-version mismatch; missing damage/profile reference; malformed muzzle vectors; unsupported projectile delivery; preserved user keybindings. |
+| Data | Flat subtype fields and rejected legacy wrappers; required mass on every category, including resources/consumables; omitted spread resolves to zero; supply-dependent required/forbidden fields; nonstackable weapons; finite bounds; old capacity names; item-version mismatch; missing damage/profile reference; malformed muzzle vectors; projectile definitions accepted but unsupported combat binding rejected; preserved user keybindings. |
+| Migration | Entire shipped catalogue validates and loads through the new path; every previous light/medium/heavy weapon ID remains present; migrated weapons work through item creation, inventory, equipment, stats, and tooltips; old-format and mixed old/new documents fail under both old and current version headers; no successful legacy loader, alias, dictionary consumer, or compatibility adapter remains. |
 | Timing | First shot immediate; SMG ticks 0/4/8; laser 0/20/40; fractional-rate long-run cadence; one-shot/tick bound; no idle/starvation catch-up; trigger release/repress cannot bypass cooldown. |
 | Ammunition | Exactly one round per shot; final shot at 236/reload complete at 326; partial manual reload; duplicate request; cancellation; unequip/re-equip/transfer preserve rounds and cooldown; restored reload resumes without refill initialization. |
 | Energy | Exactly four charged units admits one laser shot; insufficient charge pays nothing; same-tick generation usable; initial energy zero; steady demand remains separate; stable competing-slot payment and power transitions. |
@@ -451,7 +469,7 @@ All code introduced solely for test support must follow `AGENTS.md`: use `TEST-S
 
 ## 14. Future projectile boundary
 
-Keep one accepted shot contract and one damage application contract. A future `Delivery: Projectile` can reference the existing projectile catalogue by `ProjectileId`, create a host-owned projectile at the chosen muzzle, and submit the same `DamageRequest` when it impacts. It must independently define movement, lifetime, collision, replication, and visual interpolation.
+Keep one accepted shot contract and one damage application contract. `DeliveryType: Projectile` is represented in the definition model, but execution is deferred. A future schema extension can add a `ProjectileId` reference to the existing projectile catalogue; the executor can create a host-owned projectile at the chosen muzzle and submit the same `DamageRequest` when it impacts. It must independently define movement, lifetime, collision, replication, and visual interpolation.
 
 No projectile entities, generic strategy registry, rewind history, or unused projectile pooling is required now. Archetype must not dictate delivery; a future energy projectile and a physical hitscan weapon remain valid compositions once their combinations are implemented.
 
@@ -459,7 +477,8 @@ No projectile entities, generic strategy registry, rewind history, or unused pro
 
 - [ ] Re-read repository instructions and inspect intervening changes; preserve unrelated staged/untracked work.
 - [ ] Confirm current item/protocol versions before applying the planned increments.
-- [ ] Keep implementation limited to Laser Mk1 and Vulcan Mk1 hitscan and their specified effects; exclude heavy/medium weapons and separate shield impacts.
+- [ ] Complete the schema/definition migration for every existing weapon and item in story 1, preserving existing weapon IDs and removing all parallel valid legacy paths.
+- [ ] Keep playable combat implementation limited to Laser Mk1 and Vulcan Mk1 hitscan and their specified effects; this limitation does not exempt other weapons from migration. Exclude separate shield impacts.
 - [ ] Implement agreed requirements and adopted defaults; do not reopen settled barrel/aim/overflow/reserve questions.
 - [ ] Keep one authoritative simulation owner and no combat side effects in prediction replay.
 - [ ] Include per-item state, readiness, recovery, restoration, and disposal in the implementation, not as later fixes.

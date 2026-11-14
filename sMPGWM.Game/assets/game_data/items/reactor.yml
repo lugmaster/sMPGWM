@@ -1,16 +1,14 @@
-Version: 2.0.0
+Version: 3.0.0
 Items:
-  - Id: mock_standard_reactor
-    DisplayName: Standard Reactor
-    CategoryId: reactor
-    Values:
-      Mass: 1
-      EnergyProduction: 24
-    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
-  - Id: mock_advanced_reactor
-    DisplayName: Advanced Reactor
-    CategoryId: reactor
-    Values:
-      Mass: 1
-      EnergyProduction: 24
-    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+- Id: mock_standard_reactor
+  DisplayName: Standard Reactor
+  CategoryId: reactor
+  Description: PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.
+  Mass: 1
+  EnergyProduction: 24
+- Id: mock_advanced_reactor
+  DisplayName: Advanced Reactor
+  CategoryId: reactor
+  Description: PlayerMock alternate example for equipment swaps and separate item stacks.
+  Mass: 1
+  EnergyProduction: 24

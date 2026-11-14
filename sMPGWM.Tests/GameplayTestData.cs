@@ -6,6 +6,9 @@ namespace sMPGWM.Tests;
 
 internal static class GameplayTestData
 {
+    private static readonly object DocumentLock = new();
+    private static readonly Dictionary<(string File, string Schema), JObject> Documents = new();
+
     internal static GameplayCatalogues Load(bool variants = false, Action<string, JObject>? edit = null)
     {
         return GameplayCatalogueLoader.Load(source =>
@@ -49,11 +52,24 @@ internal static class GameplayTestData
         "../../../../sMPGWM.Game/assets/game_data"));
     internal static JObject Read(string file, string schema)
     {
-        if (file == "ItemDefinitions.yml") return sMPGWM.Scripts.ItemSystem.ItemDefinitionDocuments.Load(part => Read(part, part.Replace(".yml", ".schema.yml")));
-        var result = YamlParser.ValidateAndReturn(File.ReadAllText(Path.Combine(DirectoryPath, file)),
-            File.ReadAllText(Path.Combine(DirectoryPath, schema)), file, schema);
-        if (!result.IsSuccess) throw new ArgumentException(result.Error!.ToDisplayString());
-        return (JObject)result.Value!;
+        lock (DocumentLock)
+        {
+            var key = (file, schema);
+            if (!Documents.TryGetValue(key, out var document))
+            {
+                if (file == "ItemDefinitions.yml")
+                    document = sMPGWM.Scripts.ItemSystem.ItemDefinitionDocuments.Load(part => Read(part, part.Replace(".yml", ".schema.yml")));
+                else
+                {
+                    var result = YamlParser.ValidateAndReturn(File.ReadAllText(Path.Combine(DirectoryPath, file)),
+                        File.ReadAllText(Path.Combine(DirectoryPath, schema)), file, schema);
+                    if (!result.IsSuccess) throw new ArgumentException(result.Error!.ToDisplayString());
+                    document = (JObject)result.Value!;
+                }
+                Documents.Add(key, document);
+            }
+            return (JObject)document.DeepClone();
+        }
     }
     internal static JObject Find(JArray rows, string id)
     {

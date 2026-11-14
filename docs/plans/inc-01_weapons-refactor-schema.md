@@ -7,22 +7,31 @@ Dependencies: None; independent of story 2.
 
 ## Outcome
 
-Convert the existing light-weapon YAML to the Vulcan Mk1 and Laser Mk1 examples in epic ?4.1. Both weapons must load through schema validation, semantic parsing, the item registry, item creation, and inventory with their new values. They remain nonfunctional.
+Migrate every existing item to flat typed subtype properties with explicit required `Mass`, including resources and consumables. Port all existing light, medium, and heavy weapons in place, preserving their IDs, and add the Vulcan Mk1 and Laser Mk1 examples in epic section 4.1 alongside them. The complete catalogue must load through the new schema, semantic parser, registry, item creation, and inventory path. This story ends with one accepted format and no parallel valid legacy path. Firing remains deferred.
 
 ## Scope
 
-- Add immutable typed weapon metadata and conditional value validation; retain authored numeric baselines in `Values`. Follow epic ?4.2 bounds, supported discriminators, and nonstackable rules.
-- Ammunition requires `MagazineCapacity` and `ReloadDuration`; energy requires `EnergyPerShot`; reject fields belonging to the other supply mode and the old `MagazinSize` format.
-- Update generic/light-weapon schemas, category value handling, parser, registry preparation, starter references, and fixtures together. Preserve medium/heavy content and behavior except shared version headers.
+- Replace `Values` dictionaries with immutable typed item subtypes; remove the split `Weapon` metadata object. Shared `ItemDefinition` fields include required finite nonnegative `Mass`; weapon categories share `WeaponItemDefinition`. Follow epic section 4.2 bounds and nonstackable rules.
+- Require `Archetype`, `DeliveryType`, `SupplyMode`, `PresentationId`, `DamageSource`, `Damage`, `AttackSpeed`, `Range`, and `EnergyConsumption` on every weapon. Optional `SpreadDegrees` resolves to `0` when omitted.
+- Accept `DeliveryType: HitScan` or `Projectile` and `SupplyMode: Ammunition` or `Energy` as independent discriminators. This is definition support only; projectile execution remains excluded. Automatic firing remains fixed behavior of the later playable slice, without an authored `FireMode` field.
+- Ammunition requires `AmmoCapacity` and `ReloadDuration`; energy requires `EnergyPerShot`. Reject fields belonging to the other supply mode, legacy wrappers, and old `MagazinSize`/`MagazineCapacity` names. Parse supply into typed variants rather than a bag of optional fields.
+- Update all item schemas, remove category `Values` lists, and update the parser, registry preparation, stat/tooltip consumers, starter references, and fixtures together. Preserve existing numeric baselines and stat aggregation behavior. This does not add inventory/cargo mass to ship calculations.
+- Give resource/consumable items explicit authored mass, without a parser default. Migrate every existing light/medium/heavy weapon to valid flat definitions with explicitly authored missing fields and one supply mode; preserve their IDs and category capacity costs. Record chosen migration values for review; do not infer mechanics from category/archetype. The named examples do not replace existing light weapons.
+- Remove legacy schema branches, successful old-format parsing, field aliases, fallback loaders, dictionary definition consumers, and compatibility adapters. Old-format detection may remain only for actionable rejection. No category, mock item, or positive fixture is exempt from the new contract.
+- Migrate production data, positive test fixtures, examples, and consumers together. Keep old-format fixtures only for rejection tests. Later stories use the new typed model exclusively; gameplay deferrals do not defer any part of this migration.
 - Advance all eleven item document headers consistently (planned `3.0.0`; inspect current versions first). Give actionable old-format errors without overwriting user-authored data.
 - Carry `PresentationId` as metadata only. Runtime profile preparation and resource validation belong to story 4.
 
 ## Acceptance
 
 - Vulcan has damage 1.8, attack speed 15, range 800, spread 6, continuous energy demand 1, magazine capacity 60, reload duration 1500 ms, and mass 1.
-- Laser has damage 9, attack speed 3, range 1200, spread 0, continuous energy demand 2, energy per shot 4, and mass 1. Metadata matches the examples exactly.
+- Laser has damage 9, attack speed 3, range 1200, spread 0 from omission, continuous energy demand 2, energy per shot 4, and mass 1. Metadata matches the examples exactly.
+- All item categories load using flat typed properties. Missing `Mass` fails for every category, including consumables/resources; nonfinite or negative mass fails. Unknown fields and obsolete wrappers fail with actionable diagnostics.
+- Validate and load the entire shipped catalogue, not just Vulcan/Laser. Every pre-migration light/medium/heavy weapon ID remains present and resolves to the new weapon definition type. Cover migrated weapons through item creation, inventory, equipment, stat calculation, and tooltip presentation.
+- Old-format and mixed old/new documents fail even with a current version header. Verify that legacy wrappers, capacity aliases, and category `Values` lists cannot succeed through an alternative schema or parser. Existing user-authored old data fails with a migration diagnostic, without falling back to packaged defaults.
+- Missing required weapon properties and wrong-supply fields fail. Both delivery discriminators parse independently of supply mode; unknown discriminators fail. Omitted spread resolves to zero; explicit out-of-range spread fails.
 - Registry-created inventory items retain these definitions and values through existing inventory operations. Invalid combinations, bounds, references to damage sources, and version mismatches fail clearly.
-- Existing unrelated inventory/category behavior remains valid. Neither weapon fires, reloads, spends per-shot energy, or deals damage.
+- Existing unrelated inventory/category behavior remains valid. No weapon gains firing, reload execution, per-shot energy spending, or damage behavior in this story.
 
 ## Excluded
 

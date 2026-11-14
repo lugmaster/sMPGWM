@@ -47,8 +47,16 @@ UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, 
 
 def read(name):
     if name == 'ItemDefinitions.yml': # TEST-SUPPORT: ITEM-SPLIT-PY-001 | Tests: tools/validate_gameplay_data.py
-        parts = [read('items/' + category + '.yml') for category in ['engine', 'hull', 'shield_generator', 'reactor', 'light_weapon', 'medium_weapon', 'heavy_weapon', 'consumable', 'resource', 'battery', 'weapon_fixture']] # TEST-SUPPORT: ITEM-SPLIT-PY-002 | Tests: tools/validate_gameplay_data.py
-        return {'Version': parts[0]['Version'], 'Items': [item for part in parts for item in part['Items']]} # TEST-SUPPORT: ITEM-SPLIT-PY-003 | Tests: tools/validate_gameplay_data.py
+        combined = None
+        for category in ['engine', 'hull', 'shield_generator', 'reactor', 'light_weapon', 'medium_weapon', 'heavy_weapon', 'consumable', 'resource', 'battery', 'weapon_fixture']:
+            filename = 'items/' + category + '.yml'
+            part = read(filename)
+            if combined is None:
+                combined = {'Version': part['Version'], 'Items': []}
+            if part['Version'] != combined['Version']:
+                raise ValueError(f'{filename}: item definition version mismatch')
+            combined['Items'].extend(part['Items'])
+        return combined
     document = yaml.load((ROOT / name).read_text(encoding='utf-8'), Loader=UniqueKeyLoader) # TEST-SUPPORT: ITEM-SCHEMA-PY-001 | Tests: tools/validate_gameplay_data.py
     if name.startswith('items/') and not name.endswith('.schema.yml') and 'Items' in document: # TEST-SUPPORT: ITEM-SCHEMA-PY-002 | Tests: tools/validate_gameplay_data.py
         Draft7Validator(read(name.replace('.yml', '.schema.yml'))).validate(document) # TEST-SUPPORT: ITEM-SCHEMA-PY-003 | Tests: tools/validate_gameplay_data.py
@@ -70,6 +78,9 @@ def validate(documents, schemas):
             indices[kind][id] = entry
     if errors:
         return errors
+
+    if documents['items']['Version'] != documents['categories']['Version']:
+        errors.append('items: item and category definition versions must match')
 
     for name, ship in indices['ships'].items(): # TEST-SUPPORT: DATA-VALIDATOR-V2-68 | Tests: tools/validate_gameplay_data.py
         if not math.isfinite(ship['health']) or ship['health'] <= 0: # TEST-SUPPORT: SHIP-HEALTH-VALIDATOR-001 | Tests: tools/validate_gameplay_data.py
@@ -99,6 +110,17 @@ def validate(documents, schemas):
     def edge(owner, kind, id):
         ref(kind, id, owner)
         graph.setdefault(owner, []).append(f'{kind}:{id}')
+
+    def finite_numbers(fields, owner):
+        for field, value in fields.items():
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                continue
+            try:
+                finite = math.isfinite(value)
+            except OverflowError:
+                finite = False
+            if not finite:
+                errors.append(f'{owner}: {field} must be finite')
 
 
     for id, ability in indices['abilities'].items():
@@ -165,23 +187,11 @@ def validate(documents, schemas):
         owner = f'items:{id}'
         if item['CategoryId'] not in category_ids:
             errors.append(f'{owner}: unknown item category')
-        category = indices['categories'].get(item['CategoryId'], {})
-        required = {v.strip() for v in category.get('Values', '').split(',') if v.strip()}
-        values = item.get('Values', {})
-        for key in required:
-            if key == 'AbilityIds':
-                if not item.get('AbilityIds'): errors.append(f'{owner}: missing AbilityIds')
-            elif key not in values: errors.append(f'{owner}: missing category value {key}')
-        for key, value in values.items():
-            if key == 'DamageSource':
-                if value not in damage_ids: errors.append(f'{owner}: unknown damage source')
-            elif isinstance(value, bool) or not isinstance(value, (int, float)):
-                errors.append(f'{owner}: {key} must be numeric')
-            elif not math.isfinite(value) or value < 0: # TEST-SUPPORT: DATA-VALIDATOR-V2-172 | Tests: tools/validate_gameplay_data.py
-                errors.append(f'{owner}: {key} must be finite and nonnegative') # TEST-SUPPORT: DATA-VALIDATOR-V2-173 | Tests: tools/validate_gameplay_data.py
-            elif key == 'RechargeTime' and value <= 0: # TEST-SUPPORT: DATA-VALIDATOR-V2-174 | Tests: tools/validate_gameplay_data.py
-                errors.append(f'{owner}: RechargeTime must be positive milliseconds') # TEST-SUPPORT: DATA-VALIDATOR-V2-175 | Tests: tools/validate_gameplay_data.py
-        if set(values) - (required - {'AbilityIds'}): errors.append(f'{owner}: unexpected category values')
+        finite_numbers(item, owner)
+        if 'DamageSource' in item and item['DamageSource'] not in damage_ids:
+            errors.append(f'{owner}: unknown damage source')
+        if 'Supply' in item:
+            finite_numbers(item['Supply'], owner + '.Supply')
         refs('abilities', item.get('AbilityIds', []), owner)
         for grant in item.get('BehaviourGrants', []):
             ref('behaviours', grant['BehaviourId'], owner)
@@ -216,11 +226,29 @@ def negative_checks(documents, schemas):
         ('legacy ShieldCurrent', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(ShieldCurrent=10)), # TEST-SUPPORT: DATA-VALIDATOR-V2-203 | Tests: tools/validate_gameplay_data.py
         ('invalid intrinsic mass', lambda d: d['ships']['ships'][0].update(mass=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-204 | Tests: tools/validate_gameplay_data.py
         ('infinite modifier', lambda d: d['ships']['ships'][0]['stat_modifiers'].update(Speed=float('inf'))), # TEST-SUPPORT: DATA-VALIDATOR-V2-205 | Tests: tools/validate_gameplay_data.py
-        ('zero recharge time', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(RechargeTime=0)), # TEST-SUPPORT: DATA-VALIDATOR-V2-206 | Tests: tools/validate_gameplay_data.py
-        ('negative downtime', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(DownTime=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-207 | Tests: tools/validate_gameplay_data.py
-        ('legacy generator Shield', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator')['Values'].update(Shield=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-208 | Tests: tools/validate_gameplay_data.py
-        ('legacy reactor Energy', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='reactor')['Values'].update(Energy=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-209 | Tests: tools/validate_gameplay_data.py
-        ('missing item value', lambda d: d['items']['Items'][0]['Values'].pop('Speed')),
+        ('zero recharge time', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator').update(RechargeTime=0)), # TEST-SUPPORT: DATA-VALIDATOR-V2-206 | Tests: tools/validate_gameplay_data.py
+        ('negative downtime', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator').update(DownTime=-1)), # TEST-SUPPORT: DATA-VALIDATOR-V2-207 | Tests: tools/validate_gameplay_data.py
+        ('legacy generator Shield', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='shield_generator').update(Shield=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-208 | Tests: tools/validate_gameplay_data.py
+        ('legacy reactor Energy', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='reactor').update(Energy=100)), # TEST-SUPPORT: DATA-VALIDATOR-V2-209 | Tests: tools/validate_gameplay_data.py
+        ('missing item property', lambda d: d['items']['Items'][0].pop('Speed')),
+        ('missing resource mass', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='resource').pop('Mass')),
+        ('missing consumable mass', lambda d: next(i for i in d['items']['Items'] if i['CategoryId']=='consumable').pop('Mass')),
+        ('infinite item mass', lambda d: d['items']['Items'][0].update(Mass=float('inf'))),
+        ('NaN item mass', lambda d: d['items']['Items'][0].update(Mass=float('nan'))),
+        ('legacy Values wrapper', lambda d: d['items']['Items'][0].update(Values={})),
+        ('legacy category Values', lambda d: d['categories']['Categories'][0].update(Values='Mass')),
+        ('old item version', lambda d: d['items'].update(Version='2.0.0')),
+        ('mismatched category version', lambda d: d['categories'].update(Version='2.0.0')),
+        ('unknown weapon damage source', lambda d: next(i for i in d['items']['Items'] if i['Id']=='vulcan_mk1').update(DamageSource='missing')),
+        ('missing weapon supply', lambda d: next(i for i in d['items']['Items'] if i['Id']=='vulcan_mk1').pop('Supply')),
+        ('missing ammunition capacity', lambda d: next(i for i in d['items']['Items'] if i['Id']=='vulcan_mk1')['Supply'].pop('AmmoCapacity')),
+        ('missing energy cost', lambda d: next(i for i in d['items']['Items'] if i['Id']=='laser_mk1')['Supply'].pop('EnergyPerShot')),
+        ('ammunition with energy cost', lambda d: next(i for i in d['items']['Items'] if i['Id']=='vulcan_mk1')['Supply'].update(EnergyPerShot=0)),
+        ('energy with ammunition capacity', lambda d: next(i for i in d['items']['Items'] if i['Id']=='laser_mk1')['Supply'].update(AmmoCapacity=1)),
+        ('energy with reload duration', lambda d: next(i for i in d['items']['Items'] if i['Id']=='laser_mk1')['Supply'].update(ReloadDuration=1)),
+        ('unknown supply mode', lambda d: next(i for i in d['items']['Items'] if i['Id']=='laser_mk1')['Supply'].update(Mode='Unknown')),
+        ('infinite energy cost', lambda d: next(i for i in d['items']['Items'] if i['Id']=='laser_mk1')['Supply'].update(EnergyPerShot=float('inf'))),
+        ('NaN reload duration', lambda d: next(i for i in d['items']['Items'] if i['Id']=='vulcan_mk1')['Supply'].update(ReloadDuration=float('nan'))),
         ('unknown field', lambda d: d['abilities']['AbilityDefinitions'][0].update(Typo=True)),
         ('dangling reference', lambda d: d['abilities']['AbilityDefinitions'][0].update(EffectId='missing')),
         ('duplicate ID', lambda d: d['effects']['EffectDefinitions'].append(copy.deepcopy(d['effects']['EffectDefinitions'][0]))),

@@ -2,12 +2,12 @@ $schema: http://json-schema.org/draft-07/schema#
 type: object
 additionalProperties: false
 required:
-  - Version
-  - Categories
+- Version
+- Categories
 properties:
   Version:
     type: string
-    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    const: 3.0.0
   Categories:
     type: array
     minItems: 1
@@ -15,23 +15,22 @@ properties:
       type: object
       additionalProperties: false
       required:
-        - Id
-        - DisplayName
+      - Id
+      - DisplayName
       not:
-        required: [CanStack, StackLimit]
+        required:
+        - CanStack
+        - StackLimit
       properties:
-        Values:
-          type: string
-          pattern: '\S'
         Id:
           type: string
-          pattern: '\S'
+          pattern: \S
         DisplayName:
           type: string
-          pattern: '\S'
+          pattern: \S
         Icon:
           type: string
-          pattern: '^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$'
+          pattern: ^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$
         Description:
           type: string
         CanStack:

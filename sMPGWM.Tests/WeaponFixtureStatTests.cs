@@ -11,10 +11,10 @@ public sealed class WeaponFixtureStatTests
     [Test]
     public void FixtureAddsMassButNeverEnergyDemand()
     {
-        var fixture = new ItemDefinition("fixture", "fixture", "weapon_fixture", "", false, 1, new IconDefinition { IconTexture = null! })
+        var fixture = new WeaponFixtureItemDefinition("fixture", "fixture", "weapon_fixture", "", false, 1, new IconDefinition { IconTexture = null! })
         {
             CategoryId = "weapon_fixture",
-            Values = new Dictionary<string, object> { ["Mass"] = 7d, ["WeaponSlots"] = 9, ["EnergyConsumption"] = 500d }
+            Mass = 7, WeaponSlots = 9
         };
         var slots = new[] { new EquipmentSlotDefinition("weapon_fixture", "Weapon Fixture", "weapon_fixture") };
         var equipment = new ItemEntity?[] { new(ItemEntityId.FromNetwork(1), fixture, 1) };

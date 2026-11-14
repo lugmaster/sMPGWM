@@ -1,26 +1,34 @@
-Version: 2.0.0
+Version: 3.0.0
 Items:
-  - Id: mock_standard_heavy_weapon
-    DisplayName: Standard Heavy Weapon
-    CategoryId: heavy_weapon
-    Values:
-      DamageSource: physical
-      Damage: 1
-      AttackSpeed: 1
-      EnergyConsumption: 1
-      EnergyPerShot: 1
-      ReloadDuration: 1
-      Mass: 1
-    Description: "PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar."
-  - Id: mock_advanced_heavy_weapon
-    DisplayName: Advanced Heavy Weapon
-    CategoryId: heavy_weapon
-    Values:
-      DamageSource: physical
-      Damage: 1
-      AttackSpeed: 1
-      EnergyConsumption: 1
-      EnergyPerShot: 1
-      ReloadDuration: 1
-      Mass: 1
-    Description: "PlayerMock alternate example for equipment swaps and separate item stacks."
+- Id: mock_standard_heavy_weapon
+  DisplayName: Standard Heavy Weapon
+  CategoryId: heavy_weapon
+  Description: PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.
+  DamageSource: physical
+  Damage: 1
+  AttackSpeed: 1
+  EnergyConsumption: 1
+  Mass: 1
+  Archetype: HeavyCannon
+  DeliveryType: HitScan
+  PresentationId: smg_standard
+  Range: 800
+  Supply:
+    Mode: Energy
+    EnergyPerShot: 1
+- Id: mock_advanced_heavy_weapon
+  DisplayName: Advanced Heavy Weapon
+  CategoryId: heavy_weapon
+  Description: PlayerMock alternate example for equipment swaps and separate item stacks.
+  DamageSource: physical
+  Damage: 1
+  AttackSpeed: 1
+  EnergyConsumption: 1
+  Mass: 1
+  Archetype: HeavyCannon
+  DeliveryType: HitScan
+  PresentationId: smg_standard
+  Range: 800
+  Supply:
+    Mode: Energy
+    EnergyPerShot: 1

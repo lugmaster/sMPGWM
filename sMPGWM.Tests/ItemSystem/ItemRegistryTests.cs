@@ -13,12 +13,12 @@ public class ItemRegistryTests
     {
         var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var items = ItemRegistry.LoadItemDefinitions(Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
-        Assert.That(items.Count, Is.EqualTo(21));
+        Assert.That(items.Count, Is.EqualTo(23));
         Assert.That(items["mock_standard_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon"));
         Assert.That(items["mock_advanced_medium_weapon"].CategoryId, Is.EqualTo("medium_weapon"));
-        Assert.That(Convert.ToInt32(items["mock_standard_weapon_fixture"].Values["WeaponSlots"]), Is.EqualTo(9));
-        Assert.That(Convert.ToDouble(items["mock_standard_weapon_fixture"].Values["Mass"]), Is.EqualTo(1));
-        Assert.That(items["mock_standard_weapon_fixture"].Values.ContainsKey("EnergyConsumption"), Is.False);
+        Assert.That(((WeaponFixtureItemDefinition)items["mock_standard_weapon_fixture"]).WeaponSlots, Is.EqualTo(9));
+        Assert.That(items["mock_standard_weapon_fixture"].Mass, Is.EqualTo(1));
+        Assert.That(typeof(WeaponFixtureItemDefinition).GetProperty("EnergyConsumption"), Is.Null);
         Assert.That(items["mock_standard_engine"].CanStack, Is.False);
         Assert.That(items["mock_standard_engine"].StackLimit, Is.EqualTo(1));
         Assert.That(items["mock_standard_consumable"].CanStack, Is.True);
@@ -31,7 +31,7 @@ public class ItemRegistryTests
     {
         var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var items = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
-        ((JObject)items["Items"]![0]!["Values"]!).Remove("Speed");
+        ((JObject)items["Items"]![0]!).Remove("Speed");
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(items, categories, _ => null!));
         items = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
         foreach (var item in items["Items"]!)
@@ -75,8 +75,8 @@ public class ItemRegistryTests
         foreach (var category in new[] { false, true })
         {
             var schema = category ? "items/ItemCategorySchema.yml" : "items/ItemSchema.yml";
-            var yaml = "Version: 1.0.0\n" + (category ? "Categories" : "Items") + ":\n  - Id: test\n    DisplayName: Test\n    Description: Test\n" +
-                (category ? "" : "    CategoryId: test\n") + "    " + setting;
+            var yaml = "Version: 3.0.0\n" + (category ? "Categories" : "Items") + ":\n  - Id: resource\n    DisplayName: Test\n    Description: Test\n" +
+                (category ? "" : "    CategoryId: resource\n    Mass: 1\n") + "    " + setting;
             var result = YamlParser.ValidateAndReturn(yaml, File.ReadAllText(Path.Combine(directory, schema)), "test", schema);
             Assert.That(result.IsSuccess, Is.EqualTo(valid), yaml);
         }
@@ -90,9 +90,9 @@ public class ItemRegistryTests
         {
             string? iconKey = null;
             var categories = ItemDefinitionParser.LoadItemCategoryDefinitions((JObject)YamlParser.ParseToken(
-                "Categories:\n  - Id: test\n    DisplayName: Test\n    " + categorySetting, "test").Value!, key => { iconKey = key; return null!; });
+                "Version: 3.0.0\nCategories:\n  - Id: resource\n    DisplayName: Test\n    " + categorySetting, "test").Value!, key => { iconKey = key; return null!; });
             var items = ItemRegistry.LoadItemDefinitions((JObject)YamlParser.ParseToken(
-                "Items:\n  - Id: test\n    DisplayName: Test\n    CategoryId: test\n    " + itemSetting, "test").Value!, categories, _ => null!);
+                "Version: 3.0.0\nItems:\n  - Id: test\n    DisplayName: Test\n    CategoryId: resource\n    Mass: 1\n    " + itemSetting, "test").Value!, categories, _ => null!);
             var expected = itemSetting switch
             {
                 "CanStack: false" => 1,
@@ -114,17 +114,9 @@ public class ItemRegistryTests
         var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
         var yaml = Read("ItemDefinitions.yml", "items/ItemSchema.yml");
         foreach (var item in yaml["Items"]!)
-            if ((string?)item["CategoryId"] == "weapon_fixture") item["Values"]!["WeaponSlots"] = capacity;
+            if ((string?)item["CategoryId"] == "weapon_fixture") item["WeaponSlots"] = capacity;
         Assert.Throws<ArgumentException>(() => ItemRegistry.LoadItemDefinitions(yaml, categories, _ => null!));
     }
 
-    private static JObject Read(string file, string schema)
-    {
-        if (file == "ItemDefinitions.yml") return sMPGWM.Scripts.ItemSystem.ItemDefinitionDocuments.Load(part => Read(part, part.Replace(".yml", ".schema.yml")));
-        var directory = Path.GetFullPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../sMPGWM.Game/assets/game_data"));
-        var result = YamlParser.ValidateAndReturn(File.ReadAllText(Path.Combine(directory, file)),
-            File.ReadAllText(Path.Combine(directory, schema)), file, schema);
-        Assert.That(result.IsSuccess, Is.True, result.Error?.ToDisplayString());
-        return (JObject)result.Value!;
-    }
+    private static JObject Read(string file, string schema) => GameplayTestData.Read(file, schema);
 }

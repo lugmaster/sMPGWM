@@ -97,9 +97,42 @@ public class EquipmentTransferTests
     public void CategoryIdentityDoesNotDependOnDisplayNames()
     {
         var categories = sMPGWM.Scripts.ItemSystem.ItemDefinitionParser.LoadItemCategoryDefinitions(
-            Newtonsoft.Json.Linq.JObject.Parse("{Categories:[{Id:'engine',DisplayName:'Component'},{Id:'hull',DisplayName:'Component'}]}"), _ => null!);
+            Newtonsoft.Json.Linq.JObject.Parse("""
+                {
+                  "Version": "3.0.0",
+                  "Categories": [
+                    { "Id": "engine", "DisplayName": "Component" },
+                    { "Id": "hull", "DisplayName": "Component" }
+                  ]
+                }
+                """), _ => null!);
         var items = sMPGWM.Scripts.ItemSystem.ItemDefinitionParser.LoadItemDefinitions(
-            Newtonsoft.Json.Linq.JObject.Parse("{Items:[{Id:'custom_engine',DisplayName:'Engine',CategoryId:'engine'},{Id:'custom_hull',DisplayName:'Hull',CategoryId:'hull'}]}"), categories, _ => null!);
+            Newtonsoft.Json.Linq.JObject.Parse("""
+                {
+                  "Version": "3.0.0",
+                  "Items": [
+                    {
+                      "Id": "custom_engine",
+                      "DisplayName": "Engine",
+                      "CategoryId": "engine",
+                      "Mass": 1,
+                      "Speed": 300,
+                      "AfterBurnerSpeed": 400,
+                      "RotationSpeed": 30,
+                      "Acceleration": 1.2,
+                      "AfterBurnerAcceleration": 1.7,
+                      "EnergyConsumption": 16
+                    },
+                    {
+                      "Id": "custom_hull",
+                      "DisplayName": "Hull",
+                      "CategoryId": "hull",
+                      "Mass": 1,
+                      "Armor": 1
+                    }
+                  ]
+                }
+                """), categories, _ => null!);
         var slot = _equipmentImpl.FindSlot("engine");
         Assert.That(items["custom_engine"].CategoryName, Is.EqualTo(items["custom_hull"].CategoryName));
         Assert.That(items["custom_engine"].CategoryId, Is.EqualTo("engine"));

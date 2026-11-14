@@ -7,7 +7,7 @@ required:
 properties:
   Version:
     type: string
-    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+    const: 3.0.0
   Items:
     type: array
     items:
@@ -17,7 +17,16 @@ properties:
       - Id
       - DisplayName
       - CategoryId
-      - Values
+      - DamageSource
+      - Damage
+      - AttackSpeed
+      - EnergyConsumption
+      - Mass
+      - Archetype
+      - DeliveryType
+      - PresentationId
+      - Range
+      - Supply
       not:
         required:
         - CanStack
@@ -43,43 +52,6 @@ properties:
           type: integer
           minimum: 2
           maximum: 2147483646
-        Values:
-          type: object
-          additionalProperties: false
-          properties:
-            DamageSource:
-              type: string
-              pattern: \S
-            Damage:
-              type: number
-              minimum: 0
-            AttackSpeed:
-              type: number
-              minimum: 0
-            EnergyConsumption:
-              type: number
-              minimum: 0
-            EnergyPerShot:
-              type: number
-              minimum: 0
-            MagazinSize:
-              type: number
-              minimum: 0
-            ReloadDuration:
-              type: number
-              minimum: 0
-            Mass:
-              type: number
-              minimum: 0
-          required:
-          - DamageSource
-          - Damage
-          - AttackSpeed
-          - EnergyConsumption
-          - EnergyPerShot
-          - MagazinSize
-          - ReloadDuration
-          - Mass
         AbilityIds:
           type: array
           items:
@@ -109,3 +81,66 @@ properties:
                 enum:
                 - WhileSourceActive
           minItems: 1
+        DamageSource:
+          type: string
+          pattern: \S
+        Damage:
+          type: number
+          minimum: 0
+        AttackSpeed:
+          type: number
+          exclusiveMinimum: 0
+        EnergyConsumption:
+          type: number
+          minimum: 0
+        Mass:
+          type: number
+          minimum: 0
+        Archetype:
+          type: string
+          pattern: \S
+        DeliveryType:
+          type: string
+          enum:
+          - HitScan
+          - Projectile
+        PresentationId:
+          type: string
+          pattern: \S
+        Range:
+          type: number
+          exclusiveMinimum: 0
+        SpreadDegrees:
+          type: number
+          minimum: 0
+          maximum: 180
+          default: 0
+        Supply:
+          oneOf:
+          - type: object
+            additionalProperties: false
+            required:
+            - Mode
+            - AmmoCapacity
+            - ReloadDuration
+            properties:
+              Mode:
+                const: Ammunition
+              AmmoCapacity:
+                type: integer
+                minimum: 1
+                maximum: 2147483647
+              ReloadDuration:
+                type: number
+                exclusiveMinimum: 0
+          - type: object
+            additionalProperties: false
+            required:
+            - Mode
+            - EnergyPerShot
+            properties:
+              Mode:
+                const: Energy
+              EnergyPerShot:
+                type: number
+                exclusiveMinimum: 0

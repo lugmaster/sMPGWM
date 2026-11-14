@@ -10,9 +10,10 @@ public sealed class EquipmentStatAllocationTests
     [Test]
     public void ArrayInputCalculatesWithoutPerCallAllocations()
     {
-        var engine = new ItemDefinition("engine", "Engine", "engine", "", false, 1, null!)
+        var engine = new EngineItemDefinition("engine", "Engine", "engine", "", false, 1, null!)
         {
-            Values = new Dictionary<string, object> { ["Speed"] = 200d, ["Mass"] = 2d }
+            CategoryId = "engine", Speed = 200, Mass = 2, EnergyConsumption = 0,
+            AfterBurnerSpeed = 0, RotationSpeed = 0, Acceleration = 0, AfterBurnerAcceleration = 0
         };
         var items = new ItemEntity?[] { new(ItemEntityId.FromNetwork(1), engine, 1) };
         var slots = new[] { new EquipmentSlotDefinition("engine", "Engine", "engine") };

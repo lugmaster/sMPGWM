@@ -113,8 +113,9 @@ public sealed class GameplayBoundaryTests
     public void UnsupportedContentHasExplicitDiagnostics()
     {
         var catalogue = GameplayTestData.Load();
-        var item = new ItemDefinition("passive", "Passive", "Resource", "", false, 1, null!)
+        var item = new ResourceItemDefinition("passive", "Passive", "Resource", "", false, 1, null!)
         {
+            CategoryId = "resource", Mass = 1,
             AbilityIds = new[] { "delayedExplosion" },
             BehaviourGrants = new[] { new ItemBehaviourGrant("infection", BehaviourGrantWhile.Carried, BehaviourGrantLifetime.WhileSourceActive) }
         };

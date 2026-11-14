@@ -17,14 +17,37 @@ public static class EquipmentStatCalculator
         internal readonly double Mass, Armor, ShieldCapacity, RechargeTime, DownTime, EnergyProduction, EnergyConsumption, EnergyStorage;
         internal Values(ItemDefinition item)
         {
-            Speed = Read(item, "Speed"); AfterBurnerSpeed = Read(item, "AfterBurnerSpeed");
-            RotationSpeed = Read(item, "RotationSpeed"); Acceleration = Read(item, "Acceleration");
-            AfterBurnerAcceleration = Read(item, "AfterBurnerAcceleration"); Mass = Read(item, "Mass");
-            Armor = Read(item, "Armor"); ShieldCapacity = Read(item, "ShieldCapacity");
-            RechargeTime = Read(item, "RechargeTime"); DownTime = Read(item, "DownTime");
-            EnergyProduction = Read(item, "EnergyProduction");
-            EnergyConsumption = item.CategoryId == "weapon_fixture" ? 0 : Read(item, "EnergyConsumption");
-            EnergyStorage = Read(item, "EnergyStorage");
+            Mass = item.Mass;
+            switch (item)
+            {
+                case EngineItemDefinition engine:
+                    Speed = engine.Speed;
+                    AfterBurnerSpeed = engine.AfterBurnerSpeed;
+                    RotationSpeed = engine.RotationSpeed;
+                    Acceleration = engine.Acceleration;
+                    AfterBurnerAcceleration = engine.AfterBurnerAcceleration;
+                    EnergyConsumption = engine.EnergyConsumption;
+                    break;
+                case HullItemDefinition hull:
+                    Armor = hull.Armor;
+                    break;
+                case ShieldGeneratorItemDefinition shield:
+                    ShieldCapacity = shield.ShieldCapacity;
+                    RechargeTime = shield.RechargeTime;
+                    DownTime = shield.DownTime;
+                    EnergyConsumption = shield.EnergyConsumption;
+                    break;
+                case ReactorItemDefinition reactor:
+                    EnergyProduction = reactor.EnergyProduction;
+                    break;
+                case BatteryItemDefinition battery:
+                    EnergyStorage = battery.EnergyStorage;
+                    EnergyConsumption = battery.EnergyConsumption;
+                    break;
+                case WeaponItemDefinition weapon:
+                    EnergyConsumption = weapon.EnergyConsumption;
+                    break;
+            }
         }
     }
 
@@ -77,14 +100,6 @@ public static class EquipmentStatCalculator
         };
         if (!result.IsValid) throw new ArgumentException("Equipment resolves to invalid stats, recharge duration, or overflowing movement values.");
         return result;
-    }
-
-    private static double Read(ItemDefinition item, string key)
-    {
-        if (!item.Values.TryGetValue(key, out var value)) return 0;
-        var number = Convert.ToDouble(value, System.Globalization.CultureInfo.InvariantCulture);
-        if (!double.IsFinite(number) || number < 0) throw new ArgumentException($"Item '{item.Id}' has invalid {key}.");
-        return number;
     }
 
     private static double Resolve(Values? component, double baseline, double flat) =>

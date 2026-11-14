@@ -21,8 +21,8 @@ public sealed class ShipItemOwnershipTests
             world.ApproveSpawn(1, new("fighter"));
             var player = world.Players[1];
             var ship = player.ControlledShip!;
-            var definition = new ItemDefinition("mock_standard_engine", "Heavy engine", ItemRegistry.GetCategoryById("engine").DisplayName, "", false, 1, null!)
-                { CategoryId = "engine", Values = new Dictionary<string, object> { ["Mass"] = (double)float.MaxValue } };
+            var definition = (EngineItemDefinition)ItemRegistry.GetById("mock_standard_engine") with
+                { Mass = float.MaxValue };
             var item = new ItemEntity(ItemEntityId.Create(), definition, 1);
             var slots = new ItemEntity?[player.Inventory.Capacity];
             slots[0] = item;
@@ -185,8 +185,8 @@ public sealed class ShipItemOwnershipTests
             ship.Runtime.SetShieldCurrent(20);
             Assert.That(ship.Runtime.ApplyBehaviour(new SupportedBehaviour(abilities.Definitions.Behaviours.GetById("shieldCapacityBoost"), 1800, 0, .5), 1, 1, out _),
                 Is.True);
-            var definition = new ItemDefinition("mock_standard_shield_generator", "Overflowing with boost", ItemRegistry.GetCategoryById("shield_generator").DisplayName, "", false, 1, null!)
-                { CategoryId = "shield_generator", Values = new Dictionary<string, object> { ["ShieldCapacity"] = double.MaxValue / 1.2, ["RechargeTime"] = 5000d, ["DownTime"] = 3000d }, AbilityIds = new[] { "shieldCapacityBoost" } };
+            var definition = (ShieldGeneratorItemDefinition)ItemRegistry.GetById("mock_standard_shield_generator") with
+                { ShieldCapacity = double.MaxValue / 1.2, RechargeTime = 5000, DownTime = 3000, AbilityIds = new[] { "shieldCapacityBoost" } };
             var candidate = new ItemEntity(ItemEntityId.Create(), definition, 1);
             var slots = new ItemEntity?[player.Inventory.Capacity];
             slots[0] = candidate;

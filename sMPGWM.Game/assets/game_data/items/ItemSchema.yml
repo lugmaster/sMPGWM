@@ -2,81 +2,1009 @@ $schema: http://json-schema.org/draft-07/schema#
 type: object
 additionalProperties: false
 required:
-  - Version
-  - Items
+- Version
+- Items
 properties:
   Version:
     type: string
-    pattern: ^[0-9]+\.[0-9]+\.[0-9]+$
+    const: 3.0.0
   Items:
     type: array
     items:
-      type: object
-      additionalProperties: false
+      oneOf:
+      - $ref: '#/definitions/engine'
+      - $ref: '#/definitions/hull'
+      - $ref: '#/definitions/shield_generator'
+      - $ref: '#/definitions/reactor'
+      - $ref: '#/definitions/light_weapon'
+      - $ref: '#/definitions/medium_weapon'
+      - $ref: '#/definitions/heavy_weapon'
+      - $ref: '#/definitions/consumable'
+      - $ref: '#/definitions/resource'
+      - $ref: '#/definitions/battery'
+      - $ref: '#/definitions/weapon_fixture'
+definitions:
+  engine:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - EnergyConsumption
+    - Speed
+    - AfterBurnerSpeed
+    - RotationSpeed
+    - Acceleration
+    - AfterBurnerAcceleration
+    - Mass
+    not:
       required:
-        - Id
-        - DisplayName
-        - CategoryId
-      not:
-        required:
-          - CanStack
-          - StackLimit
-      properties:
-        Id:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: engine
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
           type: string
-          pattern: \S
-        DisplayName:
-          type: string
-          pattern: \S
-        CategoryId:
-          type: string
-          pattern: \S
-        Description:
-          type: string
-        CanStack:
-          type: boolean
-        Icon:
-          type:
-            - string
-            - 'null'
-        StackLimit:
-          type: integer
-          minimum: 2
-          maximum: 2147483646
-        Values:
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
           type: object
-          additionalProperties:
-            oneOf:
-              - type: number
-                minimum: 0
-              - type: string
-                pattern: '\S'
-        AbilityIds:
-          type: array
-          items:
-            type: string
-            pattern: ^[a-z][A-Za-z0-9_]*$
-          minItems: 1
-        BehaviourGrants:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - BehaviourId
-              - While
-              - Lifetime
-            properties:
-              BehaviourId:
-                type: string
-                pattern: ^[a-z][A-Za-z0-9_]*$
-              While:
-                type: string
-                enum:
-                  - Carried
-                  - Equipped
-              Lifetime:
-                type: string
-                enum:
-                  - WhileSourceActive
-          minItems: 1
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      EnergyConsumption:
+        type: number
+        minimum: 0
+      Speed:
+        type: number
+        minimum: 0
+      AfterBurnerSpeed:
+        type: number
+        minimum: 0
+      RotationSpeed:
+        type: number
+        minimum: 0
+      Acceleration:
+        type: number
+        minimum: 0
+      AfterBurnerAcceleration:
+        type: number
+        minimum: 0
+      Mass:
+        type: number
+        minimum: 0
+  hull:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - Armor
+    - Mass
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: hull
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      Armor:
+        type: number
+        minimum: 0
+      Mass:
+        type: number
+        minimum: 0
+  shield_generator:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - ShieldCapacity
+    - RechargeTime
+    - DownTime
+    - EnergyConsumption
+    - Mass
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: shield_generator
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      ShieldCapacity:
+        type: number
+        minimum: 0
+      RechargeTime:
+        type: number
+        exclusiveMinimum: 0
+      DownTime:
+        type: number
+        minimum: 0
+      EnergyConsumption:
+        type: number
+        minimum: 0
+      Mass:
+        type: number
+        minimum: 0
+  reactor:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - Mass
+    - EnergyProduction
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: reactor
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      Mass:
+        type: number
+        minimum: 0
+      EnergyProduction:
+        type: number
+        minimum: 0
+  light_weapon:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - DamageSource
+    - Damage
+    - AttackSpeed
+    - EnergyConsumption
+    - Mass
+    - Archetype
+    - DeliveryType
+    - PresentationId
+    - Range
+    - Supply
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: light_weapon
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      DamageSource:
+        type: string
+        pattern: \S
+      Damage:
+        type: number
+        minimum: 0
+      AttackSpeed:
+        type: number
+        exclusiveMinimum: 0
+      EnergyConsumption:
+        type: number
+        minimum: 0
+      Mass:
+        type: number
+        minimum: 0
+      Archetype:
+        type: string
+        pattern: \S
+      DeliveryType:
+        type: string
+        enum:
+        - HitScan
+        - Projectile
+      PresentationId:
+        type: string
+        pattern: \S
+      Range:
+        type: number
+        exclusiveMinimum: 0
+      SpreadDegrees:
+        type: number
+        minimum: 0
+        maximum: 180
+        default: 0
+      Supply:
+        oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+          - Mode
+          - AmmoCapacity
+          - ReloadDuration
+          properties:
+            Mode:
+              const: Ammunition
+            AmmoCapacity:
+              type: integer
+              minimum: 1
+              maximum: 2147483647
+            ReloadDuration:
+              type: number
+              exclusiveMinimum: 0
+        - type: object
+          additionalProperties: false
+          required:
+          - Mode
+          - EnergyPerShot
+          properties:
+            Mode:
+              const: Energy
+            EnergyPerShot:
+              type: number
+              exclusiveMinimum: 0
+  medium_weapon:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - DamageSource
+    - Damage
+    - AttackSpeed
+    - EnergyConsumption
+    - Mass
+    - Archetype
+    - DeliveryType
+    - PresentationId
+    - Range
+    - Supply
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: medium_weapon
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      DamageSource:
+        type: string
+        pattern: \S
+      Damage:
+        type: number
+        minimum: 0
+      AttackSpeed:
+        type: number
+        exclusiveMinimum: 0
+      EnergyConsumption:
+        type: number
+        minimum: 0
+      Mass:
+        type: number
+        minimum: 0
+      Archetype:
+        type: string
+        pattern: \S
+      DeliveryType:
+        type: string
+        enum:
+        - HitScan
+        - Projectile
+      PresentationId:
+        type: string
+        pattern: \S
+      Range:
+        type: number
+        exclusiveMinimum: 0
+      SpreadDegrees:
+        type: number
+        minimum: 0
+        maximum: 180
+        default: 0
+      Supply:
+        oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+          - Mode
+          - AmmoCapacity
+          - ReloadDuration
+          properties:
+            Mode:
+              const: Ammunition
+            AmmoCapacity:
+              type: integer
+              minimum: 1
+              maximum: 2147483647
+            ReloadDuration:
+              type: number
+              exclusiveMinimum: 0
+        - type: object
+          additionalProperties: false
+          required:
+          - Mode
+          - EnergyPerShot
+          properties:
+            Mode:
+              const: Energy
+            EnergyPerShot:
+              type: number
+              exclusiveMinimum: 0
+  heavy_weapon:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - DamageSource
+    - Damage
+    - AttackSpeed
+    - EnergyConsumption
+    - Mass
+    - Archetype
+    - DeliveryType
+    - PresentationId
+    - Range
+    - Supply
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: heavy_weapon
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      DamageSource:
+        type: string
+        pattern: \S
+      Damage:
+        type: number
+        minimum: 0
+      AttackSpeed:
+        type: number
+        exclusiveMinimum: 0
+      EnergyConsumption:
+        type: number
+        minimum: 0
+      Mass:
+        type: number
+        minimum: 0
+      Archetype:
+        type: string
+        pattern: \S
+      DeliveryType:
+        type: string
+        enum:
+        - HitScan
+        - Projectile
+      PresentationId:
+        type: string
+        pattern: \S
+      Range:
+        type: number
+        exclusiveMinimum: 0
+      SpreadDegrees:
+        type: number
+        minimum: 0
+        maximum: 180
+        default: 0
+      Supply:
+        oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+          - Mode
+          - AmmoCapacity
+          - ReloadDuration
+          properties:
+            Mode:
+              const: Ammunition
+            AmmoCapacity:
+              type: integer
+              minimum: 1
+              maximum: 2147483647
+            ReloadDuration:
+              type: number
+              exclusiveMinimum: 0
+        - type: object
+          additionalProperties: false
+          required:
+          - Mode
+          - EnergyPerShot
+          properties:
+            Mode:
+              const: Energy
+            EnergyPerShot:
+              type: number
+              exclusiveMinimum: 0
+  consumable:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - AbilityIds
+    - Mass
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: consumable
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      Mass:
+        type: number
+        minimum: 0
+  resource:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - Mass
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: resource
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      Mass:
+        type: number
+        minimum: 0
+  battery:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - EnergyStorage
+    - EnergyConsumption
+    - Mass
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: battery
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      EnergyStorage:
+        type: number
+        minimum: 0
+      EnergyConsumption:
+        type: number
+        minimum: 0
+      Mass:
+        type: number
+        minimum: 0
+  weapon_fixture:
+    type: object
+    additionalProperties: false
+    required:
+    - Id
+    - DisplayName
+    - CategoryId
+    - WeaponSlots
+    - Mass
+    not:
+      required:
+      - CanStack
+      - StackLimit
+    properties:
+      Id:
+        type: string
+        pattern: \S
+      DisplayName:
+        type: string
+        pattern: \S
+      CategoryId:
+        const: weapon_fixture
+      Description:
+        type: string
+      CanStack:
+        type: boolean
+      Icon:
+        type:
+        - string
+        - 'null'
+      StackLimit:
+        type: integer
+        minimum: 2
+        maximum: 2147483646
+      AbilityIds:
+        type: array
+        items:
+          type: string
+          pattern: ^[a-z][A-Za-z0-9_]*$
+        minItems: 1
+      BehaviourGrants:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - BehaviourId
+          - While
+          - Lifetime
+          properties:
+            BehaviourId:
+              type: string
+              pattern: ^[a-z][A-Za-z0-9_]*$
+            While:
+              type: string
+              enum:
+              - Carried
+              - Equipped
+            Lifetime:
+              type: string
+              enum:
+              - WhileSourceActive
+        minItems: 1
+      WeaponSlots:
+        type: integer
+        minimum: 0
+        maximum: 9
+      Mass:
+        type: number
+        minimum: 0

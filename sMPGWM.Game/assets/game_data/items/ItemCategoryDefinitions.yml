@@ -1,57 +1,47 @@
-Version: 2.0.0
+Version: 3.0.0
 Categories:
-  - Id: engine
-    DisplayName: Engines
-    Icon: Travel.CarVeichleEngine
-    Values: EnergyConsumption, Speed, AfterBurnerSpeed, RotationSpeed, Acceleration, AfterBurnerAcceleration, Mass
-    Description: "Engines move ships. Afterburner thrust increases engine energy consumption by 25%."
-  - Id: hull
-    DisplayName: Hulls
-    Icon: Travel.SpaceshipJetShooter
-    Values: Armor, Mass
-    Description: "Provide protection against attacks. The better the hull, the better the protection"
-  - Id: shield_generator
-    DisplayName: Shield Generators
-    Icon: RPG.ItemStatShieldDefenseArmor
-    Values: ShieldCapacity, RechargeTime, DownTime, EnergyConsumption, Mass
-    Description: "Provide protection against attacks. Shields consume Energy"
-  - Id: reactor
-    DisplayName: Reactors
-    Icon: Weather.AtomicEnergyNuclearPowerPlant
-    Values: EnergyProduction, Mass
-    Description: "Delivers the ships energy. Without energy no weapons, no shield, no moving"
-  - Id: battery
-    DisplayName: Battery
-    Icon: Software.BatteryPowerLevelCharging
-    Values: EnergyStorage, EnergyConsumption, Mass
-    Description: "A Battery can store overgenerated energy from a ships reactors"
-  - Id: weapon_fixture
-    DisplayName: Weapon Fixture
-    Icon: Software.HardwareCPUProcessorComputing
-    Values: WeaponSlots, Mass
-    Description: "Provides shared weapon capacity. Light weapons use 1 slot, medium weapons 2, and heavy weapons 3."
-  - Id: light_weapon
-    DisplayName: Light Weapons
-    Icon: Warfare.WeaponSniperRifleGun
-    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, MagazinSize, ReloadDuration, Mass
-    Description: "A weapon that uses 1 weapon slot."
-  - Id: medium_weapon
-    DisplayName: Medium Weapons
-    Icon: Warfare.WeaponSniperRifleGun
-    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, MagazinSize, ReloadDuration, Mass
-    Description: "A weapon that uses 2 weapon slots."
-  - Id: heavy_weapon
-    DisplayName: Heavy Weapons
-    Icon: Warfare.AmmoRocketMissileRPG
-    Values: DamageSource, Damage, AttackSpeed, EnergyConsumption, EnergyPerShot, ReloadDuration, Mass
-    Description: "A weapon that uses 3 weapon slots."
-  - Id: consumable
-    CanStack: true
-    DisplayName: Consumables
-    Icon: Alchemy.PotionVialBottleHeartHealthLifeFull
-    Description: "An item that can be consumed to trigger an effect"
-    Values: AbilityIds
-  - Id: resource
-    CanStack: true
-    DisplayName: Resources
-    Icon: Alchemy.Arsenic
+- Id: engine
+  DisplayName: Engines
+  Icon: Travel.CarVeichleEngine
+  Description: Engines move ships. Afterburner thrust increases engine energy consumption by 25%.
+- Id: hull
+  DisplayName: Hulls
+  Icon: Travel.SpaceshipJetShooter
+  Description: Provide protection against attacks. The better the hull, the better the protection
+- Id: shield_generator
+  DisplayName: Shield Generators
+  Icon: RPG.ItemStatShieldDefenseArmor
+  Description: Provide protection against attacks. Shields consume Energy
+- Id: reactor
+  DisplayName: Reactors
+  Icon: Weather.AtomicEnergyNuclearPowerPlant
+  Description: Delivers the ships energy. Without energy no weapons, no shield, no moving
+- Id: battery
+  DisplayName: Battery
+  Icon: Software.BatteryPowerLevelCharging
+  Description: A Battery can store overgenerated energy from a ships reactors
+- Id: weapon_fixture
+  DisplayName: Weapon Fixture
+  Icon: Software.HardwareCPUProcessorComputing
+  Description: Provides shared weapon capacity. Light weapons use 1 slot, medium weapons 2, and heavy weapons 3.
+- Id: light_weapon
+  DisplayName: Light Weapons
+  Icon: Warfare.WeaponSniperRifleGun
+  Description: A weapon that uses 1 weapon slot.
+- Id: medium_weapon
+  DisplayName: Medium Weapons
+  Icon: Warfare.WeaponSniperRifleGun
+  Description: A weapon that uses 2 weapon slots.
+- Id: heavy_weapon
+  DisplayName: Heavy Weapons
+  Icon: Warfare.AmmoRocketMissileRPG
+  Description: A weapon that uses 3 weapon slots.
+- Id: consumable
+  CanStack: true
+  DisplayName: Consumables
+  Icon: Alchemy.PotionVialBottleHeartHealthLifeFull
+  Description: An item that can be consumed to trigger an effect
+- Id: resource
+  CanStack: true
+  DisplayName: Resources
+  Icon: Alchemy.Arsenic

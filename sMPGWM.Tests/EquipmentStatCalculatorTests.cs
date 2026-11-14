@@ -11,13 +11,16 @@ public sealed class EquipmentStatCalculatorTests
     [Test]
     public void InstalledComponentsReceiveModifiersAndWeaponsContributeOnlyMassAndDemand()
     {
-        var engine = new ItemDefinition("engine", "engine", "engine", "", false, 1, new IconDefinition { IconTexture = null! })
+        var engine = new EngineItemDefinition("engine", "engine", "engine", "", false, 1, new IconDefinition { IconTexture = null! })
         {
-            Values = new Dictionary<string, object> { ["Speed"] = 200d, ["Mass"] = 2d, ["EnergyConsumption"] = 3d }
+            CategoryId = "engine", Speed = 200, Mass = 2, EnergyConsumption = 3,
+            AfterBurnerSpeed = 0, RotationSpeed = 0, Acceleration = 0, AfterBurnerAcceleration = 0
         };
-        var weapon = new ItemDefinition("weapon", "weapon", "light_weapon", "", false, 1, new IconDefinition { IconTexture = null! })
+        var weapon = new WeaponItemDefinition("weapon", "weapon", "light_weapon", "", false, 1, new IconDefinition { IconTexture = null! })
         {
-            Values = new Dictionary<string, object> { ["Speed"] = 900d, ["Mass"] = 4d, ["EnergyConsumption"] = 5d }
+            CategoryId = "light_weapon", Mass = 4, EnergyConsumption = 5, Archetype = "SMG",
+            DeliveryType = WeaponDeliveryType.HitScan, PresentationId = "smg_standard", DamageSource = "physical",
+            Damage = 1, AttackSpeed = 1, Range = 800, Supply = new AmmunitionSupplyDefinition(60, 1500)
         };
         var slots = new[] { new EquipmentSlotDefinition("engine", "engine", "engine"), new EquipmentSlotDefinition("weapon", "weapon", "light_weapon") };
         var equipment = new EquipmentSnapshot(1, new ItemEntity?[] { new(ItemEntityId.FromNetwork(1), engine, 1), new(ItemEntityId.FromNetwork(2), weapon, 1) });
@@ -45,9 +48,10 @@ public sealed class EquipmentStatCalculatorTests
     [Test]
     public void InvalidTimingAndOverflowAreRejected()
     {
-        var shield = new ItemDefinition("shield", "shield", "shield_generator", "", false, 1, new IconDefinition { IconTexture = null! })
+        var shield = new ShieldGeneratorItemDefinition("shield", "shield", "shield_generator", "", false, 1, new IconDefinition { IconTexture = null! })
         {
-            Values = new Dictionary<string, object> { ["ShieldCapacity"] = 100d, ["RechargeTime"] = 1000d }
+            CategoryId = "shield_generator", Mass = 0, ShieldCapacity = 100, RechargeTime = 1000,
+            DownTime = 0, EnergyConsumption = 0
         };
         var slots = new[] { new EquipmentSlotDefinition("shield", "shield", "shield_generator") };
         var equipment = new EquipmentSnapshot(1, new ItemEntity?[] { new(ItemEntityId.FromNetwork(1), shield, 1) });

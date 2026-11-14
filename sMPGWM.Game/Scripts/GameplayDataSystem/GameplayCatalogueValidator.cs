@@ -18,8 +18,8 @@ public static class GameplayCatalogueValidator
             var owner = $"ItemDefinitions.yml: item '{item.Id}'";
             foreach (var id in item.AbilityIds) Reference(data.Abilities, id, owner, "AbilityIds");
             foreach (var grant in item.BehaviourGrants) Reference(data.Behaviours, grant.BehaviourId, owner, "BehaviourGrants");
-            if (item.Values.TryGetValue("DamageSource", out var source))
-                Reference(data.DamageSources, (string)source, owner, "Values.DamageSource");
+            if (item is WeaponItemDefinition weapon)
+                Reference(data.DamageSources, weapon.DamageSource, owner, nameof(weapon.DamageSource));
         }
     }
 

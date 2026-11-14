@@ -29,6 +29,38 @@ public class ItemDisplayTests
         Assert.Throws<ArgumentOutOfRangeException>(() => IconDisplayData.FormatQuantity(-1));
 
     [Test]
+    public void WeaponTooltipsShowOnlyTheirTypedSupplyFields()
+    {
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(
+            GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
+        var definitions = ItemRegistry.LoadItemDefinitions(
+            GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
+        var ammunition = ItemDisplayFormatter.Create(new ItemEntity(ItemEntityId.FromNetwork(1), definitions["vulcan_mk1"], 1));
+        var energy = ItemDisplayFormatter.Create(new ItemEntity(ItemEntityId.FromNetwork(2), definitions["laser_mk1"], 1));
+
+        Assert.That(ammunition.Tooltip, Does.Contain("Mass: 1").And.Contain("Supply: Ammunition")
+            .And.Contain("AmmoCapacity: 60").And.Contain("ReloadDuration: 1500 ms")
+            .And.Contain("EnergyConsumption: 1 /s").And.Not.Contain("EnergyPerShot:"));
+        Assert.That(energy.Tooltip, Does.Contain("Mass: 1").And.Contain("Supply: Energy")
+            .And.Contain("EnergyPerShot: 4").And.Contain("SpreadDegrees: 0 degrees")
+            .And.Contain("EnergyConsumption: 2 /s").And.Not.Contain("AmmoCapacity:").And.Not.Contain("ReloadDuration:"));
+    }
+
+    [TestCase("mock_standard_resource")]
+    [TestCase("mock_standard_consumable")]
+    public void StackableItemTooltipsShowPerItemMassAndQuantity(string id)
+    {
+        var categories = ItemDefinitionParser.LoadItemCategoryDefinitions(
+            GameplayTestData.Read("items/ItemCategoryDefinitions.yml", "items/ItemCategorySchema.yml"), _ => null!);
+        var definitions = ItemRegistry.LoadItemDefinitions(
+            GameplayTestData.Read("ItemDefinitions.yml", "items/ItemSchema.yml"), categories, _ => null!);
+        var display = ItemDisplayFormatter.Create(new ItemEntity(ItemEntityId.FromNetwork(1), definitions[id], 3));
+
+        Assert.That(display.Quantity, Is.EqualTo(3));
+        Assert.That(display.Tooltip, Does.Contain("Mass: 1").And.Contain("Quantity: 3").And.Not.Contain("Supply:"));
+    }
+
+    [Test]
     [Category("Godot")]
     public void Tooltip_PreservesExactAggregateQuantityBeyondIndividualStackLimit()
     {
