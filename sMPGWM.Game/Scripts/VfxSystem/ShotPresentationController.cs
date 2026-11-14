@@ -1,6 +1,7 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.ItemSystem;
+using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.WeaponSystem;
 using sMPGWM.Scripts.WorldSystem;
@@ -11,14 +12,17 @@ public partial class ShotPresentationController : Node2D
 {
     private const int QueueCapacity = 512;
     private const int DedupCapacity = 512;
+    private static readonly NodePath ShieldVisualPath = new("ShipVisuals/ShieldVisual");
     private readonly AcceptedShot[] _pending = new AcceptedShot[QueueCapacity];
+    private readonly ShieldCollisionEvent[] _shieldCollisions = new ShieldCollisionEvent[ShieldCollisionEventCodec.MaxEvents];
+    private int _shieldCollisionCount;
     private readonly ItemEntityId[] _items = new ItemEntityId[DedupCapacity];
     private readonly ShotSequenceWindow[] _windows = new ShotSequenceWindow[DedupCapacity];
     private readonly long[] _seenTicks = new long[DedupCapacity];
-    private readonly Effect[] _effects = new Effect[1152];
-    private readonly int[][] _freeEffects = [new int[128], new int[256], new int[128], new int[128], new int[256], new int[128], new int[128]];
-    private readonly int[] _freeCounts = new int[7];
-    private readonly int[] _activeEffects = new int[1152];
+    private readonly Effect[] _effects = new Effect[1024];
+    private readonly int[][] _freeEffects = [new int[128], new int[256], new int[128], new int[128], new int[256], new int[128]];
+    private readonly int[] _freeCounts = new int[6];
+    private readonly int[] _activeEffects = new int[1024];
     private readonly AudioStreamPlayer2D[] _voices = new AudioStreamPlayer2D[24];
     private readonly long[] _voiceTicks = new long[24];
     private WeaponPresentationProfile[] _profiles = null!;
@@ -43,7 +47,6 @@ public partial class ShotPresentationController : Node2D
             for (var i = 0; i < 256; i++) AddEffect(index++, _profiles[profile].Tracer.Instantiate<Node2D>(), profile, 1);
             for (var i = 0; i < 128; i++) AddEffect(index++, _profiles[profile].Impact.Instantiate<Node2D>(), profile, 2);
         }
-        for (; index < _effects.Length; index++) AddEffect(index, new ShieldFlash(), -1, 3);
         for (var i = 0; i < _voices.Length; i++)
         {
             _voices[i] = new AudioStreamPlayer2D { MaxDistance = 1600, VolumeDb = -16, MaxPolyphony = 1 };
@@ -70,6 +73,19 @@ public partial class ShotPresentationController : Node2D
         _pending[_pendingCount++] = shot;
     }
 
+    public void EnqueueShieldCollision(ShieldCollisionEvent contact)
+    {
+        if (contact.Tick <= _cutoff || contact.Tick < _presentationTick - 60 || contact.Tick > _presentationTick + 120) return;
+        for (var i = 0; i < _shieldCollisionCount; i++)
+        {
+            if (_shieldCollisions[i].EntityId != contact.EntityId) continue;
+            // Keep the due event so sustained contact cannot chase a delayed presentation clock.
+            return;
+        }
+        if (_shieldCollisionCount == _shieldCollisions.Length) { DroppedEffects++; return; }
+        _shieldCollisions[_shieldCollisionCount++] = contact;
+    }
+
     private bool Remember(AcceptedShot shot)
     {
         var replacement = 0;
@@ -94,6 +110,15 @@ public partial class ShotPresentationController : Node2D
     public void Advance(double presentationTick)
     {
         _presentationTick = presentationTick;
+        for (var i = 0; i < _shieldCollisionCount;)
+        {
+            var contact = _shieldCollisions[i];
+            if (contact.Tick > presentationTick) { i++; continue; }
+            _shieldCollisions[i] = _shieldCollisions[--_shieldCollisionCount];
+            if (contact.Tick <= _cutoff || contact.Tick < presentationTick - ShieldVisual.PulseDuration * 60) continue;
+            if (_world.Entities.TryGetValue(contact.EntityId, out var target))
+                target.Presentation.PulseShieldCollision(contact.Tick, (float)((presentationTick - contact.Tick) / 60));
+        }
         for (var i = 0; i < _pendingCount;)
         {
             var shot = _pending[i];
@@ -149,9 +174,11 @@ public partial class ShotPresentationController : Node2D
         }
         var tracer = Acquire(profile, 1, startTick, .08f, shot.Origin, angle);
         if (tracer != null) { tracer.Origin = shot.Origin; tracer.End = shot.End; }
-        if ((shot.Flags & (ShotResultFlags.Hull | ShotResultFlags.World | ShotResultFlags.Wreck)) != 0)
+        var shieldContact = (shot.Flags & ShotResultFlags.ShieldContact) != 0;
+        if (!shieldContact && (shot.Flags & (ShotResultFlags.Hull | ShotResultFlags.World | ShotResultFlags.Wreck)) != 0)
             Acquire(profile, 2, startTick, _profiles[profile].ImpactDuration, shot.End, shot.Normal.Angle());
-        if ((shot.Flags & ShotResultFlags.Shield) != 0) Acquire(-1, 3, startTick, .15f, shot.End, shot.Normal.Angle());
+        if (shieldContact && _world.Entities.TryGetValue(shot.TargetEntityId, out var target))
+            target.GetNodeOrNull<ShieldVisual>(ShieldVisualPath)?.Pulse((float)Math.Max(0, (_presentationTick - startTick) / 60));
         if (_presentationTick - startTick > 6) return;
         for (var i = 0; i < _voices.Length; i++)
         {
@@ -190,7 +217,7 @@ public partial class ShotPresentationController : Node2D
         return effect;
     }
 
-    private static int GetPool(int profile, int kind) => kind == 3 ? 6 : profile * 3 + kind;
+    private static int GetPool(int profile, int kind) => profile * 3 + kind;
 
     private void Release(int index)
     {
@@ -205,9 +232,14 @@ public partial class ShotPresentationController : Node2D
         _cutoff = cutoffTick;
         _presentationTick = cutoffTick;
         _pendingCount = 0;
+        _shieldCollisionCount = 0;
+        Array.Clear(_shieldCollisions);
         while (_activeCount > 0) Release(_activeEffects[--_activeCount]);
         Array.Clear(_items);
         Array.Clear(_windows);
+        if (_world != null)
+            foreach (var ship in _world.Entities.Values)
+                ship.GetNodeOrNull<ShieldVisual>(ShieldVisualPath)?.ResetPulse();
         foreach (var voice in _voices) voice?.Stop();
     }
 

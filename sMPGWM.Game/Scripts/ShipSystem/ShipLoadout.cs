@@ -101,7 +101,11 @@ public sealed class ShipLoadout : IDisposable
         _ship.Runtime.PublishChanges();
     }
 
-    public void InitializeResources() => _ship.Runtime.InitializeResources();
+    public void InitializeResources()
+    {
+        _ship.Runtime.InitializeResources();
+        _ship.SynchronizeShieldCollider();
+    }
 
     public void EvictReplica()
     {

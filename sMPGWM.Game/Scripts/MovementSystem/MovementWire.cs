@@ -16,7 +16,7 @@ public readonly record struct MovementCommand(long Tick, ShipInputState Input);
 public static class MovementWire
 {
     public const int MaxPlayers = 10, MaxCommands = 6, MaxBytes = 1400;
-    public const int SnapshotHeaderBytes = 25, SampleBytes = 120;
+    public const int SnapshotHeaderBytes = 25, SampleBytes = 121;
     public const int CommandHeaderBytes = 41, CommandBytes = 30, MaxCommandBytes = CommandHeaderBytes + MaxCommands * CommandBytes;
     public const long MaxTick = SnapshotEnvelope.MaxTick;
     public static byte[] Snapshot(Guid session, long tick, IReadOnlyList<MovementSample> samples)
@@ -100,7 +100,7 @@ public static class MovementWire
         writer.Write(configuration.Speed); writer.Write(configuration.AfterBurnerSpeed);
         writer.Write(configuration.RotationSpeed); writer.Write(configuration.Acceleration);
         writer.Write(configuration.AfterBurnerAcceleration); writer.Write(configuration.Mass);
-        writer.Write(configuration.Enabled);
+        writer.Write(configuration.Enabled); writer.Write(configuration.ShieldColliderActive);
     }
     private static MovementConfiguration ReadConfiguration(BinaryReader reader)
     {
@@ -108,8 +108,9 @@ public static class MovementWire
         var rotation = reader.ReadSingle(); var acceleration = reader.ReadSingle();
         var afterburnerAcceleration = reader.ReadSingle(); var mass = reader.ReadSingle();
         var enabled = reader.ReadByte();
-        if (enabled > 1) throw new InvalidDataException("Invalid powered movement flag.");
-        return new(speed, afterburnerSpeed, rotation, acceleration, afterburnerAcceleration, mass, enabled != 0);
+        var shield = reader.ReadByte();
+        if (enabled > 1 || shield > 1) throw new InvalidDataException("Invalid powered movement flag.");
+        return new(speed, afterburnerSpeed, rotation, acceleration, afterburnerAcceleration, mass, enabled != 0, shield != 0);
     }
     private static void WriteVector(BinaryWriter w, Vector2 v) { w.Write(v.X); w.Write(v.Y); }
     private static Vector2 ReadVector(BinaryReader r) => new(r.ReadSingle(), r.ReadSingle());

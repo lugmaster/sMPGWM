@@ -3,7 +3,7 @@ using System;
 namespace sMPGWM.Scripts.MovementSystem;
 
 public readonly record struct MovementConfiguration(float Speed, float AfterBurnerSpeed, float RotationSpeed,
-    float Acceleration, float AfterBurnerAcceleration, float Mass, bool Enabled)
+    float Acceleration, float AfterBurnerAcceleration, float Mass, bool Enabled, bool ShieldColliderActive = false)
 {
     public bool IsValid => Valid(Speed) && Valid(AfterBurnerSpeed) && Valid(RotationSpeed) &&
         Valid(Acceleration) && Valid(AfterBurnerAcceleration) && Valid(Mass);

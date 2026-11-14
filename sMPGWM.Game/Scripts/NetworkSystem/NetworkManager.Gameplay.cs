@@ -118,10 +118,13 @@ public partial class NetworkManager
         }
         foreach (var entry in entries)
             if (World.Entities.TryGetValue(entry.Entity, out var ship))
+            {
                 ship.Runtime.Confirm(entry.Revision, entry.Capacity, entry.Current, entry.Behaviours, entry.FactionId, entry.Conditions,
                     entry.Stats, entry.EnergyCurrent, entry.EnergyDepleted, entry.ShieldProtectionAvailable,
                     entry.ShieldDowntimeDeadline, entry.AuthoritativeTick, entry.ConfigurationRevision, entry.AfterburnerActive,
                     entry.HealthCapacity, entry.HealthCurrent, entry.Components);
+                ship.InstallUncontrolledColliderState();
+            }
         return true;
     }
 

@@ -2,7 +2,20 @@
 
 Date: 2026-11-14
 
-Status: PNG baking and ship-data support complete; collider switching, glow, and multiplayer integration remain.
+Status: collider switching, movement mode replication, shield-contact notifications, and the whole-outline shader are implemented. Build, automated integration, rendered shader, and isolated startup checks pass; the full transport/performance acceptance matrix remains open.
+
+## Current implementation and debug view
+
+Follow-up verification: 424 top-level tests and 299 in-engine Godot cases pass with rendering enabled. The native-debug regression renders a real active ship with collision debugging enabled, verifies the shield is hidden, compares against an explicitly visible collider control, and confirms rays still hit the invisible shield. Physical-contact coverage confirms both shielded ships pulse, resting contact does not keep refreshing the glow, duplicate events cannot restart it, and collisions do not damage health or shields.
+
+- Ships prepare cached circle or circumscribed ellipse physics shapes from baked geometry. Instantiating a ship without geometry fails with its name and the baker command; the authoring loader still permits incomplete definitions.
+- The coordinator freezes the effective collider across movement and shot resolution, then installs the final mode after damage. Movement snapshots carry the effective mode and its configuration revision.
+- `ShieldVisual` uses `assets/vfx/shield_outline.gdshader`, a blue-white analytic outline with a local soft halo. Confirmed weapon hits and physical shield collisions refresh a per-ship 0.15-second pulse; the active shield stays invisible at rest. Physical contact notifications are coalesced per ship and sent cosmetically at the existing 30 Hz publication cadence; they do not apply collision damage. The old `ShieldFlash` arc pool is removed.
+- `ShieldColliderDebugView` is hidden by default. The physics `ShieldCollider` node is also visually hidden so Godot's native Visible Collision Shapes option cannot draw a permanent filled shield bubble; its physics shape remains enabled when protection is available. In debug builds, **F8** explicitly toggles the custom outline: cyan indicates the active shield collider; gray indicates its inactive shape. It follows the physical body, while the glow follows interpolated `ShipVisuals`, so prediction correction offsets can be inspected.
+- Shot events include the target entity and separate shield-contact/damage flags. Fixed event size is 91 bytes, with 13 events per 1,200-byte packet. The gameplay compatibility marker is `10:shield-collision-pulses`.
+- Set `SMPGWM_RENDER_TESTS=1` when running the Godot integration wrapper to exercise the shader with rendering enabled and save its screenshot attachment. The wrapper isolates user data.
+
+Verification: the full rendered .NET suite passed 421 top-level tests, including the wrapper executing 296 Godot cases. A subsequent Godot run also passed after adding the mode-only prediction transition case. Checks cover immediate rays on both sides of collider switches, stationary wall recovery, frozen contacts through shield depletion/death/energy loss, stale resource state, F8 toggling, material isolation, target-specific pulses, deduplication, and no shield-contact metal sparks. The rendered attachment is `sMPGWM.Tests/bin/Debug/net8.0/shield-visual-check.png`. Actual-game headless startup initialized Steam and exited cleanly using temporary user data. These checks do not establish five/ten-player timing, GPU cost under combat load, or multiplayer Steam transport behavior.
 
 Baseline: working tree based on `798613dcaa697e73a0ea785a713f72b906085652`. The completed baking work includes new and modified files that are not yet committed. Preserve those files and the existing friendly-fire work when continuing.
 
@@ -166,12 +179,12 @@ dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj --no-restore
 
 - [x] Reusable PNG baking tool and fighter geometry.
 - [x] Optional baked-data schema, loader validation, immutable data, and foundation tests.
-- [ ] Full-increment missing-geometry policy and any required data migration.
-- [ ] Cached shield shape and verified switching at authoritative physics boundaries.
-- [ ] Prediction, replication, restoration, and hull-based click selection integrated.
-- [ ] Struck-entity notification and shield-contact semantics implemented with updated wire bounds and compatibility.
-- [ ] Per-ship whole-outline shader pulse implemented; old arc pool removed.
+- [x] Full-increment missing-geometry policy: reject instantiation with a migration error; allow incomplete authoring definitions.
+- [x] Cached shield shape and verified switching at authoritative physics boundaries.
+- [x] Prediction, replication, restoration, and hull-based click selection integrated.
+- [x] Struck-entity notification and shield-contact semantics implemented with updated wire bounds and compatibility.
+- [x] Per-ship whole-outline shader pulse implemented; old arc pool removed.
 - [ ] Acceptance tests, rendered multiplayer checks, and five/ten-player measurements recorded.
-- [ ] Update the collision/presentation decisions in [the hitscan handoff](hitscan-combat-and-weapon-systems.md) after implementation, and retain [friendly-fire behavior](friendly-fire-handoff.md).
+- [x] Update the collision/presentation decisions in [the hitscan handoff](hitscan-combat-and-weapon-systems.md) after implementation, and retain [friendly-fire behavior](friendly-fire-handoff.md).
 
 The separate friendly-fire handoff still lists its own uncompleted acceptance checks. Do not treat the 420-test baseline or this baking increment as completion of those checks.

@@ -6,5 +6,8 @@ collision_mask = 3
 motion_mode = 1
 script = ExtResource("1")
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+[node name="ShieldCollider" type="CollisionShape2D" parent="."]
+visible = false
+disabled = true
 [node name="ShipVisuals" type="Node2D" parent="."]
 [node name="Sprite2D" type="Sprite2D" parent="ShipVisuals"]

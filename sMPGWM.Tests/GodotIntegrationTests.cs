@@ -72,7 +72,8 @@ public class GodotIntegrationTests
                 RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false,
                 CreateNoWindow = true, WorkingDirectory = staging
             };
-            foreach (var argument in new[] { "--headless", "--path", staging, "--", typeof(GodotTestRunner).Assembly.Location, report })
+            if (Environment.GetEnvironmentVariable("SMPGWM_RENDER_TESTS") != "1") start.ArgumentList.Add("--headless"); // TEST-SUPPORT: SHIELD-RENDER-HOST-001 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
+            foreach (var argument in new[] { "--path", staging, "--", typeof(GodotTestRunner).Assembly.Location, report }) // TEST-SUPPORT: SHIELD-RENDER-HOST-002 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
                 start.ArgumentList.Add(argument);
             start.Environment["APPDATA"] = Path.Combine(staging, "userdata");
             start.Environment["XDG_DATA_HOME"] = Path.Combine(staging, "userdata");
@@ -88,6 +89,13 @@ public class GodotIntegrationTests
                 throw new AssertionException("Headless Godot timed out.");
             }
             var output = await stdout + await stderr;
+            var shieldImage = Path.Combine(staging, "shield-visual-check.png"); // TEST-SUPPORT: SHIELD-RENDER-HOST-003 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
+            if (File.Exists(shieldImage)) // TEST-SUPPORT: SHIELD-RENDER-HOST-004 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
+            { // TEST-SUPPORT: SHIELD-RENDER-HOST-005 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
+                var imageDestination = Path.Combine(TestContext.CurrentContext.WorkDirectory, "shield-visual-check.png"); // TEST-SUPPORT: SHIELD-RENDER-HOST-006 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
+                File.Copy(shieldImage, imageDestination, true); // TEST-SUPPORT: SHIELD-RENDER-HOST-007 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
+                TestContext.AddTestAttachment(imageDestination, "Rendered shield shader check"); // TEST-SUPPORT: SHIELD-RENDER-HOST-008 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
+            } // TEST-SUPPORT: SHIELD-RENDER-HOST-009 | Tests: sMPGWM.Tests.GodotIntegrationTests.RegistryInventoryEquipmentHotbarAndPresentation_RunInsideGodot, sMPGWM.Tests.ShieldVisualTests.RenderedShaderProducesIndependentWholeOutlines
             Assert.That(File.Exists(report), Is.True, output);
             var results = XDocument.Load(report);
             var destination = Path.Combine(TestContext.CurrentContext.WorkDirectory, "godot-results.xml");

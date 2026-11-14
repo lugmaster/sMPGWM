@@ -9,6 +9,7 @@ internal static class WeaponPresentationCompatibility
 {
     internal static void Capture(Dictionary<string, string> inputs)
     {
+        CaptureResource(ShieldVisual.ShaderPath, inputs);
         foreach (var id in new[] { "smg_standard", "laser_standard" })
         {
             _ = new WeaponPresentationProfile(id);

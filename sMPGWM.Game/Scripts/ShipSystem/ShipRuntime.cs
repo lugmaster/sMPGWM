@@ -45,6 +45,13 @@ public sealed class ShipRuntime : IDisposable
     public long ShieldDowntimeDeadline { get; private set; }
     public long AuthoritativeTick { get; private set; }
     public long ConfigurationRevision { get; private set; } = 1;
+    internal void AdvanceMovementConfigurationRevision()
+    {
+        var configurationRevision = checked(ConfigurationRevision + 1);
+        var revision = checked(Revision + 1);
+        ConfigurationRevision = configurationRevision;
+        Revision = revision;
+    }
     public int FactionId { get; private set; }
     public bool IsAlive => !_disposed && !_conditions.Contains("dead");
     public long Revision { get; private set; } = 1;

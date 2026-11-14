@@ -23,26 +23,26 @@ public sealed class ShotPresentationPoolTests // TEST-SUPPORT: SHOT-POOL-008 | T
             world.SpawnEntity(new(entity, "fighter", Vector2.Zero, 0, Vector2.Zero)); // TEST-SUPPORT: SHOT-POOL-021 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             ulong sequence = 0; // TEST-SUPPORT: SHOT-POOL-022 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             Fill(10); // TEST-SUPPORT: SHOT-POOL-023 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.ActiveEffects, Is.EqualTo(1152)); // TEST-SUPPORT: SHOT-POOL-024 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.HighWater, Is.EqualTo(1152)); // TEST-SUPPORT: SHOT-POOL-025 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.DroppedEffects, Is.EqualTo(896)); // TEST-SUPPORT: SHOT-POOL-026 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.ActiveEffects, Is.EqualTo(1024)); // TEST-SUPPORT: SHOT-POOL-024 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.HighWater, Is.EqualTo(1024)); // TEST-SUPPORT: SHOT-POOL-025 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.DroppedEffects, Is.EqualTo(512)); // TEST-SUPPORT: SHOT-POOL-026 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             effects.Advance(14); // TEST-SUPPORT: SHOT-POOL-027 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.ActiveEffects, Is.EqualTo(896)); // TEST-SUPPORT: SHOT-POOL-028 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.ActiveEffects, Is.EqualTo(768)); // TEST-SUPPORT: SHOT-POOL-028 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             effects.Advance(16); // TEST-SUPPORT: SHOT-POOL-029 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.ActiveEffects, Is.EqualTo(384)); // TEST-SUPPORT: SHOT-POOL-030 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.ActiveEffects, Is.EqualTo(256)); // TEST-SUPPORT: SHOT-POOL-030 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             effects.Advance(20); // TEST-SUPPORT: SHOT-POOL-031 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             Assert.That(effects.ActiveEffects, Is.EqualTo(256)); // TEST-SUPPORT: SHOT-POOL-032 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             effects.Advance(40); // TEST-SUPPORT: SHOT-POOL-033 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             Assert.That(effects.ActiveEffects, Is.Zero); // TEST-SUPPORT: SHOT-POOL-034 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             Fill(41); // TEST-SUPPORT: SHOT-POOL-035 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.ActiveEffects, Is.EqualTo(1152)); // TEST-SUPPORT: SHOT-POOL-036 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.DroppedEffects, Is.EqualTo(1792)); // TEST-SUPPORT: SHOT-POOL-037 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.ActiveEffects, Is.EqualTo(1024)); // TEST-SUPPORT: SHOT-POOL-036 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.DroppedEffects, Is.EqualTo(1024)); // TEST-SUPPORT: SHOT-POOL-037 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             effects.Clear(41); // TEST-SUPPORT: SHOT-POOL-038 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             effects.Clear(41); // TEST-SUPPORT: SHOT-POOL-039 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             Assert.That(effects.ActiveEffects, Is.Zero); // TEST-SUPPORT: SHOT-POOL-040 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             Fill(42); // TEST-SUPPORT: SHOT-POOL-041 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.ActiveEffects, Is.EqualTo(1152)); // TEST-SUPPORT: SHOT-POOL-042 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
-            Assert.That(effects.DroppedEffects, Is.EqualTo(2688)); // TEST-SUPPORT: SHOT-POOL-043 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.ActiveEffects, Is.EqualTo(1024)); // TEST-SUPPORT: SHOT-POOL-042 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
+            Assert.That(effects.DroppedEffects, Is.EqualTo(1536)); // TEST-SUPPORT: SHOT-POOL-043 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
 
             void Fill(long tick) // TEST-SUPPORT: SHOT-POOL-044 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear
             { // TEST-SUPPORT: SHOT-POOL-045 | Tests: sMPGWM.Tests.ShotPresentationPoolTests.SaturatedPoolsRecoverAfterExpirationAndRepeatedClear

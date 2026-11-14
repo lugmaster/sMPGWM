@@ -15,6 +15,92 @@ public partial class ShipController : CharacterBody2D
     private ShipData _data = null!;
     private readonly MovementMotor _motor = new();
     private ShipLoadout? _loadout;
+    private CollisionPolygon2D? _hullCollider;
+    private CollisionShape2D? _shieldCollider;
+    public bool ShieldColliderActive { get; private set; }
+    private bool _shieldRecoveryPending;
+    private bool _shieldCollisionPending;
+
+    internal bool ConsumeShieldCollision()
+    {
+        var pending = _shieldCollisionPending;
+        _shieldCollisionPending = false;
+        return pending;
+    }
+
+    private void RecordShieldCollision(KinematicCollision2D collision)
+    {
+        if (ShieldColliderActive) _shieldCollisionPending = true;
+        if (collision.GetCollider() is ShipController other && other.ShieldColliderActive)
+            other._shieldCollisionPending = true;
+    }
+
+    internal void PrepareShieldCollider()
+    {
+        var geometry = Data.ShieldGeometry ?? throw new InvalidOperationException(
+            $"Ship '{Data.Name}' requires shield_geometry. Run python tools/shield_geometry/bake_shield_geometry.py --write.");
+        _hullCollider = GetNode<CollisionPolygon2D>("CollisionPolygon2D");
+        _shieldCollider = GetNode<CollisionShape2D>("ShieldCollider");
+        _shieldCollider.Shape = ShieldPhysicsGeometry.GetShape(geometry);
+        _shieldCollider.Position = geometry.Center;
+        _shieldCollider.RotationDegrees = geometry.RotationDegrees;
+        _shieldCollider.Disabled = true;
+    }
+
+    public void SynchronizeShieldCollider()
+    {
+        var active = Runtime.IsAlive && Runtime.ShieldProtectionAvailable;
+        var changed = active != ShieldColliderActive;
+        if (changed)
+        {
+            Runtime.AdvanceMovementConfigurationRevision();
+            ApplyShieldCollider(active);
+        }
+        RefreshMovementConfiguration();
+        if (changed) Runtime.PublishChanges();
+    }
+
+    internal void InstallUncontrolledColliderState()
+    {
+        if (ControllingPlayer != null || Runtime.ConfigurationRevision < MovementConfigurationRevision) return;
+        var stats = Runtime.Stats;
+        InstallMovementConfiguration(Runtime.ConfigurationRevision, new MovementConfiguration(stats.Speed,
+            stats.AfterBurnerSpeed, stats.RotationSpeed, stats.Acceleration, stats.AfterBurnerAcceleration,
+            (float)stats.Mass, Runtime.MovementAvailable, Runtime.IsAlive && Runtime.ShieldProtectionAvailable));
+    }
+
+    private void ApplyShieldCollider(bool active)
+    {
+        if (_shieldCollider == null || _hullCollider == null) return;
+        if (active == ShieldColliderActive) return;
+        // Coordinator calls outside physics query flushing make this change visible to the next ray/motion query.
+        _hullCollider.Disabled = active;
+        _shieldCollider.Disabled = !active;
+        ShieldColliderActive = active;
+        _shieldRecoveryPending = active;
+        if (IsInsideTree())
+        {
+            ForceUpdateTransform();
+            // A zero-distance body test flushes pending broadphase shape updates before direct rays.
+            TestMove(GlobalTransform, Vector2.Zero);
+        }
+    }
+
+    internal void RecoverShieldOverlap()
+    {
+        if (!_shieldRecoveryPending || !ShieldColliderActive || !IsInsideTree()) return;
+        for (var i = 0; i < 4; i++)
+        {
+            var collision = MoveAndCollide(Vector2.Zero, recoveryAsCollision: true);
+            if (collision == null || collision.GetTravel().LengthSquared() < 0.0000001f)
+            {
+                _shieldRecoveryPending = false;
+                break;
+            }
+            RecordShieldCollision(collision);
+        }
+    }
+
     public ShipLoadout Loadout => _loadout ?? throw new InvalidOperationException("Ship loadout has not been configured.");
     public EquipmentController Equipment => Loadout.Equipment;
     public ResolvedShipStats Stats => Runtime.Stats;
@@ -56,7 +142,7 @@ public partial class ShipController : CharacterBody2D
     {
         var stats = Runtime.Stats;
         var configuration = new MovementConfiguration(stats.Speed, stats.AfterBurnerSpeed, stats.RotationSpeed,
-            stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Runtime.MovementAvailable);
+            stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Runtime.MovementAvailable, ShieldColliderActive);
         InstallMovementConfiguration(Runtime.ConfigurationRevision, configuration);
     }
 
@@ -64,6 +150,7 @@ public partial class ShipController : CharacterBody2D
     {
         if (revision < MovementConfigurationRevision) return;
         if (revision < 0 || !configuration.IsValid) throw new ArgumentException("Invalid movement configuration.");
+        ApplyShieldCollider(configuration.ShieldColliderActive);
         MovementConfiguration = configuration;
         MovementConfigurationRevision = revision;
         _motor.Configure(configuration);
@@ -84,7 +171,7 @@ public partial class ShipController : CharacterBody2D
     {
         var stats = Runtime.Stats;
         var expected = new MovementConfiguration(stats.Speed, stats.AfterBurnerSpeed, stats.RotationSpeed,
-            stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Runtime.MovementAvailable);
+            stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Runtime.MovementAvailable, Runtime.IsAlive && Runtime.ShieldProtectionAvailable);
         if (!state.Configuration.IsValid || state.Configuration != expected || state.ConfigurationRevision != Runtime.ConfigurationRevision ||
             state.DiscontinuityRevision < 0 || state.DiscontinuityRevision == long.MaxValue ||
             state.AppliedFlags > 7 || state.PresentedFlags > 7 || !MovementWire.Valid(state.Input))
@@ -121,7 +208,7 @@ public partial class ShipController : CharacterBody2D
     // The session coordinator owns tick ordering; ships do not tick independently.
     public void Simulate(double delta)
     {
-
+        RecoverShieldOverlap();
         if (!Runtime.IsAlive) { Velocity = Vector2.Zero; ClearInput(); }
         var previousRotation = GlobalRotation;
         var s = MovementConfiguration;
@@ -140,6 +227,7 @@ public partial class ShipController : CharacterBody2D
         {
             var collision = MoveAndCollide(motion);
             if (collision == null) break;
+            RecordShieldCollision(collision);
             var normal = collision.GetNormal();
             motion = collision.GetRemainder().Slide(normal);
             if (Velocity.Dot(normal) < 0) Velocity = Velocity.Slide(normal);

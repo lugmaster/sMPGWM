@@ -32,6 +32,7 @@ public sealed class GameplaySimulation : IDisposable
         return !_disposed && _weaponCommands.Enqueue(peer, entity, generation, revision, kind, slot, item, group, complete);
     }
     public long CompletedTick { get; private set; } = -1;
+    public event Action<string, long>? ShieldCollisionProduced;
 
     // Direct callers retain the default disabled rule; each session captures its own value.
     public GameplaySimulation(GameWorld world, AbilityRuntime abilities, bool friendlyFire = false)
@@ -91,15 +92,20 @@ public sealed class GameplaySimulation : IDisposable
                 ship.RefreshMovementConfiguration();
             }
             _weaponCommands.Step(tick, _world, ready);
+            foreach (var ship in _world.Entities.Values) ship.SynchronizeShieldCollider();
+            foreach (var ship in _world.Entities.Values) ship.RecoverShieldOverlap();
             foreach (var player in _world.Players.Values) player.ControlledShip?.Simulate(1.0 / 60);
             Weapons.Step(tick, _world, ready);
+            foreach (var ship in _world.Entities.Values) ship.SynchronizeShieldCollider();
             foreach (var ship in _world.Entities.Values)
             {
                 if (!ship.Runtime.IsAlive) { ship.ClearInput(); ship.Velocity = Godot.Vector2.Zero; ship.Loadout.Weapons.ClearInput(); }
-                ship.RefreshMovementConfiguration();
+                ship.RecoverShieldOverlap();
                 ship.CaptureState();
             }
             CompletedTick = tick;
+            foreach (var ship in _world.Entities.Values)
+                if (ship.ConsumeShieldCollision()) ShieldCollisionProduced?.Invoke(ship.EntityId, tick);
             _weaponCommands.PublishResults();
             for (var i = 0; i < count; i++)
             {
@@ -137,6 +143,7 @@ public sealed class GameplaySimulation : IDisposable
         _disposed = true;
         _weaponCommands.Clear();
         Weapons.Dispose();
+        ShieldCollisionProduced = null;
         _transfers.Clear();
         Array.Clear(_completedTransfers);
         AbilityCommands.Clear();

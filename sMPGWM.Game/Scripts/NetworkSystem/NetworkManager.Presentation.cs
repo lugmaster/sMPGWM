@@ -15,6 +15,7 @@ public partial class NetworkManager
         _shotPresentation.Initialize(World);
     }
     private void PresentShot(AcceptedShot shot) => _shotPresentation?.Enqueue(shot);
+    private void PresentShieldCollision(ShieldCollisionEvent contact) => _shotPresentation?.EnqueueShieldCollision(contact);
     private void TickWeaponPresentation(double tick) => _shotPresentation?.Advance(tick);
     private void ClearWeaponPresentation(long cutoffTick) => _shotPresentation?.Clear(cutoffTick);
     private void DisposeWeaponPresentation()

@@ -26,6 +26,16 @@ public static class ShipFactory
             ship.GetNode<CollisionPolygon2D>("CollisionPolygon2D").Polygon = collider;
             ship.GetNode<Sprite2D>("ShipVisuals/Sprite2D").Texture = ResourceLoader.Load<Texture2D>(data.TexturePath)
                 ?? throw new InvalidOperationException("Texture unavailable: " + data.TexturePath);
+            ship.PrepareShieldCollider();
+            if (data.ShieldGeometry is { } geometry)
+            {
+                var visual = new sMPGWM.Scripts.VfxSystem.ShieldVisual { Name = "ShieldVisual" };
+                visual.Initialize(geometry);
+                ship.GetNode<Node2D>("ShipVisuals").AddChild(visual);
+                var debug = new sMPGWM.Scripts.VfxSystem.ShieldColliderDebugView { Name = "ShieldColliderDebugView" }; // TEST-SUPPORT: SHIELD-FACTORY-DEBUG-001 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
+                debug.Initialize(ship, geometry); // TEST-SUPPORT: SHIELD-FACTORY-DEBUG-002 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
+                ship.AddChild(debug); // TEST-SUPPORT: SHIELD-FACTORY-DEBUG-003 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
+            }
             ship.SetLocalControl(false); ship.CaptureState();
             return ship;
         }

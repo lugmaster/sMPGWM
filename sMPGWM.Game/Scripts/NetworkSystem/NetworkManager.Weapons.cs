@@ -30,6 +30,7 @@ public partial class NetworkManager
         if (_weaponEventsBound) return;
         _weaponEventsBound = true;
         Simulation.Weapons.ShotProduced += RecordShot;
+        Simulation.ShieldCollisionProduced += RecordShieldCollision;
         InitializeWeaponPresentation();
     }
     private void RecordShot(AcceptedShot shot)
@@ -49,6 +50,7 @@ public partial class NetworkManager
                 if (join.Phase == PeerJoinPhase.Ready) RpcId(peer, nameof(ReceiveShots), bytes);
         }
         _shotCount = 0;
+        PublishShieldCollisions();
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
     private void ReceiveShots(byte[] bytes)
@@ -154,6 +156,8 @@ public partial class NetworkManager
     }
     private void ClearWeapons()
     {
+        _shieldCollisionEventCount = 0;
+        Array.Clear(_shieldCollisionEvents);
         _publishedWeapons.Clear(); _shotCount = 0; _hasWeaponBaseline = false; _shotWindows.Clear(); _weaponHistory.Clear(); _pendingWeapons.Clear(); _latestWeaponRequest.Clear();
         ShotReceived = null; WeaponFeedback = null; DisposeWeaponPresentation();
     }

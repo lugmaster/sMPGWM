@@ -9,6 +9,14 @@ public sealed class ShipPresentation(ShipController ship)
     private Node2D Visuals => ship.GetNode<Node2D>("ShipVisuals");
     private Vector2 _offset;
     private float _angleOffset;
+    private static readonly NodePath ShieldVisualPath = new("ShipVisuals/ShieldVisual");
+    private long _lastShieldCollisionTick = -1;
+    internal void PulseShieldCollision(long tick, float ageSeconds)
+    {
+        if (tick <= _lastShieldCollisionTick) return;
+        _lastShieldCollisionTick = tick;
+        ship.GetNodeOrNull<sMPGWM.Scripts.VfxSystem.ShieldVisual>(ShieldVisualPath)?.Pulse(ageSeconds);
+    }
     public Vector2 Position => Visuals.GlobalPosition;
     public float Rotation => Visuals.GlobalRotation;
     public byte MovementFlags { get; set; }

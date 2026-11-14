@@ -93,8 +93,9 @@ public sealed class WeaponSystem : IDisposable
                 if (!ammunition && !ship.Runtime.TrySpendEnergy(stats.EnergyPerShot)) continue;
                 state.Accept(tick, stats, ammunition);
                 var flags = blocked ? target == null ? ShotResultFlags.World : !target.Runtime.IsAlive ? ShotResultFlags.Wreck : ShotResultFlags.Miss : ShotResultFlags.Miss;
+                if (target is { ShieldColliderActive: true }) flags |= ShotResultFlags.ShieldContact;
                 _shots[accepted] = new(tick, binding.ItemId, sequence, ship.EntityId, ship.ControllingPlayer!.ControlGeneration,
-                    definition.PresentationId, muzzle, origin, end, normal, flags);
+                    definition.PresentationId, muzzle, origin, end, normal, flags, target?.EntityId ?? "");
                 _targets[accepted] = target;
                 _damage[accepted++] = stats.Damage;
                 if (!controller.Available) controller.AdvanceReloads(tick);
