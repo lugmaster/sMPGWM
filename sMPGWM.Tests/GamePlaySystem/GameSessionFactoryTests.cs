@@ -14,8 +14,6 @@ namespace sMPGWM.Tests.GamePlaySystem;
 [Category("Godot")]
 public class GameSessionFactoryTests
 {
-    [TestCase("populate")]
-    [TestCase("actions")]
     [TestCase("network")]
     [TestCase("endpoint")]
     public void FailedStartupReleasesBindingsAndAllowsFreshConstruction(string failure)
@@ -29,7 +27,6 @@ public class GameSessionFactoryTests
         parent.AddChild(canvas);
         var failures = new List<string>();
         var cleanupErrors = new List<Exception>();
-        var fixture = new FailingFixture(failure);
         var coordinator = new SessionCoordinator(() => Assert.Fail("Failed session activated"), failures.Add, cleanupErrors.Add);
         GameSession? session = null;
         try
@@ -39,13 +36,12 @@ public class GameSessionFactoryTests
             {
                 session = GameSessionFactory.Create(scope, parent, canvas, world,
                     new NetworkStartupData(failure == "network" ? (NetworkRole)999 : NetworkRole.Host,
-                        NetworkType.Lan, 10, 100, Port: 0), coordinator, fixture);
+                        NetworkType.Lan, 10, 100, Port: 0), coordinator);
                 session.Network.CreateNetwork();
             });
             Assert.That(failures, Has.Count.EqualTo(1));
             Assert.That(coordinator.State, Is.EqualTo(SessionState.Stopped));
             Assert.That(cleanupErrors, Is.Empty);
-            Assert.That(fixture.Inventory!.Availability, Is.EqualTo(InventoryResult.Disposed));
             Assert.That(canvas.GetNode<Control>("Root/MenuLayer/ModalBlocker").Visible, Is.False);
             session?.Network.FailSession("duplicate failure");
             coordinator.Stop();
@@ -59,7 +55,7 @@ public class GameSessionFactoryTests
             var fresh = new SessionCoordinator(() => { }, failures.Add, cleanupErrors.Add);
             fresh.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData);
             fresh.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
-                new NetworkStartupData(NetworkRole.Host, NetworkType.Lan, 10, 100), fresh, new EmptyGameFixture()));
+                new NetworkStartupData(NetworkRole.Host, NetworkType.Lan, 10, 100), fresh));
             Assert.That(fresh.State, Is.EqualTo(SessionState.Starting));
             Assert.That(session!.Player.Participant, Is.Null);
             fresh.Stop();
@@ -105,7 +101,7 @@ public class GameSessionFactoryTests
                 coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData);
                 coordinator.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
                     new NetworkStartupData(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port),
-                    coordinator, new EmptyGameFixture()));
+                    coordinator));
                 session!.Network.CreateNetwork();
                 Assert.That(failures, Is.Empty);
                 Assert.That(coordinator.State, Is.EqualTo(SessionState.Active));
@@ -153,17 +149,4 @@ public class GameSessionFactoryTests
         }
     }
 
-    private sealed class FailingFixture(string failure) : IGameFixture
-    {
-        public InventoryController? Inventory { get; private set; }
-        public IReadOnlyList<IconDefinition> Actions => failure == "actions"
-            ? throw new InvalidOperationException("Action initialization failed") : Array.Empty<IconDefinition>();
-        public void Populate(InventoryController inventory, MessageController messages, bool includeItems)
-        {
-            Inventory = inventory;
-            if (failure == "populate") throw new InvalidOperationException("Fixture initialization failed");
-        }
-        public void ActivateAction(string key) { }
-        public void Tick(double delta, MessageController messages) { }
-    }
 }

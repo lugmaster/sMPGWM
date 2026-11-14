@@ -37,7 +37,7 @@ public class RestoredSessionTests
                 coordinator.Initialization.PrepareDefinitions(GameConfig.EnsureCompatibilityData);
                 coordinator.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
                     new NetworkStartupData(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port) { RestoredWorld = saved },
-                    coordinator, new EmptyGameFixture()));
+                    coordinator));
                 session!.Network.CreateNetwork();
                 Assert.That(errors, Is.Empty);
                 Assert.That(coordinator.State, Is.EqualTo(SessionState.Active));
@@ -95,7 +95,7 @@ public class RestoredSessionTests
         coordinator.Initialization.PrepareDefinitions(() => { });
         coordinator.Start(scope => GameSessionFactory.Create(scope, null!, null!, null!,
             new NetworkStartupData(NetworkRole.Host, NetworkType.Lan, 10, 1000) { RestoredWorld = saved },
-            coordinator, new EmptyGameFixture()));
+            coordinator));
         Assert.That(coordinator.State, Is.EqualTo(SessionState.Stopped));
         Assert.That(failures, Has.Count.EqualTo(1));
         Assert.That(failures[0], Does.Contain("authenticated reconnect mapping"));

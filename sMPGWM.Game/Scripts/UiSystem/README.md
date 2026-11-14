@@ -1,6 +1,6 @@
 # UI and player input
 
-`GamePlayManager` connects the scene's UI, input controller, and player action controller. Singleton dependencies use `InputController.Instance` and `PlayerMock.Instance`; ordinary scene nodes still use `GetNode`. Its session state is either `Active` or `Inactive`; opening a window does not change session state or pause the world.
+`GamePlayManager` connects the scene's UI, input controller, and player action controller. Singleton dependencies use `InputController.Instance`; ordinary scene nodes still use `GetNode`. Its session state is either `Active` or `Inactive`; opening a window does not change session state or pause the world.
 
 ## Responsibilities
 
@@ -64,7 +64,7 @@ While inventory is open in an active, focused session, the menu's click/native d
 
 Slot-specific delegates registered through `SetDragForwarding` adapt native Godot drag callbacks without adding inventory dependencies to `ClickableIcon`. Godot controls the drag threshold and preview; payloads contain a single-use opaque token scoped to the controller's edit session. Hover validation is read-only, and drops revalidate through the same transfer coordinator as clicks. Every native drag end clears carrying, including invalid, full-stack, and outside drops. Source state remains authoritative until a successful commit. View/session changes cancel the native drag and invalidate its token immediately. Native release does not also trigger click pickup, and wheel scrolling stays available through the existing inventory scroll container.
 
-Normal startup uses PlayerMock examples. `PopulateMockInventory` on `GamePlayManager` defaults to true and can be disabled for an empty bag. PlayerMock uses category icons and seeds 40 occupied inventory cells: duplicate equipment, including fixtures and all three weapon sizes, plus full and partial consumable/resource stacks. The ten hotbar positions start empty; no legacy mock artwork or actions are seeded. Toolbar choices survive transfers and window reopen. Toolbar changes cancel pending placement before refreshing the mapping. Search accepts Inventory/Map shortcut letters as text; Escape still opens Main Menu while search has focus and input releases still clear navigation guards. Filtering refreshes on input or committed snapshots, with scroll preservation/clamping supplied by the existing Godot scroll container.
+New players receive standard components and Vulcan Mk1 with an empty inventory. Setting general.use_dev_loadout=true adds one Laser Mk1. Restored state takes precedence; equipment abilities initialize the new-player hotbar automatically.
 
 `UiCanvas` owns a reusable `ItemPointerOverlay` Control as the last child of its shared UI root, drawing above menus and the hotbar within the same canvas. The overlay owns the carried-item icon, placement label, cursor tracking, and native drag preview construction using Godot's `SetDragPreview`. `InventoryMenu` supplies the icon and contextual text after validating the hovered target, and clears the overlay when interaction ends. Closing or reopening inventory reuses the overlay without retaining the previous pickup. Placement rules and slot highlighting remain in the inventory interaction code.
 
@@ -120,6 +120,6 @@ Set `$godotExecutable` to the Godot .NET console executable. The smoke script lo
 
 The sizing smoke checks hotbar, inventory, and equipment at both viewport sizes with 16-, 64-, and 256-pixel textures, a rectangular texture, and empty slots. It verifies that texture changes preserve the configured slot dimensions, including the hotbar while inventory is open.
 
-The inventory smoke checks default PlayerMock startup data and empty hotbar slots, then disables demo seeding for empty-inventory checks. It covers cell rendering, view-choice retention, vertical bag scrolling, multi-window wrapping, focus visibility, recentering, and teardown at 1920x1080 and 2560x1440, with the world viewport remaining 1280x720. Fixture-based rebinding and transfer interaction checks have been removed; domain unit tests remain. The architecture smoke verifies adjacent windows at a wide viewport, then enlarges map content and narrows the viewport to verify wrapping, vertical scrolling, and focus visibility. It also verifies exclusive main-menu navigation and Escape after clicking the hotbar.
+New players receive standard components and Vulcan Mk1 with an empty inventory. Setting general.use_dev_loadout=true adds one Laser Mk1. Restored state takes precedence; equipment abilities initialize the new-player hotbar automatically.
 
-For rendered visual evidence, run `& $godotExecutable --path sMPGWM.Game --script ../sMPGWM.Tests/UiSystem/inventory_smoke.gd -- --capture-visuals`. This saves window-overflow screenshots for each resolution to `artifacts/inventory-inv10-*.png`. It requires a desktop and focuses the test window. The current demo starts with PlayerMock items and an empty hotbar.
+New players receive standard components and Vulcan Mk1 with an empty inventory. Setting general.use_dev_loadout=true adds one Laser Mk1. Restored state takes precedence; equipment abilities initialize the new-player hotbar automatically.

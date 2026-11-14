@@ -7,7 +7,7 @@ using sMPGWM.Scripts.GameplayDataSystem;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
 
-public static class StarterLoadout
+public static class StartLoadout
 {
     public static void ValidateDefinitions(DefinitionSet<ItemDefinition> items)
     {
@@ -54,15 +54,17 @@ public static class StarterLoadout
         }
     }
 
-    private static string? GetStarterItem(EquipmentSlotDefinition slot) => slot.IsWeaponSlot
-        ? slot.Key switch
-        {
-            "weapon_1" => "vulcan_mk1",
-            "weapon_2" => "mock_standard_medium_weapon",
-            "weapon_3" => "mock_standard_heavy_weapon",
-            _ => null
-        }
-        : "mock_standard_" + slot.AcceptedCategory;
+    private static string? GetStarterItem(EquipmentSlotDefinition slot) => slot.Key switch
+    {
+        "engine" => "mock_standard_engine",
+        "hull" => "mock_standard_hull",
+        "shield_generator" => "mock_standard_shield_generator",
+        "reactor" => "mock_standard_reactor",
+        "battery" => "mock_standard_battery",
+        "weapon_fixture" => "mock_standard_weapon_fixture",
+        "weapon_1" => "vulcan_mk1",
+        _ => null
+    };
 
     private static int Find(ItemContainer inventory, string definition)
     {

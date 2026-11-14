@@ -5,7 +5,7 @@ Items:
   CategoryId: shield_generator
   AbilityIds:
   - shieldCapacityBoost
-  Description: PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.
+  Description: Standard component. Try moving, merging, equipping, or assigning eligible items to the hotbar.
   ShieldCapacity: 100
   RechargeTime: 5000
   DownTime: 3000
@@ -16,7 +16,7 @@ Items:
   CategoryId: shield_generator
   AbilityIds:
   - shieldCapacityBoost
-  Description: PlayerMock alternate example for equipment swaps and separate item stacks.
+  Description: Alternate component for equipment swaps and separate item stacks.
   ShieldCapacity: 100
   RechargeTime: 5000
   DownTime: 3000

@@ -70,7 +70,7 @@ public sealed class ShipItemOwnershipTests
         var store = new ItemStore();
         using var initial = new InventoryController(store);
         store.CreateItems(initial.Container, "mock_standard_engine", 1);
-        var world = new GameWorld { AuthoritativeItems = true, InitialInventory = initial.Snapshot, InitializeLoadout = sMPGWM.Scripts.GamePlaySystem.StarterLoadout.Equip };
+        var world = new GameWorld { AuthoritativeItems = true, InitializeLoadout = sMPGWM.Scripts.GamePlaySystem.StartLoadout.Equip };
         ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world);
         ShipController? failedShip = null;
         ItemEntityId failedItem = default;

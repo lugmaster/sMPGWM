@@ -42,7 +42,7 @@ public sealed class GameplayCatalogues
             EquipmentDefinitionValidator.Validate(Ships.All, Items.All);
             return true;
         });
-        StarterLoadout.ValidateDefinitions(Items);
+        StartLoadout.ValidateDefinitions(Items);
         foreach (var item in Items.All) EquipmentStatCalculator.Precompile(item);
         Abilities.Prepare(this);
         SupportDiagnostics = Abilities.GetSupportDiagnostics(Items.All);

@@ -7,7 +7,6 @@ using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.UtilitySystem;
 using sMPGWM.Scripts.UtilitySystem.Mocks;
-using PlayerMock = sMPGWM.Scripts.UtilitySystem.Mocks.PlayerMock;
 using sMPGWM.Scripts.WorldSystem;
 
 namespace sMPGWM.Scripts.GamePlaySystem;
@@ -20,7 +19,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     public PlayerController LocalPlayer => _session?.Player!;
     public MessageController MessageController => _session?.Messages!;
     public MainGameState GameState => _gameState;
-    [Export] public bool PopulateMockInventory { get; set; } = true;
 
     public RestoredWorldState CaptureState()
     {
@@ -44,12 +42,9 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
                 ?? throw new InvalidOperationException("No network startup was supplied.");
             var canvas = GetNode<UiCanvas>("UiCanvas");
             var world = GetNode<Node>("WorldViewPortContainer/WorldViewport/WorldScene");
-            IGameFixture fixture = GameConfig.Development
-                ? new DevelopmentGameFixture(PlayerMock.Instance, PopulateMockInventory)
-                : new EmptyGameFixture();
             // Clear published references after every other resource has been released.
             scope.Defer(() => _session = null);
-            _session = GameSessionFactory.Create(scope, this, canvas, world, startup, _coordinator, fixture);
+            _session = GameSessionFactory.Create(scope, this, canvas, world, startup, _coordinator);
             flow.StateChanged += NetworkStateChanged;
             scope.Defer(() => flow.StateChanged -= NetworkStateChanged);
             scope.Defer(StopSession);
@@ -62,12 +57,6 @@ public partial class GamePlayManager : AbstractSingleton<GamePlayManager>
     private void StartNetwork()
     {
         if (_coordinator?.State == SessionState.Starting) _session?.Network.CreateNetwork();
-    }
-
-    public override void _Process(double delta)
-    {
-        if (GameState == MainGameState.Active && _session != null)
-            _session.Fixture.Tick(delta, _session.Messages);
     }
 
     protected override void OnExitTree() => _coordinator?.Stop();

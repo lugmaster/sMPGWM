@@ -16,7 +16,7 @@ public sealed class RestoredWorldTests
     public void CapturedWorldRestoresOwnersItemsResourcesEffectsAndContinuityWithoutDefaults()
     {
         var source = CreateSource(out var abilities);
-        var target = new GameWorld { AuthoritativeItems = true, InitialInventory = source.InitialInventory, InitializeLoadout = (_, _) => Assert.Fail("Restore applied starter defaults") };
+        var target = new GameWorld { AuthoritativeItems = true, InitializeLoadout = (_, _) => Assert.Fail("Restore applied starter defaults") };
         try
         {
             ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(target);
@@ -101,7 +101,7 @@ public sealed class RestoredWorldTests
     public void MalformedWorldDoesNotPublishOrChangeSourceAndCanRetry(string invalid)
     {
         var source = CreateSource(out var abilities);
-        var target = new GameWorld { AuthoritativeItems = true, InitialInventory = source.InitialInventory, InitializeLoadout = (_, _) => Assert.Fail("Restore applied defaults") };
+        var target = new GameWorld { AuthoritativeItems = true, InitializeLoadout = (_, _) => Assert.Fail("Restore applied defaults") };
         try
         {
             ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(target);
@@ -155,7 +155,7 @@ public sealed class RestoredWorldTests
     private static GameWorld CreateSource(out AbilityRuntime abilities)
     {
         using var initial = new InventoryController();
-        var world = new GameWorld { AuthoritativeItems = true, InitialInventory = initial.Snapshot, InitializeLoadout = StarterLoadout.Equip };
+        var world = new GameWorld { AuthoritativeItems = true, InitializeLoadout = StartLoadout.Equip };
         abilities = new AbilityRuntime(GameplayDefinitions.Current);
         try
         {

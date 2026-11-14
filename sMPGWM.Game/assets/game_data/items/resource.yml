@@ -3,13 +3,13 @@ Items:
 - Id: mock_standard_resource
   DisplayName: Standard Resource
   CategoryId: resource
-  Description: PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.
+  Description: Standard component. Try moving, merging, equipping, or assigning eligible items to the hotbar.
   StackLimit: 10
   Mass: 1
 - Id: mock_advanced_resource
   DisplayName: Advanced Resource
   CategoryId: resource
-  Description: PlayerMock alternate example for equipment swaps and separate item stacks.
+  Description: Alternate component for equipment swaps and separate item stacks.
   StackLimit: 1000
   Mass: 1
 - Id: infectedCargo

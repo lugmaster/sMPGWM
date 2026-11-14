@@ -16,16 +16,12 @@ public partial class GameWorld : Node
 {
     public ItemStore Items { get; private set; } = new();
     public bool AuthoritativeItems { get; set; }
-    public InventorySnapshot? InitialInventory { get; set; }
     public Action<ShipLoadout, InventoryController>? InitializeLoadout { get; set; }
 
-    public void InitializePlayerLoadout(int peer, InventorySnapshot initial)
+    public void InitializePlayerLoadout(int peer)
     {
         var player = _controllers[peer];
         if (player.InventoryInitialized) return;
-        foreach (var item in initial.Slots)
-            if (item != null && Items.CreateItems(player.Inventory.Container, item.DefinitionId, item.Count) != InventoryResult.Success)
-                throw new InvalidOperationException("Could not initialize personal inventory.");
         if (player.ControlledShip is { } ship)
         {
             ship.Loadout.SetAuthoritative(true);
@@ -95,8 +91,7 @@ public partial class GameWorld : Node
             ship.Restore(record.Position, record.Rotation, record.Velocity, default);
             _controllers.Add(record.PeerId, participant);
             _records.Add(record.PeerId, record);
-            if (AuthoritativeItems && InitialInventory is { } initial) InitializePlayerLoadout(record.PeerId, initial);
-            else if (AuthoritativeItems) ship.Loadout.InitializeResources();
+            if (AuthoritativeItems) InitializePlayerLoadout(record.PeerId);
             EntitySpawned?.Invoke(ship);
             if (IsInsideTree() && record.PeerId == Multiplayer.GetUniqueId()) LocalPlayer?.BindParticipant(participant);
             Logger.Info($"NET spawn peer={record.PeerId} ship={record.ShipId} entity={record.EntityId}");

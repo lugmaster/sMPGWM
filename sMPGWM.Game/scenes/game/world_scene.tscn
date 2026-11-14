@@ -1,9 +1,3 @@
 [gd_scene format=3 uid="uid://cg8f4fn37ikfw"]
 
-[ext_resource type="Script" uid="uid://dhb28xihgpk3g" path="res://Scripts/UtilitySystem/Mocks/PlayerMock.cs" id="1_u86lt"]
-
 [node name="WorldScene" type="Node2D" unique_id=721027220]
-
-[node name="PlayerMock" type="Node2D" parent="." unique_id=987606465]
-position = Vector2(600, 300)
-script = ExtResource("1_u86lt")

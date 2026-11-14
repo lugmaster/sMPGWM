@@ -19,7 +19,6 @@ internal sealed class LocalPlayerBindings : IDisposable
     private readonly InventoryEquipmentTransferService _transfers;
     private readonly ItemHotbarController _hotbar;
     private readonly AbilityTargetingController _targeting;
-    private readonly IGameFixture _fixture;
     private readonly InventoryController _emptyInventory;
     private readonly EquipmentController _emptyEquipment;
     private PlayerSession? _owner;
@@ -29,11 +28,11 @@ internal sealed class LocalPlayerBindings : IDisposable
 
     public LocalPlayerBindings(PlayerController player, NetworkManager network, UiCanvas canvas,
         InventoryEquipmentTransferService transfers, ItemHotbarController hotbar,
-        AbilityTargetingController targeting, IGameFixture fixture,
+        AbilityTargetingController targeting,
         InventoryController emptyInventory, EquipmentController emptyEquipment)
     {
         _player = player; _network = network; _canvas = canvas; _transfers = transfers;
-        _hotbar = hotbar; _targeting = targeting; _fixture = fixture;
+        _hotbar = hotbar; _targeting = targeting;
         _emptyInventory = emptyInventory; _emptyEquipment = emptyEquipment;
         player.ParticipantChanged += Bind;
         network.ItemBindingChanged += Refresh;
@@ -83,7 +82,7 @@ internal sealed class LocalPlayerBindings : IDisposable
         _transfers.Ready = _owner != null && _network.ItemBaselineReady;
         _hotbar.Rebind(inventory, equipment);
         _canvas.BindInventory(inventory, equipment, _transfers);
-        _canvas.BindHotbar(_hotbar, _fixture.Actions);
+        _canvas.BindHotbar(_hotbar, Array.Empty<sMPGWM.Scripts.UtilitySystem.UiComponents.IconDefinition>());
         _targeting.BindEquipment(_owner?.ControlledShip?.Equipment);
     }
 

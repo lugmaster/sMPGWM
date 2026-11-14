@@ -13,12 +13,34 @@ namespace sMPGWM.Tests.GamePlaySystem;
 [Category("Godot")]
 public sealed class InitialPlayerStateTests
 {
+    [TestCase(false)]
+    [TestCase(true)]
+    public void HostPresetAppliesOnceToEachJoiningPlayer(bool development)
+    {
+        var world = new GameWorld { AuthoritativeItems = true,
+            InitializeLoadout = development ? DevelopmentLoadout.Equip : StartLoadout.Equip };
+        try
+        {
+            for (var peer = 1; peer <= 3; peer++)
+            {
+                world.ApproveSpawn(peer, PlayerStartupData.Create());
+                var owner = world.Players[peer];
+                var snapshot = owner.Inventory.Snapshot;
+                Assert.That(snapshot.Occupied.Count, Is.EqualTo(development ? 1 : 0));
+                if (development) Assert.That(snapshot.Slots[0]!.DefinitionId, Is.EqualTo("laser_mk1"));
+                world.InitializePlayerLoadout(peer);
+                Assert.That(owner.Inventory.Snapshot, Is.SameAs(snapshot));
+            }
+        }
+        finally { world.Clear(); world.Free(); }
+    }
+
     [Test]
     public void ProductionStartupCanMoveAndActivateEquippedAbility()
     {
-        StarterLoadout.ValidateDefinitions(GameplayDefinitions.Current.Items);
+        StartLoadout.ValidateDefinitions(GameplayDefinitions.Current.Items);
         using var initial = new InventoryController();
-        var world = new GameWorld { AuthoritativeItems = true, InitialInventory = initial.Snapshot, InitializeLoadout = StarterLoadout.Equip };
+        var world = new GameWorld { AuthoritativeItems = true, InitializeLoadout = StartLoadout.Equip };
         try
         {
             ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world);
@@ -30,13 +52,11 @@ public sealed class InitialPlayerStateTests
             Assert.That(ship.Runtime.Energy.Current, Is.Zero);
             Assert.That(owner.Inventory.Snapshot.Occupied, Is.Empty);
             Assert.That(ship.Equipment.Snapshot.MaxWeaponSlots, Is.EqualTo(9));
-            Assert.That(ship.Equipment.Snapshot.UsedWeaponSlots, Is.EqualTo(6));
-            Assert.That(ship.Equipment.Snapshot.FreeWeaponSlots, Is.EqualTo(3));
+            Assert.That(ship.Equipment.Snapshot.UsedWeaponSlots, Is.EqualTo(1));
+            Assert.That(ship.Equipment.Snapshot.FreeWeaponSlots, Is.EqualTo(8));
             Assert.That(ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("weapon_fixture")]!.DefinitionId, Is.EqualTo("mock_standard_weapon_fixture"));
             Assert.That(ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("weapon_1")]!.Definition.CategoryId, Is.EqualTo("light_weapon"));
-            Assert.That(ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("weapon_2")]!.Definition.CategoryId, Is.EqualTo("medium_weapon"));
-            Assert.That(ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("weapon_3")]!.Definition.CategoryId, Is.EqualTo("heavy_weapon"));
-            for (var weapon = 4; weapon <= 9; weapon++)
+            for (var weapon = 2; weapon <= 9; weapon++)
                 Assert.That(ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("weapon_" + weapon)], Is.Null);
             for (var index = 0; index < ship.Equipment.Definitions.Count; index++)
                 if (!ship.Equipment.Definitions[index].IsWeaponSlot) Assert.That(ship.Equipment.Snapshot.Slots[index], Is.Not.Null);
@@ -67,7 +87,7 @@ public sealed class InitialPlayerStateTests
     public void RepeatedInitializationPreservesItemsResourcesAndUserHotbar()
     {
         using var initial = new InventoryController();
-        var world = new GameWorld { AuthoritativeItems = true, InitialInventory = initial.Snapshot, InitializeLoadout = StarterLoadout.Equip };
+        var world = new GameWorld { AuthoritativeItems = true, InitializeLoadout = StartLoadout.Equip };
         try
         {
             world.ApproveSpawn(1, PlayerStartupData.Create());
@@ -82,8 +102,8 @@ public sealed class InitialPlayerStateTests
             hotbar.SetEditSession(123);
             Assert.That(hotbar.Clear(123, hotbar.Revision, 0), Is.EqualTo(HotbarResult.Success));
             var hotbarRevision = hotbar.Revision;
-            world.InitializePlayerLoadout(1, initial.Snapshot);
-            StarterLoadout.Equip(ship.Loadout, owner.Inventory);
+            world.InitializePlayerLoadout(1);
+            StartLoadout.Equip(ship.Loadout, owner.Inventory);
             ship.Loadout.InitializeResources();
             hotbar.InitializeEquipmentAbilities();
             Assert.That(ship.Runtime.Shield.Current, Is.EqualTo(37));

@@ -12,7 +12,6 @@ using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem.Hotbar;
 using sMPGWM.Scripts.UtilitySystem.Mocks;
 using sMPGWM.Scripts.UtilitySystem.UiComponents;
-using PlayerMock = sMPGWM.Scripts.UtilitySystem.Mocks.PlayerMock;
 
 namespace sMPGWM.Tests;
 
@@ -35,12 +34,11 @@ public sealed class ShieldGameplayIntegrationTests
         using var socket = new System.Net.Sockets.UdpClient(0);
         var port = ((System.Net.IPEndPoint)socket.Client.LocalEndPoint!).Port;
         socket.Close();
-        var mock = new PlayerMock();
         try
         {
             coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData);
             coordinator.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
-                new(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port), coordinator, new DevelopmentGameFixture(mock, true)));
+                new(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port), coordinator));
             session!.Network.CreateNetwork();
             Assert.That(errors, Is.Empty);
             session.Player.SetSessionActive(true);
@@ -49,6 +47,7 @@ public sealed class ShieldGameplayIntegrationTests
             var sync = network.Synchronization!;
             var ship = session.Player.Participant!.ControlledShip!;
             var items = session.Player.Participant!;
+            items.Inventory.Items.CreateItems(items.Inventory.Container, "mock_standard_shield_generator", 1);
             var generatorIndex = -1;
             for (var i = 0; i < items.Inventory.Capacity; i++)
                 if (items.Inventory.Snapshot.Slots[i]?.DefinitionId == "mock_standard_shield_generator") { generatorIndex = i; break; }
@@ -173,7 +172,6 @@ public sealed class ShieldGameplayIntegrationTests
         {
             coordinator.Stop();
             parent.Free();
-            mock.Free();
         }
     }
 }

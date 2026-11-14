@@ -3,7 +3,7 @@ Items:
 - Id: mock_standard_engine
   DisplayName: Standard Engine
   CategoryId: engine
-  Description: PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.
+  Description: Standard component. Try moving, merging, equipping, or assigning eligible items to the hotbar.
   EnergyConsumption: 16
   Speed: 300
   AfterBurnerSpeed: 400
@@ -14,7 +14,7 @@ Items:
 - Id: mock_advanced_engine
   DisplayName: Advanced Engine
   CategoryId: engine
-  Description: PlayerMock alternate example for equipment swaps and separate item stacks.
+  Description: Alternate component for equipment swaps and separate item stacks.
   EnergyConsumption: 16
   Speed: 300
   AfterBurnerSpeed: 400

@@ -9,8 +9,7 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 internal sealed record GameSession(
     PlayerController Player,
     MessageController Messages,
-    NetworkManager Network,
-    IGameFixture Fixture)
+    NetworkManager Network)
 {
     public ItemHotbarController Hotbar { get; init; } = null!;
     public RestoredWorldState CaptureState() =>

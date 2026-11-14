@@ -3,7 +3,7 @@ Items:
 - Id: mock_standard_medium_weapon
   DisplayName: Standard Medium Weapon
   CategoryId: medium_weapon
-  Description: PlayerMock example. Uses 2 weapon slots.
+  Description: Standard component. Uses 2 weapon slots.
   DamageSource: physical
   Damage: 1
   AttackSpeed: 1
@@ -20,7 +20,7 @@ Items:
 - Id: mock_advanced_medium_weapon
   DisplayName: Advanced Medium Weapon
   CategoryId: medium_weapon
-  Description: PlayerMock alternate example. Uses 2 weapon slots.
+  Description: Alternate component. Uses 2 weapon slots.
   DamageSource: physical
   Damage: 1
   AttackSpeed: 1

@@ -3,7 +3,7 @@ Items:
 - Id: mock_standard_heavy_weapon
   DisplayName: Standard Heavy Weapon
   CategoryId: heavy_weapon
-  Description: PlayerMock example. Try moving, merging, equipping, or assigning eligible items to the hotbar.
+  Description: Standard component. Try moving, merging, equipping, or assigning eligible items to the hotbar.
   DamageSource: physical
   Damage: 1
   AttackSpeed: 1
@@ -19,7 +19,7 @@ Items:
 - Id: mock_advanced_heavy_weapon
   DisplayName: Advanced Heavy Weapon
   CategoryId: heavy_weapon
-  Description: PlayerMock alternate example for equipment swaps and separate item stacks.
+  Description: Alternate component for equipment swaps and separate item stacks.
   DamageSource: physical
   Damage: 1
   AttackSpeed: 1

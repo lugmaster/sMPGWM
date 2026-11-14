@@ -21,7 +21,7 @@ namespace sMPGWM.Scripts.GamePlaySystem;
 internal static class GameSessionFactory
 {
     public static GameSession Create(SessionScope scope, Node parent, UiCanvas canvas, Node world,
-        NetworkStartupData startup, SessionCoordinator coordinator, IGameFixture fixture)
+        NetworkStartupData startup, SessionCoordinator coordinator)
     {
         if (startup.RestoredWorld is { } supplied)
         {
@@ -40,7 +40,7 @@ internal static class GameSessionFactory
         var participants = new GameWorld
         {
             Name = nameof(GameWorld), AuthoritativeItems = startup.Role == NetworkRole.Host,
-            InitializeLoadout = StarterLoadout.Equip
+            InitializeLoadout = GameConfigSystem.GameConfig.UseDevLoadout ? DevelopmentLoadout.Equip : StartLoadout.Equip
         };
         scope.Defer(() => ReleaseNode(participants));
         scope.Defer(participants.Clear);
@@ -54,29 +54,25 @@ internal static class GameSessionFactory
         var transfers = scope.Own(new InventoryEquipmentTransferService(inventory, equipment));
         var hotbar = scope.Own(new ItemHotbarController(inventory, equipment, transfers,
             error => Logger.Error($"Hotbar observer failed: {error}")) { SupportsAbility = id => abilities.Definitions.Abilities.IsSupported(id, out _) });
-        if (startup.RestoredWorld?.LocalHotbar is { } savedHotbar) hotbar.RestoreState(savedHotbar);
         var player = new PlayerController { Name = "PlayerController" };
         scope.Defer(() => ReleaseNode(player));
         scope.Defer(player.Shutdown);
         var messages = scope.Own(new MessageController(error => Logger.Error($"Message observer failed: {error}")));
         scope.Own(new MessagePresentationBinding(messages, canvas, player.InputPolicy));
-        fixture.Populate(inventory, messages, startup.Role == NetworkRole.Host);
-        participants.InitialInventory = inventory.Snapshot;
-        participants.Items.EvictReplica(inventory.Container);
         scope.Defer(() =>
         {
             if (GodotObject.IsInstanceValid(canvas)) canvas.UnbindInventory();
         });
         canvas.BindInventory(inventory, equipment, transfers);
         AbilityTargetingController? targeting = null;
-        player.Initialize(canvas, transfers, position => hotbar.Activate(position, fixture.ActivateAction,
+        player.Initialize(canvas, transfers, position => hotbar.Activate(position, _ => { },
             request =>
             {
                 if (request.Binding is EquipmentAbilityHotbarBinding binding) targeting?.Begin(binding);
                 else Logger.Info($"Item hotbar activation requested: {request}");
             }), world);
         parent.AddChild(player);
-        canvas.BindHotbar(hotbar, fixture.Actions);
+        canvas.BindHotbar(hotbar, Array.Empty<sMPGWM.Scripts.UtilitySystem.UiComponents.IconDefinition>());
         player.SetSessionActive(false);
 
         participants.LocalPlayer = player;
@@ -94,7 +90,7 @@ internal static class GameSessionFactory
         transfers.SetAuthority(network.RequestItemTransfer);
         targeting = new AbilityTargetingController(network, player, canvas) { Name = "AbilityTargeting" };
         world.AddChild(targeting);
-        var bindings = scope.Own(new LocalPlayerBindings(player, network, canvas, transfers, hotbar, targeting, fixture, inventory, equipment));
+        var bindings = scope.Own(new LocalPlayerBindings(player, network, canvas, transfers, hotbar, targeting, inventory, equipment));
         canvas.CancelGameplayAction = () =>
         {
             if (!targeting.IsTargeting) return false;
@@ -115,14 +111,15 @@ internal static class GameSessionFactory
         network.Failed += coordinator.Fail;
         network.SessionReady += () => coordinator.Initialization.Synchronize(() =>
         {
-            hotbar.InitializeEquipmentAbilities();
+            if (startup.RestoredWorld?.LocalHotbar is { } savedHotbar) hotbar.RestoreState(savedHotbar);
+            else hotbar.InitializeEquipmentAbilities();
             bindings.VerifyReady();
             synchronization.Activate();
         });
         network.MembershipChanged += notifications.MembershipChanged;
         network.LocalJoined += notifications.LocalJoined;
         parent.AddChild(network);
-        return new GameSession(player, messages, network, fixture) { Hotbar = hotbar };
+        return new GameSession(player, messages, network) { Hotbar = hotbar };
     }
 
     private static void ReleaseNode(Node node)

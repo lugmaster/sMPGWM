@@ -9,7 +9,6 @@ using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.UtilitySystem.Mocks;
-using PlayerMock = sMPGWM.Scripts.UtilitySystem.Mocks.PlayerMock;
 namespace sMPGWM.Tests;
 [Category("Godot")]
 public sealed class LocalBindingIntegrationTests
@@ -25,7 +24,6 @@ public sealed class LocalBindingIntegrationTests
         parent.AddChild(canvas);
         var errors = new List<string>();
         var coordinator = new SessionCoordinator(() => { }, errors.Add, e => errors.Add(e.Message));
-        var mock = new PlayerMock();
         using var socket = new System.Net.Sockets.UdpClient(0);
         var port = ((System.Net.IPEndPoint)socket.Client.LocalEndPoint!).Port;
         socket.Close();
@@ -34,7 +32,7 @@ public sealed class LocalBindingIntegrationTests
         {
             coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData);
             coordinator.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
-                new(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port), coordinator, new DevelopmentGameFixture(mock, true)));
+                new(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port), coordinator));
             session!.Network.CreateNetwork();
             Assert.That(errors, Is.Empty);
             session.Player.SetSessionActive(true);
@@ -80,7 +78,6 @@ public sealed class LocalBindingIntegrationTests
         {
             coordinator.Stop();
             parent.Free();
-            mock.Free();
         }
     }
 }
