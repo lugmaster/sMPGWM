@@ -12,6 +12,7 @@ using sMPGWM.Scripts.ParallaxSystem;
 using sMPGWM.Scripts.PlayerControllerSystem;
 using sMPGWM.Scripts.UiSystem;
 using sMPGWM.Scripts.WorldSystem;
+using sMPGWM.Scripts.VfxSystem;
 using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 using ParallaxMotion = sMPGWM.Scripts.ParallaxSystem.ParallaxMotion;
@@ -36,10 +37,12 @@ internal static class GameSessionFactory
             }
             if (!hasHost) throw new InvalidOperationException("Restored startup requires the host's controlled ship.");
         }
+        var assets = scope.Own(new SessionAssets());
         var abilities = scope.Own(new AbilityRuntime(GameplayDefinitions.Current));
         var participants = new GameWorld
         {
             Name = nameof(GameWorld), AuthoritativeItems = startup.Role == NetworkRole.Host,
+            Assets = assets.Ships,
             InitializeLoadout = StarterLoadout.Equip
         };
         scope.Defer(() => ReleaseNode(participants));
@@ -85,6 +88,11 @@ internal static class GameSessionFactory
         var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities, Simulation = scope.Own(new GameplaySimulation(participants, abilities, sMPGWM.Scripts.GameConfigSystem.GameConfig.FriendlyFire)) };
         scope.Defer(() => ReleaseNode(network));
         scope.Defer(network.StopSession);
+        var presentation = new ShotPresentationController { Name = "ShotPresentation" };
+        scope.Defer(() => ReleaseNode(presentation));
+        participants.AddChild(presentation);
+        presentation.Initialize(participants, assets.Profiles);
+        scope.Own(new CombatPresentationBinding(network, presentation));
         var synchronization = new SynchronizationCoordinator
         {
             Name = nameof(SynchronizationCoordinator), Player = player, World = participants, Network = network

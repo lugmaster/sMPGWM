@@ -1,12 +1,16 @@
 using System;
 using Godot;
+using sMPGWM.Scripts.VfxSystem;
 
 namespace sMPGWM.Scripts.ShipSystem;
 
 /// <summary>Owns visual transforms and correction offsets. Camera policy belongs to PlayerController.</summary>
 public sealed class ShipPresentation(ShipController ship)
 {
-    private Node2D Visuals => ship.GetNode<Node2D>("ShipVisuals");
+    private Node2D? _visuals;
+    private ShieldVisual? _shieldVisual;
+    private Node2D Visuals => _visuals ??= ship.GetNode<Node2D>("ShipVisuals");
+    private ShieldVisual? Shield => _shieldVisual ??= ship.GetNodeOrNull<ShieldVisual>(ShieldVisualPath);
     private Vector2 _offset;
     private float _angleOffset;
     private static readonly NodePath ShieldVisualPath = new("ShipVisuals/ShieldVisual");
@@ -15,7 +19,13 @@ public sealed class ShipPresentation(ShipController ship)
     {
         if (tick <= _lastShieldCollisionTick) return;
         _lastShieldCollisionTick = tick;
-        ship.GetNodeOrNull<sMPGWM.Scripts.VfxSystem.ShieldVisual>(ShieldVisualPath)?.Pulse(ageSeconds);
+        PulseShieldHit(ageSeconds);
+    }
+    internal void PulseShieldHit(float ageSeconds) => Shield?.Pulse(ageSeconds);
+    internal void ResetShieldPulse(long cutoffTick)
+    {
+        _lastShieldCollisionTick = cutoffTick;
+        Shield?.ResetPulse();
     }
     public Vector2 Position => Visuals.GlobalPosition;
     public float Rotation => Visuals.GlobalRotation;

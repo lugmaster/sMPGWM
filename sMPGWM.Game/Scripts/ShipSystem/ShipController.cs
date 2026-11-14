@@ -36,12 +36,15 @@ public partial class ShipController : CharacterBody2D
     }
 
     internal void PrepareShieldCollider()
+        => PrepareShieldCollider(null);
+
+    internal void PrepareShieldCollider(Shape2D? preparedShape)
     {
         var geometry = Data.ShieldGeometry ?? throw new InvalidOperationException(
             $"Ship '{Data.Name}' requires shield_geometry. Run python tools/shield_geometry/bake_shield_geometry.py --write.");
         _hullCollider = GetNode<CollisionPolygon2D>("CollisionPolygon2D");
         _shieldCollider = GetNode<CollisionShape2D>("ShieldCollider");
-        _shieldCollider.Shape = ShieldPhysicsGeometry.GetShape(geometry);
+        _shieldCollider.Shape = preparedShape ?? ShieldPhysicsGeometry.GetShape(geometry);
         _shieldCollider.Position = geometry.Center;
         _shieldCollider.RotationDegrees = geometry.RotationDegrees;
         _shieldCollider.Disabled = true;
@@ -91,7 +94,7 @@ public partial class ShipController : CharacterBody2D
         if (!_shieldRecoveryPending || !ShieldColliderActive || !IsInsideTree()) return;
         for (var i = 0; i < 4; i++)
         {
-            var collision = MoveAndCollide(Vector2.Zero, recoveryAsCollision: true);
+            using var collision = MoveAndCollide(Vector2.Zero, recoveryAsCollision: true);
             if (collision == null || collision.GetTravel().LengthSquared() < 0.0000001f)
             {
                 _shieldRecoveryPending = false;
@@ -225,7 +228,7 @@ public partial class ShipController : CharacterBody2D
         var motion = Velocity * (float)delta;
         for (int slide = 0; slide < 4 && motion.LengthSquared() > 0.0000001f; slide++)
         {
-            var collision = MoveAndCollide(motion);
+            using var collision = MoveAndCollide(motion);
             if (collision == null) break;
             RecordShieldCollision(collision);
             var normal = collision.GetNormal();

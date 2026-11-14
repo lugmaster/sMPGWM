@@ -12,17 +12,18 @@ public partial class ShotPresentationController : Node2D
 {
     private const int QueueCapacity = 512;
     private const int DedupCapacity = 512;
-    private static readonly NodePath ShieldVisualPath = new("ShipVisuals/ShieldVisual");
+    public const int MaximumEffects = 1024;
     private readonly AcceptedShot[] _pending = new AcceptedShot[QueueCapacity];
     private readonly ShieldCollisionEvent[] _shieldCollisions = new ShieldCollisionEvent[ShieldCollisionEventCodec.MaxEvents];
     private int _shieldCollisionCount;
     private readonly ItemEntityId[] _items = new ItemEntityId[DedupCapacity];
     private readonly ShotSequenceWindow[] _windows = new ShotSequenceWindow[DedupCapacity];
     private readonly long[] _seenTicks = new long[DedupCapacity];
-    private readonly Effect[] _effects = new Effect[1024];
-    private readonly int[][] _freeEffects = [new int[128], new int[256], new int[128], new int[128], new int[256], new int[128]];
-    private readonly int[] _freeCounts = new int[6];
-    private readonly int[] _activeEffects = new int[1024];
+    private readonly Effect[] _effects = new Effect[MaximumEffects];
+    private readonly int[][] _freeEffects = new int[WeaponPresentationProfile.Count * 3][];
+    private readonly int[] _freeCounts = new int[WeaponPresentationProfile.Count * 3];
+    private readonly long[] _droppedByPool = new long[WeaponPresentationProfile.Count * 3];
+    private readonly int[] _activeEffects = new int[MaximumEffects];
     private readonly AudioStreamPlayer2D[] _voices = new AudioStreamPlayer2D[24];
     private readonly long[] _voiceTicks = new long[24];
     private WeaponPresentationProfile[] _profiles = null!;
@@ -34,18 +35,44 @@ public partial class ShotPresentationController : Node2D
     public long DroppedEffects { get; private set; }
     public int HighWater { get; private set; }
     public int ActiveEffects => _activeCount;
+    public long DroppedMuzzleEffects => CountDrops(0);
+    public long DroppedTracerEffects => CountDrops(1);
+    public long DroppedImpactEffects => CountDrops(2);
 
-    public void Initialize(GameWorld world)
+    private long CountDrops(int kind)
     {
+        var count = 0L;
+        for (var profile = 0; profile < WeaponPresentationProfile.Count; profile++) count += _droppedByPool[GetPool(profile, kind)];
+        return count;
+    }
+
+    public void Initialize(GameWorld world) => Initialize(world, WeaponPresentationProfile.CreateAll());
+
+    public void Initialize(GameWorld world, WeaponPresentationProfile[] profiles)
+    {
+        if (_world != null) throw new InvalidOperationException("Shot presentation is already initialized.");
+        if (profiles.Length != WeaponPresentationProfile.Count) throw new ArgumentException("Incomplete presentation profiles.", nameof(profiles));
+        var capacity = 0L;
+        for (var i = 0; i < profiles.Length; i++)
+        {
+            if (profiles[i].Id != WeaponPresentationProfile.GetId(i)) throw new ArgumentException("Presentation profiles are out of order.", nameof(profiles));
+            if (profiles[i].MuzzleCapacity < 0 || profiles[i].TracerCapacity < 0 || profiles[i].ImpactCapacity < 0)
+                throw new ArgumentException("Negative effect capacity.", nameof(profiles));
+            capacity += (long)profiles[i].MuzzleCapacity + profiles[i].TracerCapacity + profiles[i].ImpactCapacity;
+        }
+        if (capacity > MaximumEffects) throw new ArgumentException("Presentation pool budget exceeded.", nameof(profiles));
         _world = world;
-        _profiles = [new("smg_standard"), new("laser_standard")];
+        _profiles = profiles;
         var index = 0;
-        // Budgets cap the 5,400 shots/second ceiling; exhausted cosmetics never suppress gameplay.
+        // The prepared budget bounds scene memory; exhausted cosmetics never suppress gameplay.
         for (var profile = 0; profile < _profiles.Length; profile++)
         {
-            for (var i = 0; i < 128; i++) AddEffect(index++, _profiles[profile].Muzzle.Instantiate<Node2D>(), profile, 0);
-            for (var i = 0; i < 256; i++) AddEffect(index++, _profiles[profile].Tracer.Instantiate<Node2D>(), profile, 1);
-            for (var i = 0; i < 128; i++) AddEffect(index++, _profiles[profile].Impact.Instantiate<Node2D>(), profile, 2);
+            _freeEffects[GetPool(profile, 0)] = new int[_profiles[profile].MuzzleCapacity];
+            _freeEffects[GetPool(profile, 1)] = new int[_profiles[profile].TracerCapacity];
+            _freeEffects[GetPool(profile, 2)] = new int[_profiles[profile].ImpactCapacity];
+            for (var i = 0; i < _profiles[profile].MuzzleCapacity; i++) AddEffect(index++, _profiles[profile].Muzzle.Instantiate<Node2D>(), profile, 0);
+            for (var i = 0; i < _profiles[profile].TracerCapacity; i++) AddEffect(index++, _profiles[profile].Tracer.Instantiate<Node2D>(), profile, 1);
+            for (var i = 0; i < _profiles[profile].ImpactCapacity; i++) AddEffect(index++, _profiles[profile].Impact.Instantiate<Node2D>(), profile, 2);
         }
         for (var i = 0; i < _voices.Length; i++)
         {
@@ -66,7 +93,7 @@ public partial class ShotPresentationController : Node2D
 
     public void Enqueue(AcceptedShot shot)
     {
-        if (shot.Tick <= _cutoff || shot.Sequence == 0 || shot.ProfileId is not ("smg_standard" or "laser_standard")) return;
+        if (shot.Tick <= _cutoff || shot.Sequence == 0 || !WeaponPresentationProfile.TryGetIndex(shot.ProfileId, out _)) return;
         if (shot.Tick < _presentationTick - 60 || shot.Tick > _presentationTick + 120) return;
         if (!Remember(shot)) return;
         if (_pendingCount == _pending.Length) { DroppedEffects++; return; }
@@ -151,9 +178,7 @@ public partial class ShotPresentationController : Node2D
                 effect.Node.GlobalPosition = effect.Origin.Lerp(effect.End, Math.Clamp(age / effect.Duration, 0, 1));
             if (effect.Animation != null)
             {
-                var animation = effect.Animation.Animation;
-                var frames = effect.Animation.SpriteFrames;
-                effect.Animation.Frame = Math.Min(frames.GetFrameCount(animation) - 1, (int)(age * frames.GetAnimationSpeed(animation)));
+                effect.Animation.Frame = Math.Min(effect.FrameCount - 1, (int)(age * effect.FramesPerSecond));
             }
             effect.Node.Modulate = new Color(1, 1, 1, 1 - age / effect.Duration);
         }
@@ -162,7 +187,7 @@ public partial class ShotPresentationController : Node2D
 
     private void Play(AcceptedShot shot, double startTick)
     {
-        var profile = shot.ProfileId == "smg_standard" ? 0 : 1;
+        if (!WeaponPresentationProfile.TryGetIndex(shot.ProfileId, out var profile)) return;
         _world.Entities.TryGetValue(shot.EntityId, out var ship);
         var direction = shot.End - shot.Origin;
         var angle = direction.Angle();
@@ -178,7 +203,7 @@ public partial class ShotPresentationController : Node2D
         if (!shieldContact && (shot.Flags & (ShotResultFlags.Hull | ShotResultFlags.World | ShotResultFlags.Wreck)) != 0)
             Acquire(profile, 2, startTick, _profiles[profile].ImpactDuration, shot.End, shot.Normal.Angle());
         if (shieldContact && _world.Entities.TryGetValue(shot.TargetEntityId, out var target))
-            target.GetNodeOrNull<ShieldVisual>(ShieldVisualPath)?.Pulse((float)Math.Max(0, (_presentationTick - startTick) / 60));
+            target.Presentation.PulseShieldHit((float)Math.Max(0, (_presentationTick - startTick) / 60));
         if (_presentationTick - startTick > 6) return;
         for (var i = 0; i < _voices.Length; i++)
         {
@@ -199,6 +224,7 @@ public partial class ShotPresentationController : Node2D
         if (_freeCounts[pool] == 0)
         {
             DroppedEffects++;
+            _droppedByPool[pool]++;
             return null;
         }
         var index = _freeEffects[pool][--_freeCounts[pool]];
@@ -239,7 +265,7 @@ public partial class ShotPresentationController : Node2D
         Array.Clear(_windows);
         if (_world != null)
             foreach (var ship in _world.Entities.Values)
-                ship.GetNodeOrNull<ShieldVisual>(ShieldVisualPath)?.ResetPulse();
+                ship.Presentation.ResetShieldPulse(cutoffTick);
         foreach (var voice in _voices) voice?.Stop();
     }
 
@@ -247,6 +273,8 @@ public partial class ShotPresentationController : Node2D
     {
         public readonly Node2D Node = node;
         public readonly AnimatedSprite2D? Animation = animation;
+        public readonly int FrameCount = animation?.SpriteFrames.GetFrameCount(animation.Animation) ?? 0;
+        public readonly double FramesPerSecond = animation?.SpriteFrames.GetAnimationSpeed(animation.Animation) ?? 0;
         public readonly int Pool = pool;
         public readonly int Kind = kind;
         public double StartTick;

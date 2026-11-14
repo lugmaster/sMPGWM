@@ -1,0 +1,398 @@
+{
+  "windowSeconds": [
+    15,
+    29
+  ],
+  "percentile": "nearest-rank",
+  "results": [
+    {
+      "rate": 15,
+      "before": {
+        "run": "5-players-run-1",
+        "exitCodes": {
+          "host": 0,
+          "client-1": 0,
+          "client-2": 0,
+          "client-3": 0,
+          "client-4": 0
+        },
+        "allPeersPassed": true,
+        "hostStepMs": {
+          "p50": 0.3273,
+          "p95": 0.6394,
+          "p99": 0.8472
+        },
+        "publicationIntervalMs": {
+          "p50": 33.3353,
+          "p95": 33.6861,
+          "p99": 34.049
+        },
+        "stepAllocationKiBPerSecond": 1103.173549107143,
+        "gcPauseMs": 26.652,
+        "hostShots": 12285,
+        "localShots": {
+          "host": 3105,
+          "client-1": 2376,
+          "client-2": 2187,
+          "client-3": 2244,
+          "client-4": 2160
+        },
+        "maxPoolHighWater": 171,
+        "maxPoolDrops": 0,
+        "engineErrors": {
+          "host": {
+            "ERROR: Unable to send packet on channel 0, max channels: 0": 6,
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          },
+          "client-1": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          }
+        }
+      },
+      "after": {
+        "run": "5-players-run-1",
+        "exitCodes": {
+          "host": 0,
+          "client-1": 0,
+          "client-2": 0,
+          "client-3": 0,
+          "client-4": 0
+        },
+        "allPeersPassed": true,
+        "hostStepMs": {
+          "p50": 0.2007,
+          "p95": 0.4539,
+          "p99": 0.6779
+        },
+        "publicationIntervalMs": {
+          "p50": 33.3325,
+          "p95": 33.7611,
+          "p99": 33.9522
+        },
+        "stepAllocationKiBPerSecond": 630.7823660714286,
+        "gcPauseMs": 15.985000000000001,
+        "hostShots": 9855,
+        "localShots": {
+          "host": 2835,
+          "client-1": 1607,
+          "client-2": 2050,
+          "client-3": 1512,
+          "client-4": 1602
+        },
+        "maxPoolHighWater": 216,
+        "maxPoolDrops": 0,
+        "engineErrors": {
+          "host": {
+            "ERROR: Unable to send packet on channel 0, max channels: 0": 3
+          }
+        }
+      },
+      "allocationReductionPercent": 42.82111218294218
+    },
+    {
+      "rate": 15,
+      "before": {
+        "run": "10-players-run-1",
+        "exitCodes": {
+          "host": 0,
+          "client-1": 0,
+          "client-2": 0,
+          "client-3": 0,
+          "client-4": 0,
+          "client-5": 0,
+          "client-6": 0,
+          "client-7": 0,
+          "client-8": 0,
+          "client-9": 0
+        },
+        "allPeersPassed": true,
+        "hostStepMs": {
+          "p50": 0.515,
+          "p95": 1.3415,
+          "p99": 1.5424
+        },
+        "publicationIntervalMs": {
+          "p50": 33.343,
+          "p95": 33.9471,
+          "p99": 34.1858
+        },
+        "stepAllocationKiBPerSecond": 2279.409598214286,
+        "gcPauseMs": 65.57300000000001,
+        "hostShots": 23004,
+        "localShots": {
+          "host": 3114,
+          "client-1": 2385,
+          "client-2": 2244,
+          "client-3": 2214,
+          "client-4": 2169,
+          "client-5": 2136,
+          "client-6": 2124,
+          "client-7": 2145,
+          "client-8": 2082,
+          "client-9": 2019
+        },
+        "maxPoolHighWater": 297,
+        "maxPoolDrops": 8,
+        "engineErrors": {
+          "host": {
+            "ERROR: Unable to send packet on channel 0, max channels: 0": 6
+          },
+          "client-1": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          },
+          "client-3": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          }
+        }
+      },
+      "after": {
+        "run": "10-players-run-1",
+        "exitCodes": {
+          "host": 0,
+          "client-1": 0,
+          "client-2": 0,
+          "client-3": 0,
+          "client-4": 0,
+          "client-5": 0,
+          "client-6": 0,
+          "client-7": 0,
+          "client-8": 0,
+          "client-9": 0
+        },
+        "allPeersPassed": true,
+        "hostStepMs": {
+          "p50": 0.3975,
+          "p95": 0.9613,
+          "p99": 2.7747
+        },
+        "publicationIntervalMs": {
+          "p50": 33.3308,
+          "p95": 33.987,
+          "p99": 34.8377
+        },
+        "stepAllocationKiBPerSecond": 864.9112723214286,
+        "gcPauseMs": 0.0,
+        "hostShots": 18765,
+        "localShots": {
+          "host": 3069,
+          "client-1": 1602,
+          "client-2": 2004,
+          "client-3": 1557,
+          "client-4": 1599,
+          "client-5": 1611,
+          "client-6": 2006,
+          "client-7": 1594,
+          "client-8": 1845,
+          "client-9": 1605
+        },
+        "maxPoolHighWater": 343,
+        "maxPoolDrops": 129,
+        "engineErrors": {
+          "host": {
+            "ERROR: Unable to send packet on channel 0, max channels: 0": 21
+          }
+        }
+      },
+      "allocationReductionPercent": 62.05546940756022
+    },
+    {
+      "rate": 60,
+      "before": {
+        "run": "5-players-run-1",
+        "exitCodes": {
+          "host": 0,
+          "client-1": 0,
+          "client-2": 0,
+          "client-3": 0,
+          "client-4": 0
+        },
+        "allPeersPassed": true,
+        "hostStepMs": {
+          "p50": 0.3815,
+          "p95": 0.7207,
+          "p99": 0.9163
+        },
+        "publicationIntervalMs": {
+          "p50": 33.3445,
+          "p95": 33.7325,
+          "p99": 33.9847
+        },
+        "stepAllocationKiBPerSecond": 1364.671875,
+        "gcPauseMs": 50.70299999999999,
+        "hostShots": 27243,
+        "localShots": {
+          "host": 6651,
+          "client-1": 5346,
+          "client-2": 5139,
+          "client-3": 4929,
+          "client-4": 4803
+        },
+        "maxPoolHighWater": 362,
+        "maxPoolDrops": 283,
+        "engineErrors": {
+          "host": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          },
+          "client-2": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          },
+          "client-3": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          },
+          "client-4": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          }
+        }
+      },
+      "after": {
+        "run": "5-players-run-1",
+        "exitCodes": {
+          "host": 0,
+          "client-1": 0,
+          "client-2": 0,
+          "client-3": 0,
+          "client-4": 0
+        },
+        "allPeersPassed": true,
+        "hostStepMs": {
+          "p50": 0.1763,
+          "p95": 0.5945,
+          "p99": 0.8195
+        },
+        "publicationIntervalMs": {
+          "p50": 33.3386,
+          "p95": 33.6414,
+          "p99": 34.0699
+        },
+        "stepAllocationKiBPerSecond": 741.3504464285714,
+        "gcPauseMs": 16.450000000000003,
+        "hostShots": 23742,
+        "localShots": {
+          "host": 6480,
+          "client-1": 3519,
+          "client-2": 4551,
+          "client-3": 3663,
+          "client-4": 4760
+        },
+        "maxPoolHighWater": 384,
+        "maxPoolDrops": 7566,
+        "engineErrors": {
+          "host": {
+            "ERROR: Unable to send packet on channel 0, max channels: 0": 3
+          }
+        }
+      },
+      "allocationReductionPercent": 45.67555322201014
+    },
+    {
+      "rate": 60,
+      "before": {
+        "run": "10-players-run-1",
+        "exitCodes": {
+          "host": 0,
+          "client-1": 0,
+          "client-2": 0,
+          "client-3": 0,
+          "client-4": 0,
+          "client-5": 0,
+          "client-6": 0,
+          "client-7": 0,
+          "client-8": 0,
+          "client-9": 0
+        },
+        "allPeersPassed": true,
+        "hostStepMs": {
+          "p50": 0.7928,
+          "p95": 2.1866,
+          "p99": 4.4508
+        },
+        "publicationIntervalMs": {
+          "p50": 33.3064,
+          "p95": 34.6187,
+          "p99": 45.481
+        },
+        "stepAllocationKiBPerSecond": 2946.6746651785716,
+        "gcPauseMs": 107.00200000000001,
+        "hostShots": 49572,
+        "localShots": {
+          "host": 6795,
+          "client-1": 5334,
+          "client-2": 5019,
+          "client-3": 4836,
+          "client-4": 4812,
+          "client-5": 4377,
+          "client-6": 4728,
+          "client-7": 4374,
+          "client-8": 4344,
+          "client-9": 2568
+        },
+        "maxPoolHighWater": 384,
+        "maxPoolDrops": 27165,
+        "engineErrors": {
+          "host": {
+            "ERROR: Unable to send packet on channel 0, max channels: 0": 12,
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          },
+          "client-4": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          },
+          "client-7": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          },
+          "client-8": {
+            "ERROR: 1 resources still in use at exit (run with --verbose for details).": 1
+          }
+        }
+      },
+      "after": {
+        "run": "10-players-run-1",
+        "exitCodes": {
+          "host": 0,
+          "client-1": 0,
+          "client-2": 0,
+          "client-3": 0,
+          "client-4": 0,
+          "client-5": 0,
+          "client-6": 0,
+          "client-7": 0,
+          "client-8": 0,
+          "client-9": 0
+        },
+        "allPeersPassed": true,
+        "hostStepMs": {
+          "p50": 0.3414,
+          "p95": 1.6797,
+          "p99": 2.3259
+        },
+        "publicationIntervalMs": {
+          "p50": 33.3268,
+          "p95": 33.8336,
+          "p99": 34.2502
+        },
+        "stepAllocationKiBPerSecond": 1204.8002232142858,
+        "gcPauseMs": 42.842,
+        "hostShots": 43200,
+        "localShots": {
+          "host": 6480,
+          "client-1": 4799,
+          "client-2": 4795,
+          "client-3": 3668,
+          "client-4": 3654,
+          "client-5": 3617,
+          "client-6": 3696,
+          "client-7": 3705,
+          "client-8": 4225,
+          "client-9": 3662
+        },
+        "maxPoolHighWater": 384,
+        "maxPoolDrops": 35749,
+        "engineErrors": {
+          "host": {
+            "ERROR: Unable to send packet on channel 0, max channels: 0": 15
+          }
+        }
+      },
+      "allocationReductionPercent": 59.11322558096948
+    }
+  ]
+}

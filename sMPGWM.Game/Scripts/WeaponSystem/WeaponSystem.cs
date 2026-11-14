@@ -61,6 +61,7 @@ public sealed class WeaponSystem : IDisposable
             var ship = _shooters[i]!;
             var controller = ship.Loadout.Weapons;
             controller.SetInput(ship.InputState.FireMask, ship.InputState.WeaponConfigurationRevision);
+            var queryPrepared = false;
             foreach (var binding in controller.Bindings)
             {
                 if (binding == null || !controller.Available) continue;
@@ -84,7 +85,11 @@ public sealed class WeaponSystem : IDisposable
                 Vector2 end;
                 Vector2 normal;
                 bool blocked;
-                try { target = _query.Cast(world, ship, origin, endpoint, out end, out normal, out blocked); }
+                try
+                {
+                    if (!queryPrepared) { _query.Prepare(world, ship); queryPrepared = true; }
+                    target = _query.CastPrepared(ship, origin, endpoint, out end, out normal, out blocked);
+                }
                 catch (Exception exception) when (exception is InvalidOperationException or ArgumentException)
                 {
                     GD.PushError("Hitscan query failed: " + exception.Message);

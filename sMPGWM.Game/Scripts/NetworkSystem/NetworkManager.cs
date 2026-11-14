@@ -354,13 +354,13 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
             MembershipChanged?.Invoke(peer, joined, reason);
     }
 
-    private string? _publishedTopology;
+    private WorldTopology? _publishedTopology;
     public void PublishWorldTopology()
     {
         if (!IsHost()) return;
+        if (_publishedTopology != null && World.MatchesTopology(_publishedTopology)) return;
         var topology = World.CaptureTopology();
-        if (topology.Identity == _publishedTopology) return;
-        _publishedTopology = topology.Identity;
+        _publishedTopology = topology;
         _gameplayDirty = true;
         var payload = topology.ToVariant();
         foreach (var (peer, join) in _joins.Snapshot())

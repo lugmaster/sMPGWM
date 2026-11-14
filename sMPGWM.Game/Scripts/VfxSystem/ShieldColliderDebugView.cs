@@ -21,7 +21,7 @@ public partial class ShieldColliderDebugView : Node2D // TEST-SUPPORT: SHIELD-DE
         Position = geometry.Center; // TEST-SUPPORT: SHIELD-DEBUG-021 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
         RotationDegrees = geometry.RotationDegrees; // TEST-SUPPORT: SHIELD-DEBUG-022 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
         ZIndex = 2; // TEST-SUPPORT: SHIELD-DEBUG-023 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
-        var shape = ShieldPhysicsGeometry.GetShape(geometry); // TEST-SUPPORT: SHIELD-DEBUG-024 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
+        var shape = ship.GetNode<CollisionShape2D>("ShieldCollider").Shape; // TEST-SUPPORT: SHIELD-DEBUG-024 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
         if (shape is CircleShape2D circle) _radius = circle.Radius; // TEST-SUPPORT: SHIELD-DEBUG-025 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
         else if (shape is ConvexPolygonShape2D polygon) // TEST-SUPPORT: SHIELD-DEBUG-026 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape
         { // TEST-SUPPORT: SHIELD-DEBUG-027 | Tests: sMPGWM.Tests.ShieldVisualTests.DebugOverlayTracksEffectiveShape

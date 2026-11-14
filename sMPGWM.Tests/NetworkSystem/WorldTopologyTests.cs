@@ -13,6 +13,35 @@ public class WorldTopologyTests
     private static ShipSpawnRecord Record(int peer) => new(peer, Guid.NewGuid().ToString("N"), "fighter",
         new Vector2(peer * 300, 100), 0, Vector2.Zero);
 
+    [Test] // TEST-SUPPORT: TOPOLOGY-COMPARE-1 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+    public void TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges() // TEST-SUPPORT: TOPOLOGY-COMPARE-2 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+    { // TEST-SUPPORT: TOPOLOGY-COMPARE-3 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+        var world = new GameWorld(); // TEST-SUPPORT: TOPOLOGY-COMPARE-4 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+        try // TEST-SUPPORT: TOPOLOGY-COMPARE-5 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+        { // TEST-SUPPORT: TOPOLOGY-COMPARE-6 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            world.Spawn(Record(1)); // TEST-SUPPORT: TOPOLOGY-COMPARE-7 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            var ship = world.Players[1].ControlledShip!; // TEST-SUPPORT: TOPOLOGY-COMPARE-8 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            var initial = world.CaptureTopology(); // TEST-SUPPORT: TOPOLOGY-COMPARE-9 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            Assert.That(world.MatchesTopology(initial), Is.True); // TEST-SUPPORT: TOPOLOGY-COMPARE-10 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            ship.Position += new Vector2(15, 30); // TEST-SUPPORT: TOPOLOGY-COMPARE-11 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            Assert.That(world.MatchesTopology(initial), Is.True); // TEST-SUPPORT: TOPOLOGY-COMPARE-12 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            world.Players[1].AssignShip(null); // TEST-SUPPORT: TOPOLOGY-COMPARE-13 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            Assert.That(world.MatchesTopology(initial), Is.False); // TEST-SUPPORT: TOPOLOGY-COMPARE-14 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            var released = world.CaptureTopology(); // TEST-SUPPORT: TOPOLOGY-COMPARE-15 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            Assert.That(world.MatchesTopology(released), Is.True); // TEST-SUPPORT: TOPOLOGY-COMPARE-16 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            world.Spawn(Record(2)); // TEST-SUPPORT: TOPOLOGY-COMPARE-17 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            Assert.That(world.MatchesTopology(released), Is.False); // TEST-SUPPORT: TOPOLOGY-COMPARE-18 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            var joined = world.CaptureTopology(); // TEST-SUPPORT: TOPOLOGY-COMPARE-19 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            world.Despawn(2); // TEST-SUPPORT: TOPOLOGY-COMPARE-20 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            Assert.That(world.MatchesTopology(joined), Is.False); // TEST-SUPPORT: TOPOLOGY-COMPARE-21 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            var beforeRemoval = world.CaptureTopology(); // TEST-SUPPORT: TOPOLOGY-COMPARE-22 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            world.DestroyEntity(ship.EntityId); // TEST-SUPPORT: TOPOLOGY-COMPARE-23 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            world.SpawnEntity(EntitySpawnRecord.From(Record(3))); // TEST-SUPPORT: TOPOLOGY-COMPARE-24 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+            Assert.That(world.MatchesTopology(beforeRemoval), Is.False); // TEST-SUPPORT: TOPOLOGY-COMPARE-25 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+        } // TEST-SUPPORT: TOPOLOGY-COMPARE-26 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+        finally { world.Free(); } // TEST-SUPPORT: TOPOLOGY-COMPARE-27 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+    } // TEST-SUPPORT: TOPOLOGY-COMPARE-28 | Tests: sMPGWM.Tests.NetworkSystem.WorldTopologyTests.TopologyComparisonIgnoresMovementAndDetectsControlAndMembershipChanges
+
     [Test]
     public void UncontrolledShipBelongsToWorldAndSurvivesControlChanges()
     {

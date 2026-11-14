@@ -1,28 +1,14 @@
-using Godot;
-using sMPGWM.Scripts.VfxSystem;
-using sMPGWM.Scripts.WeaponSystem;
+using System;
 
 namespace sMPGWM.Scripts.NetworkSystem;
 
 public partial class NetworkManager
 {
-    private ShotPresentationController? _shotPresentation;
-    private void InitializeWeaponPresentation()
-    {
-        if (_shotPresentation != null) return;
-        _shotPresentation = new ShotPresentationController { Name = "ShotPresentation" };
-        World.AddChild(_shotPresentation);
-        _shotPresentation.Initialize(World);
-    }
-    private void PresentShot(AcceptedShot shot) => _shotPresentation?.Enqueue(shot);
-    private void PresentShieldCollision(ShieldCollisionEvent contact) => _shotPresentation?.EnqueueShieldCollision(contact);
-    private void TickWeaponPresentation(double tick) => _shotPresentation?.Advance(tick);
-    private void ClearWeaponPresentation(long cutoffTick) => _shotPresentation?.Clear(cutoffTick);
-    private void DisposeWeaponPresentation()
-    {
-        if (!GodotObject.IsInstanceValid(_shotPresentation)) return;
-        _shotPresentation!.Clear(long.MaxValue);
-        _shotPresentation.QueueFree();
-        _shotPresentation = null;
-    }
+    internal event Action<ShieldCollisionEvent>? ShieldCollisionReceived;
+    internal event Action<double>? PresentationAdvanced;
+    internal event Action<long>? PresentationCleared;
+
+    private void PresentShieldCollision(ShieldCollisionEvent contact) => ShieldCollisionReceived?.Invoke(contact);
+    private void TickWeaponPresentation(double tick) => PresentationAdvanced?.Invoke(tick);
+    private void ClearWeaponPresentation(long cutoffTick) => PresentationCleared?.Invoke(cutoffTick);
 }

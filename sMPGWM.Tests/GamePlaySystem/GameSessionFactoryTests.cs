@@ -106,7 +106,10 @@ public class GameSessionFactoryTests
                 coordinator.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
                     new NetworkStartupData(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port),
                     coordinator, new EmptyGameFixture()));
+                var presentation = session!.Network.World.GetNode<sMPGWM.Scripts.VfxSystem.ShotPresentationController>("ShotPresentation"); // TEST-SUPPORT: SESSION-PRESENT-001 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
+                Assert.That(presentation.GetChildCount(), Is.EqualTo(1048), "Presentation pools are assembled before transport startup."); // TEST-SUPPORT: SESSION-PRESENT-002 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
                 session!.Network.CreateNetwork();
+                Assert.That(session.Network.World.GetNode("ShotPresentation"), Is.SameAs(presentation)); // TEST-SUPPORT: SESSION-PRESENT-003 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
                 Assert.That(failures, Is.Empty);
                 Assert.That(coordinator.State, Is.EqualTo(SessionState.Active));
                 Assert.That(activations, Is.EqualTo(1));
@@ -122,7 +125,14 @@ public class GameSessionFactoryTests
                     Assert.That(states[0].Position, Is.EqualTo(session.Player.Participant!.ControlledShip!.GlobalPosition));
                 }
                 Assert.That(synchronization.CompletedTick, Is.EqualTo(60));
+                var shipId = session.Player.Participant!.ControlledShip!.EntityId; // TEST-SUPPORT: SESSION-PRESENT-004 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
+                presentation.Enqueue(new(60, ItemEntityId.FromNetwork(1), 1, shipId, 1, "smg_standard", 0, Vector2.Zero, Vector2.Right, Vector2.Left, sMPGWM.Scripts.WeaponSystem.ShotResultFlags.World)); // TEST-SUPPORT: SESSION-PRESENT-005 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
+                session.Network.AdvanceWeaponPresentation(60); // TEST-SUPPORT: SESSION-PRESENT-006 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
+                Assert.That(presentation.ActiveEffects, Is.GreaterThan(0)); // TEST-SUPPORT: SESSION-PRESENT-007 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
+                session.Network.WeaponBaselineCutoff(60); // TEST-SUPPORT: SESSION-PRESENT-008 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
+                Assert.That(presentation.ActiveEffects, Is.Zero, "Resynchronization clears the session-owned effects."); // TEST-SUPPORT: SESSION-PRESENT-009 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
                 coordinator.Stop();
+                Assert.That(presentation.IsQueuedForDeletion(), Is.True); // TEST-SUPPORT: SESSION-PRESENT-010 | Tests: sMPGWM.Tests.GamePlaySystem.GameSessionFactoryTests.HostCanStartStopAndStartAgainWithAuthenticationSettingsRestored
                 synchronization._PhysicsProcess(1.0 / 60);
                 Assert.That(synchronization.CompletedTick, Is.EqualTo(60), "Teardown disables simulation synchronously.");
                 Assert.That(session.Player.Participant, Is.Null);

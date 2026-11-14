@@ -9,8 +9,9 @@ namespace sMPGWM.Scripts.NetworkSystem;
 
 public partial class NetworkManager
 {
-    private readonly Dictionary<int, ulong> _publishedWeapons = new();
+    private readonly Dictionary<int, WeaponPublicationState> _publishedWeapons = new();
     private readonly AcceptedShot[] _shots = new AcceptedShot[256];
+    private readonly AcceptedShot[] _receivedShots = new AcceptedShot[ShotEventCodec.MaxEvents];
     private int _shotCount;
     private bool _weaponEventsBound;
     private bool _hasWeaponBaseline;
@@ -31,18 +32,28 @@ public partial class NetworkManager
         _weaponEventsBound = true;
         Simulation.Weapons.ShotProduced += RecordShot;
         Simulation.ShieldCollisionProduced += RecordShieldCollision;
-        InitializeWeaponPresentation();
     }
     private void RecordShot(AcceptedShot shot)
     {
-        PresentShot(shot); ShotReceived?.Invoke(shot);
+        ShotReceived?.Invoke(shot);
         if (_shotCount < _shots.Length) _shots[_shotCount++] = shot;
     }
     private void PublishWeapons(long tick)
     {
         foreach (var (peer, join) in _joins.Snapshot())
-            if (join.ReceivesWorld && World.Players.TryGetValue(peer, out var owner) &&
-                (!_publishedWeapons.TryGetValue(peer, out var revision) || revision != WeaponRevision(owner))) SendWeapons(peer);
+        {
+            if (!join.ReceivesWorld || !World.Players.TryGetValue(peer, out var owner)) continue;
+            if (!_publishedWeapons.TryGetValue(peer, out var published) || !published.MatchesBinding(owner))
+            {
+                if (!SendWeapons(peer)) return;
+                continue;
+            }
+            var delta = WeaponStateDeltaCodec.Encode(owner, World.Items, published);
+            if (delta == null) continue;
+            if (RpcId(peer, nameof(ReceiveWeaponDelta), Synchronization!.Session.ToString("N"), delta) != Error.Ok)
+            { FailSession("Weapon delta send failed."); return; }
+            published.Capture(owner, World.Items);
+        }
         for (var start = 0; start < _shotCount; start += ShotEventCodec.MaxEvents)
         {
             var bytes = ShotEventCodec.Encode(Synchronization!.Session, _shots.AsSpan(start, Math.Min(ShotEventCodec.MaxEvents, _shotCount - start)));
@@ -55,12 +66,12 @@ public partial class NetworkManager
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
     private void ReceiveShots(byte[] bytes)
     {
-        if (!IsHostMessage() || !WeaponBaselineReady || !ShotEventCodec.Decode(bytes, out var session, out var shots) || session != Synchronization!.Session) return;
-        foreach (var shot in shots)
+        if (!IsHostMessage() || !WeaponBaselineReady || !ShotEventCodec.Decode(bytes, _receivedShots, out var session, out var count) || session != Synchronization!.Session) return;
+        foreach (var shot in _receivedShots.AsSpan(0, count))
         {
             if (shot.Tick <= _shotCutoff || shot.Tick < Synchronization.CompletedTick - 120 || shot.Tick > Synchronization.CompletedTick + 120) continue;
             if (!_shotWindows.TryAccept(shot.ItemId, shot.Sequence, shot.Tick)) continue;
-            PresentShot(shot); ShotReceived?.Invoke(shot);
+            ShotReceived?.Invoke(shot);
         }
     }
     internal void WeaponBaselineCutoff(long tick)
@@ -115,31 +126,15 @@ public partial class NetworkManager
             result >= (int)WeaponCommandResult.Accepted && result <= (int)WeaponCommandResult.QueueFull)
             WeaponFeedback?.Invoke((WeaponCommandResult)result);
     }
-    private ulong WeaponRevision(PlayerSession owner)
-    {
-        var revision = unchecked((ulong)owner.ControlGeneration * 1099511628211UL);
-        if (owner.ControlledShip is { } ship)
-        {
-            revision ^= (ulong)ship.Loadout.Weapons.ConfigurationRevision;
-            Accumulate(ship.Equipment.Container);
-        }
-        Accumulate(owner.Inventory.Container);
-        return revision;
-        void Accumulate(ItemContainer container)
-        {
-            revision = unchecked((revision ^ (ulong)container.Revision) * 1099511628211UL);
-            foreach (var id in container.Slots)
-                if (id is { } item && World.Items.Weapons.TryGet(item, out var state))
-                    revision = unchecked((revision ^ item.Value ^ (ulong)state.Revision) * 1099511628211UL);
-        }
-    }
     private bool SendWeapons(int peer)
     {
         if (!World.Players.TryGetValue(peer, out var owner)) return false;
         var payload = WeaponStateCodec.Encode(owner, World.Items);
         if (RpcId(peer, nameof(ReceiveWeapons), Synchronization!.Session.ToString("N"), payload) != Error.Ok)
         { FailSession("Weapon state send failed."); return false; }
-        _publishedWeapons[peer] = WeaponRevision(owner);
+        if (!_publishedWeapons.TryGetValue(peer, out var published))
+            _publishedWeapons.Add(peer, published = new WeaponPublicationState());
+        published.Capture(owner, World.Items);
         return true;
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -149,16 +144,23 @@ public partial class NetworkManager
         if (!WeaponStateCodec.Apply(bytes, owner, World.Items, out var applied)) { FailSession("Invalid weapon state snapshot."); return; }
         if (!applied) return;
         _hasWeaponBaseline = true;
-        InitializeWeaponPresentation();
         if (_hasItemBaseline && _clientJoin.ApplyItems(Time.GetTicksMsec()))
             if (RpcId(1, nameof(ConfirmSpawnReady), session, owner.ControlledShip?.EntityId ?? "", owner.ControlGeneration) != Error.Ok)
                 FailSession("Weapon baseline acknowledgement failed.");
+    }
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ReceiveWeaponDelta(string session, byte[] bytes)
+    {
+        if (!IsHostMessage() || !_clientJoin.HasWorld || !_hasWeaponBaseline ||
+            session != Synchronization!.Session.ToString("N") || World.LocalPlayer?.Participant is not { } owner) return;
+        if (!WeaponStateDeltaCodec.Apply(bytes, owner, World.Items)) FailSession("Invalid weapon state delta.");
     }
     private void ClearWeapons()
     {
         _shieldCollisionEventCount = 0;
         Array.Clear(_shieldCollisionEvents);
+        Array.Clear(_receivedShots);
         _publishedWeapons.Clear(); _shotCount = 0; _hasWeaponBaseline = false; _shotWindows.Clear(); _weaponHistory.Clear(); _pendingWeapons.Clear(); _latestWeaponRequest.Clear();
-        ShotReceived = null; WeaponFeedback = null; DisposeWeaponPresentation();
+        ShotReceived = null; WeaponFeedback = null; ClearWeaponPresentation(long.MaxValue);
     }
 }

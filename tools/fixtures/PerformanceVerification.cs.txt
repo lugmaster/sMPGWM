@@ -95,6 +95,8 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
         if (flow.GameFlowState == GameFlowState.InGame) // TEST-SUPPORT: PERF-WORKLOAD-0078 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         { // TEST-SUPPORT: PERF-WORKLOAD-0079 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             var network = NetworkManager.Instance; // TEST-SUPPORT: PERF-WORKLOAD-0080 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (_scenario == "combat" && _combatWarmupDiagnostics == null && elapsed + _offset >= 10) // TEST-SUPPORT: PERF-COMBAT-WARMUP-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                _combatWarmupDiagnostics = CaptureCombatDiagnostics(); // TEST-SUPPORT: PERF-COMBAT-WARMUP-003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             var owner = network.World.LocalPlayer!.Participant!; // TEST-SUPPORT: PERF-WORKLOAD-0081 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             var ship = owner.ControlledShip!; // TEST-SUPPORT: PERF-WORKLOAD-0082 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             if (!ReferenceEquals(network, _boundNetwork)) // TEST-SUPPORT: PERF-WORKLOAD-0083 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
@@ -145,7 +147,7 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
             } // TEST-SUPPORT: PERF-WORKLOAD-0123 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             if (phase == "combat") // TEST-SUPPORT: COMBAT-PERF-DRIVE-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             { // TEST-SUPPORT: COMBAT-PERF-DRIVE-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
-                if (elapsed - _firstActive >= 1) // TEST-SUPPORT: COMBAT-PERF-DRIVE-003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                if (elapsed - _firstActive >= 1 && (phaseTime < 12 || phaseTime >= 14)) // TEST-SUPPORT: COMBAT-PERF-DRIVE-003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                 { // TEST-SUPPORT: COMBAT-PERF-DRIVE-004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                     Input.ActionPress("Action"); // TEST-SUPPORT: COMBAT-PERF-DRIVE-005 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
                     Input.ActionPress("FireGroup2"); // TEST-SUPPORT: COMBAT-PERF-DRIVE-006 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
@@ -250,14 +252,44 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
         } // TEST-SUPPORT: PERF-WORKLOAD-0199 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     } // TEST-SUPPORT: PERF-WORKLOAD-0200 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
 
-    private void Finish() // TEST-SUPPORT: PERF-WORKLOAD-0201 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    private object? CaptureCombatDiagnostics() // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    { // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_scenario != "combat" || GameFlowManager.Instance.GameFlowState != GameFlowState.InGame) return null; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var network = NetworkManager.Instance; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var input = network.World.LocalPlayer!.Input; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-005 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var flags = BindingFlags.Instance | BindingFlags.NonPublic; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-006 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var pointer = (Func<bool>)typeof(InputController).GetField("_isPointerOverUi", flags)!.GetValue(input)!; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-007 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var action = typeof(InputController).GetField("_actionInput", flags)!.GetValue(input)!; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-008 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var second = typeof(InputController).GetField("_fireGroup2Input", flags)!.GetValue(input)!; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-009 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var waiting = typeof(HoldInputMode).GetField("_waitingForRelease", flags)!; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-010 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var armed = typeof(sMPGWM.Scripts.WeaponSystem.ShipWeaponController).GetField("_armed", flags)!; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-011 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var peers = new System.Collections.Generic.List<object>(); // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-012 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        foreach (var pair in network.World.Players) // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-013 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        { // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-014 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            if (pair.Value.ControlledShip is not { } ship) continue; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-015 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            var weapons = ship.Loadout.Weapons; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-016 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            peers.Add(new { peer = pair.Key, ship.EntityId, armed = armed.GetValue(weapons), weapons.HeldMask, // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-017 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                weapons.ConfigurationRevision, weapons.Available, ship.InputState.FireMask, ship.InputState.WeaponConfigurationRevision, // TEST-SUPPORT: PERF-COMBAT-LIFE-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                ship.Runtime.IsAlive, health = ship.Runtime.Health.Current, ship.Runtime.PoweredSystemsAvailable, // TEST-SUPPORT: PERF-COMBAT-LIFE-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+                energy = ship.Runtime.Energy.Current, shield = ship.Runtime.Shield.Current }); // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-018 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        } // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-019 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        return new { friendlyFire = GameConfig.FriendlyFire, rawAction = Input.IsActionPressed("Action"), rawGroup2 = Input.IsActionPressed("FireGroup2"), // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-020 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            input.FireGroupMask, input.IsGameplayInputAvailable, pointerBlocked = pointer(), // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-021 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            actionWaitingForRelease = waiting.GetValue(action), group2WaitingForRelease = waiting.GetValue(second), peers }; // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-022 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+    } // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-023 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private object? _combatWarmupDiagnostics; // TEST-SUPPORT: PERF-COMBAT-WARMUP-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+
+    private async void Finish() // TEST-SUPPORT: PERF-WORKLOAD-0201 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     { // TEST-SUPPORT: PERF-WORKLOAD-0202 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        if (_finished) return; // TEST-SUPPORT: PERF-CLEANUP-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         _finished = true; // TEST-SUPPORT: PERF-WORKLOAD-0203 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         Input.ActionRelease("Forwards"); // TEST-SUPPORT: PERF-WORKLOAD-0204 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         Input.ActionRelease("Backwards"); // TEST-SUPPORT: PERF-WORKLOAD-0205 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         PerformanceRecorder.Mark("finished"); // TEST-SUPPORT: PERF-WORKLOAD-0206 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         var activeStart = Math.Max(_firstActive, _scenario == "matrix" ? 210 - _offset : 0); // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-ACTIVE-START | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         var verifyActivity = _scenario != "idle" && _seconds - activeStart >= 20; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-ACTIVITY | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var combatDiagnostics = CaptureCombatDiagnostics(); // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-CAPTURE-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         Input.ActionRelease("Action"); // TEST-SUPPORT: COMBAT-PERF-RELEASE-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         Input.ActionRelease("FireGroup2"); // TEST-SUPPORT: COMBAT-PERF-RELEASE-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         var success = _activeSeen && _maxPeers == _expectedPeers && GameFlowManager.Instance.GameFlowState == GameFlowState.InGame && // TEST-SUPPORT: PERF-WORKLOAD-0207 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
@@ -265,6 +297,8 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
             (!_host || _scenario != "restored" || _restoreVerified) && (_scenario != "combat" || _localShots > 0); // TEST-SUPPORT: PERF-WORKLOAD-0208 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         File.WriteAllText(Path.Combine(_output, "workload.json"), JsonConvert.SerializeObject(new // TEST-SUPPORT: PERF-WORKLOAD-0209 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         { // TEST-SUPPORT: PERF-WORKLOAD-0210 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            combatWarmupDiagnostics = _combatWarmupDiagnostics, // TEST-SUPPORT: PERF-COMBAT-WARMUP-004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+            combatDiagnostics, // TEST-SUPPORT: PERF-COMBAT-DIAGNOSTICS-REPORT-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             confirmedShots = _confirmedShots, localShots = _localShots, smgShots = _smgShots, laserShots = _laserShots, // TEST-SUPPORT: COMBAT-PERF-REPORT-001 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             poolHighWater = _poolHighWater, poolDrops = _poolDrops, // TEST-SUPPORT: COMBAT-PERF-REPORT-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
             success, role = _host ? "host" : "client", scenario = _scenario, duration = _clock.Elapsed.TotalSeconds, // TEST-SUPPORT: PERF-WORKLOAD-0211 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
@@ -278,8 +312,11 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
         }, Formatting.Indented)); // TEST-SUPPORT: PERF-WORKLOAD-0216 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         PerformanceRecorder.Flush(_output); // TEST-SUPPORT: PERF-WORKLOAD-0217 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
         GD.Print("PERFORMANCE_COMPLETE success=" + success); // TEST-SUPPORT: PERF-WORKLOAD-0218 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
-        GameFlowManager.Instance.QuitToStartMenu(); // TEST-SUPPORT: PERF-WORKLOAD-0219 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
-        GetTree().Quit(success ? 0 : 2); // TEST-SUPPORT: PERF-WORKLOAD-0220 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        GameFlowManager.Instance.QuitToStartMenu(delayMs: 0); // TEST-SUPPORT: PERF-WORKLOAD-0219 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        var tree = GetTree(); // TEST-SUPPORT: PERF-CLEANUP-002 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        await ToSignal(tree, SceneTree.SignalName.ProcessFrame); // TEST-SUPPORT: PERF-CLEANUP-003 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        await ToSignal(tree, SceneTree.SignalName.ProcessFrame); // TEST-SUPPORT: PERF-CLEANUP-004 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
+        tree.Quit(success ? 0 : 2); // TEST-SUPPORT: PERF-WORKLOAD-0220 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
     } // TEST-SUPPORT: PERF-WORKLOAD-0221 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
 } // TEST-SUPPORT: PERF-WORKLOAD-0222 | Tests: sMPGWM.Tests.PerformanceProcessTests.LocalPerformanceMatrix
 

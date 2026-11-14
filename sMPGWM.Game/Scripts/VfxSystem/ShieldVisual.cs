@@ -14,6 +14,10 @@ public partial class ShieldVisual : Node2D
     private float _remaining;
 
     public void Initialize(ShieldGeometry geometry)
+        => Initialize(geometry, ResourceLoader.Load<Shader>(ShaderPath)
+            ?? throw new InvalidOperationException("Shield outline shader is unavailable."));
+
+    public void Initialize(ShieldGeometry geometry, Shader shader)
     {
         if (_material != null) throw new InvalidOperationException("Shield visual is already initialized.");
         Position = geometry.Center;
@@ -21,8 +25,7 @@ public partial class ShieldVisual : Node2D
         ZIndex = 1;
         var padding = new Vector2(10, 10);
         _bounds = new Rect2(-geometry.Radii - padding, (geometry.Radii + padding) * 2);
-        _material = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>(ShaderPath)
-            ?? throw new InvalidOperationException("Shield outline shader is unavailable.") };
+        _material = new ShaderMaterial { Shader = shader };
         _material.SetShaderParameter("radii", geometry.Radii);
         Material = _material;
         ResetPulse();

@@ -78,10 +78,11 @@ public partial class NetworkManager
                 _gameplayDirty = true;
         if (_gameplayDirty)
         {
-            var state = GameplaySnapshot();
-            var changed = GameplaySnapshot(true);
+            Array? state = null;
+            Array? changed = null;
             foreach (var (peer, join) in _joins.Snapshot())
-                if (join.ReceivesWorld && RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"), join.Phase == PeerJoinPhase.Ready ? changed : state) != Error.Ok)
+                if (join.ReceivesWorld && RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"),
+                        join.Phase == PeerJoinPhase.Ready ? changed ??= GameplaySnapshot(true) : state ??= GameplaySnapshot()) != Error.Ok)
                 {
                     FailSession("Gameplay snapshot send failed.");
                     return;

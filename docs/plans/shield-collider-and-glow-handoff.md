@@ -2,6 +2,22 @@
 
 Date: 2026-11-14
 
+## Architecture follow-up
+
+Session construction now owns `SessionAssets`, the prepared ship catalogue, weapon presentation pools, and `CombatPresentationBinding`. Networking publishes combat events and presentation timing/reset notifications; it no longer creates or destroys rendering/audio nodes. Ship hit and physical-contact pulses use `ShipPresentation`.
+
+The catalogue prepares ship textures, hull arrays, shield shapes, the shield shader, ship scenes, and weapon presentation profiles before activation. Shape sharing is scoped to the catalogue rather than a permanent static cache. Disposal releases catalogue ownership without invalidating nodes awaiting deferred destruction. Standalone construction remains supported for tooling and tests. Late spawns still instantiate nodes and per-ship materials; GPU pipeline warmup is not established by resource loading.
+
+Shot encoding writes directly into its final byte array and network decoding reuses a bounded event buffer. Weapon replication sends reliable changed-slot deltas after a full baseline; control, equipment, inventory, and configuration changes require another full baseline. Delta batches are validated before installation. The protocol compatibility marker is `11:weapon-state-deltas` (transport protocol 13).
+
+World publication compares membership and control bindings without building topology snapshots or string identities each physics step. Gameplay publication only builds full/changed resource snapshots when a recipient needs them. Hitscan exclusions are prepared once per firing ship's batch, preserving resolution-before-damage ordering. Motion collision wrappers are released after their immediate use.
+
+VFX animation metadata and UI display values are cached. Prepared profiles supply bounded per-kind pool budgets with a total ceiling of 1,024 effects; the default budgets remain unchanged. Per-kind drop counters support later workload tuning. No automatic pool growth or forced garbage collection was added.
+
+Final headless ENet capacity runs pass at five and ten players for nine weapons at both 15/s and the synthetic 60/s ceiling. Normal-rate host callback allocation measured approximately 631/865 KiB/s at five/ten players; ten-player normal-rate p99 work was 2.775 ms and publication p99 was 34.84 ms. These are short samples with a post-warmup trigger release, not certification of initial held-input readiness. Under impaired startup, a client can hold fire with a matching configuration while the host has not accepted its required release state; the controller remains unarmed until release/re-press. Keep that readiness issue open. High-rate cosmetics still saturate. See the [measurement report](../measurements/2026-11-14-architecture/README.md) for comparison methodology, excluded runs, raw archives, and remaining Steam/GPU coverage.
+
+Rendered verification passes 424 top-level tests, including 304 in-engine cases. Gameplay-data validation passes 136 definitions and 22 invalid-content checks. The first process attempts inherited enabled friendly fire, unlike the previous cooperative capacity baseline, and some peers stopped firing; those runs are retained as excluded evidence. One also crashed during native shutdown. Motion-wrapper disposal and two deferred-cleanup frames in the isolated harness were added; subsequent process exits were clean. Capacity fixtures now explicitly disable friendly fire only in their staged copy and record the rule in the manifest. No production input/arming rule or friendly-fire setting was changed. Final process measurements and limitations are recorded in `docs/measurements/2026-11-14-architecture/`.
+
 Status: collider switching, movement mode replication, shield-contact notifications, and the whole-outline shader are implemented. Build, automated integration, rendered shader, and isolated startup checks pass; the full transport/performance acceptance matrix remains open.
 
 ## Current implementation and debug view

@@ -10,8 +10,9 @@ internal static class WeaponPresentationCompatibility
     internal static void Capture(Dictionary<string, string> inputs)
     {
         CaptureResource(ShieldVisual.ShaderPath, inputs);
-        foreach (var id in new[] { "smg_standard", "laser_standard" })
+        for (var i = 0; i < WeaponPresentationProfile.Count; i++)
         {
+            var id = WeaponPresentationProfile.GetId(i);
             _ = new WeaponPresentationProfile(id);
             CaptureResource($"res://scenes/vfx/muzzle_flashes/muzzle_{id}/muzzle_{id}.tscn", inputs);
             CaptureResource($"res://scenes/vfx/tracers/tracer_{id}/tracer_{id}.tscn", inputs);

@@ -63,20 +63,29 @@ public partial class WeaponStatusPanel : VBoxContainer
                 row.Box.Visible = true;
                 row.Item = binding.ItemId;
                 row.Slot = ship.Equipment.Definitions[slot].Key;
-                row.Name.Text = ship.Equipment.Snapshot.Slots[slot]?.Definition.DisplayName ?? row.Slot;
-                row.Group.Select(ship.Loadout.Weapons.GetGroup(slot));
+                var displayName = ship.Equipment.Snapshot.Slots[slot]?.Definition.DisplayName ?? row.Slot;
+                if (row.DisplayedName != displayName) { row.Name.Text = displayName; row.DisplayedName = displayName; }
+                var group = ship.Loadout.Weapons.GetGroup(slot);
+                if (row.Group.Selected != group) row.Group.Select(group);
                 row.Group.Disabled = !ship.Runtime.IsAlive;
                 var stats = binding.Definition.Stats;
                 row.Progress.Visible = state.Reloading;
+                var status = (state.Reloading, ship.Runtime.IsAlive, ship.Runtime.PoweredSystemsAvailable,
+                    binding.Definition.SupplyMode, state.Rounds, stats.MagazineCapacity, stats.EnergyPerShot,
+                    ship.Runtime.Energy.Current < stats.EnergyPerShot);
+                if (row.DisplayedStatus != status)
+                {
+                    if (state.Reloading) row.Status.Text = $"Reloading {state.Rounds}/{stats.MagazineCapacity}";
+                    else if (!ship.Runtime.IsAlive) row.Status.Text = "Disabled";
+                    else if (!ship.Runtime.PoweredSystemsAvailable) row.Status.Text = "No power";
+                    else if (binding.Definition.SupplyMode == WeaponSupplyMode.Ammunition) row.Status.Text = $"{state.Rounds}/{stats.MagazineCapacity}";
+                    else row.Status.Text = status.Item8 ? "Insufficient energy" : $"{stats.EnergyPerShot:0.#} energy / shot";
+                    row.DisplayedStatus = status;
+                }
                 if (state.Reloading)
                 {
-                    row.Status.Text = $"Reloading {state.Rounds}/{stats.MagazineCapacity}";
                     row.Progress.Value = System.Math.Clamp((tick - state.ReloadStartTick) / System.Math.Max(1d, state.ReloadDeadline - state.ReloadStartTick), 0, 1);
                 }
-                else if (!ship.Runtime.IsAlive) row.Status.Text = "Disabled";
-                else if (!ship.Runtime.PoweredSystemsAvailable) row.Status.Text = "No power";
-                else if (binding.Definition.SupplyMode == WeaponSupplyMode.Ammunition) row.Status.Text = $"{state.Rounds}/{stats.MagazineCapacity}";
-                else row.Status.Text = ship.Runtime.Energy.Current < stats.EnergyPerShot ? "Insufficient energy" : $"{stats.EnergyPerShot:0.#} energy / shot";
             }
         }
         for (; rowIndex < _rows.Length; rowIndex++) { _rows[rowIndex].Box.Visible = false; _rows[rowIndex].Item = default; }
@@ -91,5 +100,8 @@ public partial class WeaponStatusPanel : VBoxContainer
         public readonly HBoxContainer Box = box;
         public string Slot = "";
         public ItemEntityId Item;
+        public string? DisplayedName;
+        public (bool Reloading, bool Alive, bool Powered, WeaponSupplyMode Supply, int Rounds, int Capacity,
+            double Energy, bool Insufficient)? DisplayedStatus;
     }
 }

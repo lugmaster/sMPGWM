@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Godot;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
@@ -15,6 +14,7 @@ public partial class GameWorld : Node
 {
     public ItemStore Items { get; private set; } = new();
     public bool AuthoritativeItems { get; set; }
+    public ShipAssetCatalogue? Assets { get; set; }
     public InventorySnapshot? InitialInventory { get; set; }
     public Action<ShipLoadout, InventoryController>? InitializeLoadout { get; set; }
 
@@ -156,7 +156,7 @@ public partial class GameWorld : Node
         if (_entities.ContainsKey(record.EntityId))
             throw new InvalidOperationException("Duplicate entity ID.");
         var ship = ShipFactory.Create(ShipRegistry.GetById(record.ShipId), record.EntityId,
-            record.Position, record.Rotation, record.Velocity, Items, AuthoritativeItems);
+            record.Position, record.Rotation, record.Velocity, Items, AuthoritativeItems, Assets);
         try
         {
             AddChild(ship);
@@ -181,14 +181,30 @@ public partial class GameWorld : Node
         if (GodotObject.IsInstanceValid(ship)) { ship.Loadout.Dispose(); ship.Runtime.Dispose(); ship.QueueFree(); }
     }
 
+    public bool MatchesTopology(WorldTopology topology)
+    {
+        if (topology.Participants.Length != _controllers.Count || topology.Entities.Length != _entities.Count) return false;
+        foreach (var binding in topology.Participants)
+            if (!_controllers.TryGetValue(binding.Peer, out var owner) || owner.ControlGeneration != binding.Generation ||
+                (owner.ControlledShip?.EntityId ?? "") != binding.Entity) return false;
+        foreach (var record in topology.Entities)
+            if (!_entities.TryGetValue(record.EntityId, out var ship) || !GodotObject.IsInstanceValid(ship) || ship.IsQueuedForDeletion()) return false;
+        return true;
+    }
+
     public WorldTopology CaptureTopology()
     {
-        foreach (var id in _entities.Keys.ToArray())
+        foreach (var id in new List<string>(_entities.Keys))
             if (!GodotObject.IsInstanceValid(_entities[id]) || _entities[id].IsQueuedForDeletion()) _entities.Remove(id);
         RefreshConstructionRecords();
-        var participants = _controllers.Select(p => new ParticipantBinding(p.Key, p.Value.ControlGeneration,
-            p.Value.ControlledShip?.EntityId ?? "")).ToArray();
-        var entities = _entities.Values.Select(ship => new EntitySpawnRecord(ship.EntityId, ship.Data.Name, ship.GlobalPosition, ship.GlobalRotation, ship.Velocity)).ToArray();
+        var participants = new ParticipantBinding[_controllers.Count];
+        var index = 0;
+        foreach (var (peer, owner) in _controllers)
+            participants[index++] = new ParticipantBinding(peer, owner.ControlGeneration, owner.ControlledShip?.EntityId ?? "");
+        var entities = new EntitySpawnRecord[_entities.Count];
+        index = 0;
+        foreach (var ship in _entities.Values)
+            entities[index++] = new EntitySpawnRecord(ship.EntityId, ship.Data.Name, ship.GlobalPosition, ship.GlobalRotation, ship.Velocity);
         var topology = new WorldTopology(participants, entities);
         if (!topology.IsValid()) throw new InvalidOperationException("Invalid world topology.");
         return topology;
@@ -203,11 +219,15 @@ public partial class GameWorld : Node
                 (p.Generation < owner.ControlGeneration || (p.Generation == owner.ControlGeneration &&
                 p.Entity != (owner.ControlledShip?.EntityId ?? ""))))
                 throw new InvalidOperationException("Stale control topology.");
-        var changed = topology.Participants.Where(p => !_controllers.TryGetValue(p.Peer, out var owner) ||
-            owner.ControlGeneration != p.Generation || (owner.ControlledShip?.EntityId ?? "") != p.Entity)
-            .Select(p => p.Peer).Concat(_controllers.Keys.Where(peer => !topology.Participants.Any(p => p.Peer == peer))).Distinct().ToArray();
+        var changed = new List<int>(topology.Participants.Length + _controllers.Count);
+        foreach (var participant in topology.Participants)
+            if (!_controllers.TryGetValue(participant.Peer, out var owner) ||
+                owner.ControlGeneration != participant.Generation || (owner.ControlledShip?.EntityId ?? "") != participant.Entity)
+                changed.Add(participant.Peer);
+        foreach (var peer in _controllers.Keys)
+            if (!HasParticipant(topology, peer)) changed.Add(peer);
         // Detach every changed owner before assigning any ship: transfers and swaps preserve instances.
-        foreach (int peer in changed)
+        foreach (var peer in changed)
             if (_controllers.TryGetValue(peer, out var owner)) owner.AssignShip(null);
         foreach (var record in topology.Entities)
         {
@@ -222,26 +242,44 @@ public partial class GameWorld : Node
         }
         // Released entities remain frozen, so their final authoritative placement travels with topology.
         foreach (var record in topology.Entities)
-            if (!topology.Participants.Any(p => p.Entity == record.EntityId))
+            if (!HasController(topology, record.EntityId))
             {
                 var ship = _entities[record.EntityId];
                 ship.Restore(record.Position, record.Rotation, record.Velocity, default);
                 ship.Presentation.Snap();
             }
-        foreach (var peer in _controllers.Keys.ToArray())
-            if (!topology.Participants.Any(p => p.Peer == peer)) Despawn(peer);
-        foreach (var entity in _entities.Keys.ToArray())
-            if (!topology.Entities.Any(e => e.EntityId == entity)) DestroyEntity(entity);
+        foreach (var peer in new List<int>(_controllers.Keys))
+            if (!HasParticipant(topology, peer)) Despawn(peer);
+        foreach (var entity in new List<string>(_entities.Keys))
+            if (!HasEntity(topology, entity)) DestroyEntity(entity);
         _records.Clear();
         foreach (var p in topology.Participants)
             if (p.Entity != "") CaptureConstructionRecord(p.Peer);
-        return changed;
+        return changed.ToArray();
+    }
+
+    private static bool HasParticipant(WorldTopology topology, int peer)
+    {
+        foreach (var participant in topology.Participants) if (participant.Peer == peer) return true;
+        return false;
+    }
+
+    private static bool HasController(WorldTopology topology, string entity)
+    {
+        foreach (var participant in topology.Participants) if (participant.Entity == entity) return true;
+        return false;
+    }
+
+    private static bool HasEntity(WorldTopology topology, string entity)
+    {
+        foreach (var record in topology.Entities) if (record.EntityId == entity) return true;
+        return false;
     }
 
     public void Clear()
     {
         foreach (var peerId in new List<int>(_controllers.Keys)) Despawn(peerId);
-        foreach (var entity in _entities.Keys.ToArray()) DestroyEntity(entity);
+        foreach (var entity in new List<string>(_entities.Keys)) DestroyEntity(entity);
     }
 
     public override void _ExitTree() => Clear();

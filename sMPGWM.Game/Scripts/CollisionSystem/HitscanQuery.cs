@@ -21,11 +21,24 @@ public sealed class HitscanQuery : System.IDisposable
     public ShipController? Cast(GameWorld world, ShipController shooter, Vector2 origin, Vector2 endpoint,
         out Vector2 end, out Vector2 normal, out bool blocked)
     {
+        Prepare(world, shooter);
+        return CastPrepared(shooter, origin, endpoint, out end, out normal, out blocked);
+    }
+
+    // Reuse exclusions while resolving one shooter's batch, before any accepted damage is applied.
+    public void Prepare(GameWorld world, ShipController shooter)
+    {
         _excluded.Clear();
         foreach (var ship in world.Entities.Values)
             if (ship == shooter || !_friendlyFire && ship.Runtime.IsAlive && shooter.Runtime.IsAllyOf(ship.Runtime)) _excluded.Add(ship.GetRid());
-        _query.From = origin; _query.To = endpoint; _query.Exclude = _excluded;
-        var hit = shooter.GetWorld2D().DirectSpaceState.IntersectRay(_query);
+        _query.Exclude = _excluded;
+    }
+
+    public ShipController? CastPrepared(ShipController shooter, Vector2 origin, Vector2 endpoint,
+        out Vector2 end, out Vector2 normal, out bool blocked)
+    {
+        _query.From = origin; _query.To = endpoint;
+        using var hit = shooter.GetWorld2D().DirectSpaceState.IntersectRay(_query);
         blocked = hit.Count != 0;
         end = blocked ? hit["position"].AsVector2() : endpoint;
         normal = blocked ? hit["normal"].AsVector2() : Vector2.Zero;

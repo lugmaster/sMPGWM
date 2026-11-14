@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Godot;
 
 namespace sMPGWM.Scripts.ShipSystem;
@@ -9,11 +8,9 @@ public static class ShieldPhysicsGeometry
     public const float MaximumOutwardError = 0.5f;
     public const int MaximumSegments = 4096;
     private const double RoundingAllowance = 0.000001;
-    private static readonly Dictionary<ShieldGeometry, Shape2D> Shapes = new();
 
     public static Shape2D GetShape(ShieldGeometry geometry)
     {
-        if (Shapes.TryGetValue(geometry, out var cached)) return cached;
         var radius = Math.Max(geometry.Radii.X, geometry.Radii.Y);
         if (!geometry.Center.IsFinite() || !geometry.Radii.IsFinite() ||
             geometry.Radii.X <= 0 || geometry.Radii.Y <= 0 || !float.IsFinite(geometry.RotationDegrees))
@@ -51,7 +48,6 @@ public static class ShieldPhysicsGeometry
             shape = new ConvexPolygonShape2D { Points = points };
         }
         else throw new ArgumentException("Unknown shield geometry shape.", nameof(geometry));
-        Shapes.Add(geometry, shape);
         return shape;
     }
 }
