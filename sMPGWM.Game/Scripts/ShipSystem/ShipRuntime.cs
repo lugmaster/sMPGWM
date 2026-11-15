@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Godot;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.ConditionSystem;
 using sMPGWM.Scripts.GameplayDataSystem;
@@ -21,6 +22,7 @@ public sealed class ShipRuntime : IDisposable
     private ShipComponentKind? _pendingComponents;
     private bool _disposed;
     public ShipResources Resources { get; }
+    public IReadOnlyList<Vector2> WeaponFixturePoints { get; } = Array.Empty<Vector2>();
     public ShipComponentCollection Components { get; } = new();
     public bool AbilityAdmissionAvailable => !_disposed && Components.AbilityAdmission != null;
     public ResolvedShipStats EquipmentInputs => _stats.EquipmentInputs;
@@ -60,6 +62,11 @@ public sealed class ShipRuntime : IDisposable
         if (!double.IsFinite(healthCapacity) || healthCapacity <= 0)
             throw new ArgumentOutOfRangeException(nameof(healthCapacity));
         _health.SetCapacity(healthCapacity);
+    }
+
+    public ShipRuntime(ShipData data) : this(data.Health)
+    {
+        WeaponFixturePoints = data.WeaponFixturePoints;
     }
 
     public ShipRuntime(double capacity, double current)

@@ -44,6 +44,8 @@ public sealed class RestoredWorldTests
             foreach (var ship in saved.Ships)
             {
                 var restored = target.Entities[ship.Entity.EntityId];
+                Assert.That(restored.Runtime.WeaponFixturePoints, Is.SameAs(restored.Data.WeaponFixturePoints));
+                Assert.That(restored.Runtime.WeaponFixturePoints, Is.EqualTo(source.Entities[ship.Entity.EntityId].Runtime.WeaponFixturePoints));
                 Assert.That(restored.GlobalPosition, Is.EqualTo(ship.Entity.Position));
                 Assert.That(restored.GlobalRotation, Is.EqualTo(ship.Entity.Rotation));
                 Assert.That(restored.Velocity, Is.EqualTo(ship.Entity.Velocity));

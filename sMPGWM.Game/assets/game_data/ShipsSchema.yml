@@ -18,6 +18,7 @@ properties:
         - name
         - description
         - texture_path
+        - weapon_fixture_points
         - collider_points
         - mass
         - health
@@ -32,6 +33,18 @@ properties:
         texture_path:
           type: string
           pattern: '^res://.+'
+        weapon_fixture_points:
+          description: Local offsets from the ship origin for muzzle or projectile origins.
+          type: array
+          minItems: 1
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items:
+              type: number
+              minimum: -3.4028234663852886e+38
+              maximum: 3.4028234663852886e+38
         collider_points:
           type: array
           minItems: 3

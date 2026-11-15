@@ -10,6 +10,23 @@ namespace sMPGWM.Tests.ShipSystem;
 [Category("Godot")]
 public class ShipFactoryTests
 {
+    [TestCase(true)]
+    [TestCase(false)]
+    public void HostAndReplicaKeepFixturePointsInShipLocalCoordinates(bool authoritative)
+    {
+        var data = GameplayDefinitions.Current.Ships.GetById("fighter");
+        var store = new ItemStore();
+        var ship = ShipFactory.Create(data, "fixture-points", new Vector2(100, 200), 1.5f, Vector2.One, store, authoritative);
+        ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(ship);
+        try
+        {
+            Assert.That(ship.Runtime.WeaponFixturePoints, Is.SameAs(data.WeaponFixturePoints));
+            Assert.That(ship.Runtime.WeaponFixturePoints, Is.EqualTo(new[] { new Vector2(1, -15), new Vector2(1, 15) }));
+        }
+        finally { ship.Free(); }
+        Assert.That(store.IsEmpty, Is.True);
+    }
+
     [Test]
     public void LoadoutRequiresExplicitConfiguration()
     {
@@ -18,6 +35,7 @@ public class ShipFactoryTests
         var store = new ItemStore();
         try
         {
+            Assert.Throws<InvalidOperationException>(() => _ = ship.Runtime);
             Assert.Throws<InvalidOperationException>(() => _ = ship.Loadout);
             Assert.Throws<InvalidOperationException>(() => _ = ship.Equipment);
             ship.ConfigureLoadout(store, false);
@@ -56,7 +74,7 @@ public class ShipFactoryTests
     {
         GamePlayProvider.CreateShip().Free();
         var data = GameplayDefinitions.Current.Ships.GetById("fighter");
-        var invalid = new ShipData(new ShipDefinition { Name = "invalid-texture", Description = data.Description, Health = data.Health, TexturePath = "res://scenes/game/game_objects/ship.tscn" }, Array.Empty<Vector2>(), data.Stats);
+        var invalid = new ShipData(new ShipDefinition { Name = "invalid-texture", Description = data.Description, Health = data.Health, TexturePath = "res://scenes/game/game_objects/ship.tscn" }, Array.Empty<Vector2>(), new[] { Vector2.Zero }, data.Stats);
         var store = new ItemStore();
         var orphanCount = Performance.GetMonitor(Performance.Monitor.ObjectOrphanNodeCount);
         var failure = Assert.Throws<InvalidOperationException>(() => ShipFactory.Create(invalid, "failed-after-loadout", Vector2.Zero, 0, Vector2.Zero, store, false));

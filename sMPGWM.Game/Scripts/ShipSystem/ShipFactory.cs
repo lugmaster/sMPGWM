@@ -13,11 +13,13 @@ public static class ShipFactory
         ItemStore store, bool authoritative)
     {
         ShipController? ship = null;
+        ShipRuntime? runtime = null;
         ShipLoadout? loadout = null;
         try
         {
             ship = GamePlayProvider.CreateShip();
             ship.EntityId = entityId; ship.Data = data;
+            runtime = ship.Runtime;
             ship.ConfigureLoadout(store, authoritative);
             loadout = ship.Loadout;
             ship.Position = position; ship.Rotation = rotation; ship.Velocity = velocity;
@@ -39,7 +41,7 @@ public static class ShipFactory
                 {
                     if (ship != null)
                     {
-                        try { ship.Runtime?.Dispose(); }
+                        try { runtime?.Dispose(); }
                         finally { ship.Free(); }
                     }
                 }

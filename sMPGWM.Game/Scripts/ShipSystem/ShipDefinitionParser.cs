@@ -38,6 +38,14 @@ internal static class ShipDefinitionParser
             points[i] = new Vector2(Number(pair![0], "collider_points"), Number(pair[1], "collider_points"));
         }
         Require(IsUsablePolygon(points), "collider_points (duplicate, degenerate or intersecting polygon)");
+        Require(definition.WeaponFixturePoints is { Length: > 0 }, "weapon_fixture_points (at least one coordinate pair required)");
+        var weaponFixturePoints = new Vector2[definition.WeaponFixturePoints!.Length];
+        for (var i = 0; i < weaponFixturePoints.Length; i++)
+        {
+            var pair = definition.WeaponFixturePoints[i];
+            Require(pair is { Length: 2 }, "weapon_fixture_points");
+            weaponFixturePoints[i] = new Vector2(Number(pair![0], "weapon_fixture_points"), Number(pair[1], "weapon_fixture_points"));
+        }
         var s = definition.Stats;
         Number(s.ShieldCapacity, "ShieldCapacity");
         Number(s.Armor, "Armor");
@@ -50,7 +58,7 @@ internal static class ShipDefinitionParser
         var stats = new ShipStats(Number(s.Speed, "Speed"), Number(s.AfterBurnerSpeed, "AfterBurnerSpeed"),
             Number(s.RotationSpeed, "RotationSpeed"), Number(s.Acceleration, "Acceleration"),
             Number(s.AfterBurnerAcceleration, "AfterBurnerAcceleration"), Number(definition.Mass, "mass"));
-        return new ShipData(definition, points, stats);
+        return new ShipData(definition, points, weaponFixturePoints, stats);
     }
 
     internal static bool IsUsablePolygon(Vector2[] points)

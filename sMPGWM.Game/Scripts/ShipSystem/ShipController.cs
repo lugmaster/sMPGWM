@@ -11,7 +11,8 @@ public partial class ShipController : CharacterBody2D
 {
     internal PlayerSession? ControllingPlayer { get; set; }
     public string EntityId { get; internal set; } = "";
-    public ShipRuntime Runtime { get; private set; } = null!;
+    private ShipRuntime? _runtime;
+    public ShipRuntime Runtime => _runtime ?? throw new InvalidOperationException("Ship runtime has not been configured.");
     private ShipData _data = null!;
     private readonly MovementMotor _motor = new();
     private ShipLoadout? _loadout;
@@ -33,7 +34,7 @@ public partial class ShipController : CharacterBody2D
     public override void _ExitTree()
     {
         _loadout?.Dispose();
-        Runtime?.Dispose();
+        _runtime?.Dispose();
         DefinitionChanged = null;
         Teleported = null;
     }
@@ -43,7 +44,7 @@ public partial class ShipController : CharacterBody2D
         internal set
         {
             _data = value;
-            Runtime ??= new(value.Health);
+            _runtime ??= new ShipRuntime(value);
             DefinitionChanged?.Invoke();
         }
     }
