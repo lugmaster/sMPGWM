@@ -43,6 +43,19 @@ sMPGWM is a **2D top-down coop multiplayer space shooter** developed in **Godot 
 - **Host dummy:** The representation of the host in another player's local context.
 - **Client dummy:** The representation of a client in another player's local context.
 
+### Session Lifecycle
+
+Each participant's local session has two main phases after pressing **Host** or **Join**:
+
+| Phase | Lifecycle state name | Description |
+| --- | --- | --- |
+| **Session Initialization** | `Initializing` | Load and validate YAML gameplay definitions, establish networking, build or synchronize the world, and prepare the local player's ship, inventory, equipment, hotbar, and interface bindings. The loading screen remains visible and gameplay controls remain inactive. |
+| **Gameplay** | `Playing` | Begin once initialization succeeds and the local player can interact. Hide the loading screen, enable gameplay controls, and continue normal gameplay and network synchronization. |
+
+Use **`SessionReady`** as the name for the event marking the transition from Session Initialization to Gameplay. Readiness means all required local setup and, for a joining client, initial synchronization and host join confirmation have completed; a network connection alone is not sufficient.
+
+These phases describe each participant's **local session lifecycle**, not a shared phase for the entire multiplayer session. A joining client can be `Initializing` while the host and existing players remain `Playing`.
+
 
 
 ## Current Features
