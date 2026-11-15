@@ -1,6 +1,6 @@
 # Weapons | EnergyPerShot and Reloading
 
-Status: refined against source on 2026-11-15; planned; no implementation authorized by this document.
+Status: implemented on 2026-11-15; build/run verification and remaining coverage limits recorded below.
 Epic: [Hitscan combat and weapon systems](hitscan-combat-and-weapon-systems.md)
 Story: 6 of 7
 Dependencies: Story 5 (implemented; its recorded verification limitations still apply).
@@ -67,7 +67,7 @@ Preserve existing firing effects and equipment/group controls. No supply visuali
 
 ## Detailed implementation plan
 
-The following is the implementation sequence, not an authorization to start coding. Type names and wire layouts below are proposed concrete designs; final names may follow existing conventions without changing the contracts.
+The following records the implementation design authorized by the user. Type names and wire layouts below are proposed concrete designs; final names may follow existing conventions without changing the contracts.
 
 ### 1. Establish item-owned runtime state
 
@@ -187,4 +187,17 @@ Ammo/reload/energy-starvation visualization, equipment supply displays, a weapon
 
 ## Reference and verification record
 
-The epic retains end-state contracts, particularly sections 6.2, 6.3, and 9.2. This refinement is documentation only; no supply implementation or new test results are claimed. Follow repository test-support markers and record completed implementation evidence and remaining limitations here.
+The epic retains end-state contracts, particularly sections 6.2, 6.3, and 9.2. The original refinement preceded implementation; the verification record below describes the implemented slice. Follow repository test-support markers and record completed implementation evidence and remaining limitations here.
+
+
+### Implementation record (2026-11-15)
+
+Implemented item-owned `WeaponRuntimeState`, atomic ammunition admission and full-cost energy spending, 60 Hz reload deadlines, automatic/manual reload, successful-transaction cancellation, and explicit Weapons component availability. Reload maintenance runs after resource generation and before movement, independently of player readiness. Death integration is included with story 7.
+
+Reload is configurable (default R), respects both binding slots and blocked-context release gates, and upgrades configurations missing only the new action while preserving existing bindings. Reliable commands use numeric ship references, equipment/item identities, a 32-command queue, 32-result per-peer history and six-tick rate limit. Session replay tombstones are capped at 64 peer identities; no history is restored with world state.
+
+Protocol is now 13. Owner rows contain eight positional fields and are bounded to nine equipped weapons; complete item rows contain ten fields. Independent supply revisions publish reload-only changes; full item snapshots retain newer runtime state and reject conflicting equal revisions or cadence rollback. Ready peers receive changed gameplay rows; joining peers retain complete snapshots. No supply HUD was added.
+
+Regression coverage includes exact/insufficient/invalid energy cost, 236/326 timing through the gameplay pipeline, reload idempotence/cancellation, capture isolation, stale item snapshots, transfer preview versus commit, restored reload deadlines, unready/unowned completion, component removal on the deadline, manual ungrouped reload, malformed/stale commands, and input/settings migration. Build/run and ENet measurements are recorded in [story 7](inc-07_weapons-damage.md#implementation-and-verification-record-2026-11-15).
+
+Coverage limits: the local ENet firing harness checks admitted/delivered shots during mixed-supply reload cycles, not explicit per-item state equality during a mid-reload reconnect. The complete one/nine-weapon, join/recovery, adverse-delivery matrix and live GodotSteam transport session were not run. These remain validation work, not claims inferred from the earlier story's measurements.

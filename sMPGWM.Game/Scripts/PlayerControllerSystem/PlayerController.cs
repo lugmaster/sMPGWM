@@ -13,6 +13,7 @@ public partial class PlayerController : Node
     public PlayerInputPolicy InputPolicy { get; } = new();
     public PlayerSession? Participant { get; private set; }
     public event Action<PlayerSession?>? ParticipantChanged;
+    public event Action? ReloadRequested;
     public InputController Input { get; } = new() { Name = "InputController" };
     private UiCanvas _canvas = null!;
     private InventoryEquipmentTransferService _transfer = null!;
@@ -114,6 +115,7 @@ public partial class PlayerController : Node
         if (_ship == null || !_authorityReady || !IsMultiplayerAuthority()) return;
         if (Input.IsGameplayInputAvailable && InputPolicy.IsContextAvailable(InputContext.Flight))
         {
+            if (Input.ReloadWeaponsJustPressed) ReloadRequested?.Invoke();
             var aim = _ship.GetGlobalMousePosition() - _ship.GlobalPosition;
             _ship.SetInput(new(Input.Direction, aim.Angle(), Input.RotateShipButtonPressed && aim.LengthSquared() > 0,
                 Input.AfterBurnerPressed, Input.BreakPressed, Input.AutoBreakingEnabled,
@@ -158,6 +160,7 @@ public partial class PlayerController : Node
         if (_shutdown) return;
         UnbindParticipant();
         _shutdown = true;
+        ReloadRequested = null;
         InputPolicy.CanControlPlayerChanged -= ApplyAvailability;
         if (_canvas != null)
         {

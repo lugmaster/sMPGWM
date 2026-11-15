@@ -90,7 +90,17 @@ public sealed class EquipmentController : IDisposable, IEquipmentView
             groups = count == 0 ? WeaponGroupConfiguration.Empty : new WeaponGroupConfiguration(bindings);
         }
         var installLoadout = PrepareLoadoutChange?.Invoke(slots);
-        return () => { _weaponGroups = groups; installLoadout?.Invoke(); };
+        var previousSlots = Container.Entities;
+        for (var i = 0; i < previousSlots.Length; i++)
+            if (previousSlots[i]?.WeaponState is { IsReloading: true } state && previousSlots[i]?.Id != slots[i]?.Id &&
+                state.Revision >= long.MaxValue - 1) throw new OverflowException("Cannot cancel outgoing reload.");
+        return () =>
+        {
+            for (var i = 0; i < previousSlots.Length; i++)
+                if (previousSlots[i]?.Id != slots[i]?.Id) previousSlots[i]?.WeaponState?.CancelReload();
+            _weaponGroups = groups;
+            installLoadout?.Invoke();
+        };
     }
 
     internal Action PrepareWeaponGroupConfirmation(ItemEntity?[] slots, long revision, WeaponGroupConfiguration groups)

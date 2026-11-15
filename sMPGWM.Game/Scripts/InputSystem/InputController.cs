@@ -12,6 +12,8 @@ public partial class InputController : AbstractSingleton<InputController>
     
     public bool PrimaryFirePressed { get; private set; }
     public bool SecondaryFirePressed { get; private set; }
+    public bool ReloadWeaponsJustPressed { get; private set; }
+    private bool _reloadWasHeld;
     public bool ActionButtonPressed { get; private set; }
     public bool RotateShipButtonPressed { get; private set; }
     public bool MainMenuJustPressed { get; private set; }
@@ -27,6 +29,7 @@ public partial class InputController : AbstractSingleton<InputController>
     private readonly ToggleInputMode _enableAutoBreaking = new("EnableAutoBreaking", true);
     private readonly HoldInputMode _primaryFireInput = new("PrimaryFire");
     private readonly HoldInputMode _secondaryFireInput = new("SecondaryFire");
+    private readonly HoldInputMode _reloadInput = new("ReloadWeapons");
     private readonly HoldInputMode _actionInput = new("Action");
     private readonly HoldInputMode _afterBurnerInput = new("AfterBurner");
     private readonly HoldInputMode _rotateShipInput = new("RotateShip");
@@ -50,6 +53,7 @@ public partial class InputController : AbstractSingleton<InputController>
         _inputModes.Add(_actionInput);
         _inputModes.Add(_primaryFireInput);
         _inputModes.Add(_secondaryFireInput);
+        _inputModes.Add(_reloadInput);
         _inputModes.Add(_rotateShipInput);
         _inputModes.Add(_afterBurnerInput);
         _inputModes.Add(_breakInput);
@@ -83,7 +87,7 @@ public partial class InputController : AbstractSingleton<InputController>
         {
             if (pointerBlocked && (_inputModes[index] == _actionInput ||
                                    _inputModes[index] == _primaryFireInput ||
-                                   _inputModes[index] == _secondaryFireInput || _inputModes[index] == _rotateShipInput))
+                                   _inputModes[index] == _secondaryFireInput || _inputModes[index] == _reloadInput || _inputModes[index] == _rotateShipInput))
             {
                 _inputModes[index].ResetState();
                 continue;
@@ -100,6 +104,9 @@ public partial class InputController : AbstractSingleton<InputController>
     {
         PrimaryFirePressed = _primaryFireInput.IsActive();
         SecondaryFirePressed = _secondaryFireInput.IsActive();
+        var reloadHeld = _reloadInput.IsActive();
+        ReloadWeaponsJustPressed = reloadHeld && !_reloadWasHeld;
+        _reloadWasHeld = reloadHeld;
         ActionButtonPressed = _actionInput.IsActive();
         AutoBreakingEnabled = _enableAutoBreaking.IsActive();
         RotateShipButtonPressed = _rotateShipInput.IsActive();

@@ -471,6 +471,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped) return;
         _stopped = true;
+        ClearReloads();
         ClearGameplay();
         ClearWeapons();
         ClearItems();

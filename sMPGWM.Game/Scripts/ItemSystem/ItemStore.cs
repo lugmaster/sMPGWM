@@ -57,7 +57,12 @@ public sealed class ItemStore
                 if (item.Id.Value == 0 || item.Id.Value >= long.MaxValue || !restoredIds.Add(item.Id.Value) ||
                     !GameplayDefinitions.Current.Items.TryGetById(item.DefinitionId, out var definition))
                     throw new ArgumentException("Invalid, duplicate, or unknown restored item identity/definition.", nameof(batch));
-                slots[slot] = new ItemEntity(item.Id, definition, item.Count) { WeaponState = item.WeaponState?.Capture() };
+                slots[slot] = new ItemEntity(item.Id, definition, item.Count);
+                if ((item.WeaponState == null) != (slots[slot]!.WeaponState == null))
+                    throw new ArgumentException("Restored weapon state does not match its definition.", nameof(batch));
+                if (item.WeaponState is { } weapon)
+                    slots[slot]!.WeaponState!.Restore(weapon.Revision, weapon.NextEligibleTick, weapon.Sequence, weapon.LastAcceptedTick,
+                        weapon.Rounds, weapon.ReloadStartTick, weapon.ReloadDeadlineTick);
                 maximumId = Math.Max(maximumId, item.Id.Value);
             }
             if (!Valid(container, slots) || !changes.TryAdd(container, slots))
@@ -251,6 +256,15 @@ public sealed class ItemStore
             if (!Owns(container) || container.Disposed || entry.Revision < container.Revision ||
                 entry.Revision < 0 || !Valid(container, entry.Slots) || !changes.TryAdd(container, entry.Slots)) return false;
             if (entry.Revision == container.Revision && !SameItems(container.Entities, entry.Slots)) return false;
+            foreach (var incoming in entry.Slots)
+            {
+                if (incoming?.WeaponState is not { } next || !_items.TryGetValue(incoming.Id, out var known) || known.WeaponState is not { } current) continue;
+                if (incoming.DefinitionId != known.DefinitionId) return false;
+                if (next.Revision == current.Revision && !next.SameAs(current)) return false;
+                if (next.Revision > current.Revision && (next.Sequence < current.Sequence ||
+                    next.LastAcceptedTick < current.LastAcceptedTick || next.NextEligibleTick < current.NextEligibleTick)) return false;
+                if (next.Revision <= current.Revision) incoming.WeaponState = current;
+            }
         }
         PreparedTransaction transaction;
         try { transaction = Prepare(changes); }

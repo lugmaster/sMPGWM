@@ -11,12 +11,21 @@ namespace sMPGWM.Scripts.WorldSystem;
 
 public partial class GameWorld
 {
-    private static void ValidateWeaponContinuity(ItemContainerState container, long completedTick)
+    private static void ValidateWeaponContinuity(ItemContainerState container, long completedTick, ShipRuntimeState? runtime = null)
     {
         foreach (var item in container.Slots)
-            if (item != null && ((item.Definition is WeaponItemDefinition) != (item.WeaponState != null) ||
-                item.WeaponState is { } cadence && cadence.LastAcceptedTick > completedTick))
+        {
+            if (item == null) continue;
+            if ((item.Definition is WeaponItemDefinition) != (item.WeaponState != null) ||
+                item.WeaponState is { } cadence && cadence.LastAcceptedTick > completedTick)
                 throw new ArgumentException("Restored weapon state does not match its item or completed tick.");
+            if (item.WeaponState is not { IsReloading: true } state) continue;
+            if (runtime == null || state.ReloadStartTick > completedTick || state.ReloadDeadlineTick <= completedTick ||
+                (runtime.Components & (ShipComponentKind.Power | ShipComponentKind.Weapons)) != (ShipComponentKind.Power | ShipComponentKind.Weapons))
+                throw new ArgumentException("Restored reload requires an equipped, powered weapon in the current tick domain.");
+            foreach (var condition in runtime.Conditions)
+                if (condition is "dead" or "energyDepleted") throw new ArgumentException("Unavailable ships cannot retain reloads.");
+        }
     }
 
     private RestoredWorldState? _restoredState;
@@ -54,6 +63,8 @@ public partial class GameWorld
             if (saved.Entity == null || saved.Runtime == null || saved.Runtime.Behaviours == null ||
                 saved.Runtime.AuthoritativeTick > state.CompletedTick)
                 throw new ArgumentException("Restored runtime is ahead of the completed world tick.");
+            if (saved.Runtime.HealthCapacity > 0 && saved.Runtime.HealthCurrent == 0 && saved.Entity.Velocity != Vector2.Zero)
+                throw new ArgumentException("A restored wreck must have zero velocity.");
             foreach (var behaviour in saved.Runtime.Behaviours)
                 if (behaviour.RuntimeId > state.AbilitySequence || behaviour.Deadline <= state.CompletedTick)
                     throw new ArgumentException("Restored effects are expired or would reuse an effect identity.");
@@ -65,7 +76,7 @@ public partial class GameWorld
                 ?? throw new ArgumentException("Missing restored ownership binding.");
             ValidateWeaponContinuity(state.Players[i].Inventory, state.CompletedTick);
         }
-        foreach (var saved in state.Ships) ValidateWeaponContinuity(saved.Equipment, state.CompletedTick);
+        foreach (var saved in state.Ships) ValidateWeaponContinuity(saved.Equipment, state.CompletedTick, saved.Runtime);
         if (!new WorldTopology(bindings, entities).IsValid()) throw new ArgumentException("Invalid restored world topology.");
 
         var store = new ItemStore();

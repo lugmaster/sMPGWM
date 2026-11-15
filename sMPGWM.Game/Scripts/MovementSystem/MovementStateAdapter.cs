@@ -14,8 +14,9 @@ internal static class MovementStateAdapter
     }
     public static void Restore(ShipController ship, MovementSample sample)
     {
+        if (!ship.Runtime.IsAlive && sample.ConfigurationRevision < ship.Runtime.ConfigurationRevision) return;
         ship.InstallMovementConfiguration(sample.ConfigurationRevision, sample.Configuration);
         ship.Restore(sample.Position, sample.Rotation, sample.Velocity, sample.Input);
-        ship.RestoreMovementMetadata(sample.Revision, sample.AppliedFlags);
+        ship.RestoreMovementMetadata(sample.Revision, ship.Runtime.IsAlive ? sample.AppliedFlags : (byte)0);
     }
 }

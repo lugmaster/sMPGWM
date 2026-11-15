@@ -1,6 +1,6 @@
 # Weapons | Damage
 
-Status: planned; no implementation authorized by this document.  
+Status: implemented on 2026-11-15; build/run verification and remaining coverage limits recorded below.
 Epic: [Hitscan combat and weapon systems](hitscan-combat-and-weapon-systems.md)  
 Story: 7 of 7  
 Dependencies: Story 6.
@@ -34,3 +34,30 @@ Respawn, despawn, loot, friendly fire, new damage-type multipliers, additional s
 ## Reference and verification
 
 The epic retains detailed end-state contracts. Implement only the scope above; later stories own their deferred behavior. Recheck current code and versions before implementation. Add focused verification for this story and preserve existing regressions. Follow repository test-support markers; record completed evidence and limitations here.
+
+
+## Implementation and verification record (2026-11-15)
+
+Implemented shield-first damage with fractional armor mitigation, shield contact sampled immediately before each hit resolves, and stable ship/slot admission before damage so same-tick trades survive. The bounded damage staging holds the supported ten ships by nine weapons independently of cosmetic staging. Damage resolves before cosmetic callbacks, including when no cosmetic consumer exists. Dead ships retain collision bodies, clear actions/velocity/effects/reloads, reject implicit revival, and cannot regenerate, fire, move or activate abilities. Reliable gameplay snapshots carry final resources/death; restoration rejects inconsistent positive-capacity health/death state. Replica movement discards pre-death samples and stops interpolation on the wreck. Physical and laser descriptions now match their shared effectiveness.
+
+Runtime and Godot tests cover shield-only/break/overflow, unavailable shields, armor 0/50/100/200, fractional damage, zero damage contact, same-tick shield depletion, lethal trades without a cosmetic consumer, death movement and restoration consistency. Existing presentation impact/arc tests remain in the regression suite. Resource-only fixtures retain their bounded behavior.
+
+Final `dotnet test sMPGWM.sln --no-restore --verbosity minimal` rebuilt the game and tests successfully: 628 selected outer tests passed, including 370 in-engine Godot cases. The three explicit long-running tests are excluded by the normal suite; the ENet runs below were performed separately. The pre-existing `UiIcon.Size` hiding warning and unsupported mock-ability startup diagnostics remain. `git diff --check` passes.
+
+Normal startup with `Godot_v4.7.2-stable_mono_win64_console.exe --headless --path sMPGWM.Game --quit-after 180` exited 0, initialized Steam and loaded StartMenu. This verifies executable startup; it is not a manual graphical playtest or a Steam multiplayer transport test.
+
+Local normal-startup ENet measurements used the development Laser/Vulcan loadout, Debug builds, one machine, approximately 20-second runs, and the existing firing harness. Tick/allocations statistics use seconds 10?18 and include the full simulation/network step and Godot query allocations.
+
+| Workload | Accepted host shots | Shot bytes published | Tick p99 | Mean allocated bytes/tick | Publication p99 | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Five peers | 947 | 252,495 | 1.223 ms | 24,031 | 39.942 ms | All exits 0 |
+| Ten peers, repeat | 1,635 | 924,944 | 1.646 ms | 31,302 | 34.180 ms | All exits 0 |
+| Five peers, moderate impairment | 752 | 193,778 | 1.105 ms | 23,976 | 33.967 ms | All exits 0 |
+
+Moderate impairment adds 20?60 ms each direction and 1% loss, with delay-induced reordering. Cosmetic staging dropped no events; recorded staging high-water was 4/9/6 respectively. The impaired run's pending cosmetic high-water was at most 11 with no queue drops. The proxy reported 47/70 dropped datagrams, 54 client-to-host socket errors around the run/teardown and no proxy exception. No reliable-backlog measurement is claimed.
+
+The first ten-peer attempt passed every workload assertion but one client crashed during native Godot shutdown with outstanding script bindings/KinematicCollision2D references. A repeat exited cleanly before the subsequent explicit movement-collision wrapper disposal change. The impaired run includes that disposal change. The cause and elimination of the intermittent shutdown crash are not proven; native ENet channel/resource teardown warnings remain recorded.
+
+Raw logs, staged sources/configuration, workload assertions and summaries are retained locally under `docs/measurements/2026-11-15-combat-enet`, `...-retry`, and `...-moderate` (ignored generated measurement directories).
+
+Validation limits: these are allied firing workloads, so they exercise mixed supply/reload and delivery rather than hostile damage/death convergence under impaired delivery. Hostile combat is covered by in-engine tests. No live GodotSteam MultiplayerPeer session, prolonged release soak, nine-weapon performance matrix or manual visual acceptance was performed. Build/run DOD is verified separately from these outstanding epic-wide validation items.

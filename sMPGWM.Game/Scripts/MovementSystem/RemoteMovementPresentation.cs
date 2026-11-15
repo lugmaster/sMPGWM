@@ -13,6 +13,14 @@ public sealed class RemoteMovementPresentation
     public void Remove(int peer) => _buffers.Remove(peer);
     public void Apply(int peer, ShipController ship, long tick, MovementSample sample, bool baseline)
     {
+        if (!ship.Runtime.IsAlive)
+        {
+            MovementStateAdapter.Restore(ship, sample);
+            _buffers.Remove(peer);
+            ship.Presentation.MovementFlags = 0;
+            ship.Presentation.Snap();
+            return;
+        }
         var oldPosition = ship.Presentation.Position;
         float oldAngle = ship.Presentation.Rotation;
         MovementStateAdapter.Restore(ship, sample);
@@ -31,6 +39,13 @@ public sealed class RemoteMovementPresentation
         foreach (var (peer, buffer) in _buffers)
         {
             if (buffer.Count == 0 || !owners.TryGetValue(peer, out var owner) || owner.ControlledShip == null) continue;
+            if (!owner.ControlledShip.Runtime.IsAlive)
+            {
+                buffer.Clear();
+                owner.ControlledShip.Presentation.MovementFlags = 0;
+                owner.ControlledShip.Presentation.Snap();
+                continue;
+            }
             while (buffer.Count > 2 && buffer[1].Tick <= _cursor) buffer.RemoveAt(0);
             var lower = buffer[0]; var upper = buffer.Count > 1 ? buffer[1] : lower;
             var presented = MovementPresentation.Sample(lower.Tick, lower.State, upper.Tick, upper.State, _cursor);

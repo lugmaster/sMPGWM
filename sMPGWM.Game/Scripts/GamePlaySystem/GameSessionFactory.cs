@@ -78,6 +78,7 @@ internal static class GameSessionFactory
         participants.AddChild(new ParallaxMotion { Name = nameof(ParallaxMotion) });
         world.AddChild(participants);
         var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities, Simulation = scope.Own(new GameplaySimulation(participants, abilities)) };
+        player.ReloadRequested += network.ReloadWeapons;
         var effects = new VfxSystem.ShotPresentationController { Name = "WeaponEffects" };
         scope.Defer(() => ReleaseNode(effects));
         world.AddChild(effects);

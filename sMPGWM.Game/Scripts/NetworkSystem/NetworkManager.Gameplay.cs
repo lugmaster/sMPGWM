@@ -78,13 +78,21 @@ public partial class NetworkManager
                 _gameplayDirty = true;
         if (_gameplayDirty)
         {
-            var state = GameplaySnapshot();
+            var changed = new Godot.Collections.Array();
+            foreach (var ship in World.Entities.Values)
+                if (!_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var previous) || previous != ship.Runtime.Revision)
+                    changed.Add(GameplaySnapshotCodec.Encode(ship.EntityId, ship.Runtime));
+            Godot.Collections.Array? complete = null;
             foreach (var (peer, join) in _joins.Snapshot())
-                if (join.ReceivesWorld && RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"), state) != Error.Ok)
+            {
+                if (!join.ReceivesWorld) continue;
+                var state = join.Phase == PeerJoinPhase.Ready ? changed : complete ??= GameplaySnapshot();
+                if (RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"), state) != Error.Ok)
                 {
                     FailSession("Gameplay snapshot send failed.");
                     return;
                 }
+            }
             _publishedGameplayRevisions.Clear();
             foreach (var ship in World.Entities.Values) _publishedGameplayRevisions.Add(ship.EntityId, ship.Runtime.Revision);
             _gameplayDirty = false;

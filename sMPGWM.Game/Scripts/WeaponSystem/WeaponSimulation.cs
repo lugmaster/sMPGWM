@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.WorldSystem;
 
@@ -12,16 +13,46 @@ public sealed class WeaponSimulation : IDisposable
     private readonly PhysicsRayQueryParameters2D _query = new() { CollideWithBodies = true, CollideWithAreas = false, HitFromInside = true };
     private readonly Godot.Collections.Array<Rid> _excluded = new();
     private readonly ShipController?[] _shooters = new ShipController[10];
+    private readonly PendingHit[] _hits = new PendingHit[90];
+    private int _hitCount;
+    public ReloadCommandProcessor ReloadCommands { get; }
     public Func<string, int>? EntityIndex { get; set; }
     public Action<AcceptedShot>? Accepted { get; set; }
     public Func<Guid>? Session { get; set; }
     public long AcceptedCount { get; private set; }
 
-    public WeaponSimulation(GameWorld world) => _world = world;
+    public WeaponSimulation(GameWorld world)
+    {
+        _world = world;
+        ReloadCommands = new(world);
+    }
+
+    public void MaintainReloads(long tick, Func<int, bool> ready)
+    {
+        foreach (var ship in _world.Entities.Values)
+        {
+            ship.Weapons.Refresh();
+            CancelUnavailableReloads(ship);
+        }
+        ReloadCommands.Step(tick, ready);
+        foreach (var ship in _world.Entities.Values)
+        {
+            if (!ship.Runtime.WeaponsAvailable) continue;
+            for (var i = 0; i < ship.Weapons.Count; i++)
+                ship.Weapons.GetBinding(i).Item.WeaponState!.CompleteReload(tick);
+        }
+    }
+
+    private static void CancelUnavailableReloads(ShipController ship)
+    {
+        if (ship.Runtime.WeaponsAvailable) return;
+        for (var i = 0; i < ship.Weapons.Count; i++)
+            ship.Weapons.GetBinding(i).Item.WeaponState!.CancelReload();
+    }
 
     public void Step(long tick, Func<int, bool> ready)
     {
-        if (Accepted == null || EntityIndex == null || Session == null) return;
+        if (EntityIndex == null || Session == null) return;
         var session = Session();
         if (session == Guid.Empty) return;
         var count = 0;
@@ -34,7 +65,17 @@ public sealed class WeaponSimulation : IDisposable
             { _shooters[at] = _shooters[at - 1]; at--; }
             _shooters[at] = ship;
         }
+        _hitCount = 0;
         for (var i = 0; i < count; i++) Fire(_shooters[i]!, tick, session);
+        // Admit every shot before damage so lethal hits cannot suppress same-tick trades.
+        for (var i = 0; i < _hitCount; i++)
+        {
+            var pending = _hits[i];
+            var shield = pending.Target?.Runtime.ApplyDamage(pending.Damage) == true;
+            _hits[i] = pending with { Shot = pending.Shot with { ShieldContact = shield } };
+        }
+        for (var i = 0; i < _hitCount; i++) Accepted?.Invoke(_hits[i].Shot);
+        Array.Clear(_hits, 0, _hitCount);
         Array.Clear(_shooters);
     }
 
@@ -43,12 +84,11 @@ public sealed class WeaponSimulation : IDisposable
         var weapons = ship.Weapons;
         weapons.Refresh();
         var input = ship.InputState;
-        var enabled = ship.Runtime.IsAlive && ship.Runtime.PoweredSystemsAvailable &&
-            input.WeaponRevision == ship.Equipment.Revision;
+        var enabled = input.WeaponRevision == ship.Equipment.Revision;
         _excluded.Clear();
         _excluded.Add(ship.GetRid());
         foreach (var other in _world.Entities.Values)
-            if (other != ship && other.Runtime.IsAlive && other.Runtime.FactionId == ship.Runtime.FactionId)
+            if (other != ship && other.Runtime.IsAlive && ship.Runtime.IsAllyOf(other.Runtime))
                 _excluded.Add(other.GetRid());
         _query.Exclude = _excluded;
         var fixtures = ship.Runtime.WeaponFixturePoints;
@@ -56,9 +96,15 @@ public sealed class WeaponSimulation : IDisposable
         {
             var binding = weapons.GetBinding(i);
             var state = binding.Item.WeaponState!;
-            var eligible = enabled && (input.FireMask & binding.Groups) != 0 && fixtures.Count != 0;
-            if (!eligible || tick + 1e-9 < state.NextEligibleTick || tick <= state.LastAcceptedTick)
+            var eligible = enabled && ship.Runtime.WeaponsAvailable &&
+                (input.FireMask & binding.Groups) != 0 && fixtures.Count != 0;
+            if (eligible && binding.Definition.Supply is AmmunitionSupplyDefinition && state.Rounds == 0)
+                state.TryStartReload(tick);
+            if (!eligible || !state.CanAccept(tick, binding.Definition.AttackSpeed))
             { state.TryAccept(tick, binding.Definition.AttackSpeed, eligible); continue; }
+            state.ValidateAcceptance(tick, binding.Definition.AttackSpeed);
+            if (binding.Definition.Supply is EnergySupplyDefinition energy && ship.Runtime.Energy.Current < energy.EnergyPerShot)
+            { state.TryAccept(tick, binding.Definition.AttackSpeed, false); continue; }
             var sequence = checked(state.Sequence + 1);
             var muzzle = (int)((sequence - 1) % fixtures.Count);
             var origin = ship.GlobalTransform * fixtures[muzzle];
@@ -70,11 +116,15 @@ public sealed class WeaponSimulation : IDisposable
             var endpoint = hit ? collision["position"].AsVector2() : _query.To;
             var normal = hit ? collision["normal"].AsVector2() : Vector2.Zero;
             if (hit && normal.IsZeroApprox()) normal = -direction;
-            var shield = hit && collision["collider"].AsGodotObject() is ShipController target && target.Runtime.ShieldProtectionAvailable;
+            var target = hit ? collision["collider"].AsGodotObject() as ShipController : null;
+            if (binding.Definition.Supply is EnergySupplyDefinition payment && !ship.Runtime.TrySpendEnergy(payment.EnergyPerShot)) continue;
             if (!state.TryAccept(tick, binding.Definition.AttackSpeed, true)) continue;
+            CancelUnavailableReloads(ship);
+            ship.RefreshMovementConfiguration();
             AcceptedCount++;
-            Accepted!(new(session, tick, binding.Item.Id.Value, EntityIndex!(ship.EntityId),
-                ship.ControllingPlayer!.ControlGeneration, sequence, binding.Profile, muzzle, origin, endpoint, normal, hit, shield));
+            _hits[_hitCount++] = new(new(session, tick, binding.Item.Id.Value, EntityIndex!(ship.EntityId),
+                ship.ControllingPlayer!.ControlGeneration, sequence, binding.Profile, muzzle, origin, endpoint, normal, hit, false),
+                target != null && !ship.Runtime.IsAllyOf(target.Runtime) ? target : null, binding.Definition.Damage);
         }
     }
 
@@ -92,9 +142,13 @@ public sealed class WeaponSimulation : IDisposable
     {
         Accepted = null; EntityIndex = null; Session = null;
         Array.Clear(_shooters);
+        Array.Clear(_hits);
+        ReloadCommands.Clear();
         _excluded.Clear();
         _query.Dispose();
     }
+
+    private readonly record struct PendingHit(AcceptedShot Shot, ShipController? Target, double Damage);
 }
 
 

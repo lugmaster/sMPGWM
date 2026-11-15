@@ -8,6 +8,68 @@ namespace sMPGWM.Tests.NetworkSystem;
 public sealed class WeaponGroupReplicationTests
 {
     [Test]
+    public void ReloadOnlyBaselineAdvancesStateAndDelayedBaselineCannotUndoIt()
+    {
+        using var host = new ShipItemTestContext();
+        using var client = new ShipItemTestContext();
+        Equip(host, "mock_standard_weapon_fixture", "weapon_fixture");
+        var weapon = Equip(host, "vulcan_mk1", "weapon_1");
+        var slot = host.Equipment.FindSlot("weapon_1");
+        weapon.WeaponState!.TryAccept(0, 15, true);
+        using var beforeReload = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(beforeReload, client.Player), Is.True);
+        weapon.WeaponState.TryStartReload(1);
+        using var reloading = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(reloading, client.Player), Is.True);
+        var state = client.Equipment.Snapshot.Slots[slot]!.WeaponState!;
+        Assert.That(state.IsReloading, Is.True);
+        Assert.That(state.Rounds, Is.EqualTo(59));
+        Assert.That(state.ReloadDeadlineTick, Is.EqualTo(91));
+        Assert.That(ItemSnapshotCodec.Apply(beforeReload, client.Player), Is.True);
+        Assert.That(client.Equipment.Snapshot.Slots[slot]!.WeaponState, Is.SameAs(state));
+        weapon.WeaponState.CompleteReload(91);
+        using var completed = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(completed, client.Player), Is.True);
+        Assert.That(ItemSnapshotCodec.Apply(reloading, client.Player), Is.True);
+        state = client.Equipment.Snapshot.Slots[slot]!.WeaponState!;
+        Assert.That(state.Rounds, Is.EqualTo(60));
+        Assert.That(state.IsReloading, Is.False);
+        Assert.That(state.Sequence, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void SameRevisionConflictingSupplyRejectsWholeSnapshot()
+    {
+        using var host = new ShipItemTestContext();
+        using var client = new ShipItemTestContext();
+        Equip(host, "mock_standard_weapon_fixture", "weapon_fixture");
+        Equip(host, "vulcan_mk1", "weapon_1");
+        var slot = host.Equipment.FindSlot("weapon_1");
+        using var snapshot = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(snapshot, client.Player), Is.True);
+        snapshot[8].AsGodotArray()[slot].AsGodotArray()[7] = 59;
+        Assert.That(ItemSnapshotCodec.Apply(snapshot, client.Player), Is.False);
+        Assert.That(client.Equipment.Snapshot.Slots[slot]!.WeaponState!.Rounds, Is.EqualTo(60));
+    }
+
+    [Test]
+    public void HigherSupplyRevisionCannotRewindAcceptedCadence()
+    {
+        using var host = new ShipItemTestContext();
+        using var client = new ShipItemTestContext();
+        Equip(host, "mock_standard_weapon_fixture", "weapon_fixture");
+        var weapon = Equip(host, "vulcan_mk1", "weapon_1");
+        weapon.WeaponState!.TryAccept(0, 15, true);
+        var slot = host.Equipment.FindSlot("weapon_1");
+        using var snapshot = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(snapshot, client.Player), Is.True);
+        var row = snapshot[8].AsGodotArray()[slot].AsGodotArray();
+        row[3] = 0.0; row[4] = 0L; row[5] = -1L; row[6] = 3L;
+        Assert.That(ItemSnapshotCodec.Apply(snapshot, client.Player), Is.False);
+        Assert.That(client.Equipment.Snapshot.Slots[slot]!.WeaponState!.Sequence, Is.EqualTo(1));
+    }
+
+    [Test]
     public void OwnerBaselineRestoresCadenceWithoutChangingEquipmentRevisionAndRejectsMalformedStateAtomically()
     {
         using var host = new ShipItemTestContext();
@@ -144,7 +206,7 @@ public sealed class WeaponGroupReplicationTests
         foreach (var value in rows)
         {
             var row = value.AsGodotArray();
-            Assert.That(row.Count, Is.AnyOf(0, 6));
+            Assert.That(row.Count, Is.AnyOf(0, 10));
         }
     }
 

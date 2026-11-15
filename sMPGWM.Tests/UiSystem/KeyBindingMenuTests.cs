@@ -131,7 +131,7 @@ public sealed class KeyBindingMenuTests
             foreach (var section in sections.GetChildren())
                 rowCount += section.GetNode<VBoxContainer>("RowsContainer").GetChildCount();
             Assert.That(rowCount, Is.EqualTo(KeyBindingCatalog.Actions.Length));
-            Assert.That(rowCount, Is.EqualTo(17));
+            Assert.That(rowCount, Is.EqualTo(18));
             var firstRows = sections.GetChild(0).GetNode<VBoxContainer>("RowsContainer");
             var row = firstRows.GetChild(0);
             var primary = row.GetNode<Button>("PrimaryBindingButton");

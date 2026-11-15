@@ -12,7 +12,7 @@ internal sealed class KeyBindingConfiguration
     [
         "Forwards", "Backwards", "StrafeLeft", "StrafeRight", "AfterBurner", "Break", "EnableAutoBreaking",
         "Action", "PrimaryFire", "SecondaryFire", "RotateShip", "TargetSwitch", "TargetNearestSwitch", "MainMenu", "InventoryMenu",
-        "MapMenu", "MessageMenu"
+        "MapMenu", "MessageMenu", "ReloadWeapons"
     ];
 
     public KeyBindingDefinition[] Actions { get; }

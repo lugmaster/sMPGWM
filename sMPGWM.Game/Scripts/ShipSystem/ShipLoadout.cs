@@ -11,6 +11,7 @@ public sealed class ShipLoadout : IDisposable
     private readonly ItemEntityId?[] _sourceItems;
     private readonly StatContributionSource?[] _sources;
     private bool _authoritative;
+    internal bool IsAuthoritative => _authoritative;
     private bool _disposed;
     private bool _publishGameplay;
     public ItemStore Store { get; }

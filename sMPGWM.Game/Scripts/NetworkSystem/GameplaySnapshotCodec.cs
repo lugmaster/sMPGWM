@@ -83,8 +83,7 @@ internal static class GameplaySnapshotCodec
                 (stats.HasShieldGenerator && !double.IsFinite(capacity * (1000d / 60 / stats.RechargeTime))) ||
                 configurationRevision < 1 || tick < 0 || shieldDeadline < 0 ||
                 afterburnerActive && (!stats.HasEngine || (components & ShipComponentKind.Movement) == 0) ||
-                depleted != (stats.EnergyProduction < stats.GetEnergyConsumption(afterburnerActive) && energy == 0) ||
-                protection != ((components & (ShipComponentKind.Power | ShipComponentKind.Shield)) == (ShipComponentKind.Power | ShipComponentKind.Shield) && stats.HasShieldGenerator && capacity > 0 && current > 0 && !depleted && shieldDeadline <= tick)) return false;
+                depleted != (stats.EnergyProduction < stats.GetEnergyConsumption(afterburnerActive) && energy == 0)) return false;
             if (faction < 0 || faction > int.MaxValue) return false;
             var conditionRows = row[6].AsGodotArray();
             if (conditionRows.Count > ShipRuntime.MaxConditions) return false;
@@ -102,10 +101,16 @@ internal static class GameplaySnapshotCodec
             foreach (var condition in conditions)
                 if (condition == "energyDepleted") hasDepletedCondition = true;
             if (hasDepletedCondition != depleted) return false;
+            var dead = false;
+            foreach (var condition in conditions) if (condition == "dead") dead = true;
+            if (healthCapacity > 0 && (dead != (healthCurrent == 0) || dead && afterburnerActive)) return false;
+            if (protection != (!dead && (components & (ShipComponentKind.Power | ShipComponentKind.Shield)) ==
+                (ShipComponentKind.Power | ShipComponentKind.Shield) && stats.HasShieldGenerator && capacity > 0 &&
+                current > 0 && !depleted && shieldDeadline <= tick)) return false;
             if (!Guid.TryParseExact(entity, "N", out _) || !entities.Add(entity) || revision < 1 ||
                 !double.IsFinite(capacity) || !double.IsFinite(current) || current < 0 || capacity < current) return false;
             var values = row[4].AsGodotArray();
-            if (values.Count > ShipRuntime.MaxBehaviours) return false;
+            if (values.Count > ShipRuntime.MaxBehaviours || healthCapacity > 0 && dead && values.Count != 0) return false;
             var behaviours = new BehaviourInstance[values.Count];
             var definitionIds = new HashSet<string>(StringComparer.Ordinal);
             for (var j = 0; j < values.Count; j++)

@@ -46,7 +46,11 @@ public partial class ShipController : CharacterBody2D
         internal set
         {
             _data = value;
-            _runtime ??= new ShipRuntime(value);
+            if (_runtime == null)
+            {
+                _runtime = new ShipRuntime(value);
+                _runtime.Changed += OnRuntimeChanged;
+            }
             DefinitionChanged?.Invoke();
         }
     }
@@ -90,7 +94,9 @@ public partial class ShipController : CharacterBody2D
             stats.Acceleration, stats.AfterBurnerAcceleration, (float)stats.Mass, Runtime.MovementAvailable);
         if (!state.Configuration.IsValid || state.Configuration != expected || state.ConfigurationRevision != Runtime.ConfigurationRevision ||
             state.DiscontinuityRevision < 0 || state.DiscontinuityRevision == long.MaxValue ||
-            state.AppliedFlags > 7 || state.PresentedFlags > 7 || !MovementWire.Valid(state.Input))
+            state.AppliedFlags > 7 || state.PresentedFlags > 7 || !MovementWire.Valid(state.Input) ||
+            !Runtime.IsAlive && (state.AppliedFlags != 0 || state.PresentedFlags != 0 || state.Input.FireMask != 0 ||
+                state.Input.Direction != Vector2.Zero || state.Input.HasAim || state.Input.Afterburner || state.Input.Brake))
             throw new ArgumentException("Invalid restored movement state.");
         MovementConfigurationRevision = 0;
         InstallMovementConfiguration(state.ConfigurationRevision, state.Configuration);
@@ -103,7 +109,10 @@ public partial class ShipController : CharacterBody2D
     }
     public void Restore(Vector2 position, float rotation, Vector2 velocity, ShipInputState input)
     {
-        GlobalPosition = position; GlobalRotation = rotation; Velocity = velocity; _input = input;
+        GlobalPosition = position; GlobalRotation = rotation;
+        Velocity = Runtime.IsAlive ? velocity : Vector2.Zero;
+        if (Runtime.IsAlive) _input = input;
+        else ClearInput();
         CaptureState();
     }
     public bool LocallyControlled { get; private set; }
@@ -114,7 +123,27 @@ public partial class ShipController : CharacterBody2D
         LocallyControlled = enabled;
         ClearInput();
     }
-    public void SetInput(ShipInputState input) => _input = input;
+    public void SetInput(ShipInputState input)
+    {
+        if (Runtime.IsAlive) _input = input;
+        else ClearInput();
+    }
+    private void OnRuntimeChanged()
+    {
+        if (!Runtime.WeaponsAvailable && _loadout?.IsAuthoritative == true)
+        {
+            var slots = Equipment.Snapshot.Slots;
+            for (var i = 0; i < slots.Count; i++) slots[i]?.WeaponState?.CancelReload();
+        }
+        if (Runtime.IsAlive) return;
+        ClearInput();
+        Velocity = Vector2.Zero;
+        AppliedMovementFlags = 0;
+        PresentedMovementFlags = 0;
+        Presentation.Snap();
+        RefreshMovementConfiguration();
+        CaptureState();
+    }
     public void ClearInput() => _input = new(Vector2.Zero, 0, false, false, false, _input.AutomaticBraking);
     public void Teleport(Vector2 position, float rotation, Vector2 velocity)
     {
@@ -125,6 +154,11 @@ public partial class ShipController : CharacterBody2D
     public void Simulate(double delta)
     {
 
+        if (!Runtime.IsAlive)
+        {
+            OnRuntimeChanged();
+            return;
+        }
         var previousRotation = GlobalRotation;
         var s = MovementConfiguration;
         if (s.Enabled)
@@ -140,7 +174,7 @@ public partial class ShipController : CharacterBody2D
         var motion = Velocity * (float)delta;
         for (int slide = 0; slide < 4 && motion.LengthSquared() > 0.0000001f; slide++)
         {
-            var collision = MoveAndCollide(motion);
+            using var collision = MoveAndCollide(motion);
             if (collision == null) break;
             var normal = collision.GetNormal();
             motion = collision.GetRemainder().Slide(normal);

@@ -25,7 +25,7 @@ public static class KeyBindingSettings
     public static void LoadConfiguration(Variant defaults, Variant effective, string effectiveSource)
     {
         var shipped = KeyBindingConfiguration.Parse(defaults, FilePaths.SystemConfigPath);
-        var configured = KeyBindingConfiguration.Parse(effective, effectiveSource);
+        var configured = UpgradeReload(shipped, effective, effectiveSource);
         KeyBindingConfiguration.RequireMatchingActions(shipped, configured, effectiveSource);
         var defaultBindings = new InputEvent?[configured.Actions.Length, SlotCount];
         for (var row = 0; row < configured.Actions.Length; row++)
@@ -41,6 +41,42 @@ public static class KeyBindingSettings
         _configuration = configured.Values;
         _defaults = defaultBindings;
         Apply(configured.Bindings);
+    }
+
+    private static KeyBindingConfiguration UpgradeReload(KeyBindingConfiguration shipped, Variant effective, string source)
+    {
+        if (effective.VariantType != Variant.Type.Dictionary || effective.AsGodotDictionary().ContainsKey("ReloadWeapons"))
+            return KeyBindingConfiguration.Parse(effective, source);
+        var values = effective.AsGodotDictionary().Duplicate(true);
+        var reload = shipped.Values["ReloadWeapons"].AsGodotDictionary().Duplicate(true);
+        var order = 0;
+        var used = new System.Collections.Generic.HashSet<int>();
+        foreach (var entry in values)
+        {
+            if (entry.Value.VariantType != Variant.Type.Dictionary) continue;
+            var definition = entry.Value.AsGodotDictionary();
+            if (definition.TryGetValue("order", out var value) && value.VariantType == Variant.Type.Int)
+                used.Add(value.AsInt32());
+            if (definition.TryGetValue("sectionId", out var section) && section.AsString() == "flight" &&
+                definition.TryGetValue("sectionDisplayName", out var display)) reload["sectionDisplayName"] = display;
+        }
+        while (used.Contains(order)) order = checked(order + 1);
+        reload["order"] = order;
+        reload["primary"] = default;
+        values["ReloadWeapons"] = reload;
+        var configured = KeyBindingConfiguration.Parse(values, source);
+        KeyBindingConfiguration.RequireMatchingActions(shipped, configured, source);
+        var occupied = false;
+        for (var row = 0; row < configured.Actions.Length; row++)
+        {
+            if (configured.Actions[row].SectionId != "flight") continue;
+            for (var slot = 0; slot < SlotCount; slot++)
+                if (configured.Bindings[row, slot] is InputEventKey key &&
+                    (key.PhysicalKeycode == Key.R || key.Keycode == Key.R) &&
+                    !key.CtrlPressed && !key.ShiftPressed && !key.AltPressed && !key.MetaPressed) occupied = true;
+        }
+        if (!occupied) reload["primary"] = shipped.Values["ReloadWeapons"].AsGodotDictionary()["primary"];
+        return KeyBindingConfiguration.Parse(values, source);
     }
 
     public static InputEvent? Normalize(InputEvent input)

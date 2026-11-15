@@ -82,6 +82,7 @@ public sealed class GameplaySimulation : IDisposable
                 ship.Runtime.AdvanceResources(tick);
                 ship.RefreshMovementConfiguration();
             }
+            Weapons.MaintainReloads(tick, ready);
             foreach (var player in _world.Players.Values) player.ControlledShip?.Simulate(1.0 / 60);
             Weapons.Step(tick, ready);
             CompletedTick = tick;
@@ -106,6 +107,7 @@ public sealed class GameplaySimulation : IDisposable
     public void RemovePeer(int peer)
     {
         AbilityCommands.RemovePeer(peer);
+        Weapons.ReloadCommands.RemovePeer(peer);
         var count = _transfers.Count;
         for (var i = 0; i < count; i++)
         {

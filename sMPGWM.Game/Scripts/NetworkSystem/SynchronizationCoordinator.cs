@@ -220,6 +220,7 @@ public partial class SynchronizationCoordinator : Node
     }
     public void ResetCommands(int peer)
     {
+        Network.CancelPendingReloads(peer);
         _queues.Remove(peer); _bindings.Remove(peer);
         if (World.Players.TryGetValue(peer, out var owner)) owner.ControlledShip?.ClearInput();
     }

@@ -25,7 +25,7 @@ public sealed class WeaponSimulationTests
     [TestCase(2, 0, 3)]
     [TestCase(3, 11, 3)]
     [TestCase(0, 0, 0)]
-    public void GroupsUseIndependentCadenceWithoutResourceConsumption(byte mask, int smgCount, int laserCount)
+    public void GroupsUseIndependentCadenceAndPaySupply(byte mask, int smgCount, int laserCount)
     {
         var world = CreateWorld();
         using var weapons = new WeaponSimulation(world);
@@ -50,7 +50,7 @@ public sealed class WeaponSimulationTests
             }
             Assert.That(smg, Is.EqualTo(smgCount));
             Assert.That(laser, Is.EqualTo(laserCount));
-            Assert.That(ship.Runtime.Energy.Current, Is.EqualTo(energy));
+            Assert.That(ship.Runtime.Energy.Current, Is.EqualTo(energy - laserCount * 4));
             Assert.That(ship.Runtime.Health.Current, Is.EqualTo(health));
             Assert.That(ship.Runtime.Shield.Current, Is.EqualTo(shield));
         }
@@ -157,7 +157,7 @@ public sealed class WeaponSimulationTests
     [TestCase(true, true)]
     [TestCase(false, true)]
     [TestCase(true, false)]
-    public void ShieldContactRecordsHitTimeAvailabilityWithoutResourceMutation(bool charged, bool powered)
+    public void ShieldContactRecordsDamageTimeAvailability(bool charged, bool powered)
     {
         var world = CreateWorld();
         using var weapons = new WeaponSimulation(world);
@@ -191,8 +191,8 @@ public sealed class WeaponSimulationTests
             Assert.That(shots.Count, Is.EqualTo(1));
             Assert.That(shots[0].Hit, Is.True);
             Assert.That(shots[0].ShieldContact, Is.EqualTo(charged && powered));
-            Assert.That(target.Runtime.Shield.Current, Is.EqualTo(shield));
-            Assert.That(target.Runtime.Health.Current, Is.EqualTo(health));
+            Assert.That(target.Runtime.Shield.Current, Is.EqualTo(charged && powered ? shield - 9 : shield));
+            Assert.That(target.Runtime.Health.Current, Is.EqualTo(charged && powered ? health : health - 9 * 100 / (100 + target.Runtime.Stats.Armor)).Within(1e-9));
             Assert.That(target.Runtime.ShieldDowntimeDeadline, Is.EqualTo(downtime));
         }
         finally
@@ -310,7 +310,123 @@ public sealed class WeaponSimulationTests
         var world = new GameWorld { AuthoritativeItems = true, InitializeLoadout = DevelopmentLoadout.Equip };
         ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world);
         world.ApproveSpawn(1, PlayerStartupData.Create());
+        Charge(world.Players[1].ControlledShip!);
         return world;
+    }
+
+    private static void Charge(ShipController ship)
+    {
+        var stats = ship.Runtime.EquipmentInputs;
+        var battery = ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("battery")]!.Id.Value;
+        ship.Runtime.ApplyEquipment(stats with { EnergyProduction = 1200 + stats.EnergyConsumption }, battery);
+        ship.Runtime.AdvanceResources(0);
+        ship.Runtime.ApplyEquipment(stats, battery);
+    }
+
+    [Test]
+    public void MagazineCompletesOn326BeforeFiringInFullPipeline()
+    {
+        var world = CreateWorld();
+        using var abilities = new sMPGWM.Scripts.AbilitySystem.AbilityRuntime(GameplayDefinitions.Current);
+        using var simulation = new GameplaySimulation(world, abilities);
+        try
+        {
+            var ship = world.Players[1].ControlledShip!;
+            ship.GlobalPosition = new(10000, 10000);
+            var shots = new List<AcceptedShot>();
+            Configure(simulation.Weapons, shots.Add);
+            ship.SetInput(new(Vector2.Zero, 0, false, false, false, false, 1, ship.Equipment.Revision));
+            for (var tick = 0; tick <= 326; tick++) simulation.Step(tick, _ => true, (_, _, _) => { });
+            Assert.That(shots.Count, Is.EqualTo(61));
+            Assert.That(shots[59].Tick, Is.EqualTo(236));
+            Assert.That(shots[60].Tick, Is.EqualTo(326));
+            var state = ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("weapon_1")]!.WeaponState!;
+            Assert.That(state.Rounds, Is.EqualTo(59));
+            Assert.That(state.IsReloading, Is.False);
+        }
+        finally { world.Clear(); world.Free(); }
+    }
+
+    [Test]
+    public void AcceptedHitsTradeWithoutCosmeticConsumer()
+    {
+        var world = CreateWorld();
+        using var weapons = new WeaponSimulation(world);
+        var firstBody = PhysicsServer2D.BodyCreate();
+        var secondBody = PhysicsServer2D.BodyCreate();
+        var shape = PhysicsServer2D.CircleShapeCreate();
+        try
+        {
+            world.ApproveSpawn(2, PlayerStartupData.Create());
+            var first = world.Players[1].ControlledShip!;
+            var second = world.Players[2].ControlledShip!;
+            Charge(second);
+            second.Runtime.SetFaction(2);
+            first.GlobalPosition = new(10000, 10000);
+            second.GlobalPosition = new(10000, 20000);
+            PhysicsServer2D.ShapeSetData(shape, 20f);
+            foreach (var ship in new[] { first, second })
+            {
+                ship.Runtime.SetShieldCurrent(0);
+                ship.Runtime.SetHealthCurrent(1);
+                ship.Equipment.ApplyWeaponGroupDefinition(["weapon_2"], []);
+                ship.SetInput(new(Vector2.Zero, 0, false, false, false, false, 1, ship.Equipment.Revision));
+            }
+            AddBlocker(firstBody, shape, first, first.GlobalTransform * first.Runtime.WeaponFixturePoints[0] + Vector2.Right * 100);
+            PhysicsServer2D.BodyAttachObjectInstanceId(firstBody, second.GetInstanceId());
+            AddBlocker(secondBody, shape, second, second.GlobalTransform * second.Runtime.WeaponFixturePoints[0] + Vector2.Right * 100);
+            PhysicsServer2D.BodyAttachObjectInstanceId(secondBody, first.GetInstanceId());
+            Configure(weapons, _ => { });
+            weapons.Accepted = null;
+            weapons.Step(0, _ => true);
+            Assert.That(weapons.AcceptedCount, Is.EqualTo(2));
+            Assert.That(first.Runtime.IsAlive, Is.False);
+            Assert.That(second.Runtime.IsAlive, Is.False);
+            Assert.That(first.Velocity, Is.EqualTo(Vector2.Zero));
+            Assert.That(second.Velocity, Is.EqualTo(Vector2.Zero));
+        }
+        finally
+        {
+            PhysicsServer2D.FreeRid(firstBody); PhysicsServer2D.FreeRid(secondBody); PhysicsServer2D.FreeRid(shape);
+            world.Clear(); world.Free();
+        }
+    }
+
+    [Test]
+    public void LaterSameTickHitSeesShieldDepletedByEarlierSlot()
+    {
+        var world = CreateWorld();
+        using var weapons = new WeaponSimulation(world);
+        var body = PhysicsServer2D.BodyCreate();
+        var shape = PhysicsServer2D.CircleShapeCreate();
+        try
+        {
+            world.ApproveSpawn(2, PlayerStartupData.Create());
+            var shooter = world.Players[1].ControlledShip!;
+            var target = world.Players[2].ControlledShip!;
+            target.Runtime.SetFaction(2);
+            target.Runtime.SetShieldCurrent(1.8);
+            shooter.GlobalPosition = new(10000, 10000);
+            PhysicsServer2D.ShapeSetData(shape, 50f);
+            AddBlocker(body, shape, shooter, shooter.GlobalTransform * shooter.Runtime.WeaponFixturePoints[0] + Vector2.Right * 100);
+            PhysicsServer2D.BodyAttachObjectInstanceId(body, target.GetInstanceId());
+            var shots = new List<AcceptedShot>();
+            Configure(weapons, shots.Add);
+            var health = target.Runtime.Health.Current;
+            shooter.SetInput(new(Vector2.Zero, 0, false, false, false, false, 3, shooter.Equipment.Revision));
+            weapons.Step(0, _ => true);
+            Assert.That(shots.Count, Is.EqualTo(2));
+            Assert.That(shots[0].Profile, Is.Zero);
+            Assert.That(shots[0].ShieldContact, Is.True);
+            Assert.That(shots[1].ShieldContact, Is.False);
+            Assert.That(target.Runtime.Shield.Current, Is.Zero);
+            Assert.That(target.Runtime.Health.Current, Is.EqualTo(health - 9 * 100 / (100 + target.Runtime.Stats.Armor)).Within(1e-9));
+        }
+        finally
+        {
+            PhysicsServer2D.FreeRid(body); PhysicsServer2D.FreeRid(shape);
+            world.Clear(); world.Free();
+        }
     }
 
     private static void Configure(WeaponSimulation weapons, Action<AcceptedShot> accepted)

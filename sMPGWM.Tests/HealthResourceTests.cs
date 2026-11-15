@@ -28,8 +28,9 @@ public sealed class HealthResourceTests
         Assert.That(notifications, Is.EqualTo(1));
         Assert.That(ship.SetHealthCurrent(0), Is.True);
         Assert.That(ship.Health.Current, Is.Zero);
-        Assert.That(ship.SetHealthCurrent(150), Is.True);
-        Assert.That(ship.Health.Current, Is.EqualTo(150));
+        Assert.That(ship.IsAlive, Is.False);
+        Assert.Throws<InvalidOperationException>(() => ship.SetHealthCurrent(150));
+        Assert.That(ship.Health.Current, Is.Zero);
         ship.Dispose();
         var disposedRevision = ship.Revision;
         Assert.That(ship.SetHealthCurrent(20), Is.False);

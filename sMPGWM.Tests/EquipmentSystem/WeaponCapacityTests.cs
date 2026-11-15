@@ -8,6 +8,32 @@ namespace sMPGWM.Tests.EquipmentSystem;
 [Category("Godot")]
 public sealed class WeaponCapacityTests
 {
+    [Test]
+    public void TransferPreviewPreservesReloadAndCommittedUnequipCancelsBeforePublication()
+    {
+        using var inventory = new InventoryController();
+        using var equipment = new EquipmentController(inventory.Items);
+        Equip(inventory, equipment, Add(inventory, "mock_standard_weapon_fixture"), "weapon_fixture");
+        var weapon = Add(inventory, "vulcan_mk1");
+        Equip(inventory, equipment, weapon, "weapon_1");
+        var state = weapon.WeaponState!;
+        state.TryAccept(0, 15, true);
+        state.TryStartReload(1);
+        var source = inventory.Items.GetLocation(weapon.Id);
+        var destination = new ItemLocation(inventory.Container.Id, 0);
+        var revision = state.Revision;
+        Assert.That(inventory.Items.TransferItem(weapon.Id, source, destination, equipment.Revision, inventory.Revision, commit: false),
+            Is.EqualTo(TransferResult.Success));
+        Assert.That(state.IsReloading, Is.True);
+        Assert.That(state.Revision, Is.EqualTo(revision));
+        equipment.Changed += _ => Assert.That(state.IsReloading, Is.False);
+        Assert.That(inventory.Items.TransferItem(weapon.Id, source, destination, equipment.Revision, inventory.Revision),
+            Is.EqualTo(TransferResult.Success));
+        Assert.That(state.IsReloading, Is.False);
+        Assert.That(state.Rounds, Is.EqualTo(59));
+        Assert.That(state.NextEligibleTick, Is.EqualTo(4));
+    }
+
     [TestCase("light_weapon", 1)]
     [TestCase("medium_weapon", 2)]
     [TestCase("heavy_weapon", 3)]

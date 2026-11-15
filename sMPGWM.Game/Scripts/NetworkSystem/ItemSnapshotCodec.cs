@@ -31,7 +31,9 @@ internal static class ItemSnapshotCodec
         var rows = new Array();
         foreach (var item in slots)
             rows.Add(item == null ? new Array() : new Array { checked((long)item.Id.Value), item.DefinitionId, item.Count,
-                item.WeaponState?.NextEligibleTick ?? 0, item.WeaponState?.Sequence ?? 0, item.WeaponState?.LastAcceptedTick ?? -1 });
+                item.WeaponState?.NextEligibleTick ?? 0, item.WeaponState?.Sequence ?? 0, item.WeaponState?.LastAcceptedTick ?? -1,
+                item.WeaponState?.Revision ?? 0, item.WeaponState?.Rounds ?? 0,
+                item.WeaponState?.ReloadStartTick ?? -1, item.WeaponState?.ReloadDeadlineTick ?? -1 });
         return rows;
     }
 
@@ -89,9 +91,10 @@ internal static class ItemSnapshotCodec
             if (rows[i].VariantType != Variant.Type.Array) return false;
             var row = rows[i].AsGodotArray();
             if (row.Count == 0) continue;
-            if (row.Count != 6 || row[0].VariantType != Variant.Type.Int || row[1].VariantType != Variant.Type.String ||
+            if (row.Count != 10 || row[0].VariantType != Variant.Type.Int || row[1].VariantType != Variant.Type.String ||
                 row[2].VariantType != Variant.Type.Int || row[3].VariantType != Variant.Type.Float ||
                 row[4].VariantType != Variant.Type.Int || row[5].VariantType != Variant.Type.Int) return false;
+            for (var field = 6; field < 10; field++) if (row[field].VariantType != Variant.Type.Int) return false;
             var id = row[0].AsInt64();
             var definitionId = row[1].AsString();
             var count = row[2].AsInt64();
@@ -103,10 +106,12 @@ internal static class ItemSnapshotCodec
                 last < -1 || last > SnapshotEnvelope.MaxTick || (sequence == 0 ? last != -1 : last < 0 || next <= last)) return false;
             if (slots[i]!.WeaponState is { } state)
             {
-                try { state.Restore(next, sequence, last); }
+                if (row[7].AsInt64() < 0 || row[7].AsInt64() > int.MaxValue) return false;
+                try { state.Restore(row[6].AsInt64(), next, sequence, last, row[7].AsInt32(), row[8].AsInt64(), row[9].AsInt64()); }
                 catch (System.ArgumentException) { return false; }
             }
-            else if (next != 0 || sequence != 0 || last != -1) return false;
+            else if (next != 0 || sequence != 0 || last != -1 || row[6].AsInt64() != 0 || row[7].AsInt64() != 0 ||
+                row[8].AsInt64() != -1 || row[9].AsInt64() != -1) return false;
         }
         return true;
     }
