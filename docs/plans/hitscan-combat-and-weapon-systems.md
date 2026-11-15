@@ -46,7 +46,7 @@ Story 3 implements one `labeled_button_pair` per equipped weapon with its name a
 
 Implement only `laser_mk1` and `vulcan_mk1` as host-authoritative automatic hitscan weapons, ammunition magazines, discrete energy costs, shield/health damage with hull mitigation, two fire groups, synchronized combat state, and pooled presentation. Preserve 60 physics steps/second and publish networking every second step at 30 Hz. Support five typical players and ten maximum, including all nine permitted weapon slots per ship.
 
-Heavy/medium weapon execution, additional playable weapon variants, and separate shield-impact effects are outside this slice. The item-format migration covers all categories, including medium/heavy definitions, resources, and consumables. Use only the two specified muzzle-flash, tracer, and impact profiles below. Shield damage absorption remains in scope; shield-specific presentation does not. Existing out-of-scope weapon data does not authorize implementing its firing behavior.
+Heavy/medium weapon execution and additional playable weapon variants are outside this slice. The item-format migration covers all categories, including medium/heavy definitions, resources, and consumables. Use the two specified muzzle-flash, tracer, and weapon-impact profiles below, with independent generic shield-hit feedback as specified in [story 4](inc-04_weapons-firing-visuals.md). Additional shield-break effects remain outside scope. Existing out-of-scope weapon data does not authorize implementing its firing behavior.
 
 The design leaves a delivery boundary for future projectiles. Projectile motion, projectile replication, historical hit rewind, speculative local shooting, ammunition inventory items, new AI, loot-on-death, despawn/respawn, and a general effect-execution framework are outside this slice. Existing projectile and damage-effect definitions are not evidence that those executors already work.
 
@@ -59,7 +59,7 @@ This document authorizes no implementation by itself. It records the agreed requ
 | Topic | Decision |
 | --- | --- |
 | Combat scope limit | Laser Mk1 and Vulcan Mk1 are the playable combat slice. This limit does not exclude any existing weapon from the schema and definition migration. |
-| Impact presentation | Use each weapon's specified existing impact for every hit, including shield-only hits; no separate shield effect or doubled overflow effect. |
+| Impact presentation | Every contact plays one impact selected by the weapon's `PresentationId`, including shield-only hits. An active shield independently adds one generic shield arc; shield break/overflow never duplicates the weapon impact. See [story 4](inc-04_weapons-firing-visuals.md). |
 | Initial weapons | `vulcan_mk1`: automatic physical SMG; `laser_mk1`: automatic laser pulses. Both use `DeliveryType: HitScan`. |
 | Item shape | Shared fields and typed subtype properties are authored at item level; remove the generic `Values` bag and the split `Weapon` metadata object. |
 | Item mass | `Mass` is explicitly required on every item, including consumables and resources. |
@@ -229,7 +229,7 @@ Presentation profiles reference these existing scenes:
 
 Audio paths at inspection are `assets/audio/sound_effects/shooting_smg_standard/shooting_smg_standard.wav` and `assets/audio/sound_effects/shooting_laser_standard/shooting_laser_standard.wav`. Resolve the existing audio; this work does not rename it.
 
-Use the listed impact scene for every contact, including shield-only, hull, world, and wreck hits. A shield-breaking hit produces one impact, not separate shield and hull effects. Misses produce no impact. Do not add shield-flash scenes, profiles, pools, or shield-dependent effect selection. Profile IDs/resources are prepared before session activation and included in compatibility inputs.
+Use the listed impact scene for every contact, including shield-only, hull, world, and wreck hits. Weapon presentation selects it from `PresentationId` without inspecting shield state. Independently, the target/shield supplies the authoritative shield-contact outcome for one generic pooled shield arc, without inspecting the weapon profile. A shield-breaking or overflow hit produces one weapon impact plus one arc when protection was active immediately before that hit's damage resolution; it never produces a second weapon impact. Misses produce neither impact nor arc. [Story 4](inc-04_weapons-firing-visuals.md) defines the drawing, lifetime, pooling, and the read-only shield-availability behavior before story 7 introduces damage. Profile IDs/resources are prepared before session activation and included in compatibility inputs.
 
 ### 4.4 Migration behavior
 
@@ -274,7 +274,7 @@ Scripts/
   VfxSystem/
     WeaponPresentationProfile.cs
     ShotPresentationController.cs
-    ...reusable muzzle, tracer, impact, and audio pools
+    ...reusable muzzle, tracer, weapon-impact, generic shield-arc, and audio pools
   NetworkSystem/
     ...weapon-state codec and shot-event codec
 ```
@@ -341,7 +341,7 @@ Run only on the authoritative physics path:
 4. Move all controlled live ships; update their authoritative transforms before any shot queries.
 5. In stable ship-identity and slot order, check eligibility/affordability, choose the prospective sequence/spread/muzzle, and prepare the collision query/result. Recheck affordability and commit supply, cadence, sequence, and accepted result exactly once after successful preparation. Store bounded accepted results. A ship alive at the start of this phase remains eligible for its already admitted attacks. If payment causes power loss, cancel that ship's active reloads immediately in this tick.
 6. Apply damage results in the same stable shot order; process death once. Already admitted shots still resolve, permitting trades. Shots geometrically intercepted by a target that dies earlier in this phase do not retarget through it.
-7. Finalize hit/miss presentation results and authoritative death state from applied damage; shield absorption does not select a different effect. Refresh each affected controller's cached movement configuration after combat energy/death changes; changing runtime revisions alone does not update the movement snapshot cache. Finalize revisions/change notifications and completed tick. At even ticks publish current resources, weapon state, and cosmetic shot batches.
+7. Finalize hit/miss presentation results, the independent shield-contact result, and authoritative death state. Preserve collision hit/miss independently of damage amounts; for shield contact, use the target's `ShieldProtectionAvailable` captured at each hit's turn in the stable damage order before that hit mutates shields. Active protection adds generic shield feedback without requiring positive absorbed damage or changing the weapon impact. Refresh each affected controller's cached movement configuration after combat energy/death changes; changing runtime revisions alone does not update the movement snapshot cache. Finalize revisions/change notifications and completed tick. At even ticks publish current resources, weapon state, and cosmetic shot batches.
 
 A shot's origin is `ship.GlobalTransform * selectedLocalOffset`; its base direction is the authoritative ship's normalized `+X` axis after movement. Rotate this direction by host-selected spread and cast for `Range` measured from that muzzle. No mouse world position, client-supplied muzzle, client target, or damage value determines the hit.
 
@@ -407,7 +407,7 @@ Initially use bounded reliable absolute updates for correctness. Measure backlog
 
 ### 9.3 Shot events
 
-Each accepted shot produces a compact event containing session/tick, `ItemEntityId`, item shot sequence, firing entity/control generation, profile ID, muzzle index, authoritative origin/end point, impact normal, and a hit/miss result. The deduplication key is `(session, ItemEntityId, shotSequence)`: two identical equipped weapons may both emit sequence 1. The cosmetic event needs no shield/hull distinction; damage results remain authoritative gameplay state. Preserve item identity and profile data in the event so it can display even if the firing weapon has since been unequipped.
+Each accepted shot produces a compact event containing session/tick, `ItemEntityId`, item shot sequence, firing entity/control generation, profile ID, muzzle index, authoritative origin/end point, impact normal, a hit/miss result, and a shield-contact boolean. The deduplication key is `(session, ItemEntityId, shotSequence)`: two identical equipped weapons may both emit sequence 1. The target/shield supplies the shield-contact result at authoritative hit time: story 5 carries the read-only collision-time availability sample from story 4; story 7 captures protection availability at each hit's turn in the stable damage order before that hit mutates shields, independently of absorbed-damage amount. Clients render that result without rechecking current shield state. Weapon presentation consumes the hit result and profile; generic shield presentation consumes the independent shield-contact result without a weapon profile. Damage amounts remain authoritative gameplay state. Preserve item identity and profile data in the event so it can display even if the firing weapon has since been unequipped. Encode all fields through the predefined positional array/scalar schema and include the added boolean in codec ceilings and compatibility checks.
 
 Batch at 30 Hz using separate unreliable packets with a proposed 1,200-byte application-payload ceiling. Derive events-per-packet from the final codec, split batches, and test both ENet and GodotSteam MultiplayerPeer rather than assuming channel/MTU behavior. Use compact profile indices from the prepared compatible catalogue where useful; never serialize full definitions per shot.
 
@@ -423,9 +423,9 @@ Bump inspected protocol `11` to the next available version when wire formats cha
 
 ## 10. Pooled presentation and UI
 
-Preload profiles and instantiate bounded pools during session loading. Pools belong to the session, not static global registries. Reuse muzzle flashes, short moving tracer segments, the two specified impact effects, and a bounded audio voice pool. Connect completion signals once and reset all animation, transform, color, visibility, lifetime, and ownership state on reuse.
+Preload profiles and instantiate bounded pools during session loading. Pools belong to the session, not static global registries. Reuse muzzle flashes, short moving tracer segments, the two specified weapon-impact effects, a shared generic shield-arc pool, and a bounded audio voice pool. [Story 4](inc-04_weapons-firing-visuals.md) records the extracted historical capacities, timing, and revised layering contract. Connect completion signals once where used and reset all animation, transform, color, visibility, lifetime, and ownership state on reuse.
 
-An accepted hit applies damage immediately. Tracers are presentation only: they can travel from the recorded origin toward the endpoint during a short profile-defined lifetime, but collision/damage never waits for them. Muzzle flashes follow the displayed ship; tracers and impacts retain the recorded world path. Every hit uses exactly one instance of the weapon's specified impact at the contact point, including shield-only and overflow hits. There is no separate shield feedback.
+An accepted hit applies damage immediately once story 7 introduces damage. Tracers are presentation only: they can travel from the recorded origin toward the endpoint during a short profile-defined lifetime, but collision/damage never waits for them. Muzzle flashes follow the displayed ship; tracers, weapon impacts, and shield arcs retain the recorded world path/contact. Every hit uses exactly one instance of the weapon's specified impact at the contact point, including shield-only and overflow hits. An authoritative active-shield contact adds one generic arc at that same point, independently of the weapon profile. Each layer acquires from its own pool; exhaustion of either layer does not suppress the other or affect gameplay.
 
 Use expiry/animation completion and an array-backed active list instead of creating timers/tweens or closures per shot. Pool exhaustion drops a cosmetic effect or replaces the oldest low-priority instance, never suppresses damage. Bound/attenuate simultaneous audio voices instead of starting unlimited sounds.
 
@@ -469,7 +469,7 @@ Stories 1 and 2 are done. The complete shipped item catalogue, legacy weapon han
 | Death | One death result; health clamps; movement truly stops with prior velocity; no regeneration/firing/reload; wreck blocks; same-tick trades; later admitted hits do not retarget through newly dead victim. |
 | Groups | All four membership combinations; independent per-weapon toggles; placeholder cleanup; both loadout definitions initialize equipped weapons; saved membership survives restoration; unequip/fixture removal clears membership and entries; host changes converge on all players; stale requests rejected; each weapon fires once when both groups are held; UI/focus/recovery clear input. |
 | Networking | Malformed/oversize packets; wrong peer/session/generation/item; duplicate reload/group requests; delayed release and input expiry; reordered weapon state; complete baseline after items; recovery while reloading; no historical effects on join. |
-| Presentation | Events deduplicate without losing valid reordered shots; remote timeline alignment; specified muzzle/tracer/impact scenes for both weapons; shield-only and overflow each use one ordinary weapon impact; no shield-specific effect; misses have no impact; missing profile rejected at preparation; bounded exhaustion; pool reset/reuse and session disposal. |
+| Presentation | Events deduplicate without losing valid reordered shots; remote timeline alignment; specified muzzle/tracer/impact scenes for both weapons; every contact uses one profile-selected weapon impact; active-shield contacts independently add one generic arc; exact break/overflow never duplicate either layer; unavailable shields and later same-tick hits after depletion add no arc; clients use the recorded shield outcome despite newer shield state; misses have neither impact nor arc; missing profile rejected at preparation; independent bounded pool exhaustion; pool reset/reuse and session disposal. |
 | Performance | Ten players × nine weapons, synchronized bursts, 60/s supported ceiling, sustained impaired network, allocations/timing/backlog/pool evidence. |
 
 Extend existing `CommandQueueTests`, movement synchronization tests, `HealthSnapshotTests`, `ResourceSnapshotTests`, `JoinProtocolTests`, weapon-fixture replication tests, restoration tests, and resource/equipment tests where relevant. Use real Godot integration tests for query geometry and presentation lifecycle; pure tests cover scheduling and damage arithmetic.
@@ -488,7 +488,7 @@ No projectile entities, generic strategy registry, rewind history, or unused pro
 - [ ] Confirm current item/protocol versions before applying the planned increments.
 - [x] Complete story 1: typed item definitions for the full shipped catalogue and completed legacy weapon handling, with no parallel valid legacy paths.
 - [x] Complete story 2: required `weapon_fixture_points`, at least one finite coordinate pair, immutable ship data, and `ShipRuntime.WeaponFixturePoints` through construction and restoration.
-- [ ] Keep playable combat implementation limited to Laser Mk1 and Vulcan Mk1 hitscan and their specified effects; this limitation does not exempt other weapons from migration. Exclude separate shield impacts.
+- [ ] Keep playable combat implementation limited to Laser Mk1 and Vulcan Mk1 hitscan, their specified weapon effects, and the independent generic shield arc from story 4; this limitation does not exempt other weapons from migration. Exclude additional shield-break effects.
 - [ ] Implement agreed requirements and adopted defaults; do not reopen settled barrel/aim/overflow/reserve questions.
 - [ ] Keep one authoritative simulation owner and no combat side effects in prediction replay.
 - [ ] Include per-item state, readiness, recovery, restoration, and disposal in the implementation, not as later fixes.

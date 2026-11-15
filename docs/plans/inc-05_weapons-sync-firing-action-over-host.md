@@ -14,6 +14,7 @@ Participating players request firing through the host. All peers see host-confir
 - Extend existing 30 Hz input with two held-fire bits and configuration revision. Validate ownership/session/control generation; retain redundancy, expiry, and release-on-focus/UI behavior.
 - Host alone admits shots at 60 Hz and resolves hits. Clear held input on disconnect/unbind/recovery and require fresh released input after baseline/control transfer.
 - Implement bounded separate unreliable shot batches and deduplication keyed by session, item identity, and shot sequence. Use authoritative origins/endpoints and the epic ?9 event contract, timeline, late-event, and recovery-cutoff rules.
+- Carry the authoritative shield-contact boolean alongside the hit/miss result for the layered presentation in [story 4](inc-04_weapons-firing-visuals.md). The target/shield supplies the read-only collision-time protection-availability sample; story 7 moves that decision to each hit's turn in stable damage resolution, before shield mutation. Clients never recheck current shield state. Weapon presentation uses only the hit result and profile, while generic shield feedback consumes the shield-contact result without a weapon profile. Include the added scalar in codec bounds and compatibility validation.
 - Synchronize configuration and current cadence/sequence state needed for join, recovery, and restoration. Do not invent ammunition state before story 6.
 - Gate readiness on dependencies; do not replay old effects on joins or movement reconciliation. Use positional arrays/scalars and numeric references; bump protocol and verify codec ceilings.
 - Validate both ENet and GodotSteam MultiplayerPeer and record actual coverage. Pool exhaustion or event loss affects cosmetics only.
@@ -21,6 +22,7 @@ Participating players request firing through the host. All peers see host-confir
 ## Acceptance
 
 - Host and clients can fire either/both groups; every peer sees corresponding firing, streaks, and hit impacts under normal delivery.
+- Every contact plays one profile-selected weapon impact; active-shield contacts additionally play one generic shield arc. Verify this under delayed/reordered events and shield-state updates, with no duplicate layer on duplicate shot events and neither impact nor arc on misses.
 - Wrong-peer, stale binding/session, malformed, oversized, duplicate, and reordered messages are handled safely. Missing input expires without stuck firing.
 - Join/recovery/restoration gives current state without historical visual playback; packet loss permits missed cosmetics, never duplicate authoritative shots.
 - Measure five/ten players and up to nine weapons each, including synchronized bursts and bounded queues. No health damage or supply consumption occurs.
