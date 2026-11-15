@@ -60,5 +60,6 @@ public static class DevelopmentLoadout
                     inventory.Container.Revision, equipment.Container.Revision) != TransferResult.Success)
                 throw new InvalidOperationException("Could not equip development weapon: " + item.DefinitionId);
         }
+        equipment.ApplyWeaponGroupDefinition(["weapon_1", "weapon_3"], ["weapon_2"]);
     }
 }

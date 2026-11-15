@@ -179,8 +179,10 @@ public partial class UiCanvas : CanvasLayer
         _inventoryMenu?.BindHotbar(_hotbar, _playerHud.Hotbar);
     }
 
+    private NetworkManager? _weaponGroupRequests;
     internal void BindGameplay(NetworkManager? network)
     {
+        _weaponGroupRequests = network;
         if (network == null && _gameplayFeedback != null) _gameplayFeedback.Text = "";
         var panels = FindChildren("*", "", true, false);
         foreach (var panel in panels)
@@ -217,6 +219,7 @@ public partial class UiCanvas : CanvasLayer
         if (id != UiWindowId.InventoryMenu) return;
         _inventoryMenu = (InventoryMenu)window;
         _inventoryMenu.SetPointerOverlay(_itemPointerOverlay);
+        _inventoryMenu.WeaponGroupRequests = _weaponGroupRequests;
         if (_inventory != null && _equipment != null)
         {
             _inventoryMenu.Bind(_inventory, _equipment, _inventoryViewState);

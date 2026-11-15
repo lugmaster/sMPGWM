@@ -10,19 +10,15 @@ theme_override_constants/separation = -5
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Label"
-clip_text = true
 vertical_alignment = 1
+clip_text = true
 
 [node name="FirstButton" type="CheckButton" parent="." unique_id=2093310232]
-custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-size_flags_horizontal = 3
-text = "First"
+text = "
+"
 clip_text = true
 
 [node name="SecondButton" type="CheckButton" parent="." unique_id=2144323167]
-custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Second"
 clip_text = true

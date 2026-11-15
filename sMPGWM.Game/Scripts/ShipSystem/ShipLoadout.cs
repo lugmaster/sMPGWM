@@ -24,7 +24,7 @@ public sealed class ShipLoadout : IDisposable
         _sourceItems = new ItemEntityId?[Equipment.Definitions.Count];
         _sources = new StatContributionSource?[Equipment.Definitions.Count];
         _authoritative = authoritative;
-        Equipment.Container.PrepareChange = Prepare;
+        Equipment.PrepareLoadoutChange = Prepare;
         Equipment.Container.PublishDomainChange = Publish;
         ship.DefinitionChanged += DefinitionChanged;
         if (authoritative)

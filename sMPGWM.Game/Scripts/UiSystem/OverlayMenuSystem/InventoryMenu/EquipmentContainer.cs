@@ -16,6 +16,7 @@ namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 public partial class EquipmentContainer : TabContainer
 {
     private readonly List<ClickableIcon> _cells = new();
+    private readonly List<HBoxContainer> _weaponGroupRows = new();
     private GridContainer _shipSlots = null!;
     private ItemGrid _weaponSlots = null!;
     private ItemCellBinding[] _weaponBindings = Array.Empty<ItemCellBinding>();
@@ -29,6 +30,8 @@ public partial class EquipmentContainer : TabContainer
 
     public override void _Ready()
     {
+        var placeholder = GetNodeOrNull<Node>("Weapons/WeaponsGroupsContainer/WeaponEntryLabeledButtonPair");
+        if (placeholder != null) { placeholder.GetParent().RemoveChild(placeholder); placeholder.QueueFree(); }
         _shipSlots = GetNode<GridContainer>("Ship");
         _weaponSlots = GetNode<ItemGrid>("Weapons/Slots");
         var capacity = GetNode<Control>("Weapons/Capacity");
@@ -40,6 +43,47 @@ public partial class EquipmentContainer : TabContainer
         SetTabIcon(2, Icons.Travel.PersonPeopleThree.IconTexture);
         for (var index = 0; index < GetTabCount(); index++) SetTabIconMaxWidth(index, 14);
         TabChanged += OnTabChanged;
+    }
+
+    internal void RenderGroups(IReadOnlyList<EquipmentSlotDefinition> definitions, EquipmentSnapshot snapshot,
+        sMPGWM.Scripts.NetworkSystem.NetworkManager? network)
+    {
+        var container = GetNode<VBoxContainer>("Weapons/WeaponsGroupsContainer");
+        foreach (var row in _weaponGroupRows) { container.RemoveChild(row); row.QueueFree(); }
+        _weaponGroupRows.Clear();
+        var scene = GD.Load<PackedScene>("res://scenes/ui/base/labeled_button_pair.tscn");
+        for (var i = 0; i < definitions.Count; i++)
+        {
+            if (!definitions[i].IsWeaponSlot || snapshot.Slots[i] is not { } item) continue;
+            if (!snapshot.WeaponGroups.TryGetBinding(i, item.Id, out var membership)) continue;
+            var slot = i;
+            var row = scene.Instantiate<HBoxContainer>();
+            container.AddChild(row);
+            _weaponGroupRows.Add(row);
+            row.GetNode<Label>("Label").Text = item.Definition.DisplayName;
+            var first = row.GetNode<CheckButton>("FirstButton");
+            var second = row.GetNode<CheckButton>("SecondButton");
+            first.SetPressedNoSignal(membership.Primary);
+            second.SetPressedNoSignal(membership.Secondary);
+            first.Disabled = second.Disabled = network == null || network.WeaponGroupRequestPending;
+            void Change(bool unused)
+            {
+                first.Disabled = second.Disabled = true;
+                var result = network!.RequestWeaponGroups(slot, checked((long)item.Id.Value), snapshot.Revision, first.ButtonPressed, second.ButtonPressed);
+                if (result != TransferResult.Pending && IsInstanceValid(row))
+                {
+                    first.Disabled = second.Disabled = false;
+                    if (result is not (TransferResult.Success or TransferResult.NoChange))
+                    {
+                        first.SetPressedNoSignal(membership.Primary);
+                        second.SetPressedNoSignal(membership.Secondary);
+                        row.TooltipText = "Weapon groups rejected: " + result;
+                    }
+                }
+            }
+            first.Toggled += Change;
+            second.Toggled += Change;
+        }
     }
 
     private void OnTabChanged(long index)

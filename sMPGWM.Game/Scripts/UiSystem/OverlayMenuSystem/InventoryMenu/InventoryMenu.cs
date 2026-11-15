@@ -4,10 +4,10 @@ using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar;
+using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem;
 using sMPGWM.Scripts.UiSystem.HudSystem.Hotbar;
 using sMPGWM.Scripts.UiSystem.Items;
-using sMPGWM.Scripts.UtilitySystem.UiComponents;
 using ClickableIcon = sMPGWM.Scripts.UtilitySystem.UiComponents.ClickableIcon;
 using GameOverlayMenu = sMPGWM.Scripts.UtilitySystem.UiComponents.GameOverlayMenu;
 
@@ -15,6 +15,7 @@ namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem.InventoryMenu;
 
 public partial class InventoryMenu : GameOverlayMenu
 {
+    internal NetworkManager? WeaponGroupRequests;
     protected override string ScreenTitle => "InventoryMenu";
     private readonly HashSet<ClickableIcon> _cells = new();
     private IInventoryView? _inventory;
@@ -116,12 +117,16 @@ public partial class InventoryMenu : GameOverlayMenu
         _inventoryView.ViewChanged += RefreshView;
         _inventory!.Changed += RefreshInventory;
         _equipment!.Changed += RefreshEquipment;
+        if (WeaponGroupRequests != null) WeaponGroupRequests.WeaponGroupRequestFinished += RefreshGroups;
         RefreshInventory(_inventory.Snapshot);
         RefreshEquipment(_equipment.Snapshot);
     }
 
+    private void RefreshGroups() { if (_equipment != null) RefreshEquipment(_equipment.Snapshot); }
+
     internal void Unbind()
     {
+        if (WeaponGroupRequests != null) WeaponGroupRequests.WeaponGroupRequestFinished -= RefreshGroups;
         DismissTooltips();
         SetInteraction(null, 0UL);
         if (_hotbar != null) _hotbar.Changed -= OnViewChanging;
@@ -171,7 +176,7 @@ public partial class InventoryMenu : GameOverlayMenu
 
     public override void _ExitTree() { Unbind(); base._ExitTree(); }
     private void RefreshInventory(InventorySnapshot snapshot) { OnViewChanging(); _inventoryView.Render(snapshot, _visuals); }
-    private void RefreshEquipment(EquipmentSnapshot snapshot) { OnViewChanging(); _equipmentView.Render(_equipment!.Definitions, snapshot, _visuals); }
+    private void RefreshEquipment(EquipmentSnapshot snapshot) { OnViewChanging(); _equipmentView.Render(_equipment!.Definitions, snapshot, _visuals); _equipmentView.RenderGroups(_equipment.Definitions, snapshot, WeaponGroupRequests); }
     private void RefreshView() => RefreshInventory(_inventory!.Snapshot);
     private void OnViewChanging() { _mappingVersion++; CancelInteraction(); }
 

@@ -23,7 +23,7 @@ public partial class GameWorld
         foreach (var ship in _entities.Values)
             ships[index++] = new RestoredShipState(new EntitySpawnRecord(ship.EntityId, ship.Data.Name,
                 ship.GlobalPosition, ship.GlobalRotation, ship.Velocity), Items.Capture(ship.Equipment.Container),
-                ship.Runtime.CaptureState(), ship.CaptureMovementState());
+                ship.Runtime.CaptureState(), ship.CaptureMovementState()) { WeaponGroups = ship.Equipment.Snapshot.WeaponGroups };
         var players = new RestoredPlayerState[_controllers.Count];
         index = 0;
         foreach (var owner in _controllers.Values)
@@ -61,6 +61,7 @@ public partial class GameWorld
         var players = new Dictionary<int, PlayerSession>(bindings.Length);
         var records = new Dictionary<int, ShipSpawnRecord>(bindings.Length);
         var containers = new ItemContainerRestoration[entities.Length + bindings.Length];
+        var installGroups = new Action[entities.Length];
         try
         {
             for (var i = 0; i < entities.Length; i++)
@@ -69,7 +70,11 @@ public partial class GameWorld
                 var ship = ShipFactory.Create(GameplayDefinitions.Current.Ships.GetById(record.ShipId), record.EntityId,
                     record.Position, record.Rotation, record.Velocity, store, true);
                 ships.Add(record.EntityId, ship);
-                containers[i] = new ItemContainerRestoration(ship.Equipment.Container, state.Ships[i].Equipment);
+                var saved = state.Ships[i];
+                containers[i] = new ItemContainerRestoration(ship.Equipment.Container, saved.Equipment);
+                var slots = new ItemEntity?[saved.Equipment.Slots.Count];
+                for (var slot = 0; slot < slots.Length; slot++) slots[slot] = saved.Equipment.Slots[slot];
+                installGroups[i] = ship.Equipment.PrepareWeaponGroupConfirmation(slots, saved.Equipment.Revision, saved.WeaponGroups);
             }
             for (var i = 0; i < bindings.Length; i++)
             {
@@ -84,7 +89,7 @@ public partial class GameWorld
                     records.Add(binding.Peer, new ShipSpawnRecord(binding.Peer, ship.EntityId, ship.Data.Name,
                         ship.Position, ship.Rotation, ship.Velocity));
             }
-            store.Restore(containers);
+            store.Restore(containers, () => { foreach (var install in installGroups) install(); });
             foreach (var saved in state.Ships)
             {
                 var ship = ships[saved.Entity.EntityId];

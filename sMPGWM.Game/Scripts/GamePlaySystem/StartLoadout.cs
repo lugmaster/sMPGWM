@@ -31,6 +31,7 @@ public static class StartLoadout
         var store = loadout.Store;
         var equipment = loadout.Equipment;
         if (!ReferenceEquals(store, inventory.Items)) throw new ArgumentException("Starter inventory belongs to a different store.");
+        var equippedAny = false;
         for (var pass = 0; pass < 2; pass++)
         {
             for (var index = 0; index < equipment.Definitions.Count; index++)
@@ -39,6 +40,7 @@ public static class StartLoadout
                 if (slot.IsWeaponSlot != (pass == 1) || equipment.Container.Entities[index] != null) continue;
                 var definition = GetStarterItem(slot);
                 if (definition == null) continue;
+                equippedAny = true;
                 var sourceIndex = Find(inventory.Container, definition);
                 if (sourceIndex < 0)
                 {
@@ -52,6 +54,7 @@ public static class StartLoadout
                     throw new InvalidOperationException("Could not equip starter item: " + definition);
             }
         }
+        if (equippedAny) equipment.ApplyWeaponGroupDefinition(["weapon_1"], []);
     }
 
     private static string? GetStarterItem(EquipmentSlotDefinition slot) => slot.Key switch

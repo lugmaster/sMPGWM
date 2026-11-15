@@ -1,6 +1,6 @@
 # Weapons | Equipment Groups
 
-Status: planned; no implementation authorized by this document.  
+Status: implemented; automated regression checks passed; live multiplayer and visual acceptance verification pending.
 Epic: [Hitscan combat and weapon systems](hitscan-combat-and-weapon-systems.md)  
 Story: 3 of 7  
 Dependencies: Story 1.
@@ -61,3 +61,11 @@ Input mapping and key bindings, trigger execution, firing visuals, ammunition/re
 ## Verification
 
 Verify the acceptance criteria and relevant regressions. Mark test-support code according to `AGENTS.md` and record results and limitations here.
+
+### Implementation verification (2026-11-15)
+
+- Implemented independent membership as an immutable `WeaponGroupConfiguration` owned by the equipment controller within the ship loadout. Its compact bindings contain only equipped weapons and identify both slot and item identity. `ItemEntity`, inventory storage, and generic item wire rows contain no weapon-group state. Configuration changes share the equipment revision and commit before publication; capture/restoration carries the configuration explicitly in `RestoredShipState`.
+- Equipment rows instantiate `labeled_button_pair.tscn`, remove the placeholder, display accepted state, and disable controls during requests. Rejections use the existing item-feedback channel.
+- `dotnet test sMPGWM.sln --no-restore`: passed (574 top-level tests, including the headless Godot integration runner). Godot cases cover all four captured memberships, transactional cleanup/rollback, replacement defaults, independent identical weapons, stale/invalid configuration rejection, unchanged item object identity, separate three-field item wire rows, malformed configuration rollback, and full world capture/restoration. The original unequip reference-preservation assertion is retained.
+- `git diff --check`: passed. Existing `UiIcon.Size` compiler warning remains.
+- Limitations: no interactive UI inspection or live Steam multi-peer/rejoin exercise was performed. Dedicated transport duplicate/race and repeated-session UI tests remain to be added; these acceptance scenarios are not claimed as verified by the regression run. Optional performance scenarios were not run.

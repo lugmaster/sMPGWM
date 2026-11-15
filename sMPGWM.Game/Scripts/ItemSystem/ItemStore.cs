@@ -25,7 +25,10 @@ public sealed class ItemStore
     }
 
     /// <summary>Installs supplied identities into unpublished, empty containers as one authoritative transaction.</summary>
-    public void Restore(IReadOnlyList<ItemContainerRestoration> batch)
+    public void Restore(IReadOnlyList<ItemContainerRestoration> batch) => Restore(batch, null);
+
+    // Domain state must be prepared and validated before this call; installation must not fail or publish.
+    internal void Restore(IReadOnlyList<ItemContainerRestoration> batch, Action? installDomainState)
     {
         ArgumentNullException.ThrowIfNull(batch);
         if (Publishing) throw new InvalidOperationException("Cannot restore storage during publication.");
@@ -77,6 +80,7 @@ public sealed class ItemStore
         }
         transaction.Commit();
         foreach (var entry in entries) entry.Container.Revision = entry.State.Revision;
+        installDomainState?.Invoke();
         Publish(changes.Keys);
     }
 
@@ -234,7 +238,10 @@ public sealed class ItemStore
         Confirm(new[] { new ItemContainerConfirmation(inventory, inventorySlots, inventoryRevision),
             new ItemContainerConfirmation(equipment, equipmentSlots, equipmentRevision) });
 
-    internal bool Confirm(IReadOnlyList<ItemContainerConfirmation> batch)
+    internal bool Confirm(IReadOnlyList<ItemContainerConfirmation> batch) => Confirm(batch, null);
+
+    // Domain state must be prepared and validated before this call; installation must not fail or publish.
+    internal bool Confirm(IReadOnlyList<ItemContainerConfirmation> batch, Action? installDomainState)
     {
         if (Publishing || batch.Count == 0 || batch.Count > 32) return false;
         var changes = new Dictionary<ItemContainer, ItemEntity?[]>();
@@ -252,6 +259,7 @@ public sealed class ItemStore
         catch (OverflowException) { return false; }
         transaction.Commit();
         foreach (var entry in batch) entry.Container.Revision = entry.Revision;
+        installDomainState?.Invoke();
         Publish(changes.Keys);
         return true;
     }
