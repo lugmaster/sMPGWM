@@ -72,6 +72,7 @@ public partial class NetworkManager
         if (!IsHost() || tick % 2 != 0) return;
         PublishWorldTopology();
         PublishItemChanges();
+        PublishWeaponStates(tick);
         foreach (var ship in World.Entities.Values)
             if (!_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var revision) || revision != ship.Runtime.Revision)
                 _gameplayDirty = true;

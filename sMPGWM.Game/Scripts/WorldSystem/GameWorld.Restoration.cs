@@ -11,6 +11,14 @@ namespace sMPGWM.Scripts.WorldSystem;
 
 public partial class GameWorld
 {
+    private static void ValidateWeaponContinuity(ItemContainerState container, long completedTick)
+    {
+        foreach (var item in container.Slots)
+            if (item != null && ((item.Definition is WeaponItemDefinition) != (item.WeaponState != null) ||
+                item.WeaponState is { } cadence && cadence.LastAcceptedTick > completedTick))
+                throw new ArgumentException("Restored weapon state does not match its item or completed tick.");
+    }
+
     private RestoredWorldState? _restoredState;
     public bool IsRestored => _restoredState != null;
     public long InitialCompletedTick { get; private set; }
@@ -52,8 +60,12 @@ public partial class GameWorld
         }
         var bindings = new ParticipantBinding[state.Players.Count];
         for (var i = 0; i < bindings.Length; i++)
+        {
             bindings[i] = (state.Players[i] ?? throw new ArgumentException("Missing restored participant.")).Binding
                 ?? throw new ArgumentException("Missing restored ownership binding.");
+            ValidateWeaponContinuity(state.Players[i].Inventory, state.CompletedTick);
+        }
+        foreach (var saved in state.Ships) ValidateWeaponContinuity(saved.Equipment, state.CompletedTick);
         if (!new WorldTopology(bindings, entities).IsValid()) throw new ArgumentException("Invalid restored world topology.");
 
         var store = new ItemStore();

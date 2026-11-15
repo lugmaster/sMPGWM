@@ -57,7 +57,7 @@ public sealed class ItemStore
                 if (item.Id.Value == 0 || item.Id.Value >= long.MaxValue || !restoredIds.Add(item.Id.Value) ||
                     !GameplayDefinitions.Current.Items.TryGetById(item.DefinitionId, out var definition))
                     throw new ArgumentException("Invalid, duplicate, or unknown restored item identity/definition.", nameof(batch));
-                slots[slot] = new ItemEntity(item.Id, definition, item.Count);
+                slots[slot] = new ItemEntity(item.Id, definition, item.Count) { WeaponState = item.WeaponState?.Capture() };
                 maximumId = Math.Max(maximumId, item.Id.Value);
             }
             if (!Valid(container, slots) || !changes.TryAdd(container, slots))

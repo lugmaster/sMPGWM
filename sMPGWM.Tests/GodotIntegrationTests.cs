@@ -27,6 +27,9 @@ public class GodotIntegrationTests
             Copy(Path.Combine(game, "config/config.cfg"), Path.Combine(staging, "config/config.cfg"));
             Copy(Path.Combine(game, "scenes/game/ui_canvas.tscn"), Path.Combine(staging, "scenes/game/ui_canvas.tscn"));
             CopyTree(Path.Combine(game, "assets/world"), Path.Combine(staging, "assets/world"));
+            CopyTree(Path.Combine(game, "scenes/vfx"), Path.Combine(staging, "scenes/vfx"));
+            CopyTree(Path.Combine(game, "assets/vfx"), Path.Combine(staging, "assets/vfx"));
+            CopyTree(Path.Combine(game, "assets/audio/sound_effects"), Path.Combine(staging, "assets/audio/sound_effects"));
             CopyTree(Path.Combine(game, ".godot/imported"), Path.Combine(staging, ".godot/imported"));
             CopyTree(Path.Combine(game, "assets/mocks"), Path.Combine(staging, "assets/mocks"));
             File.WriteAllText(Path.Combine(staging, "project.godot"), """

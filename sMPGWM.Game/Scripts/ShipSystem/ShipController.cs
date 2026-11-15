@@ -20,6 +20,8 @@ public partial class ShipController : CharacterBody2D
     public EquipmentController Equipment => Loadout.Equipment;
     public ResolvedShipStats Stats => Runtime.Stats;
     public ShipResources Resources => Runtime.Resources;
+    private WeaponSystem.ShipWeaponController? _weapons;
+    public WeaponSystem.ShipWeaponController Weapons => _weapons ??= new(this);
 
     public void ConfigureLoadout(ItemStore store, bool authoritative)
     {

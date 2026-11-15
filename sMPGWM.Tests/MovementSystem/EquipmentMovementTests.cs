@@ -24,7 +24,7 @@ public class EquipmentMovementTests
             samples[i] = new(i + 1, Guid.NewGuid().ToString("N"), 1, 0, new Vector2(i, i), .5f,
                 Vector2.One, default, 20, 0, 7, new(350, 600, 3, 2, 4, 9, i % 2 == 0));
         var bytes = MovementWire.Snapshot(Guid.NewGuid(), 20, samples);
-        Assert.That(bytes.Length, Is.EqualTo(1135));
+        Assert.That(bytes.Length, Is.EqualTo(1225));
         Assert.That(bytes.Length, Is.LessThanOrEqualTo(MovementWire.MaxBytes));
         Assert.That(MovementWire.ReadSnapshot(bytes, out _, out _, out var decoded), Is.True);
         Assert.That(decoded, Is.EqualTo(samples));

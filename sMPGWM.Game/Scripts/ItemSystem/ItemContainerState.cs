@@ -19,7 +19,9 @@ public sealed class ItemContainerState
         Revision = revision;
         GrowthChunk = growthChunk;
         var copy = new ItemEntity?[slots.Count];
-        for (var i = 0; i < copy.Length; i++) copy[i] = slots[i];
+        for (var i = 0; i < copy.Length; i++)
+            if (slots[i] is { } item)
+                copy[i] = new ItemEntity(item.Id, item.Definition, item.Count) { WeaponState = item.WeaponState?.Capture() };
         Slots = Array.AsReadOnly(copy);
     }
 }

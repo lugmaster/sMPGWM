@@ -229,6 +229,7 @@ public partial class NetworkManager
 
     private void RemovePlayerItems(int peer)
     {
+        _publishedWeaponStateTicks.Remove(peer);
         _groupOutcomes.Clear();
         _groupPublished.Clear();
         _itemRequests.Remove(peer);

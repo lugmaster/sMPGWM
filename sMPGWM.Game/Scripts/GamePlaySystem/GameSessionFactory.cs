@@ -20,6 +20,8 @@ internal static class GameSessionFactory
     public static GameSession Create(SessionScope scope, Node parent, UiCanvas canvas, Node world,
         NetworkStartupData startup, SessionCoordinator coordinator)
     {
+        foreach (var definition in GameplayDefinitions.Current.Items.All)
+            WeaponSystem.ShipWeaponController.ValidateDefinition(definition);
         if (startup.RestoredWorld is { } supplied)
         {
             if (startup.Role != NetworkRole.Host || supplied.Players.Count > startup.MaxPlayers)
@@ -76,6 +78,18 @@ internal static class GameSessionFactory
         participants.AddChild(new ParallaxMotion { Name = nameof(ParallaxMotion) });
         world.AddChild(participants);
         var network = new NetworkManager { Name = nameof(NetworkManager), Startup = startup, World = participants, Abilities = abilities, Simulation = scope.Own(new GameplaySimulation(participants, abilities)) };
+        var effects = new VfxSystem.ShotPresentationController { Name = "WeaponEffects" };
+        scope.Defer(() => ReleaseNode(effects));
+        world.AddChild(effects);
+        effects.Initialize();
+        scope.Defer(() => effects.Clear(long.MaxValue));
+        var weaponPresentation = new VfxSystem.WeaponPresentationBinding { Name = "WeaponPresentation" };
+        scope.Defer(() => ReleaseNode(weaponPresentation));
+        world.AddChild(weaponPresentation);
+        weaponPresentation.Initialize(network, effects);
+        network.Simulation.Weapons.Session = () => network.Synchronization?.Session ?? Guid.Empty;
+        network.Simulation.Weapons.EntityIndex = network.GetWeaponEntityIndex;
+        network.Simulation.Weapons.Accepted = network.StageShot;
         scope.Defer(() => ReleaseNode(network));
         scope.Defer(network.StopSession);
         var synchronization = new SynchronizationCoordinator

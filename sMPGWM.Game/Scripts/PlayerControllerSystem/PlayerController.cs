@@ -116,7 +116,8 @@ public partial class PlayerController : Node
         {
             var aim = _ship.GetGlobalMousePosition() - _ship.GlobalPosition;
             _ship.SetInput(new(Input.Direction, aim.Angle(), Input.RotateShipButtonPressed && aim.LengthSquared() > 0,
-                Input.AfterBurnerPressed, Input.BreakPressed, Input.AutoBreakingEnabled));
+                Input.AfterBurnerPressed, Input.BreakPressed, Input.AutoBreakingEnabled,
+                (byte)((Input.PrimaryFirePressed ? 1 : 0) | (Input.SecondaryFirePressed ? 2 : 0)), _ship.Equipment.Revision));
         }
         else
         {
@@ -126,6 +127,12 @@ public partial class PlayerController : Node
 
     }
     public void UsePredictionCamera(bool enabled) => _camera.PositionSmoothingEnabled = !enabled;
+    public void ResetFireInput()
+    {
+        Input.SetGameplayInputEnabled(false);
+        _ship?.ClearInput();
+        ApplyAvailability(InputPolicy.CanControlPlayer);
+    }
     public void SetSessionActive(bool active)
     {
         _active = active;

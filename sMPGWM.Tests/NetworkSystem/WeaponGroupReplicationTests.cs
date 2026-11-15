@@ -7,6 +7,31 @@ namespace sMPGWM.Tests.NetworkSystem;
 [Category("Godot")]
 public sealed class WeaponGroupReplicationTests
 {
+    [Test]
+    public void OwnerBaselineRestoresCadenceWithoutChangingEquipmentRevisionAndRejectsMalformedStateAtomically()
+    {
+        using var host = new ShipItemTestContext();
+        using var client = new ShipItemTestContext();
+        Equip(host, "mock_standard_weapon_fixture", "weapon_fixture");
+        var weapon = Equip(host, "vulcan_mk1", "weapon_1");
+        var slot = host.Equipment.FindSlot("weapon_1");
+        using var initial = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(initial, client.Player), Is.True);
+        var revision = host.Equipment.Revision;
+        Assert.That(weapon.WeaponState!.TryAccept(100, 15, true), Is.True);
+        using var updated = ItemSnapshotCodec.Encode(host.Player);
+        Assert.That(ItemSnapshotCodec.Apply(updated, client.Player), Is.True);
+        var replica = client.Equipment.Snapshot.Slots[slot]!.WeaponState!;
+        Assert.That(replica.Sequence, Is.EqualTo(1));
+        Assert.That(replica.NextEligibleTick, Is.EqualTo(104));
+        Assert.That(replica.LastAcceptedTick, Is.EqualTo(100));
+        Assert.That(client.Equipment.Revision, Is.EqualTo(revision));
+        using var malformed = ItemSnapshotCodec.Encode(host.Player);
+        malformed[8].AsGodotArray()[slot].AsGodotArray()[3] = double.NaN;
+        Assert.That(ItemSnapshotCodec.Apply(malformed, client.Player), Is.False);
+        Assert.That(client.Equipment.Snapshot.Slots[slot]!.WeaponState, Is.SameAs(replica));
+    }
+
     [TestCase(false, false)]
     [TestCase(false, true)]
     [TestCase(true, false)]
@@ -119,7 +144,7 @@ public sealed class WeaponGroupReplicationTests
         foreach (var value in rows)
         {
             var row = value.AsGodotArray();
-            Assert.That(row.Count, Is.AnyOf(0, 3));
+            Assert.That(row.Count, Is.AnyOf(0, 6));
         }
     }
 

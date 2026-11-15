@@ -192,6 +192,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
                 RejectJoin(peer, "Initial spawn send failed.");
                 return;
             }
+            if (RpcId(peer, nameof(ReceiveWeaponEntityMap), Synchronization!.Session.ToString("N"), WeaponEntityMap()) != Error.Ok)
+            { RejectJoin(peer, "Weapon topology send failed."); return; }
             if (!SendItems(peer)) return;
             if (!_joins.Advance(peer, PeerJoinPhase.Verified, PeerJoinPhase.Spawning, Time.GetTicksMsec()))
             {
@@ -274,7 +276,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (!IsHostMessage() || Synchronization == null || session != Synchronization.Session.ToString("N") ||
             World.LocalPlayer?.Participant is not { } owner || entity != owner.ControlledShip?.EntityId ||
-            generation != owner.ControlGeneration || !_hasItemBaseline || !_clientJoin.Complete(Time.GetTicksMsec())) return;
+            generation != owner.ControlGeneration || !_hasItemBaseline || !_hasWeaponMap || !_clientJoin.Complete(Time.GetTicksMsec())) return;
         _heartbeat!.ActivateClient();
         Logger.Info("NET local spawn complete; entering game");
         SessionReady?.Invoke();
@@ -344,7 +346,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     private void AnnounceMembership(int peer, bool joined, string reason)
     {
         foreach (var other in _joins.Snapshot())
-            if (other.Key != peer && other.Value.Phase == PeerJoinPhase.Ready)
+            if (other.Key != peer && other.Value.Phase == PeerJoinPhase.Ready && CanSendToPeer(other.Key))
                 RpcId(other.Key, nameof(ReceiveMembership), peer, joined, reason);
     }
 
@@ -365,8 +367,9 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _gameplayDirty = true;
         var payload = topology.ToVariant();
         foreach (var (peer, join) in _joins.Snapshot())
-            if (join.ReceivesWorld)
+            if (join.ReceivesWorld && CanSendToPeer(peer))
                 RpcId(peer, nameof(ReceiveWorldTopology), Synchronization!.Session.ToString("N"), payload);
+        PublishWeaponEntityMap();
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveWorldTopology(string session, Godot.Collections.Array payload)
@@ -389,6 +392,9 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     }
 
     public bool MovementReady(int peer) => peer == 1 || _joins.Is(peer, PeerJoinPhase.Ready);
+
+    private bool CanSendToPeer(int peer) => Multiplayer.MultiplayerPeer is not ENetMultiplayerPeer enet ||
+        enet.GetPeer(peer)?.GetState() == ENetPacketPeer.PeerState.Connected;
 
     public void PublishMovement(byte[] payload)
     {
@@ -443,7 +449,9 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (IsHost() && session == Synchronization!.Session.ToString("N") && MovementReady(peer) && request > 0 && AllowRequest(_baselineRequests, peer, 500))
         {
             PublishWorldTopology();
-            Synchronization!.ResetCommands(peer);
+            Synchronization!.ResetCommandsForRecovery(peer);
+            if (!SendItems(peer)) return;
+            RpcId(peer, nameof(ReceiveWeaponEntityMap), Synchronization.Session.ToString("N"), WeaponEntityMap());
             RpcId(peer, nameof(ReceiveBaseline), request, Synchronization.Baseline());
         }
     }
@@ -464,6 +472,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         if (_stopped) return;
         _stopped = true;
         ClearGameplay();
+        ClearWeapons();
         ClearItems();
         Synchronization?.Stop();
         _baselineRequests.Clear(); _timingRequests.Clear();

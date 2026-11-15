@@ -52,6 +52,8 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
     private string _restoreEntity = ""; // TEST-SUPPORT: PERF-WORKLOAD-0045 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private RestoredWorldState? _restored; // TEST-SUPPORT: PERF-WORKLOAD-0046 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private NetworkManager? _boundNetwork; // TEST-SUPPORT: PERF-WORKLOAD-0047 | Tests: sMPGWM.Tests.PerformanceProcessTests
+    private long _receivedShots; // TEST-SUPPORT: PERF-FIRE-001 | Tests: sMPGWM.Tests.PerformanceProcessTests
+    private long _acceptedShots; // TEST-SUPPORT: PERF-FIRE-002 | Tests: sMPGWM.Tests.PerformanceProcessTests
 
     public override void _Ready() // TEST-SUPPORT: PERF-WORKLOAD-0048 | Tests: sMPGWM.Tests.PerformanceProcessTests
     { // TEST-SUPPORT: PERF-WORKLOAD-0049 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -97,6 +99,7 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
                 _lastPosition = ship.GlobalPosition; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-5 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 network.AbilityFeedback += AbilityResult; // TEST-SUPPORT: PERF-WORKLOAD-0086 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 network.ItemFeedback += ItemResult; // TEST-SUPPORT: PERF-WORKLOAD-0087 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                network.ShotReceived += (_, _, _) => _receivedShots++; // TEST-SUPPORT: PERF-FIRE-003 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 _focus.SetValue(null, FocusedValue); // TEST-SUPPORT: PERF-WORKLOAD-0088 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 _activeSeen = true; // TEST-SUPPORT: PERF-WORKLOAD-0089 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 if (_firstActive < 0) _firstActive = elapsed; // TEST-SUPPORT: PERF-WORKLOAD-0090 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -128,6 +131,20 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
                 return; // TEST-SUPPORT: PERF-WORKLOAD-0114 | Tests: sMPGWM.Tests.PerformanceProcessTests
             } // TEST-SUPPORT: PERF-WORKLOAD-0115 | Tests: sMPGWM.Tests.PerformanceProcessTests
             var phaseTime = elapsed + _offset; // TEST-SUPPORT: PERF-WORKLOAD-OFFSET-3 | Tests: sMPGWM.Tests.PerformanceProcessTests
+            if (_scenario == "firing") // TEST-SUPPORT: PERF-FIRE-004 | Tests: sMPGWM.Tests.PerformanceProcessTests
+            { // TEST-SUPPORT: PERF-FIRE-005 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                _acceptedShots = network.Simulation.Weapons.AcceptedCount; // TEST-SUPPORT: PERF-FIRE-006 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                if (elapsed - _firstActive > .5 && (elapsed + _offset) % 5 > .25) // TEST-SUPPORT: PERF-FIRE-007 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                { // TEST-SUPPORT: PERF-FIRE-008 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                    Input.ActionPress("PrimaryFire"); // TEST-SUPPORT: PERF-FIRE-009 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                    Input.ActionPress("SecondaryFire"); // TEST-SUPPORT: PERF-FIRE-010 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                } // TEST-SUPPORT: PERF-FIRE-011 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                else // TEST-SUPPORT: PERF-FIRE-012 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                { // TEST-SUPPORT: PERF-FIRE-013 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                    Input.ActionRelease("PrimaryFire"); // TEST-SUPPORT: PERF-FIRE-014 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                    Input.ActionRelease("SecondaryFire"); // TEST-SUPPORT: PERF-FIRE-015 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                } // TEST-SUPPORT: PERF-FIRE-016 | Tests: sMPGWM.Tests.PerformanceProcessTests
+            } // TEST-SUPPORT: PERF-FIRE-017 | Tests: sMPGWM.Tests.PerformanceProcessTests
             var phase = _scenario == "matrix" ? phaseTime < 210 ? "idle" : phaseTime < 420 ? "active" : "burst" : _scenario; // TEST-SUPPORT: PERF-WORKLOAD-0116 | Tests: sMPGWM.Tests.PerformanceProcessTests
             if (phase != _phase) // TEST-SUPPORT: PERF-WORKLOAD-0117 | Tests: sMPGWM.Tests.PerformanceProcessTests
             { // TEST-SUPPORT: PERF-WORKLOAD-0118 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -223,11 +240,14 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
         _finished = true; // TEST-SUPPORT: PERF-WORKLOAD-0203 | Tests: sMPGWM.Tests.PerformanceProcessTests
         Input.ActionRelease("Forwards"); // TEST-SUPPORT: PERF-WORKLOAD-0204 | Tests: sMPGWM.Tests.PerformanceProcessTests
         Input.ActionRelease("Backwards"); // TEST-SUPPORT: PERF-WORKLOAD-0205 | Tests: sMPGWM.Tests.PerformanceProcessTests
+        Input.ActionRelease("PrimaryFire"); // TEST-SUPPORT: PERF-FIRE-018 | Tests: sMPGWM.Tests.PerformanceProcessTests
+        Input.ActionRelease("SecondaryFire"); // TEST-SUPPORT: PERF-FIRE-019 | Tests: sMPGWM.Tests.PerformanceProcessTests
         PerformanceRecorder.Mark("finished"); // TEST-SUPPORT: PERF-WORKLOAD-0206 | Tests: sMPGWM.Tests.PerformanceProcessTests
         var activeStart = Math.Max(_firstActive, _scenario == "matrix" ? 210 - _offset : 0); // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-ACTIVE-START | Tests: sMPGWM.Tests.PerformanceProcessTests
         var verifyActivity = _scenario != "idle" && _seconds - activeStart >= 20; // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-ACTIVITY | Tests: sMPGWM.Tests.PerformanceProcessTests
         var success = _activeSeen && _maxPeers == _expectedPeers && GameFlowManager.Instance.GameFlowState == GameFlowState.InGame && // TEST-SUPPORT: PERF-WORKLOAD-0207 | Tests: sMPGWM.Tests.PerformanceProcessTests
             (!verifyActivity || _distance > 1 && _accepted > 0) && // TEST-SUPPORT: PERF-WORKLOAD-VERIFY-MOVEMENT-ABILITIES | Tests: sMPGWM.Tests.PerformanceProcessTests
+            (_scenario != "firing" || _receivedShots > 0 && (!_host || _acceptedShots > 0)) && // TEST-SUPPORT: PERF-FIRE-020 | Tests: sMPGWM.Tests.PerformanceProcessTests
             (!_host || _scenario != "restored" || _restoreVerified); // TEST-SUPPORT: PERF-WORKLOAD-0208 | Tests: sMPGWM.Tests.PerformanceProcessTests
         File.WriteAllText(Path.Combine(_output, "workload.json"), JsonConvert.SerializeObject(new // TEST-SUPPORT: PERF-WORKLOAD-0209 | Tests: sMPGWM.Tests.PerformanceProcessTests
         { // TEST-SUPPORT: PERF-WORKLOAD-0210 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -238,6 +258,9 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
             firstActiveSeconds = _firstActive, maxPeers = _maxPeers, acceptedAbilities = _accepted, // TEST-SUPPORT: PERF-WORKLOAD-0212 | Tests: sMPGWM.Tests.PerformanceProcessTests
             rejectedAbilities = _rejected, transferAttempts = _transferAttempts, staleAttempts = _staleAttempts, // TEST-SUPPORT: PERF-WORKLOAD-0213 | Tests: sMPGWM.Tests.PerformanceProcessTests
             itemRejections = _itemRejections, inventoryRevisionChanges = _inventoryChanges, // TEST-SUPPORT: PERF-WORKLOAD-0214 | Tests: sMPGWM.Tests.PerformanceProcessTests
+            acceptedShots = _acceptedShots, receivedShots = _receivedShots, // TEST-SUPPORT: PERF-FIRE-021 | Tests: sMPGWM.Tests.PerformanceProcessTests
+            shotBytesPublished = _boundNetwork?.ShotBytesPublished, shotStagingHighWater = _boundNetwork?.ShotStagingHighWater, shotStagingDrops = _boundNetwork?.ShotStagingDrops, // TEST-SUPPORT: PERF-FIRE-022 | Tests: sMPGWM.Tests.PerformanceProcessTests
+            pendingShotHighWater = _boundNetwork?.PendingShotHighWater, pendingShotDrops = _boundNetwork?.PendingShotDrops, // TEST-SUPPORT: PERF-FIRE-023 | Tests: sMPGWM.Tests.PerformanceProcessTests
             restored = _restoreVerified, dataChecksum = GameConfig.GameDataChecksum, configChecksum = GameConfig.ConfigDataChecksum // TEST-SUPPORT: PERF-WORKLOAD-0215 | Tests: sMPGWM.Tests.PerformanceProcessTests
         }, Formatting.Indented)); // TEST-SUPPORT: PERF-WORKLOAD-0216 | Tests: sMPGWM.Tests.PerformanceProcessTests
         PerformanceRecorder.Flush(_output); // TEST-SUPPORT: PERF-WORKLOAD-0217 | Tests: sMPGWM.Tests.PerformanceProcessTests

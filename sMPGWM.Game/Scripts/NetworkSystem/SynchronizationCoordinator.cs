@@ -23,6 +23,8 @@ public partial class SynchronizationCoordinator : Node
     public double Jitter => _clock.Jitter; // TEST-SUPPORT: NETWORK-METRICS-002 | Tests: sMPGWM.Tests.PerformanceProcessTests
     public int Lead => _clock.Lead;
     public double HostEstimate => _clock.HostEstimate;
+    public double PresentationTick => Network.IsHost() ? CompletedTick : _clock.PresentationTick;
+    public double WeaponLocalPresentationTick => Network.IsHost() ? CompletedTick : _clock.HostEstimate;
     private bool _active;
     private Func<int, bool>? _gameplayReady;
     private Action<int, long, AbilityActivationResult>? _abilityCompleted;
@@ -43,6 +45,7 @@ public partial class SynchronizationCoordinator : Node
         {
             Session = Guid.NewGuid();
             CompletedTick = World.InitialCompletedTick;
+            Network.ClearShotPresentation(Session, CompletedTick);
         }
         else if (!_client.HasBaseline) { Network.FailSession("Missing movement baseline."); return; }
         Player.UsePredictionCamera(!Network.IsHost());
@@ -111,7 +114,11 @@ public partial class SynchronizationCoordinator : Node
                 _abilityCompleted ??= Network.CompleteAbility);
             CompletedTick = tick;
             Network.PublishGameplay(tick);
-            if (tick % 2 == 0) Network.PublishMovement(Baseline());
+            if (tick % 2 == 0)
+            {
+                Network.PublishMovement(Baseline());
+                Network.PublishShots();
+            }
             return;
         }
         if (_client.NeedsRecovery()) Recover();
@@ -159,6 +166,8 @@ public partial class SynchronizationCoordinator : Node
                 !World.Players.TryGetValue(s.Peer, out var p) || p.ControlledShip?.EntityId != s.Entity ||
                 p.ControlGeneration != s.Generation)) return false;
             Session = session;
+            Network.ClearShotPresentation(session, tick);
+            Player.ResetFireInput();
             _client.ApplyBaseline(session, tick);
             _prediction.Reset(tick); _remote.Reset(tick); _clock.ClearProbes();
         }
@@ -184,6 +193,7 @@ public partial class SynchronizationCoordinator : Node
     public override void _Process(double delta)
     {
         if (!_active || Network.IsHost() || !_client.CanPresent) return;
+        Network.PresentShots(_clock.HostEstimate, _clock.PresentationTick);
         _remote.Render(delta, _clock.PresentationTick, World.Players);
         Player.Participant?.ControlledShip?.Presentation.RenderLocal(delta);
     }
@@ -193,6 +203,8 @@ public partial class SynchronizationCoordinator : Node
         if (!_client.BeginRecovery()) return;
         _prediction.Reset(PredictionTick); _remote.Reset(CompletedTick); _clock.ClearProbes();
         Player.Participant?.ControlledShip?.ClearInput();
+        Player.ResetFireInput();
+        Network.ClearShotPresentation(Session, CompletedTick);
         Network.RequestMovementBaseline(_client.Request);
     }
     public void BindingChanged(int peer)
@@ -206,7 +218,19 @@ public partial class SynchronizationCoordinator : Node
             if (_active) Recover();
         }
     }
-    public void ResetCommands(int peer) { _queues.Remove(peer); _bindings.Remove(peer); }
+    public void ResetCommands(int peer)
+    {
+        _queues.Remove(peer); _bindings.Remove(peer);
+        if (World.Players.TryGetValue(peer, out var owner)) owner.ControlledShip?.ClearInput();
+    }
+    public void ResetCommandsForRecovery(int peer)
+    {
+        ResetCommands(peer);
+        if (!World.Players.TryGetValue(peer, out var owner) || owner.ControlledShip is not { } ship) return;
+        _bindings[peer] = (ship.EntityId, owner.ControlGeneration);
+        // Previously issued commands may still be in flight anywhere inside the 32-tick admission window.
+        _queues[peer] = new CommandQueue(CompletedTick + 32);
+    }
     public void Stop()
     {
         _active = false; ProcessMode = ProcessModeEnum.Disabled; _client.Stop();

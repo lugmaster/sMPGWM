@@ -30,7 +30,8 @@ internal static class ItemSnapshotCodec
     {
         var rows = new Array();
         foreach (var item in slots)
-            rows.Add(item == null ? new Array() : new Array { checked((long)item.Id.Value), item.DefinitionId, item.Count });
+            rows.Add(item == null ? new Array() : new Array { checked((long)item.Id.Value), item.DefinitionId, item.Count,
+                item.WeaponState?.NextEligibleTick ?? 0, item.WeaponState?.Sequence ?? 0, item.WeaponState?.LastAcceptedTick ?? -1 });
         return rows;
     }
 
@@ -88,14 +89,24 @@ internal static class ItemSnapshotCodec
             if (rows[i].VariantType != Variant.Type.Array) return false;
             var row = rows[i].AsGodotArray();
             if (row.Count == 0) continue;
-            if (row.Count != 3 || row[0].VariantType != Variant.Type.Int || row[1].VariantType != Variant.Type.String ||
-                row[2].VariantType != Variant.Type.Int) return false;
+            if (row.Count != 6 || row[0].VariantType != Variant.Type.Int || row[1].VariantType != Variant.Type.String ||
+                row[2].VariantType != Variant.Type.Int || row[3].VariantType != Variant.Type.Float ||
+                row[4].VariantType != Variant.Type.Int || row[5].VariantType != Variant.Type.Int) return false;
             var id = row[0].AsInt64();
             var definitionId = row[1].AsString();
             var count = row[2].AsInt64();
             if (id <= 0 || !identities.Add(id) || definitionId.Length > 128 ||
                 !GameplayDefinitions.Current.Items.TryGetById(definitionId, out var definition) || count <= 0 || count > definition.StackLimit) return false;
             slots[i] = new(ItemEntityId.FromNetwork(id), definition, (int)count);
+            var next = row[3].AsDouble(); var sequence = row[4].AsInt64(); var last = row[5].AsInt64();
+            if (!double.IsFinite(next) || next < 0 || next > SnapshotEnvelope.MaxTick || sequence < 0 || sequence == long.MaxValue ||
+                last < -1 || last > SnapshotEnvelope.MaxTick || (sequence == 0 ? last != -1 : last < 0 || next <= last)) return false;
+            if (slots[i]!.WeaponState is { } state)
+            {
+                try { state.Restore(next, sequence, last); }
+                catch (System.ArgumentException) { return false; }
+            }
+            else if (next != 0 || sequence != 0 || last != -1) return false;
         }
         return true;
     }

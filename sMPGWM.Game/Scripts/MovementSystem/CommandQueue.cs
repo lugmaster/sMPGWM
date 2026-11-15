@@ -10,7 +10,11 @@ public sealed class CommandQueue
     private uint _occupied;
     private ShipInputState _last;
     private long _applied = -100;
+    private bool _fireArmed;
+    private readonly long _fireReleaseAfterTick;
     public long LatestArrival { get; private set; }
+
+    public CommandQueue(long fireReleaseAfterTick = -1) => _fireReleaseAfterTick = fireReleaseAfterTick;
 
     public bool Accept(MovementCommand c, long completed)
     {
@@ -35,12 +39,18 @@ public sealed class CommandQueue
         if ((_occupied & bit) != 0 && _pending[index].Tick == tick)
         {
             _last = _pending[index].Input;
+            if (_last.FireMask == 0 && tick > _fireReleaseAfterTick) _fireArmed = true;
+            if (!_fireArmed) _last = _last with { FireMask = 0 };
             _applied = tick;
             _occupied &= ~bit;
         }
         else
         {
-            if (tick - _applied > 6) _last = new(Vector2.Zero, 0, false, false, false, _last.AutomaticBraking);
+            if (tick - _applied > 6)
+            {
+                _fireArmed = false;
+                _last = new(Vector2.Zero, 0, false, false, false, _last.AutomaticBraking);
+            }
         }
         return _last;
     }

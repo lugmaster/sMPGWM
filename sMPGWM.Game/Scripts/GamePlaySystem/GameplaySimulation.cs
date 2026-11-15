@@ -24,10 +24,12 @@ public sealed class GameplaySimulation : IDisposable
     private bool _stepping;
     public AbilityCommandProcessor AbilityCommands { get; } = new();
     public long CompletedTick { get; private set; } = -1;
+    public WeaponSystem.WeaponSimulation Weapons { get; }
 
     public GameplaySimulation(GameWorld world, AbilityRuntime abilities)
     {
         _world = world;
+        Weapons = new(world);
         _abilities = abilities;
         _recordAbility = RecordAbility;
         if (world.IsRestored) CompletedTick = world.InitialCompletedTick;
@@ -81,6 +83,7 @@ public sealed class GameplaySimulation : IDisposable
                 ship.RefreshMovementConfiguration();
             }
             foreach (var player in _world.Players.Values) player.ControlledShip?.Simulate(1.0 / 60);
+            Weapons.Step(tick, ready);
             CompletedTick = tick;
             for (var i = 0; i < count; i++)
             {
@@ -118,6 +121,7 @@ public sealed class GameplaySimulation : IDisposable
         _transfers.Clear();
         Array.Clear(_completedTransfers);
         AbilityCommands.Clear();
+        Weapons.Dispose();
     }
 
     private readonly record struct PendingTransfer(int Peer, string Entity, long Generation,

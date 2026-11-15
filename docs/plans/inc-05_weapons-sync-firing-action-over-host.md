@@ -1,6 +1,6 @@
 # Weapons | Syncing Firing Action over Host
 
-Status: planned; no implementation authorized by this document.  
+Status: implemented together with story 4; verification evidence below.
 Epic: [Hitscan combat and weapon systems](hitscan-combat-and-weapon-systems.md)  
 Story: 5 of 7  
 Dependencies: Story 4; uses group authority from story 3.
@@ -75,3 +75,39 @@ Historical runtime tests and measurements are not evidence that this adaptation 
 ## Reference and verification
 
 The epic retains detailed end-state contracts. Implement only the scope above; later stories own their deferred behavior. Recheck current code and versions before implementation. Add focused verification for this story and preserve existing regressions. Follow repository test-support markers; record completed evidence and limitations here.
+
+## Implementation and verification (2026-11-15)
+
+Implemented together with story 4. The redundant input stream carries a two-bit held mask and equipment revision. Host-local and remote commands use the same queue and released-input arming. Authority/session/entity/control-generation checks remain in the existing command admission path; stale configuration cannot fire replacements. Expiry disarms firing. Recovery clears both visual layers globally and requires a released command beyond the previous 32-tick admission horizon, preventing delayed pre-baseline commands from rearming (up to approximately 550 ms of conservative rearming delay).
+
+Protocol is now 12. `ShotEventCodec` uses positional scalar binary fields and a reliable session-owned numeric entity map. Each event includes hit-time shield contact; clients never infer it from current resources. The complete batch validates before dispatch. Staging is 256 events, pending/missing-topology storage is 512, and deduplication retains 512 item identities with a 64-sequence reorder window and expiry. Events are presented on local/remote timelines with age checks; validated baselines establish the global cutoff. Owner cadence is included in item baselines and updated reliably without ammunition state. Packet buffers and cadence scratch storage are reused.
+
+Final encoded ceilings:
+
+| Payload | Maximum count | Encoded bytes | Limit |
+| --- | ---: | ---: | ---: |
+| Shot batch | 17 events | 1,139 | 1,200 |
+| Redundant input | 6 commands | 221 | 256 |
+| Movement snapshot | 10 ships | 1,225 | Existing 1,400 |
+
+Shots use a 17-byte header and 66-byte event. Muzzle indices are 32-bit integers, preserving the existing fixture schema rather than silently restricting it to 256 points. Tests cover exact ceilings, malformed/non-finite events, invalid flags/references, duplicate/reordered events, expired identity reuse, baseline cadence, and recovery arming.
+
+Actual normal-startup headless ENet runs used the existing performance harness with a new firing scenario that presses the real primary/secondary actions and asserts accepted host shots and delivered events on every peer. All processes in the five/ten-peer runs exited successfully. Nine-weapon runs modify only the staged fixture loadout and reactor output (the shipped reactor cannot continuously power nine Vulcans). The synthetic case also changes staged attack speed to 60/s. Shipped `config.cfg` and game data remain unchanged.
+
+| ENet workload | Host accepted shots | Staging high-water / drops | Shot bytes across recipients | Host tick p50 / p95 / p99 |
+| --- | ---: | --- | ---: | --- |
+| 5 peers, shipped development loadout | 1,367 | Bounded | Not recorded in first run | See raw recorder |
+| 10 peers, shipped development loadout | 2,426 | Bounded | Not recorded in first run | 0.769 / 1.521 / 1.899 ms |
+| 5 peers, nine Vulcans each | 10,197 | 36 / 0 | 2,520,166 | 0.367 / 0.717 / 0.936 ms |
+| 10 peers, nine Vulcans each | 18,036 | 63 / 0 | 9,963,132 | 0.806 / 1.781 / 2.716 ms |
+| 10 peers, nine synthetic 60/s weapons each | 71,505 | 180 / 0 | 39,425,581 | 1.070 / 2.418 / 2.993 ms |
+
+These are approximately 20-second Debug runs on one machine, not release performance certification. Tick statistics use seconds 10–18. Measured whole-step allocations were approximately 23,987 / 33,931 / 49,358 bytes per tick for the last three rows; these include existing simulation/network work and Godot query allocations. Publication median was approximately 33.34 ms; p99 was 43.57 / 46.50 / 34.52 ms. Synchronized synthetic presentation tests independently cover 90-shot bursts and bounded cosmetic overload; see story 4 for pool metrics and zero-allocation presentation measurements.
+
+Raw logs, workload assertions, CSVs, manifests, staged patches and configuration are retained locally under `docs/measurements/2026-11-15-weapons-enet*` (generated measurement directories are ignored by Git). The executable also launched normally to StartMenu with Steam initialization and exited successfully with `--headless --quit-after 180`.
+
+A five-peer impairment run with 20–60 ms delay in each direction and 1% packet loss also passed every process assertion/exit: 1,057 host admissions, 905 received events on the last client, pending high-water 14 and zero pending drops. The proxy dropped 52 client-to-host and 75 host-to-client packets, with no proxy errors. Missing effects under loss are cosmetic.
+
+Final `dotnet test sMPGWM.sln --no-restore --verbosity minimal` rebuilt the game/tests successfully and passed all 603 selected outer tests, including the Godot wrapper's 352 in-engine tests. The three explicit long-running tests are not selected by the normal suite; the firing performance scenarios above were executed separately. `git diff --check` passes.
+
+Coverage limitations: live multiplayer transport measurements are ENet only; Steam initialization is not a GodotSteam MultiplayerPeer transport test. No two-account Steam session, manual visual/artistic review, or prolonged release soak was performed. Simultaneous process teardown can still emit native ENet channel warnings and a resource-in-use exit warning; all workload assertions and process exits passed. Application-side sends to disconnected ENet peers are guarded. Existing unsupported ability diagnostics and the pre-existing `UiIcon.Size` build warning remain.

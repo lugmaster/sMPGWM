@@ -1,6 +1,6 @@
 # Weapons | Firing Visuals
 
-Status: planned; no implementation authorized by this document.  
+Status: implemented together with story 5; verification evidence below.
 Epic: [Hitscan combat and weapon systems](hitscan-combat-and-weapon-systems.md)  
 Story: 4 of 7  
 Dependencies: Stories 1, 2, and 3.
@@ -114,3 +114,33 @@ Remote firing and shot replication, supply mechanics, damage/death, additional s
 The epic retains detailed end-state contracts. Implement only the scope above; later stories own their deferred behavior. Recheck current code and versions before implementation. Add focused verification for this story and preserve existing regressions. Follow repository test-support markers; record completed evidence and limitations here.
 
 Planning update: extracted the reference implementation and checked the existing VFX scene frame counts/rates. This records the revised visual contract and implementation requirements only; no runtime implementation or new visual/performance verification has been completed by this update.
+
+## Implementation and verification (2026-11-15)
+
+Implemented `WeaponSimulation` after authoritative movement, item-owned `WeaponCadence`, prepared slot/group bindings, deterministic spread, transformed alternating fixture origins, nearest body hits, living-ally exclusions, inside-blocker hits, and read-only shield-contact capture. `ItemContainerState` captures independent cadence copies; transfers and restoration preserve deadlines and sequences. Executable definitions are validated before session creation. Unsupported medium/heavy weapons remain outside this slice. No damage, ammunition depletion, reload, or discrete energy cost was added.
+
+`ShotPresentationController` preloads the two authored profiles and instantiates session-owned free-index/active-array pools. It samples authored frame durations, retains world-space impacts/tracers/shield arcs, attaches muzzles to displayed ship fixtures, and independently drops exhausted cosmetics. Session cleanup stops audio and clears queued events and owner references. The shield remains the original radius-9 crescent with a 150 ms linear fade above the weapon impact.
+
+Selected capacities (ten players, nine weapons, rate times lifetime plus a synchronized burst):
+
+| Pool | SMG | Laser | Shared |
+| --- | ---: | ---: | ---: |
+| Muzzle | 192 | 128 | |
+| Tracer | 224 | 128 | |
+| Impact | 416 | 224 | |
+| Shield arc | | | 320 |
+| Audio voices | | | 24 |
+| Pending events / identity deduplication | | | 512 / 512 |
+
+Godot integration covers every contact/profile combination, complete clips, moving muzzle attachment, world-space contacts, late events, independent exhaustion, reuse, cutoff and cleanup. Real configured LMB/Q and remapped keyboard inputs in both binding slots are exercised through targeting/release-wait, interactive UI, menus, acknowledgement, focus and control transitions. Movement remains available during targeting.
+
+Synthetic presentation measurements over 120 ticks, with nine weapons per player:
+
+| Workload | Muzzle/tracer/impact/shield high-water | Visual drops | Update p95 |
+| --- | --- | --- | ---: |
+| 5 players, SMG 15/s | 45 / 90 / 180 / 135 | 0 | 0.365 ms |
+| 10 players, SMG 15/s | 90 / 180 / 360 / 270 | 0 | 0.757 ms |
+| 10 players, laser 3/s | 90 / 90 / 180 / 90 | 0 | 0.328 ms |
+| 10 players, synthetic 60/s | 192 / 224 / 416 / 320 | 3,120 / 5,424 / 7,056 / 6,370 respectively | 0.851 ms |
+
+All four loops measured zero managed allocation, pending high-water at most 90, and no queue or identity drops. These are headless synthetic update measurements, not GPU/render benchmarks. Audio is intentionally bounded and drops under synchronized stress; the synchronous synthetic clock does not advance real audio playback. Transport and actual game-run evidence is recorded in story 5. Manual artistic assessment of overlapping effects remains unperformed.
