@@ -15,7 +15,18 @@ public partial class SynchronizationCoordinator : Node
     public PlayerController Player { get; init; } = null!;
     public GameWorld World { get; init; } = null!;
     public NetworkManager Network { get; set; } = null!;
-    public Guid Session { get; private set; }
+    private Guid _session;
+    public Guid Session
+    {
+        get => _session;
+        private set
+        {
+            if (_session == value) return;
+            _session = value;
+            SessionWireIdentity = value.ToString("N");
+        }
+    }
+    public string SessionWireIdentity { get; private set; } = Guid.Empty.ToString("N");
     public long CompletedTick { get; private set; }
     public long PredictionTick => _prediction.Tick;
     // TEST-SUPPORT: NETWORK-METRICS-001
@@ -35,9 +46,9 @@ public partial class SynchronizationCoordinator : Node
     private readonly ClientSynchronizationState _client = new(Time.GetTicksMsec);
     private readonly LocalMovementPrediction _prediction = new();
     private readonly RemoteMovementPresentation _remote = new();
-    private readonly Dictionary<int, CommandQueue> _queues = new();
-    private readonly Dictionary<int, (string, long)> _bindings = new();
-    private readonly Dictionary<int, ulong> _traffic = new();
+    private readonly Dictionary<int, CommandQueue> _queues = new(MovementWire.MaxPlayers);
+    private readonly Dictionary<int, (string, long)> _bindings = new(MovementWire.MaxPlayers);
+    private readonly Dictionary<int, ulong> _traffic = new(MovementWire.MaxPlayers);
     private readonly List<MovementSample> _snapshotSamples = new(MovementWire.MaxPlayers);
     private readonly List<int> _departedPeers = new(MovementWire.MaxPlayers);
     private readonly List<MovementSample> _receivedSamples = new(MovementWire.MaxPlayers);
@@ -68,19 +79,26 @@ public partial class SynchronizationCoordinator : Node
             Session = Guid.NewGuid();
             CompletedTick = World.InitialCompletedTick;
             Network.ClearShotPresentation(Session, CompletedTick);
+            foreach (var ship in World.Ships) Network.GetWeaponEntityIndex(ship.EntityId);
         }
         else if (!_client.HasBaseline) { Network.FailSession("Missing movement baseline."); return; }
         Player.UsePredictionCamera(!Network.IsHost());
+        if (Network.IsHost())
+            foreach (var owner in World.Participants)
+                if (owner.ControlledShip != null) Queue(owner.ControllingPeerId, owner);
         _active = true; _client.Activate();
     }
 
     public byte[] Baseline()
     {
         _snapshotSamples.Clear();
-        foreach (var pair in World.Players)
-            if (pair.Value.ControlledShip != null)
-                _snapshotSamples.Add(MovementStateAdapter.Capture(pair.Key, pair.Value,
-                    _queues.TryGetValue(pair.Key, out var queue) ? queue.LatestArrival : CompletedTick));
+        foreach (var owner in World.Participants)
+            if (owner.ControlledShip != null)
+            {
+                if (Network.IsHost()) Queue(owner.ControllingPeerId, owner);
+                _snapshotSamples.Add(MovementStateAdapter.Capture(owner.ControllingPeerId, owner,
+                    _queues.TryGetValue(owner.ControllingPeerId, out var queue) ? queue.LatestArrival : CompletedTick));
+            }
         var bytes = _snapshotBuffers[_snapshotSamples.Count];
         MovementWire.SnapshotInto(Session, CompletedTick, _snapshotSamples, _entityIndex ??= Network.GetWeaponEntityIndex, bytes);
         return bytes;
@@ -127,8 +145,9 @@ public partial class SynchronizationCoordinator : Node
             Network.PublishWorldTopology();
             Player.SampleMovementInput();
             long tick = CompletedTick + 1;
-            foreach (var (peer, owner) in World.Players)
+            foreach (var owner in World.Participants)
             {
+                var peer = owner.ControllingPeerId;
                 var ship = owner.ControlledShip; if (ship == null) continue;
                 var q = Queue(peer, owner);
                 if (peer == 1) q.Accept(new(tick, ship.InputState), CompletedTick);
@@ -194,7 +213,7 @@ public partial class SynchronizationCoordinator : Node
         {
             if (!_client.AcceptsBaseline(session, request)) return false;
             var expected = 0;
-            foreach (var owner in World.Players.Values) if (owner.ControlledShip != null) expected++;
+            foreach (var owner in World.Participants) if (owner.ControlledShip != null) expected++;
             if (samples.Count != expected) return false;
             foreach (var sample in samples)
                 if (!World.Players.TryGetValue(sample.Peer, out var owner) || owner.ControlledShip?.EntityId != sample.Entity ||

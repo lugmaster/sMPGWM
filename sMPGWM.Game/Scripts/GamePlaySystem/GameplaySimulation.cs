@@ -69,13 +69,13 @@ public sealed class GameplaySimulation : IDisposable
                 _completedTransfers[i] = command;
                 _transferResults[i] = result;
             }
-            foreach (var ship in _world.Entities.Values)
+            foreach (var ship in _world.Ships)
             {
                 ship.Runtime.CommitConfiguration(tick);
             }
             _completedAbilities = 0;
             AbilityCommands.Step(tick, _world, _abilities, ready, _recordAbility);
-            foreach (var ship in _world.Entities.Values)
+            foreach (var ship in _world.Ships)
             {
                 var input = ship.InputState;
                 ship.Runtime.SetAfterburner(input.Afterburner && !input.Brake && input.Direction.LengthSquared() > .01f);
@@ -83,7 +83,7 @@ public sealed class GameplaySimulation : IDisposable
                 ship.RefreshMovementConfiguration();
             }
             Weapons.MaintainReloads(tick, ready);
-            foreach (var player in _world.Players.Values) player.ControlledShip?.Simulate(1.0 / 60);
+            foreach (var player in _world.Participants) player.ControlledShip?.Simulate(1.0 / 60);
             Weapons.Step(tick, ready);
             CompletedTick = tick;
             for (var i = 0; i < count; i++)

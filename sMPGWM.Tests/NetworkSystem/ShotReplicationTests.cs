@@ -8,6 +8,31 @@ namespace sMPGWM.Tests.NetworkSystem;
 
 public sealed class ShotReplicationTests
 {
+    [Test]
+    public void PreparedShotCodecStorageDoesNotAllocateDuringRepeatedBatches()
+    {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
+        var shots = new[] { Shot(Guid.NewGuid()) };
+        var decoded = new AcceptedShot[1];
+        var bytes = new byte[ShotEventCodec.HeaderBytes + ShotEventCodec.EventBytes];
+        for (var i = 0; i < 100; i++)
+        {
+            ShotEventCodec.EncodeInto(shots, bytes);
+            ShotEventCodec.TryDecode(bytes, decoded, out _);
+        }
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        var valid = true;
+        for (var i = 0; i < 1000; i++)
+        {
+            ShotEventCodec.EncodeInto(shots, bytes);
+            valid &= ShotEventCodec.TryDecode(bytes, decoded, out var count) && count == 1;
+        }
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.That(valid, Is.True);
+        Assert.That(allocated, Is.Zero);
+        Assert.That(decoded, Is.EqualTo(shots));
+    }
+
     private static AcceptedShot Shot(Guid session, long sequence = 1) => new(session, 10, 123, 2, 1, sequence,
         1, 0, Vector2.Zero, new Vector2(10, 20), Vector2.Up, true, true);
 

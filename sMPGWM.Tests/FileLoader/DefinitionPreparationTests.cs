@@ -99,6 +99,33 @@ public class DefinitionPreparationTests
         }
     }
 
+    [Test]
+    public void UnknownWeaponPresentationFailsBeforeDefinitionsArePublished()
+    {
+        var previous = PreparedData.GetValue(null);
+        var reload = typeof(GameConfig).GetProperty(nameof(GameConfig.ReloadConfigOnStart))!;
+        var previousReload = GameConfig.ReloadConfigOnStart;
+        var path = ProjectSettings.GlobalizePath("user://config/items/light_weapon.yml");
+        var original = File.ReadAllText(path);
+        try
+        {
+            reload.SetValue(null, false);
+            PreparedData.SetValue(null, null);
+            File.WriteAllText(path, original.Replace("PresentationId: smg_standard", "PresentationId: missing_visual", StringComparison.Ordinal));
+            Assert.Throws<InvalidOperationException>(GameplayDefinitions.Initialize);
+            AssertUnavailable();
+            Assert.That(PreparedData.GetValue(null), Is.Null);
+            File.WriteAllText(path, original);
+            Assert.DoesNotThrow(GameplayDefinitions.Initialize);
+        }
+        finally
+        {
+            File.WriteAllText(path, original);
+            reload.SetValue(null, previousReload);
+            PreparedData.SetValue(null, previous);
+        }
+    }
+
     private static IReadOnlyDictionary<string, string> GetInputs()
     {
         var data = PreparedData.GetValue(null)!;

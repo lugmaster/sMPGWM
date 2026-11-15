@@ -11,6 +11,8 @@ public partial class StatBar : Control
     private ProgressBar _progressBar = null!;
     private Label _nameLabel = null!;
     private Label _valueLabel = null!;
+    private double _displayedCurrent = double.NaN;
+    private double _displayedMaximum = double.NaN;
 
     public override void _EnterTree()
     {
@@ -52,6 +54,13 @@ public partial class StatBar : Control
         _progressBar.Value = current;
         _progressBar.ShowPercentage = false;
 
-        _valueLabel.Text = $"{current:0}/{maximum:0}";
+        var displayedCurrent = Math.Round(current, MidpointRounding.AwayFromZero);
+        var displayedMaximum = Math.Round(maximum, MidpointRounding.AwayFromZero);
+        if (_displayedCurrent != displayedCurrent || _displayedMaximum != displayedMaximum)
+        {
+            _valueLabel.Text = $"{current:0}/{maximum:0}";
+            _displayedCurrent = displayedCurrent;
+            _displayedMaximum = displayedMaximum;
+        }
     }
 }

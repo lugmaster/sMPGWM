@@ -31,7 +31,7 @@ public partial class NetworkManager
         _pendingReloadEntity = entity;
         _pendingReloadGeneration = owner.ControlGeneration;
         _pendingReloadEquipment = ship.Equipment.Revision;
-        var payload = new Godot.Collections.Array { Synchronization.Session.ToString("N"), entity,
+        var payload = new Godot.Collections.Array { Synchronization.SessionWireIdentity, entity,
             owner.ControlGeneration, request, ship.Equipment.Revision, items };
         ReloadFeedback?.Invoke(ReloadResult.Pending);
         if (IsHost()) QueueReload(1, payload);
@@ -44,7 +44,7 @@ public partial class NetworkManager
     private void QueueReload(int peer, Godot.Collections.Array payload)
     {
         if (!IsHost() || !MovementReady(peer) || Synchronization == null || payload.Count != 6 ||
-            payload[0].VariantType != Variant.Type.String || payload[0].AsString() != Synchronization.Session.ToString("N") ||
+            payload[0].VariantType != Variant.Type.String || payload[0].AsString() != Synchronization.SessionWireIdentity ||
             payload[1].VariantType != Variant.Type.Int || payload[1].AsInt64() is <= 0 or > int.MaxValue ||
             payload[2].VariantType != Variant.Type.Int || payload[2].AsInt64() <= 0 ||
             payload[3].VariantType != Variant.Type.Int || payload[3].AsInt64() is <= 0 or long.MaxValue ||
@@ -92,13 +92,13 @@ public partial class NetworkManager
     {
         if (peer == 1) ApplyReloadResult(request, result);
         else if (Synchronization != null && CanSendToPeer(peer))
-            RpcId(peer, nameof(ReceiveReloadResult), Synchronization.Session.ToString("N"), request, (int)result);
+            RpcId(peer, nameof(ReceiveReloadResult), Synchronization.SessionWireIdentity, request, (int)result);
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveReloadResult(string session, long request, int result)
     {
-        if (IsHostMessage() && Synchronization != null && session == Synchronization.Session.ToString("N") &&
+        if (IsHostMessage() && Synchronization != null && session == Synchronization.SessionWireIdentity &&
             Enum.IsDefined((ReloadResult)result)) ApplyReloadResult(request, (ReloadResult)result);
     }
 

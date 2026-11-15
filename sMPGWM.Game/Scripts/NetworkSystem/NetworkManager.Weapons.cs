@@ -12,10 +12,10 @@ public partial class NetworkManager
     private readonly AcceptedShot[] _stagedShots = new AcceptedShot[ShotStagingCapacity];
     private readonly AcceptedShot[] _decodedShots = new AcceptedShot[ShotEventCodec.MaxEvents];
     private readonly AcceptedShot[] _pendingShots = new AcceptedShot[PendingShotCapacity];
-    private readonly byte[]?[] _shotPacketBuffers = new byte[]?[ShotEventCodec.MaxEvents];
+    private readonly byte[][] _shotPacketBuffers = CreateShotPacketBuffers();
     private readonly ShotSequenceWindow _shotSequences = new();
-    private readonly Dictionary<string, int> _weaponEntities = new(StringComparer.Ordinal);
-    private readonly Dictionary<int, string> _weaponEntityNames = new();
+    private readonly Dictionary<string, int> _weaponEntities = new(WorldTopology.MaxEntities, StringComparer.Ordinal);
+    private readonly Dictionary<int, string> _weaponEntityNames = new(WorldTopology.MaxEntities);
     private int _nextWeaponEntity, _stagedShotCount, _pendingShotCount;
     private Guid _shotSession;
     private bool _hasWeaponMap;
@@ -29,6 +29,14 @@ public partial class NetworkManager
     public int ShotDedupHighWater => _shotSequences.HighWater;
     public event Action<AcceptedShot, ShipController?, double>? ShotReceived;
     public event Action<long>? ShotPresentationCleared;
+
+    private static byte[][] CreateShotPacketBuffers()
+    {
+        var buffers = new byte[ShotEventCodec.MaxEvents][];
+        for (var i = 0; i < buffers.Length; i++)
+            buffers[i] = new byte[ShotEventCodec.HeaderBytes + (i + 1) * ShotEventCodec.EventBytes];
+        return buffers;
+    }
 
     public int GetWeaponEntityIndex(string entity)
     {
@@ -53,7 +61,7 @@ public partial class NetworkManager
     {
         var rows = WeaponEntityMap();
         foreach (var (peer, join) in _joins.Snapshot())
-            if (join.ReceivesWorld && CanSendToPeer(peer)) RpcId(peer, nameof(ReceiveWeaponEntityMap), Synchronization!.Session.ToString("N"), rows);
+            if (join.ReceivesWorld && CanSendToPeer(peer)) RpcId(peer, nameof(ReceiveWeaponEntityMap), Synchronization!.SessionWireIdentity, rows);
         // Retain only living topology entries; numeric IDs are never reused in this transport session.
         if (_weaponEntities.Count > World.Entities.Count)
         {
@@ -111,12 +119,12 @@ public partial class NetworkManager
         for (var offset = 0; offset < _stagedShotCount; offset += ShotEventCodec.MaxEvents)
         {
             var count = Math.Min(ShotEventCodec.MaxEvents, _stagedShotCount - offset);
-            var bytes = _shotPacketBuffers[count - 1] ??= new byte[ShotEventCodec.HeaderBytes + count * ShotEventCodec.EventBytes];
+            var bytes = _shotPacketBuffers[count - 1];
             ShotEventCodec.EncodeInto(_stagedShots.AsSpan(offset, count), bytes);
             foreach (var (peer, join) in recipients)
                 if (join.Phase == PeerJoinPhase.Ready && CanSendToPeer(peer))
                 {
-                    RpcId(peer, nameof(ReceiveShots), bytes);
+                    RpcId(peer, MethodName.ReceiveShots, (ReadOnlySpan<Variant>)[bytes]);
                     ShotBytesPublished += bytes.Length;
                 }
         }

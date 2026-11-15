@@ -27,6 +27,7 @@ public partial class GameWorld : Node
             ship.Loadout.SetAuthoritative(true);
             InitializeLoadout?.Invoke(ship.Loadout, player.Inventory);
             ship.Loadout.InitializeResources();
+            ship.Weapons.Refresh();
         }
         player.InventoryInitialized = true;
     }
@@ -36,6 +37,7 @@ public partial class GameWorld : Node
     private int _spawnIndex;
     private Dictionary<string, ShipController> _entities = new();
     public IReadOnlyDictionary<string, ShipController> Entities => _entities;
+    internal Dictionary<string, ShipController>.ValueCollection Ships => _entities.Values;
     public event Action<ShipController>? EntitySpawned;
 
     private void TrackBinding(ShipController? previous, ShipController? next)
@@ -55,6 +57,7 @@ public partial class GameWorld : Node
 
     public PlayerController? LocalPlayer { get; set; }
     public IReadOnlyDictionary<int, PlayerSession> Players => _controllers;
+    internal Dictionary<int, PlayerSession>.ValueCollection Participants => _controllers.Values;
 
     public ShipSpawnRecord ApproveSpawn(int peerId, PlayerStartupData data)
     {
@@ -175,6 +178,18 @@ public partial class GameWorld : Node
             if (owner.ControlledShip == ship) { owner.AssignShip(null); _records.Remove(owner.ControllingPeerId); }
         _entities.Remove(entity);
         if (GodotObject.IsInstanceValid(ship)) { ship.Loadout.Dispose(); ship.Runtime.Dispose(); ship.QueueFree(); }
+    }
+
+    internal bool HasSameTopology(WorldTopology topology)
+    {
+        if (topology.Participants.Length != _controllers.Count || topology.Entities.Length != _entities.Count) return false;
+        foreach (var binding in topology.Participants)
+            if (!_controllers.TryGetValue(binding.Peer, out var owner) || owner.ControlGeneration != binding.Generation ||
+                (owner.ControlledShip?.EntityId ?? "") != binding.Entity) return false;
+        foreach (var record in topology.Entities)
+            if (!_entities.TryGetValue(record.EntityId, out var ship) ||
+                !GodotObject.IsInstanceValid(ship) || ship.IsQueuedForDeletion()) return false;
+        return true;
     }
 
     public WorldTopology CaptureTopology()

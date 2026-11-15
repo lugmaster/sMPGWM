@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.GameFlowSystem;
 using sMPGWM.Scripts.GameplayDataSystem;
@@ -65,5 +66,27 @@ public class CompatibilityTests
     {
         Assert.That(Compatibility.Accept(new byte[8193]), Is.False);
         Assert.That(Compatibility.Accept("invalid"u8.ToArray()), Is.False);
+        Assert.That(Compatibility.Accept("{}"u8.ToArray()), Is.False);
+        Assert.That(Compatibility.Accept("[]"u8.ToArray()), Is.False);
+        Assert.That(Compatibility.Accept("[1,2,3,4,5,6,7,8,9]"u8.ToArray()), Is.False);
+        Assert.That(Compatibility.Accept("[null,null,null,null,null,null,null,null,null]"u8.ToArray()), Is.False);
+    }
+
+    [Test, Category("Godot")]
+    public void AuthenticationUsesPositionalScalarsAndRejectsOldProtocol()
+    {
+        GameConfig.EnsureCompatibilityData();
+        var payload = Compatibility.Payload();
+        using var document = JsonDocument.Parse(payload);
+        Assert.That(document.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Array));
+        Assert.That(document.RootElement.GetArrayLength(), Is.EqualTo(9));
+        foreach (var value in document.RootElement.EnumerateArray())
+            Assert.That(value.ValueKind, Is.EqualTo(JsonValueKind.String));
+        Assert.That(Compatibility.Accept(payload), Is.True);
+        var fields = JsonSerializer.Deserialize<string[]>(payload)!;
+        fields[1] = "14";
+        Assert.That(Compatibility.Accept(JsonSerializer.SerializeToUtf8Bytes(fields)), Is.False);
+        Assert.That(Compatibility.Accept(JsonSerializer.SerializeToUtf8Bytes(Compatibility.Capture())), Is.False);
+        Assert.That(Compatibility.Accept(JsonSerializer.SerializeToUtf8Bytes(fields[..8])), Is.False);
     }
 }

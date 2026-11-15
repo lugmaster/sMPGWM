@@ -24,7 +24,7 @@ public sealed class RemoteMovementPresentation
         var oldPosition = ship.Presentation.Position;
         float oldAngle = ship.Presentation.Rotation;
         MovementStateAdapter.Restore(ship, sample);
-        if (!_buffers.TryGetValue(peer, out var buffer)) _buffers[peer] = buffer = new();
+        if (!_buffers.TryGetValue(peer, out var buffer)) _buffers[peer] = buffer = new(65);
         bool reset = baseline || buffer.Count == 0 || buffer[^1].State.Revision != sample.Revision ||
             buffer[^1].State.Generation != sample.Generation || buffer[^1].State.Entity != sample.Entity;
         if (reset) buffer.Clear();

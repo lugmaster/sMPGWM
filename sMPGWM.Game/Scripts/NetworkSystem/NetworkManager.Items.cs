@@ -44,9 +44,11 @@ public partial class NetworkManager
                 }) ? TransferResult.Pending : TransferResult.PublicationInProgress;
         }
         if (_pendingItemRequest != 0) return TransferResult.Pending;
+        var entityIndex = player.ControlledShip is { } controlled ? GetWeaponEntityIndex(controlled.EntityId) : 0;
+        if (player.ControlledShip != null && entityIndex == 0) return TransferResult.InvalidSession;
         _pendingItemRequest = ++_nextItemRequest;
-        var result = RpcId(1, nameof(TransferItems), Synchronization.Session.ToString("N"), _pendingItemRequest,
-            player.ControlledShip?.EntityId ?? "", player.ControlGeneration,
+        var result = RpcId(1, nameof(TransferItems), Synchronization.SessionWireIdentity, _pendingItemRequest,
+            entityIndex, player.ControlGeneration,
             request.Source.InventoryAddress ?? -1, request.Source.EquipmentSlotKey ?? "", checked((long)request.SourceEntity.Value),
             request.Destination.InventoryAddress ?? -1, request.Destination.EquipmentSlotKey ?? "",
             request.DestinationEntity is { } target ? checked((long)target.Value) : 0L,
@@ -57,12 +59,14 @@ public partial class NetworkManager
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void TransferItems(string session, long request, string entity, long generation, int sourceIndex, string sourceSlot, long sourceId,
+    private void TransferItems(string session, long request, int entity, long generation, int sourceIndex, string sourceSlot, long sourceId,
         int targetIndex, string targetSlot, long targetId, long inventoryRevision, long equipmentRevision)
     {
         var peer = Multiplayer.GetRemoteSenderId();
-        if (!IsHost() || !MovementReady(peer) || Synchronization == null || session != Synchronization.Session.ToString("N") ||
-            request <= 0 || generation < 0 || entity.Length is not (0 or 32) || !World.Players.ContainsKey(peer)) return;
+        if (!IsHost() || !MovementReady(peer) || Synchronization == null || session != Synchronization.SessionWireIdentity ||
+            request <= 0 || generation < 0 || entity < 0 || !World.Players.TryGetValue(peer, out var owner)) return;
+        var entityName = entity == 0 ? "" : ResolveNetworkEntity(entity);
+        if (entityName == null || (owner.ControlledShip?.EntityId ?? "") != entityName || owner.ControlGeneration != generation) return;
         if (!AllowRequest(_itemRequestTimes, peer, 30))
         {
             ReplyItemTransfer(peer, request, TransferResult.PublicationInProgress, entity, generation);
@@ -78,7 +82,7 @@ public partial class NetworkManager
             {
                 var transfer = new TransferRequest(0, Cell(sourceIndex, sourceSlot), ItemEntityId.FromNetwork(sourceId),
                     Cell(targetIndex, targetSlot), targetId == 0 ? null : ItemEntityId.FromNetwork(targetId), inventoryRevision, equipmentRevision);
-                if (Simulation.QueueTransfer(peer, entity, generation, transfer,
+                if (Simulation.QueueTransfer(peer, entityName, generation, transfer,
                     outcome => ReplyItemTransfer(peer, request, outcome, entity, generation))) return;
                 result = TransferResult.PublicationInProgress;
             }
@@ -93,7 +97,7 @@ public partial class NetworkManager
         if (IsHost()) return ship.Equipment.SetWeaponGroups(slot, ItemEntityId.FromNetwork(identity), revision, primary, secondary);
         if (_pendingItemRequest != 0) return TransferResult.Pending;
         _pendingItemRequest = ++_nextItemRequest;
-        if (RpcId(1, nameof(ChangeWeaponGroups), Synchronization!.Session.ToString("N"), _pendingItemRequest,
+        if (RpcId(1, nameof(ChangeWeaponGroups), Synchronization!.SessionWireIdentity, _pendingItemRequest,
                 player.ControlGeneration, slot, identity, revision, primary, secondary) == Error.Ok) return TransferResult.Pending;
         _pendingItemRequest = 0;
         return TransferResult.InvalidSession;
@@ -103,11 +107,11 @@ public partial class NetworkManager
     private void ChangeWeaponGroups(string session, long request, long generation, int slot, long identity, long revision, bool primary, bool secondary)
     {
         var peer = Multiplayer.GetRemoteSenderId();
-        if (!IsHost() || !MovementReady(peer) || Synchronization == null || session != Synchronization.Session.ToString("N") ||
+        if (!IsHost() || !MovementReady(peer) || Synchronization == null || session != Synchronization.SessionWireIdentity ||
             !World.Players.TryGetValue(peer, out var player) || player.ControlledShip is not { } ship || request <= 0) return;
         if (_groupOutcomes.TryGetValue(peer, out var cached) && cached.Request == request)
         {
-            ReplyItemTransfer(peer, request, cached.Result, ship.EntityId, player.ControlGeneration);
+            ReplyItemTransfer(peer, request, cached.Result, GetWeaponEntityIndex(ship.EntityId), player.ControlGeneration);
             return;
         }
         var result = TransferResult.StaleRevision;
@@ -118,7 +122,7 @@ public partial class NetworkManager
                 result = ship.Equipment.SetWeaponGroups(slot, ItemEntityId.FromNetwork(identity), revision, primary, secondary);
         }
         _groupOutcomes[peer] = (request, result);
-        ReplyItemTransfer(peer, request, result, ship.EntityId, player.ControlGeneration);
+        ReplyItemTransfer(peer, request, result, GetWeaponEntityIndex(ship.EntityId), player.ControlGeneration);
     }
 
     private static bool ValidCell(int index, string slot) =>
@@ -129,7 +133,10 @@ public partial class NetworkManager
     private bool SendItems(int peer)
     {
         var player = World.Players[peer];
-        if (RpcId(peer, nameof(ReceiveItems), Synchronization!.Session.ToString("N"), ItemSnapshotCodec.Encode(player)) != Error.Ok)
+        PrepareWeaponReplication(player);
+        using var payload = ItemSnapshotCodec.Encode(player);
+        payload[2] = player.ControlledShip is { } ship ? GetWeaponEntityIndex(ship.EntityId) : 0;
+        if (RpcId(peer, nameof(ReceiveItems), Synchronization!.SessionWireIdentity, payload) != Error.Ok)
         {
             FailSession("Inventory snapshot send failed.");
             return false;
@@ -140,16 +147,18 @@ public partial class NetworkManager
 
     private void PublishItemChanges()
     {
-        foreach (var (recipient, _) in World.Players)
+        foreach (var recipientPlayer in World.Participants)
         {
+            var recipient = recipientPlayer.ControllingPeerId;
             if (recipient == 1 || !(_joins.Is(recipient, PeerJoinPhase.Spawning) || _joins.Is(recipient, PeerJoinPhase.Ready))) continue;
-            foreach (var (owner, participant) in World.Players)
+            foreach (var participant in World.Participants)
             {
+                var owner = participant.ControllingPeerId;
                 if (owner == recipient || participant.ControlledShip is not { } ship) continue;
                 var key = (recipient, owner);
                 var version = (participant.ControlGeneration, ship.Equipment.Revision);
                 if (_groupPublished.TryGetValue(key, out var previous) && previous == version) continue;
-                if (RpcId(recipient, nameof(ReceiveRemoteEquipment), Synchronization!.Session.ToString("N"), owner,
+                if (RpcId(recipient, nameof(ReceiveRemoteEquipment), Synchronization!.SessionWireIdentity, owner,
                         participant.ControlGeneration, ship.Equipment.Revision, ItemSnapshotCodec.EncodeSlots(ship.Equipment.Snapshot.Slots),
                         WeaponGroupSnapshotCodec.Encode(ship.Equipment.Snapshot.WeaponGroups)) != Error.Ok)
                 { FailSession("Equipment snapshot send failed."); return; }
@@ -157,8 +166,9 @@ public partial class NetworkManager
             }
         }
 
-        foreach (var (peer, player) in World.Players)
+        foreach (var player in World.Participants)
         {
+            var peer = player.ControllingPeerId;
             if (peer == 1 || !(_joins.Is(peer, PeerJoinPhase.Spawning) || _joins.Is(peer, PeerJoinPhase.Ready))) continue;
             if (!_publishedItemRevisions.TryGetValue(peer, out var published) ||
                 published != (player.ControlGeneration, player.Inventory.Revision, player.ControlledShip?.Equipment.Revision ?? 0))
@@ -170,7 +180,7 @@ public partial class NetworkManager
     private void ReceiveRemoteEquipment(string session, int owner, long generation, long revision, Godot.Collections.Array rows,
         Godot.Collections.Array groupRows)
     {
-        if (!IsHostMessage() || Synchronization == null || session != Synchronization.Session.ToString("N") || !_clientJoin.HasWorld ||
+        if (!IsHostMessage() || Synchronization == null || session != Synchronization.SessionWireIdentity || !_clientJoin.HasWorld ||
             !World.Players.TryGetValue(owner, out var player) || generation != player.ControlGeneration || player.ControlledShip is not { } ship ||
             rows.Count != ship.Equipment.Definitions.Count || revision < ship.Equipment.Revision || revision == long.MaxValue) return;
         if (!ItemSnapshotCodec.DecodeSlots(rows, new HashSet<long>(), out var slots) ||
@@ -186,41 +196,49 @@ public partial class NetworkManager
             FailSession("Invalid equipment snapshot.");
     }
 
-    private void ReplyItemTransfer(int peer, long request, TransferResult result, string entity, long generation)
+    private void ReplyItemTransfer(int peer, long request, TransferResult result, int entity, long generation)
     {
         if (!World.Players.ContainsKey(peer) || _stopped) return;
         PublishWorldTopology();
         // The reliable owner snapshot precedes the acknowledgement, including stale-request recovery.
-        if (SendItems(peer) && RpcId(peer, nameof(ItemTransferResult), Synchronization!.Session.ToString("N"),
+        if (SendItems(peer) && RpcId(peer, nameof(ItemTransferResult), Synchronization!.SessionWireIdentity,
                 request, (int)result, entity, generation) != Error.Ok) FailSession("Item transfer acknowledgement failed.");
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveItems(string session, Godot.Collections.Array rows)
     {
-        if (!IsHostMessage() || Synchronization == null || session != Synchronization.Session.ToString("N") || !_clientJoin.HasWorld) return;
+        if (!IsHostMessage() || Synchronization == null || session != Synchronization.SessionWireIdentity || !_clientJoin.HasWorld) return;
         if (World.LocalPlayer?.Participant is not { } owner) return;
         if (ItemSnapshotCodec.IsOldBinding(rows, owner)) return;
+        if (rows.Count != 10 || rows[2].VariantType != Variant.Type.Int || rows[2].AsInt64() is < 0 or > int.MaxValue)
+        { FailSession("Invalid inventory binding."); return; }
+        var index = rows[2].AsInt32();
+        var entity = index == 0 ? "" : ResolveNetworkEntity(index);
+        if (entity == null) { FailSession("Unknown inventory binding."); return; }
+        rows[2] = entity;
         if (!ItemSnapshotCodec.Apply(rows, owner))
         {
             FailSession("Invalid inventory snapshot.");
             return;
         }
+        PrepareWeaponReplication(owner);
         var wasReady = _hasItemBaseline;
         _hasItemBaseline = true;
         if (!wasReady) ItemBindingChanged?.Invoke();
         if (_stopped || !_clientJoin.ApplyItems(Time.GetTicksMsec())) return;
-        if (RpcId(1, nameof(ConfirmSpawnReady), session, owner.ControlledShip?.EntityId ?? "",
+        if (RpcId(1, nameof(ConfirmSpawnReady), session, owner.ControlledShip is { } controlled ? GetWeaponEntityIndex(controlled.EntityId) : 0,
                 owner.ControlGeneration) != Error.Ok) FailSession("Spawn acknowledgement failed.");
     }
 
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ItemTransferResult(string session, long request, int result, string entity, long generation)
+    private void ItemTransferResult(string session, long request, int result, int entity, long generation)
     {
-        if (!IsHostMessage() || Synchronization == null || session != Synchronization.Session.ToString("N") ||
+        if (!IsHostMessage() || Synchronization == null || session != Synchronization.SessionWireIdentity ||
             !_hasItemBaseline || !Enum.IsDefined((TransferResult)result)) return;
         if (request != _pendingItemRequest || request == 0 || World.LocalPlayer?.Participant is not { } player ||
-            player.ControlGeneration != generation || (player.ControlledShip?.EntityId ?? "") != entity) return;
+            player.ControlGeneration != generation || entity < 0 ||
+            (player.ControlledShip?.EntityId ?? "") != (entity == 0 ? "" : ResolveNetworkEntity(entity))) return;
         _pendingItemRequest = 0;
         WeaponGroupRequestFinished?.Invoke();
         if ((TransferResult)result is not (TransferResult.Success or TransferResult.NoChange))

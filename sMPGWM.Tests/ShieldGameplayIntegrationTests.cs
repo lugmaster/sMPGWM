@@ -90,8 +90,9 @@ public sealed class ShieldGameplayIntegrationTests
             var deadline = ship.Runtime.ActiveBehaviours[0].Deadline;
             var instance = ship.Runtime.ActiveBehaviours[0].RuntimeId;
             var receive = typeof(NetworkManager).GetMethod("QueueAbility", BindingFlags.NonPublic | BindingFlags.Instance)!;
-            receive.Invoke(network, new object[] { 1, sync.Session.ToString("N"), 1L, ship.EntityId,
-                session.Player.Participant.ControlGeneration, ship.EntityId, "shieldCapacityBoost", "shield_generator", (long)generator.Id.Value, (int)AbilitySourceKind.Equipment });
+            var shipIndex = network.GetWeaponEntityIndex(ship.EntityId);
+            receive.Invoke(network, new object[] { 1, sync.SessionWireIdentity, 1L, shipIndex,
+                session.Player.Participant.ControlGeneration, shipIndex, "shieldCapacityBoost", "shield_generator", (long)generator.Id.Value, (int)AbilitySourceKind.Equipment });
             sync._PhysicsProcess(1d / 60);
             Assert.That(ship.Runtime.ActiveBehaviours[0].Deadline, Is.EqualTo(deadline));
             for (var step = 0; step < 6; step++) sync._PhysicsProcess(1d / 60);
@@ -101,6 +102,23 @@ public sealed class ShieldGameplayIntegrationTests
             Assert.That(ship.Runtime.ActiveBehaviours[0].Deadline, Is.GreaterThan(deadline));
             var allySpawn = network.World.ApproveSpawn(2, network.Startup.Player);
             var ally = network.World.Entities[allySpawn.EntityId];
+            var allyIndex = network.GetWeaponEntityIndex(ally.EntityId);
+            var generation = session.Player.Participant.ControlGeneration;
+            foreach (var invalid in new[]
+                     {
+                         (Caster: 0, Target: shipIndex, Generation: generation, Session: sync.SessionWireIdentity),
+                         (Caster: -1, Target: shipIndex, Generation: generation, Session: sync.SessionWireIdentity),
+                         (Caster: int.MaxValue, Target: shipIndex, Generation: generation, Session: sync.SessionWireIdentity),
+                         (Caster: shipIndex, Target: 0, Generation: generation, Session: sync.SessionWireIdentity),
+                         (Caster: allyIndex, Target: shipIndex, Generation: generation, Session: sync.SessionWireIdentity),
+                         (Caster: shipIndex, Target: shipIndex, Generation: generation + 1, Session: sync.SessionWireIdentity),
+                         (Caster: shipIndex, Target: shipIndex, Generation: generation, Session: Guid.NewGuid().ToString("N"))
+                     })
+            {
+                receive.Invoke(network, new object[] { 1, invalid.Session, 1000L, invalid.Caster,
+                    invalid.Generation, invalid.Target, "shieldCapacityBoost", "shield_generator", (long)generator.Id.Value, (int)AbilitySourceKind.Equipment });
+                Assert.That(network.Simulation.AbilityCommands.Count, Is.Zero, "Invalid numeric references must be rejected before command admission.");
+            }
             ally.Teleport(ship.Position + new Vector2(100, 0), 0, Vector2.Zero);
             ally.Presentation.Snap();
             var binding = (EquipmentAbilityHotbarBinding)hotbar.Entries[0]!;
@@ -165,6 +183,31 @@ public sealed class ShieldGameplayIntegrationTests
             for (var i = 0; i < 1801; i++) sync._PhysicsProcess(1d / 60);
             Assert.That(ship.Runtime.Shield.Capacity, Is.EqualTo(100));
             Assert.That(ally.Runtime.Shield.Capacity, Is.EqualTo(100));
+            var removedSpawn = network.World.ApproveSpawn(3, network.Startup.Player);
+            var removedIndex = network.GetWeaponEntityIndex(removedSpawn.EntityId);
+            network.World.Despawn(3);
+            var feedback = new List<AbilityActivationResult>();
+            network.AbilityFeedback += feedback.Add;
+            network.ActivateAbility("shieldCapacityBoost", removedSpawn.EntityId, "shield_generator", (long)generator.Id.Value);
+            Assert.That(feedback, Is.EqualTo(new[] { AbilityActivationResult.Pending, AbilityActivationResult.TargetIsNotALivingAlly }),
+                "A target removed before host admission must complete the pending ability.");
+            Assert.That(network.Simulation.AbilityCommands.Count, Is.Zero);
+            var requestField = typeof(NetworkManager).GetField("_nextRequest", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            var rejectedRequest = (long)requestField.GetValue(network)!;
+            receive.Invoke(network, new object[] { 1, sync.SessionWireIdentity, rejectedRequest, shipIndex,
+                generation, removedIndex, "shieldCapacityBoost", "shield_generator", (long)generator.Id.Value, (int)AbilitySourceKind.Equipment });
+            Assert.That(feedback[^1], Is.EqualTo(AbilityActivationResult.TargetIsNotALivingAlly), "Duplicate requests retain their terminal result.");
+            Assert.That(feedback.Count, Is.EqualTo(3));
+            for (var step = 0; step < 6; step++) sync._PhysicsProcess(1d / 60);
+            feedback.Clear();
+            var unknownRequest = rejectedRequest + 1;
+            requestField.SetValue(network, unknownRequest);
+            receive.Invoke(network, new object[] { 1, sync.SessionWireIdentity, unknownRequest, shipIndex,
+                generation, int.MaxValue, "shieldCapacityBoost", "shield_generator", (long)generator.Id.Value, (int)AbilitySourceKind.Equipment });
+            Assert.That(feedback, Is.EqualTo(new[] { AbilityActivationResult.TargetIsNotALivingAlly }),
+                "An index removed from the host map must also receive terminal feedback.");
+            Assert.That(network.Simulation.AbilityCommands.Count, Is.Zero);
+            network.AbilityFeedback -= feedback.Add;
             Assert.That(errors, Is.Empty);
             canvas.UnbindInventory();
         }

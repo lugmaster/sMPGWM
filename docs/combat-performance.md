@@ -1,5 +1,21 @@
 # Combat performance measurements
 
+## Deferred allocation findings (2026-11-15)
+
+The current allocation pass is limited to its implemented changes and verification. Further findings are recorded here for later work; these are not claims of measured bottlenecks. Keybinding menus, networking decomposition, rewind, separate shield colliders, and VFX capacity tuning remain out of scope.
+
+| Location | Remaining allocation/work | Follow-up |
+| --- | --- | --- |
+| `CollisionSystem/HitscanQuery.Cast` | Godot creates an `IntersectRay` result dictionary for each cast. Query parameters are reused and results are disposed. | Measure cost per actual shot and maximum shooting-entity workload before replacing collision queries. |
+| Network RPC boundary | Engine marshalling, incoming byte arrays, and `AsGodotArray` wrappers remain even when application buffers are reused. | Profile managed and native costs separately; do not describe the game as allocation-free. |
+| `NetworkSystem/GameplayDeltaState.Encode` | A warmed resource update measured 336 managed bytes. A control performing its three nested Godot-array assignments also measured 336 bytes; runtime health mutation alone measured zero (1,000 iterations, Godot 4.7.2/.NET 8 x64). | Investigate array-to-Variant interop later. The test enforces the measured budget and application-buffer reuse, not a zero-allocation claim. |
+| `NetworkSystem/GameplayDeltaReceiver.Apply` | Configuration/effect changes still assemble and validate full snapshot state; resource-only updates use the fast path. | Consider reusable transactional decoding only if change frequency makes this material. Preserve atomic validation and epoch checks. |
+| Topology and inventory publication | Actual joins, ownership/equipment changes, and recovery still construct snapshots. | Measure spikes during late join and equipment changes; unchanged topology now avoids constructing snapshots. |
+| `NetworkSystem/HeartbeatMonitor` | Periodic request/response log strings remain, normally on a five-second interval. | Consider logging guards or sampling only if profiling warrants it. |
+| HUD text | Displayed numeric changes still require strings; fractional resource changes no longer rebuild identical rounded labels. | Retain accurate bars; measure presentation costs during rendered playtests. |
+| `VfxSystem/ShotPresentationController` | Fixed pools can drop visuals/audio at extreme firing rates. This is bounded overflow, not evidence of an allocation leak. | Evaluate representative rendered playtests before capacity changes. |
+
+
 The opt-in driver copies the game into an isolated temporary project, applies workload and recorder instrumentation there, builds Release, and launches one host plus local ENet clients. It does not modify production definitions. `source.zip` retains copied executable source including instrumentation and untracked changes; `manifest.json` records source hashes, revision, arguments and placement. Raw measurements are under the ignored `docs/measurements/` directory.
 
 Run comparable moving-fire measurements before and after a change:
@@ -78,10 +94,55 @@ Archived source provenance:
 | after | 2026-11-15T13:27:36Z | `db1bfce81b30565a46543f30182c89b91ab6e7191abc3436ab21c495589050a1` |
 | shields | 2026-11-15T13:30:30Z | `101632825f03523675c3288ad9aaa2e3cb456455cdfc5fce79a3e3a5b25258b5` |
 
-## Final working-tree verification
+## Earlier architecture-refactor verification
 
 The final working tree passed 631 non-engine tests plus the integration wrapper executing 376 Godot tests. Movement codec coverage includes zero managed allocation across 1,000 warmed encode/decode cycles; this is a codec guarantee, not a whole-game guarantee.
 
 `python tools/run_shield_slice.py --players 10 --impaired --variants` also passed: all ten processes exited successfully and 6,616 observations across 2,526 entity revisions converged. The seeded transport applied 20-60 ms delay in each direction, 1% loss and reordering, with the final client joining at 12 seconds. This checks configuration/effect/resource replication and joining against the final source, separately from the earlier performance snapshots.
 
-The network protocol is now 14; older builds are intentionally incompatible. Resource shields still absorb damage at hull contact because this branch has no authored independent shield collider. The development loadout's heavy hitscan weapon now executes its definition after removal of name-based weapon admission.
+That archived verification used network protocol 14; older builds were intentionally incompatible. Resource shields still absorb damage at hull contact because this branch has no authored independent shield collider. The development loadout's heavy hitscan weapon now executes its definition after removal of name-based weapon admission.
+
+## Allocation and initialization pass, 2026-11-15
+
+This is a separate comparison from the earlier architecture-refactor snapshots above. The baseline is clean commit `dc434b45691e0fc312c141fa7c3d399d3450f236`, staged in a detached worktree before implementation. After snapshots contain the allocation, initialization, and numeric-reference changes; wire protocol is 15 and handshake version is 3. All 16 runs passed, covering 120 peer executions.
+
+Each scenario ran once at 5 and 10 players for 75 seconds, with statistics covering seconds 30-75. Workloads ran serially on one machine using Release builds and headless ENet. Other development/test activity overlapped parts of the baseline. These short samples support an allocation comparison, not an isolated timing experiment or the full three-repeat acceptance matrix. Rendered FPS, GPU work, and Steam transport were not measured.
+
+`active` exercises movement and repeated ability activation. `firing` adds nine weapons per player at a configured 60-shot/second cadence; ammunition/reloads still apply. `combat` keeps shooters stationary, adds one hostile shield target per player, and raises target shield capacity in the isolated definitions.
+
+| Workload | Players | Host allocation MB/s, before -> after | Reduction | Clients aggregate MB/s, before -> after | Host step p99 ms, before -> after |
+| --- | ---: | --- | ---: | --- | --- |
+| idle | 5 | 0.697 -> 0.179 | 74.4% | 2.050 -> 2.020 | 0.675 -> 0.495 |
+| idle | 10 | 1.257 -> 0.297 | 76.4% | 5.507 -> 5.447 | 1.093 -> 0.821 |
+| active | 5 | 0.718 -> 0.188 | 73.8% | 2.167 -> 2.149 | 0.683 -> 0.491 |
+| active | 10 | 1.304 -> 0.317 | 75.7% | 7.540 -> 7.262 | 1.052 -> 0.838 |
+| firing | 5 | 0.944 -> 0.354 | 62.5% | 1.561 -> 1.530 | 1.050 -> 0.890 |
+| firing | 10 | 1.943 -> 0.722 | 62.8% | 5.608 -> 5.492 | 2.000 -> 1.959 |
+| combat | 5 | 1.619 -> 1.051 | 35.1% | 2.476 -> 2.423 | 1.411 -> 1.153 |
+| combat | 10 | 3.288 -> 1.784 | 45.7% | 8.277 -> 8.176 | 2.980 -> 2.515 |
+
+Host allocation decreased across all workloads; client allocation decreased only modestly. The game still allocates through engine queries, RPC/Variant interop, and other recorded residuals. The warmed gameplay resource-row control measured 336 managed bytes/update from its three nested array assignments; this pass does not claim zero-allocation replication.
+
+All after runs averaged 30.000 Hz host movement publication, but worst intervals did not improve consistently: ten-player firing increased from 53.847 to 81.992 ms, and five-player combat increased from 68.936 to 116.283 ms. Lower allocation and improved step p99 do not establish a guaranteed 60 FPS frame budget or a 33.33 ms maximum publication interval.
+
+Combat accepted 76,824 / 149,724 shield hits at 5 / 10 players with zero host shot-staging drops. Existing visual/audio overflow remains deliberately unchanged; these whole-run host counters include warmup:
+
+| Players | Muzzle drops | Tracer drops | Impact drops | Shield drops | Audio drops | VFX queue drops |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 5 | 0 | 24 | 5872 | 1774 | 70950 | 0 |
+| 10 | 6912 | 16447 | 52447 | 42629 | 143607 | 0 |
+
+Evidence is retained under `docs/measurements/2026-11-15-allocation-pass/`: combined `summary.md`/`summary.json`, per-run raw CSVs, and per-scenario `manifest.json`, `initial.patch`, and immutable instrumented `source.zip`. SHA-256 values below refer to each scenario's `source.zip`:
+
+| Dataset directory | Snapshot UTC | Source archive SHA-256 |
+| --- | --- | --- |
+| `after-active` | 2026-11-15T14:31:42Z | `3c12bd019678678b7d147352f7f1173362196c29473dae475dd287de09380003` |
+| `after-combat` | 2026-11-15T14:37:27Z | `bf985f1efba38075ef4d2f32ed446bdd438eb3908b0c57dd9e8027dd2d982ac6` |
+| `after-firing` | 2026-11-15T14:34:35Z | `16f03c76b063a247cb28871bd91ef18ea9def620e0195ea0b6ad1f8ab9f1db8f` |
+| `after-idle` | 2026-11-15T14:28:45Z | `1fd7187761a3ae7dba25e611f13f0bc0aaabadc50763967480175ea21c75130b` |
+| `before-active` | 2026-11-15T14:20:05Z | `3304362f164f7574dc2205185262dcaa9216542a73a2afc7898d6e515b93498e` |
+| `before-combat` | 2026-11-15T14:25:52Z | `bf5b0ee003422ad8197c71894390d08e26fae0f8a3a33868701912e060c9f521` |
+| `before-firing` | 2026-11-15T14:22:59Z | `32272ce2c43b7cbbc55d5c145b4a614cdcb3ac07c60bc19a36ffb6a17045483f` |
+| `before-idle` | 2026-11-15T14:17:10Z | `0244cec57de523d11156caef674f65c8ee19bc0128bcd727dbfe916e41b74953` |
+
+Final correctness verification passed 633 outer tests, including the integration wrapper executing 393/393 Godot tests. The separate `python tools/run_shield_slice.py --players 10 --impaired --variants` run also passed all ten processes: 6,641 observations across 2,146 entity revisions converged. It applied seeded 20-60 ms delay in each direction, 1% loss, and delay-induced reordering, with the last client joining at 12 seconds. It exercises abilities, equipment/components, ownership changes, and authoritative resource convergence; it does not measure rendered combat. Evidence and raw logs are retained in `measurements/2026-11-15-allocation-pass/impaired-latejoin.txt` and `impaired-latejoin-logs/`.

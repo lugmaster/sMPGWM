@@ -12,6 +12,34 @@ namespace sMPGWM.Tests;
 [Category("Godot")]
 public sealed class WeaponSimulationTests
 {
+    [TestCase(false)]
+    [TestCase(true)]
+    public void IdleWeaponStepsDoNotAllocateAfterPreparation(bool fullSimulation)
+    {
+        var world = CreateWorld();
+        using var weapons = new WeaponSimulation(world);
+        using var abilities = new sMPGWM.Scripts.AbilitySystem.AbilityRuntime(GameplayDefinitions.Current);
+        using var simulation = new GameplaySimulation(world, abilities);
+        try
+        {
+            Configure(weapons, _ => { });
+            Configure(simulation.Weapons, _ => { });
+            Func<int, bool> ready = _ => true;
+            Action<int, long, sMPGWM.Scripts.AbilitySystem.AbilityActivationResult> completed = (_, _, _) => { };
+            for (var tick = 0; tick < 1000; tick++)
+                if (fullSimulation) simulation.Step(tick, ready, completed);
+                else weapons.Step(tick, ready);
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var tick = 1000; tick < 2000; tick++)
+                if (fullSimulation) simulation.Step(tick, ready, completed);
+                else weapons.Step(tick, ready);
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.That(allocated, Is.Zero);
+            Assert.That(weapons.AcceptedCount, Is.Zero);
+        }
+        finally { world.Clear(); world.Free(); }
+    }
+
     [Test]
     public void AuthoredHitscanWeaponExecutesWithoutANameWhitelist()
     {

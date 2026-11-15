@@ -35,10 +35,9 @@ public partial class NetworkManager
     private void PublishGameplayDeltas()
     {
         _gameplayDeltaRows.Clear();
-        foreach (var ship in World.Entities.Values)
+        foreach (var ship in World.Ships)
         {
-            if (!_gameplayPublishers.TryGetValue(ship.EntityId, out var publisher))
-                _gameplayPublishers.Add(ship.EntityId, publisher = new());
+            var publisher = _gameplayPublishers[ship.EntityId];
             if (publisher.Encode(GetWeaponEntityIndex(ship.EntityId), ship.Runtime) is { } row) _gameplayDeltaRows.Add(row);
         }
         if (_gameplayDeltaRows.Count == 0 && !_gameplayDirty) return;
@@ -47,8 +46,8 @@ public partial class NetworkManager
         {
             if (!join.ReceivesWorld || !CanSendToPeer(peer)) continue;
             var result = join.Phase == PeerJoinPhase.Ready
-                ? RpcId(peer, nameof(ReceiveGameplayDeltas), Synchronization!.Session.ToString("N"), _gameplayDeltaRows)
-                : RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"), baseline ??= GameplaySnapshot());
+                ? RpcId(peer, MethodName.ReceiveGameplayDeltas, (ReadOnlySpan<Variant>)[Synchronization!.SessionWireIdentity, _gameplayDeltaRows])
+                : RpcId(peer, MethodName.ReceiveGameplay, (ReadOnlySpan<Variant>)[Synchronization!.SessionWireIdentity, baseline ??= GameplaySnapshot()]);
             if (result != Error.Ok) { FailSession("Gameplay update send failed."); break; }
         }
         baseline?.Dispose();
@@ -64,7 +63,7 @@ public partial class NetworkManager
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveGameplayDeltas(string session, Array rows)
     {
-        if (!IsHostMessage() || _clientJoin.Phase != ClientJoinPhase.Ready || session != Synchronization!.Session.ToString("N")) return;
+        if (!IsHostMessage() || _clientJoin.Phase != ClientJoinPhase.Ready || session != Synchronization!.SessionWireIdentity) return;
         if (!_gameplayReceiver.Apply(rows, World, Abilities.Definitions, _resolveGameplayEntity ??= ResolveNetworkEntity))
             FailSession("Invalid gameplay update.");
     }

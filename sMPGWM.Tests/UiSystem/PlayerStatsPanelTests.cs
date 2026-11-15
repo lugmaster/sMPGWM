@@ -18,6 +18,31 @@ namespace sMPGWM.Tests.UiSystem;
 [Category("Godot")]
 public sealed class PlayerStatsPanelTests
 {
+    [Test]
+    public void FractionalBarChangesKeepProgressWithoutAllocatingIdenticalLabels()
+    {
+        var root = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests");
+        var bar = HudProvider.CreateStatBar();
+        root.AddChild(bar);
+        try
+        {
+            var progress = bar.GetNode<ProgressBar>("%ProgressBar");
+            var label = bar.GetNode<Label>("%ValueLabel");
+            progress.Step = 0;
+            bar.Setup(10.1, 100);
+            for (var i = 0; i < 100; i++) bar.Setup(10.1 + i % 20 * .01, 100);
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 1000; i++) bar.Setup(10.1 + i % 20 * .01, 100);
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.That(allocated, Is.Zero);
+            Assert.That(label.Text, Is.EqualTo("10/100"));
+            Assert.That(progress.Value, Is.EqualTo(10.29).Within(1e-9));
+            bar.Setup(10.5, 100.5);
+            Assert.That(label.Text, Is.EqualTo("11/101"));
+        }
+        finally { bar.Free(); }
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public void ShieldTracksBindingMutationReplicationReplacementAndDisposal(bool bindBeforeReady)

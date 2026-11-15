@@ -8,14 +8,15 @@ namespace sMPGWM.Scripts.NetworkSystem;
 
 internal static class Compatibility
 {
+    private static readonly string[] Fields = ["handshake", "protocol", "game_id", "mode", "version", "development", "config", "data", "build"];
     internal static Dictionary<string, string> Capture()
     {
         if (string.IsNullOrEmpty(GameConfig.GameDataChecksum))
             throw new InvalidOperationException("Session definitions and compatibility data have not been prepared.");
         return new()
         {
-            ["handshake"] = "2",
-            ["protocol"] = "14",
+            ["handshake"] = "3",
+            ["protocol"] = "15",
             ["game_id"] = GameConfig.LobbyGameId,
             ["mode"] = GameConfig.LobbyMode,
             ["version"] = GameConfig.Version,
@@ -26,7 +27,13 @@ internal static class Compatibility
         };
     }
 
-    internal static byte[] Payload() => JsonSerializer.SerializeToUtf8Bytes(Capture());
+    internal static byte[] Payload()
+    {
+        var captured = Capture();
+        var values = new string[Fields.Length];
+        for (var i = 0; i < Fields.Length; i++) values[i] = captured[Fields[i]];
+        return JsonSerializer.SerializeToUtf8Bytes(values);
+    }
 
     internal static bool Matches(Func<string, string> remote)
         => Matches(Capture(), remote, message => Logger.Info(message));
@@ -57,8 +64,11 @@ internal static class Compatibility
         if (data.Length == 0 || data.Length > 8192) return false;
         try
         {
-            var fields = JsonSerializer.Deserialize<Dictionary<string, string>>(data);
-            return fields != null && fields.Count == 9 && Matches(key => fields.GetValueOrDefault(key, ""));
+            var values = JsonSerializer.Deserialize<string[]>(data);
+            if (values == null || values.Length != Fields.Length) return false;
+            for (var i = 0; i < values.Length; i++)
+                if (string.IsNullOrEmpty(values[i]) || values[i].Length > 1024) return false;
+            return Matches(key => values[Array.IndexOf(Fields, key)]);
         }
         catch (JsonException) { return false; }
     }

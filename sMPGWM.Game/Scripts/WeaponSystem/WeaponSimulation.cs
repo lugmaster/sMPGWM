@@ -29,13 +29,13 @@ public sealed class WeaponSimulation : IDisposable
 
     public void MaintainReloads(long tick, Func<int, bool> ready)
     {
-        foreach (var ship in _world.Entities.Values)
+        foreach (var ship in _world.Ships)
         {
             ship.Weapons.Refresh();
             CancelUnavailableReloads(ship);
         }
         ReloadCommands.Step(tick, ready);
-        foreach (var ship in _world.Entities.Values)
+        foreach (var ship in _world.Ships)
         {
             if (!ship.Runtime.WeaponsAvailable) continue;
             for (var i = 0; i < ship.Weapons.Count; i++)
@@ -56,8 +56,8 @@ public sealed class WeaponSimulation : IDisposable
         var session = Session();
         if (session == Guid.Empty) return;
         var count = 0;
-        foreach (var entity in _world.Entities.Values) entity.ForceUpdateTransform();
-        foreach (var player in _world.Players.Values)
+        foreach (var entity in _world.Ships) entity.ForceUpdateTransform();
+        foreach (var player in _world.Participants)
         {
             var ship = player.ControlledShip;
             if (ship == null || !ready(player.ControllingPeerId)) continue;
@@ -87,7 +87,7 @@ public sealed class WeaponSimulation : IDisposable
         weapons.Refresh();
         var input = ship.InputState;
         var enabled = input.WeaponRevision == ship.Equipment.Revision;
-        _query.Prepare(_world, ship);
+        var queryPrepared = false;
         var fixtures = ship.Runtime.WeaponFixturePoints;
         for (var i = 0; i < weapons.Count; i++)
         {
@@ -106,6 +106,11 @@ public sealed class WeaponSimulation : IDisposable
             var muzzle = (int)((sequence - 1) % fixtures.Count);
             var origin = ship.GlobalTransform * fixtures[muzzle];
             var direction = ship.GlobalTransform.X.Normalized().Rotated(Spread(binding.Item.Id.Value, sequence, binding.Definition.SpreadDegrees));
+            if (!queryPrepared)
+            {
+                _query.Prepare(_world, ship);
+                queryPrepared = true;
+            }
             var contact = _query.Cast(ship, origin, origin + direction * (float)binding.Definition.Range);
             var target = contact.Target;
             if (binding.Definition.Supply is EnergySupplyDefinition payment && !ship.Runtime.TrySpendEnergy(payment.EnergyPerShot)) continue;

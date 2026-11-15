@@ -33,37 +33,47 @@ public partial class NetworkManager
             (!IsHost() && (_clientJoin.Phase != ClientJoinPhase.Ready ||
                 source.Kind == AbilitySourceKind.Equipment && !ItemBaselineReady))) return;
         var owner = World.LocalPlayer.Participant;
+        var caster = GetWeaponEntityIndex(ship.EntityId);
+        var target = GetWeaponEntityIndex(targetEntity);
+        if (caster == 0 || target == 0)
+        { AbilityFeedback?.Invoke(AbilityActivationResult.TargetIsNotALivingAlly); return; }
         _pendingCaster = ship.EntityId; _pendingGeneration = owner.ControlGeneration;
         var request = ++_nextRequest;
-        var target = targetEntity;
         AbilityFeedback?.Invoke(AbilityActivationResult.Pending);
-        if (IsHost()) QueueAbility(1, Synchronization.Session.ToString("N"), request, ship.EntityId, owner.ControlGeneration,
+        if (IsHost()) QueueAbility(1, Synchronization.SessionWireIdentity, request, caster, owner.ControlGeneration,
             target, ability, source.Key, source.Entity, (int)source.Kind);
-        else if (RpcId(1, nameof(RequestAbility), Synchronization.Session.ToString("N"), request, ship.EntityId,
+        else if (RpcId(1, nameof(RequestAbility), Synchronization.SessionWireIdentity, request, caster,
                      owner.ControlGeneration, target, ability, source.Key, source.Entity, (int)source.Kind) != Error.Ok)
             AbilityFeedback?.Invoke(AbilityActivationResult.SendFailed);
     }
 
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void RequestAbility(string session, long request, string caster, long generation, string target,
+    private void RequestAbility(string session, long request, int caster, long generation, int target,
         string ability, string slot, long source, int sourceKind)
         => QueueAbility(Multiplayer.GetRemoteSenderId(), session, request, caster, generation, target, ability, slot, source, sourceKind);
 
-    private void QueueAbility(int peer, string session, long request, string caster, long generation, string target,
+    private void QueueAbility(int peer, string session, long request, int caster, long generation, int target,
         string ability, string slot, long source, int sourceKind)
     {
         var origin = new AbilitySource((AbilitySourceKind)sourceKind, slot, source);
-        if (!IsHost() || !MovementReady(peer) || Synchronization == null || session != Synchronization.Session.ToString("N") ||
-            request <= 0 || caster.Length != 32 || target.Length != 32 || ability.Length is < 1 or > 64 || !origin.IsValid) return;
+        if (!IsHost() || !MovementReady(peer) || Synchronization == null || session != Synchronization.SessionWireIdentity ||
+            request <= 0 || caster <= 0 || target <= 0 || ability.Length is < 1 or > 64 || !origin.IsValid ||
+            ResolveNetworkEntity(caster) is not { } casterEntity || !World.Players.TryGetValue(peer, out var owner) ||
+            owner.ControlledShip?.EntityId != casterEntity || owner.ControlGeneration != generation) return;
         if (!_abilityResults.TryGetValue(peer, out var history)) _abilityResults.Add(peer, history = new());
         if (!history.Admit(request, Synchronization.CompletedTick, out var result))
         { ReplyAbility(peer, request, result); return; }
+        if (ResolveNetworkEntity(target) is not { } targetEntity || !World.Entities.ContainsKey(targetEntity))
+        {
+            CompleteAbility(peer, request, AbilityActivationResult.TargetIsNotALivingAlly);
+            return;
+        }
         if (Simulation.AbilityCommands.Count >= 32)
         {
             history.Complete(request, AbilityActivationResult.Busy);
             ReplyAbility(peer, request, AbilityActivationResult.Busy); return;
         }
-        Simulation.AbilityCommands.Enqueue((peer, request, caster, generation, target, ability, origin));
+        Simulation.AbilityCommands.Enqueue((peer, request, casterEntity, generation, targetEntity, ability, origin));
     }
 
     public void PublishGameplay(long tick)
@@ -84,7 +94,7 @@ public partial class NetworkManager
     private Godot.Collections.Array GameplaySnapshot()
     {
         var rows = new Godot.Collections.Array();
-        foreach (var ship in World.Entities.Values)
+        foreach (var ship in World.Ships)
         {
             var row = GameplaySnapshotCodec.Encode(ship.EntityId, ship.Runtime);
             row[0] = GetWeaponEntityIndex(ship.EntityId);
@@ -126,7 +136,7 @@ public partial class NetworkManager
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveGameplay(string session, Godot.Collections.Array rows)
     {
-        if (IsHostMessage() && _clientJoin.HasWorld && session == Synchronization!.Session.ToString("N") &&
+        if (IsHostMessage() && _clientJoin.HasWorld && session == Synchronization!.SessionWireIdentity &&
             !ApplyGameplay(rows, _clientJoin.Phase != ClientJoinPhase.Ready))
             FailSession("Invalid gameplay snapshot.");
     }
@@ -137,12 +147,12 @@ public partial class NetworkManager
             if (request == _nextRequest && World.LocalPlayer?.Participant?.ControlledShip?.EntityId == _pendingCaster &&
                 World.LocalPlayer.Participant.ControlGeneration == _pendingGeneration) AbilityFeedback?.Invoke(result);
         }
-        else RpcId(peer, nameof(AbilityResult), Synchronization!.Session.ToString("N"), request, (int)result);
+        else RpcId(peer, nameof(AbilityResult), Synchronization!.SessionWireIdentity, request, (int)result);
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void AbilityResult(string session, long request, int result)
     {
-        if (IsHostMessage() && session == Synchronization!.Session.ToString("N") && request == _nextRequest &&
+        if (IsHostMessage() && session == Synchronization!.SessionWireIdentity && request == _nextRequest &&
             Enum.IsDefined((AbilityActivationResult)result) &&
             World.LocalPlayer?.Participant?.ControlledShip?.EntityId == _pendingCaster &&
             World.LocalPlayer.Participant.ControlGeneration == _pendingGeneration)

@@ -14,9 +14,11 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
     private sealed class Peer
     {
         public double Seen, Next;
-        public readonly Dictionary<long, double> Pending = new();
+        public readonly Dictionary<long, double> Pending = new(64);
     }
-    private readonly Dictionary<int, Peer> _peers = new();
+    private readonly Dictionary<int, Peer> _peers = new(MovementSystem.MovementWire.MaxPlayers);
+    private int[] _peerIds = new int[MovementSystem.MovementWire.MaxPlayers];
+    private readonly long[] _expiredSequences = new long[64];
     private bool _host, _running, _active;
     private double _seen;
     private long _sequence, _received;
@@ -30,8 +32,9 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
     }
     public void Track(int id)
     {
-        if (_running && _host && id > 1)
-            _peers.TryAdd(id, new Peer { Seen = Now, Next = Now + Math.Max(.1, RequestIntervalSeconds) });
+        if (!_running || !_host || id <= 1 || _peers.ContainsKey(id)) return;
+        _peers.Add(id, new Peer { Seen = Now, Next = Now + Math.Max(.1, RequestIntervalSeconds) });
+        if (_peerIds.Length < _peers.Count) Array.Resize(ref _peerIds, _peers.Count);
     }
     public void ActivateClient() { if (_running && !_host && !_active) { _active = true; _seen = Now; } }
     public void Remove(int id) => _peers.Remove(id);
@@ -51,8 +54,11 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
             }
             return;
         }
-        foreach (var id in new List<int>(_peers.Keys))
+        var peerCount = 0;
+        foreach (var id in _peers.Keys) _peerIds[peerCount++] = id;
+        for (var i = 0; i < peerCount; i++)
         {
+            var id = _peerIds[i];
             if (!_peers.TryGetValue(id, out var peer)) continue;
             if (now - peer.Seen >= timeout)
             {
@@ -61,14 +67,16 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
                 PeerTimedOut?.Invoke(id, "Heartbeat timeout");
                 continue;
             }
-            foreach (var seq in new List<long>(peer.Pending.Keys))
-                if (now >= peer.Pending[seq]) peer.Pending.Remove(seq);
+            var expiredCount = 0;
+            foreach (var (pendingSequence, expiry) in peer.Pending)
+                if (now >= expiry) _expiredSequences[expiredCount++] = pendingSequence;
+            for (var j = 0; j < expiredCount; j++) peer.Pending.Remove(_expiredSequences[j]);
             if (now < peer.Next) continue;
             peer.Next = now + Math.Max(.1, RequestIntervalSeconds);
             if (peer.Pending.Count >= 64) continue;
             var sequence = ++_sequence;
             peer.Pending.Add(sequence, now + timeout);
-            var result = RpcId(id, nameof(HeartbeatRequest), sequence);
+            var result = RpcId(id, MethodName.HeartbeatRequest, (ReadOnlySpan<Variant>)[sequence]);
             Logger.Info($"HB request peer={id} sequence={sequence} result={result}");
         }
     }
@@ -78,7 +86,7 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
         if (!_running || _host || !_active || Multiplayer.GetRemoteSenderId() != 1 || sequence <= _received) return;
         _received = sequence;
         _seen = Now;
-        var result = RpcId(1, nameof(HeartbeatResponse), sequence);
+        var result = RpcId(1, MethodName.HeartbeatResponse, (ReadOnlySpan<Variant>)[sequence]);
         Logger.Info($"HB response host=1 sequence={sequence} result={result}");
     }
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]

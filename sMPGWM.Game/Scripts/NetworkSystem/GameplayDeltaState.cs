@@ -22,11 +22,23 @@ internal sealed class GameplayDeltaState : IDisposable
     private double _healthCapacity;
     private long _revision, _configurationEpoch, _effectEpoch;
     private readonly Array _row = new(), _configuration = new(), _effects = new(), _resources = new(), _empty = new();
+    private readonly Array _activeBehaviours = new(), _activeConditions = new();
+    private readonly Array[] _behaviourRows = new Array[ShipRuntime.MaxBehaviours];
+    private readonly double[] _statValues = new double[14];
 
     public GameplayDeltaState()
     {
         _row.Resize(6);
+        _configuration.Resize(ConfigurationFields.Length);
+        _effects.Resize(EffectFields.Length);
         _resources.Resize(ResourceFields.Length);
+        for (var i = 0; i < _behaviourRows.Length; i++)
+        {
+            _behaviourRows[i] = new();
+            _behaviourRows[i].Resize(3);
+        }
+        _effects[0] = _activeBehaviours;
+        _effects[1] = _activeConditions;
     }
 
     public Array? Encode(int entity, ShipRuntime state)
@@ -40,27 +52,38 @@ internal sealed class GameplayDeltaState : IDisposable
             for (var i = 0; i < _behaviourCount; i++) if (_behaviours[i] != state.ActiveBehaviours[i]) { effectsChanged = true; break; }
             for (var i = 0; i < _conditionCount; i++) if (_conditions[i] != state.Conditions[i]) { effectsChanged = true; break; }
         }
-        if (configurationChanged || effectsChanged)
+        if (configurationChanged)
         {
-            using var full = GameplaySnapshotCodec.Encode("", state);
-            if (configurationChanged)
+            var s = state.Stats;
+            _statValues[0] = s.Speed; _statValues[1] = s.AfterBurnerSpeed; _statValues[2] = s.RotationSpeed;
+            _statValues[3] = s.Acceleration; _statValues[4] = s.AfterBurnerAcceleration; _statValues[5] = s.Mass;
+            _statValues[6] = s.Armor; _statValues[7] = s.ShieldCapacity; _statValues[8] = s.RechargeTime;
+            _statValues[9] = s.DownTime; _statValues[10] = s.EnergyProduction; _statValues[11] = s.EnergyConsumption;
+            _statValues[12] = s.EnergyStorage; _statValues[13] = s.EngineEnergyConsumption;
+            _configuration[0] = state.Shield.Capacity; _configuration[1] = state.FactionId;
+            _configuration[2] = _statValues;
+            _configuration[3] = (s.HasEngine ? 1 : 0) | (s.HasHull ? 2 : 0) | (s.HasShieldGenerator ? 4 : 0) |
+                (s.HasReactor ? 8 : 0) | (s.HasBattery ? 16 : 0);
+            _configuration[4] = (int)state.Components.Presence; _configuration[5] = state.Health.Capacity;
+            _configurationEpoch = state.Revision;
+            _stats = state.Stats; _components = state.Components.Presence;
+            _faction = state.FactionId; _healthCapacity = state.Health.Capacity;
+        }
+        if (effectsChanged)
+        {
+            _activeBehaviours.Clear(); _activeConditions.Clear();
+            System.Array.Clear(_conditions);
+            _behaviourCount = state.ActiveBehaviours.Count; _conditionCount = state.Conditions.Count;
+            for (var i = 0; i < _behaviourCount; i++)
             {
-                _configuration.Clear();
-                foreach (var field in ConfigurationFields) _configuration.Add(full[field]);
-                _configurationEpoch = state.Revision;
-                _stats = state.Stats; _components = state.Components.Presence;
-                _faction = state.FactionId; _healthCapacity = state.Health.Capacity;
+                var active = _behaviours[i] = state.ActiveBehaviours[i];
+                var row = _behaviourRows[i];
+                row[0] = active.DefinitionId; row[1] = active.RuntimeId; row[2] = active.Deadline;
+                _activeBehaviours.Add(row);
             }
-            if (effectsChanged)
-            {
-                _effects.Clear();
-                foreach (var field in EffectFields) _effects.Add(full[field]);
-                _effectEpoch = state.Revision;
-                System.Array.Clear(_conditions);
-                _behaviourCount = state.ActiveBehaviours.Count; _conditionCount = state.Conditions.Count;
-                for (var i = 0; i < _behaviourCount; i++) _behaviours[i] = state.ActiveBehaviours[i];
-                for (var i = 0; i < _conditionCount; i++) _conditions[i] = state.Conditions[i];
-            }
+            for (var i = 0; i < _conditionCount; i++)
+                _activeConditions.Add(_conditions[i] = state.Conditions[i]);
+            _effectEpoch = state.Revision;
         }
         _revision = state.Revision;
         _resources[0] = state.Revision; _resources[1] = state.Shield.Current; _resources[2] = state.Energy.Current;
@@ -90,5 +113,7 @@ internal sealed class GameplayDeltaState : IDisposable
     public void Dispose()
     {
         _row.Dispose(); _configuration.Dispose(); _effects.Dispose(); _resources.Dispose(); _empty.Dispose();
+        _activeBehaviours.Dispose(); _activeConditions.Dispose();
+        foreach (var row in _behaviourRows) row.Dispose();
     }
 }

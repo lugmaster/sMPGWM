@@ -34,6 +34,8 @@ public static class GameplayDefinitions
                     texture.GetWidth() > 0 && texture.GetHeight() > 0);
             if (!result.IsSuccess) throw new InvalidOperationException(result.Error!.ToDisplayString());
             var catalogues = result.Value!;
+            foreach (var definition in catalogues.Items.All)
+                WeaponSystem.WeaponDefinitionCompiler.Prepare(definition);
             inputs.Add("GameplayProtocol", "6:complete-initial-state-readiness");
             var checksum = ChecksumGenerator.Compute(inputs);
             foreach (var diagnostic in catalogues.SupportDiagnostics) Logger.Warning(diagnostic);

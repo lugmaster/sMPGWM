@@ -19,7 +19,7 @@ public sealed class HitscanQuery : IDisposable
     {
         _excluded.Clear();
         _excluded.Add(shooter.GetRid());
-        foreach (var other in world.Entities.Values)
+        foreach (var other in world.Ships)
             if (other != shooter && other.Runtime.IsAlive && shooter.Runtime.IsAllyOf(other.Runtime))
                 _excluded.Add(other.GetRid());
         _query.Exclude = _excluded;

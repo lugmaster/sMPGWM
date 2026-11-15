@@ -20,8 +20,6 @@ internal static class GameSessionFactory
     public static GameSession Create(SessionScope scope, Node parent, UiCanvas canvas, Node world,
         NetworkStartupData startup, SessionCoordinator coordinator)
     {
-        foreach (var definition in GameplayDefinitions.Current.Items.All)
-            WeaponSystem.ShipWeaponController.ValidateDefinition(definition);
         if (startup.RestoredWorld is { } supplied)
         {
             if (startup.Role != NetworkRole.Host || supplied.Players.Count > startup.MaxPlayers)
@@ -124,6 +122,7 @@ internal static class GameSessionFactory
         {
             if (startup.RestoredWorld?.LocalHotbar is { } savedHotbar) hotbar.RestoreState(savedHotbar);
             else hotbar.InitializeEquipmentAbilities();
+            foreach (var ship in participants.Ships) ship.Weapons.Refresh();
             bindings.VerifyReady();
             synchronization.Activate();
         });

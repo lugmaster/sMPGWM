@@ -14,6 +14,44 @@ public class WorldTopologyTests
         new Vector2(peer * 300, 100), 0, Vector2.Zero);
 
     [Test]
+    public void UnchangedTopologyChecksDoNotAllocateAndCapturesKeepCurrentPositions()
+    {
+        var world = new GameWorld();
+        try
+        {
+            world.Spawn(Record(1));
+            var ship = world.Players[1].ControlledShip!;
+            var topology = world.CaptureTopology();
+            ship.Position += new Vector2(100, 200);
+            for (var i = 0; i < 100; i++) world.HasSameTopology(topology);
+            var same = true;
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 1000; i++) same &= world.HasSameTopology(topology);
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.That(same, Is.True);
+            Assert.That(allocated, Is.Zero);
+            Assert.That(world.CaptureTopology().Entities[0].Position, Is.EqualTo(ship.GlobalPosition));
+            world.Players[1].AssignShip(null);
+            Assert.That(world.HasSameTopology(topology), Is.False);
+            topology = world.CaptureTopology();
+            world.Players[1].AssignShip(ship);
+            Assert.That(world.HasSameTopology(topology), Is.False);
+            topology = world.CaptureTopology();
+            world.Players[1].ApplyGeneration(world.Players[1].ControlGeneration + 1);
+            Assert.That(world.HasSameTopology(topology), Is.False);
+            var uncontrolled = world.SpawnEntity(EntitySpawnRecord.From(Record(2)));
+            topology = world.CaptureTopology();
+            uncontrolled.QueueFree();
+            Assert.That(world.HasSameTopology(topology), Is.False);
+            world.DestroyEntity(uncontrolled.EntityId);
+            var replacement = world.SpawnEntity(EntitySpawnRecord.From(Record(3)));
+            Assert.That(world.Entities.Count, Is.EqualTo(topology.Entities.Length));
+            Assert.That(world.HasSameTopology(topology), Is.False);
+        }
+        finally { world.Clear(); world.Free(); }
+    }
+
+    [Test]
     public void UncontrolledShipBelongsToWorldAndSurvivesControlChanges()
     {
         var world = new GameWorld();
