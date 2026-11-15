@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://cnhoxy2cyjk0v"]
+
+[node name="LabeledButtonPair" type="HBoxContainer" unique_id=232406362]
+offset_right = 338.0
+offset_bottom = 36.0
+size_flags_horizontal = 0
+theme_override_constants/separation = -5
+
+[node name="Label" type="Label" parent="." unique_id=537832943]
+custom_minimum_size = Vector2(128, 0)
+layout_mode = 2
+text = "Label"
+vertical_alignment = 1
+
+[node name="FirstButton" type="CheckButton" parent="." unique_id=2093310232]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "First"
+
+[node name="SecondButton" type="CheckButton" parent="." unique_id=2144323167]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Second"

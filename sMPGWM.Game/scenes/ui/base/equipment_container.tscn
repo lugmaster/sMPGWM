@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cuerqmlisy4it" path="res://Scripts/UiSystem/OverlayMenuSystem/InventoryMenu/EquipmentContainer.cs" id="1_equipment"]
 [ext_resource type="PackedScene" uid="uid://c0hl3kglrv4nb" path="res://scenes/ui/base/icon_with_label.tscn" id="2_capacity"]
 [ext_resource type="PackedScene" uid="uid://j88ps3ai1b35" path="res://scenes/ui/base/item_grid.tscn" id="3_weapons"]
+[ext_resource type="PackedScene" uid="uid://cnhoxy2cyjk0v" path="res://scenes/ui/base/labeled_button_pair.tscn" id="4_xj6e7"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_content"]
 content_margin_top = 4.0
@@ -11,12 +12,13 @@ content_margin_top = 4.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_content")
-current_tab = 0
+current_tab = 1
 clip_tabs = false
 use_hidden_tabs_for_min_size = true
 script = ExtResource("1_equipment")
 
 [node name="Ship" type="GridContainer" parent="." unique_id=1154619501]
+visible = false
 layout_mode = 2
 theme_override_constants/h_separation = 13
 theme_override_constants/v_separation = 10
@@ -24,7 +26,6 @@ columns = 2
 metadata/_tab_index = 0
 
 [node name="Weapons" type="VBoxContainer" parent="." unique_id=354661036]
-visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 metadata/_tab_index = 1
@@ -45,6 +46,16 @@ vertical_scroll_mode = 0
 
 [node name="SlotGrid" parent="Weapons/Slots" index="0" unique_id=69379893]
 columns = 3
+
+[node name="HSeparator" type="HSeparator" parent="Weapons" unique_id=1350710175]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Weapons" unique_id=165397724]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="LabeledButtonPair" parent="Weapons/VBoxContainer" unique_id=232406362 instance=ExtResource("4_xj6e7")]
+layout_mode = 2
 
 [node name="Crew" type="Control" parent="." unique_id=1853209317]
 visible = false
