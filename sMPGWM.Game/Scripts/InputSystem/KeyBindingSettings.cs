@@ -1,6 +1,7 @@
 using System;
 using Godot;
 using sMPGWM.Scripts.FileLoadingSystem;
+using Dictionary = Godot.Collections.Dictionary;
 
 namespace sMPGWM.Scripts.InputSystem;
 
@@ -13,7 +14,7 @@ public static class KeyBindingSettings
 
     private static InputEvent?[,]? _current;
     private static InputEvent?[,]? _defaults;
-    private static Godot.Collections.Dictionary? _configuration;
+    private static Dictionary? _configuration;
 
     public static InputEvent?[,] CreateCurrentBindings() =>
         Clone(_current ?? throw new InvalidOperationException("Keybinding configuration has not been loaded."));
@@ -100,10 +101,28 @@ public static class KeyBindingSettings
             if (binding is InputEventMouseButton mouse && mouse.ButtonIndex is >= MouseButton.Left and <= MouseButton.Xbutton2) continue;
             return false;
         }
-        return true;
+        return FindConflict(KeyBindingCatalog.Actions, bindings) == null;
     }
 
-    public static Godot.Collections.Dictionary Serialize(InputEvent?[,] bindings)
+    internal static string? FindConflict(KeyBindingDefinition[] actions, InputEvent?[,] bindings)
+    {
+        for (var action = 0; action < actions.Length; action++)
+        for (var slot = 0; slot < SlotCount; slot++)
+        {
+            var binding = bindings[action, slot];
+            if (binding == null) continue;
+            for (var other = action; other < actions.Length; other++)
+            {
+                if (actions[action].SectionId != actions[other].SectionId) continue;
+                for (var otherSlot = other == action ? slot + 1 : 0; otherSlot < SlotCount; otherSlot++)
+                    if (SameBinding(binding, bindings[other, otherSlot]))
+                        return $"{Format(binding)} is assigned to both {actions[action].Label} and {actions[other].Label} in {actions[action].SectionDisplayName}. Change or clear one before saving.";
+            }
+        }
+        return null;
+    }
+
+    public static Dictionary Serialize(InputEvent?[,] bindings)
     {
         if (!IsValid(bindings)) throw new ArgumentException("Invalid keybindings.", nameof(bindings));
         var saved = (_configuration ?? throw new InvalidOperationException("Keybinding configuration has not been loaded.")).Duplicate(true);
@@ -169,7 +188,7 @@ public static class KeyBindingSettings
     private static Variant Encode(InputEvent? input)
     {
         if (input is not InputEventWithModifiers binding) return default;
-        var encoded = new Godot.Collections.Dictionary();
+        var encoded = new Dictionary();
         if (input is InputEventKey key)
         {
             encoded["type"] = "key";

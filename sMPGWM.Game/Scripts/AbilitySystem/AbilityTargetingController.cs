@@ -1,6 +1,6 @@
 using Godot;
 using sMPGWM.Scripts.EquipmentSystem;
-using sMPGWM.Scripts.GamePlaySystem;
+using sMPGWM.Scripts.InputSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.UiSystem;
@@ -59,6 +59,7 @@ public partial class AbilityTargetingController : Node
         _caster = ship.EntityId;
         _generation = _player.Participant.ControlGeneration;
         _waitForRelease = Input.IsMouseButtonPressed(MouseButton.Left);
+        PublishInputState();
         var texture = Cursors.GreenTargetCursor;
         Input.SetCustomMouseCursor(texture, Input.CursorShape.Arrow, texture.GetSize() / 2);
         _canvas.ShowGameplayFeedback("Select your ship or an allied ship. Right-click or Escape to cancel.");
@@ -69,11 +70,15 @@ public partial class AbilityTargetingController : Node
         if (_binding == null) return;
         _binding = null;
         _waitForRelease = Input.IsMouseButtonPressed(MouseButton.Left) || Input.IsMouseButtonPressed(MouseButton.Right);
+        PublishInputState();
         Input.SetCustomMouseCursor(null);
         _canvas.ShowGameplayFeedback("");
     }
 
+    private void PublishInputState() => _player.InputPolicy.SetAbilityTargeting(IsTargeting, _waitForRelease);
+
     private bool ContextValid() => _player.Input.IsGameplayInputAvailable &&
+        _player.InputPolicy.IsContextAvailable(InputContext.AbilityTargeting) &&
         _player.Participant?.ControlledShip?.EntityId == _caster && _player.Participant.ControlGeneration == _generation &&
         _binding != null && _network.ItemBaselineReady && _player.Participant.ControlledShip.Runtime.AbilityAdmissionAvailable &&
         _player.Participant.ControlledShip.Loadout.Provides(_binding.SlotKey, _source, _binding.AbilityId);
@@ -81,7 +86,10 @@ public partial class AbilityTargetingController : Node
     public override void _Process(double delta)
     {
         if (_waitForRelease && !Input.IsMouseButtonPressed(MouseButton.Left) && !Input.IsMouseButtonPressed(MouseButton.Right))
+        {
             _waitForRelease = false;
+            PublishInputState();
+        }
         if (IsTargeting && !ContextValid()) Cancel();
     }
 
@@ -128,5 +136,6 @@ public partial class AbilityTargetingController : Node
         Cancel();
         _player.InputPolicy.CanControlPlayerChanged -= AvailabilityChanged;
         BindEquipment(null);
+        _player.InputPolicy.SetAbilityTargeting(false, false);
     }
 }

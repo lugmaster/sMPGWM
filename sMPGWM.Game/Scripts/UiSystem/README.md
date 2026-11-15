@@ -13,6 +13,26 @@
 | `InputController` | Gates continuous movement/combat input, clears outputs when blocked or unfocused, and suppresses mouse attacks over UI. |
 | `PlayerActionController` | Accepts hotbar activation requests and checks policy and current input availability before invoking gameplay. |
 
+## Input contexts and keybinding sections
+
+`InputContext` is the shared vocabulary for binding sections and `PlayerInputPolicy`. `InputContextNames` derives the accepted `sectionId` values once from the enum names using snake_case (`AbilityTargeting` becomes `ability_targeting`), so there is no separate handwritten ID list. These enum names therefore form the configuration ID contract. The menu uses the configurable `sectionDisplayName` (such as `Ability Targeting`) only for presentation. Actions sharing a section ID must agree on its display name. User overrides may change display names, bindings, and presentation order, but cannot change an action's section ID.
+
+| Context | Section ID | Default display name | Scope |
+| --- | --- | --- | --- |
+| `Flight` | `flight` | Flight | Ship controls, fire inputs, and target-switch inputs. |
+| `AbilityTargeting` | `ability_targeting` | Ability Targeting | Target confirmation; the existing `Action` binding is reserved here and remains unconsumed. |
+| `MenuShortcuts` | `menu_shortcuts` | Menu Shortcuts | Opening/toggling menus, including during flight. |
+| `MenuInteraction` | `menu_interaction` | Menu Interaction | Native UI control interaction. |
+| `InventoryInteraction` | `inventory_interaction` | Inventory Interaction | Inventory/equipment item manipulation and hotbar editing. |
+
+Sections appear only when they contain configured actions. Ability targeting still handles its existing mouse/Escape events, and native menu/inventory controls retain their existing handling. Primary and secondary fire remain unconsumed.
+
+Bindings must be unique within a context, across both binding slots. Sharing between contexts is allowed. The same conflict check runs in the menu, configuration loading, and save/apply validation. This permits Action and Primary Fire to share left mouse without a special-case exception.
+
+Contexts are overlapping permissions, not an exclusive mode or a priority stack. `PlayerInputPolicy` retains `CanControlPlayer` as the general gameplay gate. Ability targeting reports its active/release-wait state to the policy: flight movement stays available, while flight pointer actions remain suppressed until release. Inventory availability uses the existing UI editing notifications. `BindingCapture`, `TextEntry`, and `RequiredAcknowledgement` are input restrictions, not keybinding sections; the window manager supplies its current restrictions to the policy's shortcut rule at the event boundary. Focus, authority, and pointer-over-UI checks remain at their existing boundaries.
+
+Cross-context sharing does not itself provide physical-key capture for every action. Existing Godot GUI handling, menu event handling, and the flight-pointer gate still determine delivery. A future configurable interaction must use the policy and define consumption when its context overlaps another.
+
 ## Window behavior
 
 `MainGame` keeps the world in a window-filling `SubViewport` and renders UI through the single `UiCanvas` CanvasLayer in the root viewport. The project's `canvas_items` stretch mode keeps UI rendering at the window resolution. Inside `UiCanvas/Root`, scene-tree order defines the UI draw order: `Hudlayer` (including the hotbar), `MenuLayer`, then `ItemPointerOverlay`. These branches are Controls; individual HUD widgets and pointer visuals do not create CanvasLayers or override ordering with Z indices. Pointer visuals and their children ignore mouse input.

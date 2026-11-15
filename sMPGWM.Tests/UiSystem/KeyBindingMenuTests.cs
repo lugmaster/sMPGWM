@@ -1,4 +1,6 @@
 using Godot;
+using Dictionary = Godot.Collections.Dictionary;
+using FileAccess = System.IO.FileAccess;
 using sMPGWM.Scripts.FileLoadingSystem;
 using sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.InputSystem;
@@ -10,6 +12,27 @@ namespace sMPGWM.Tests.UiSystem;
 [Category("Godot")]
 public sealed class KeyBindingMenuTests
 {
+    [Test]
+    public void BindingUniquenessIsEnforcedWithinEachContextIncludingSecondarySlots()
+    {
+        var bindings = KeyBindingSettings.CreateDefaultBindings();
+        Assert.That(KeyBindingSettings.IsValid(bindings), Is.True);
+        var fire = FindAction("PrimaryFire");
+        var action = FindAction("Action");
+        Assert.That(KeyBindingCatalog.Actions[fire].Context, Is.EqualTo(InputContext.Flight));
+        Assert.That(KeyBindingCatalog.Actions[action].Context, Is.EqualTo(InputContext.AbilityTargeting));
+        Assert.That(KeyBindingSettings.SameBinding(bindings[fire, 0], bindings[action, 0]), Is.True);
+
+        var forward = FindAction("Forwards");
+        bindings[forward, 1] = bindings[FindAction("InventoryMenu"), 0];
+        Assert.That(KeyBindingSettings.IsValid(bindings), Is.True, "Different contexts may share a binding.");
+        bindings[forward, 1] = bindings[fire, 0];
+        Assert.That(KeyBindingSettings.IsValid(bindings), Is.False);
+        Assert.That(GameConfig.SaveKeyBindings(bindings), Is.EqualTo(Error.InvalidData));
+        bindings[forward, 1] = bindings[forward, 0];
+        Assert.That(KeyBindingSettings.IsValid(bindings), Is.False, "Slots of one action must also be unique.");
+    }
+
     [Test]
     public void NormalizationPreservesModifiersAndMouseButtons()
     {
@@ -40,7 +63,7 @@ public sealed class KeyBindingMenuTests
     public void SaveReloadAndRestorePreserveDefaultsAndCompatibility()
     {
         var configPath = ProjectSettings.GlobalizePath(FilePaths.SystemConfigPath);
-        var originalConfig = System.IO.File.ReadAllText(configPath);
+        var originalConfig = File.ReadAllText(configPath);
         var originalBindings = KeyBindingSettings.CreateCurrentBindings();
         var defaults = KeyBindingSettings.CreateDefaultBindings();
         try
@@ -76,7 +99,7 @@ public sealed class KeyBindingMenuTests
         }
         finally
         {
-            System.IO.File.WriteAllText(configPath, originalConfig);
+            File.WriteAllText(configPath, originalConfig);
             Assert.That(ConfigLoader.Instance.Load().error, Is.EqualTo(Error.Ok));
             GameConfig.Load();
             Assert.That(GameConfig.SaveKeyBindings(originalBindings), Is.EqualTo(Error.Ok));
@@ -101,11 +124,14 @@ public sealed class KeyBindingMenuTests
             var menu = settings.GetNode<KeyBindingMenuController>("Keybindings");
             var sections = menu.GetNode<VBoxContainer>("MenuContainer/ScrollContainer/MarginContainer/SectionsContainer");
             Assert.That(sections.GetChildCount(), Is.EqualTo(3));
+            Assert.That(sections.GetChild(0).GetNode<Label>("SectionHeader/SectionLabel").Text, Is.EqualTo("Flight"));
+            Assert.That(sections.GetChild(1).GetNode<Label>("SectionHeader/SectionLabel").Text, Is.EqualTo("Ability Targeting"));
+            Assert.That(sections.GetChild(2).GetNode<Label>("SectionHeader/SectionLabel").Text, Is.EqualTo("Menu Shortcuts"));
             var rowCount = 0;
             foreach (var section in sections.GetChildren())
                 rowCount += section.GetNode<VBoxContainer>("RowsContainer").GetChildCount();
             Assert.That(rowCount, Is.EqualTo(KeyBindingCatalog.Actions.Length));
-            Assert.That(rowCount, Is.EqualTo(15));
+            Assert.That(rowCount, Is.EqualTo(17));
             var firstRows = sections.GetChild(0).GetNode<VBoxContainer>("RowsContainer");
             var row = firstRows.GetChild(0);
             var primary = row.GetNode<Button>("PrimaryBindingButton");
@@ -168,7 +194,7 @@ public sealed class KeyBindingMenuTests
             menu._Input(new InputEventKey { PhysicalKeycode = Key.Escape, Pressed = true });
             menu._Input(new InputEventKey { PhysicalKeycode = Key.Escape, Pressed = false });
             Assert.That(secondary.Text, Does.Contain("Esc"));
-            Assert.That(save.Disabled, Is.True);
+            Assert.That(save.Disabled, Is.False, "Flight can share a binding with Menu Shortcuts.");
             secondary.EmitSignal(BaseButton.SignalName.Pressed);
             menu._Input(new InputEventKey { PhysicalKeycode = Key.F10, Pressed = true });
             menu._Input(new InputEventKey { PhysicalKeycode = Key.F10, Pressed = false });
@@ -202,12 +228,12 @@ public sealed class KeyBindingMenuTests
         var path = ProjectSettings.GlobalizePath(FilePaths.UserConfigPath);
         try
         {
-            using (var lockedConfig = new System.IO.FileStream(path, FileMode.Open, System.IO.FileAccess.Read, FileShare.None))
+            using (var lockedConfig = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
                 Assert.That(GameConfig.SaveKeyBindings(draft), Is.Not.EqualTo(Error.Ok));
             Assert.That(GD.VarToStr(ConfigLoader.Instance.GetValue(KeyBindingSettings.ConfigSection, KeyBindingSettings.ConfigKey)), Is.EqualTo(stored));
             AssertBindingsEqual(original, KeyBindingSettings.CreateCurrentBindings());
             var shipped = ConfigLoader.Instance.GetDefaultValue(KeyBindingSettings.ConfigSection, KeyBindingSettings.ConfigKey);
-            Assert.Throws<InvalidOperationException>(() => KeyBindingSettings.LoadConfiguration(shipped, new Godot.Collections.Dictionary { ["Forwards"] = "invalid stored binding" }, FilePaths.UserConfigPath));
+            Assert.Throws<InvalidOperationException>(() => KeyBindingSettings.LoadConfiguration(shipped, new Dictionary { ["Forwards"] = "invalid stored binding" }, FilePaths.UserConfigPath));
             AssertBindingsEqual(original, KeyBindingSettings.CreateCurrentBindings());
         }
         finally

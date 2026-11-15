@@ -11,7 +11,7 @@ internal sealed class KeyBindingConfiguration
     private static readonly string[] RequiredActions =
     [
         "Forwards", "Backwards", "StrafeLeft", "StrafeRight", "AfterBurner", "Break", "EnableAutoBreaking",
-        "Action", "AlternateAction", "TargetSwitch", "TargetNearestSwitch", "MainMenu", "InventoryMenu",
+        "Action", "PrimaryFire", "SecondaryFire", "RotateShip", "TargetSwitch", "TargetNearestSwitch", "MainMenu", "InventoryMenu",
         "MapMenu", "MessageMenu"
     ];
 
@@ -36,6 +36,7 @@ internal sealed class KeyBindingConfiguration
 
         var actions = new KeyBindingDefinition[values.Count];
         var orders = new HashSet<int>();
+        var sectionDisplayNames = new Dictionary<string, string>(StringComparer.Ordinal);
         var index = 0;
         foreach (var entry in values)
         {
@@ -44,7 +45,13 @@ internal sealed class KeyBindingConfiguration
             var actionPath = path + "." + action;
             var definition = RequireDictionary(entry.Value, actionPath);
             var label = RequireString(Require(definition, "label", actionPath), actionPath + ".label");
-            var section = RequireString(Require(definition, "section", actionPath), actionPath + ".section");
+            var sectionId = RequireString(Require(definition, "sectionId", actionPath), actionPath + ".sectionId");
+            var sectionDisplayName = RequireString(Require(definition, "sectionDisplayName", actionPath), actionPath + ".sectionDisplayName");
+            if (!InputContextNames.TryGetContext(sectionId, out _))
+                throw Invalid(actionPath + ".sectionId", "unknown input context: " + sectionId);
+            if (sectionDisplayNames.TryGetValue(sectionId, out var existingDisplayName) && existingDisplayName != sectionDisplayName)
+                throw Invalid(actionPath + ".sectionDisplayName", "must match other actions in section " + sectionId);
+            sectionDisplayNames[sectionId] = sectionDisplayName;
             var orderValue = Require(definition, "order", actionPath);
             if (orderValue.VariantType != Variant.Type.Int || orderValue.AsInt64() < 0 || orderValue.AsInt64() > int.MaxValue)
                 throw Invalid(actionPath + ".order", "must be a nonnegative integer");
@@ -56,7 +63,7 @@ internal sealed class KeyBindingConfiguration
             var deadzone = deadzoneValue.AsDouble();
             if (!double.IsFinite(deadzone) || deadzone < 0 || deadzone > 1)
                 throw Invalid(actionPath + ".deadzone", "must be a number between 0 and 1");
-            actions[index++] = new KeyBindingDefinition(action, label, section) { Order = order, Deadzone = (float)deadzone };
+            actions[index++] = new KeyBindingDefinition(action, label, sectionId) { SectionDisplayName = sectionDisplayName, Order = order, Deadzone = (float)deadzone };
         }
 
         Array.Sort(actions, (left, right) => left.Order.CompareTo(right.Order));
@@ -68,14 +75,20 @@ internal sealed class KeyBindingConfiguration
             bindings[row, 0] = Decode(Require(definition, "primary", actionPath), actionPath + ".primary");
             bindings[row, 1] = Decode(Require(definition, "secondary", actionPath), actionPath + ".secondary");
         }
+        if (KeyBindingSettings.FindConflict(actions, bindings) is { } conflict)
+            throw Invalid(path, conflict);
         return new KeyBindingConfiguration(actions, bindings, values.Duplicate(true));
     }
 
     public static void RequireMatchingActions(KeyBindingConfiguration defaults, KeyBindingConfiguration effective, string source)
     {
         foreach (var action in defaults.Actions)
+        {
             if (!effective.Values.ContainsKey(action.Action))
                 throw Invalid(source + " [keybindings] bindings." + action.Action, "action defined in shipped configuration is missing");
+            if (effective.Values[action.Action].AsGodotDictionary()["sectionId"].AsString() != action.SectionId)
+                throw Invalid(source + " [keybindings] bindings." + action.Action + ".sectionId", "input context must match the shipped action");
+        }
         foreach (var action in effective.Actions)
             if (!defaults.Values.ContainsKey(action.Action))
                 throw Invalid(source + " [keybindings] bindings." + action.Action, "action has no shipped default");

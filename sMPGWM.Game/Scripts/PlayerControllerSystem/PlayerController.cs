@@ -28,7 +28,7 @@ public partial class PlayerController : Node
     {
         _canvas = canvas; _transfer = transfer; _world = world;
         AddChild(Input);
-        Input.SetPointerInputFilter(canvas.IsPointerOverInteractiveUi);
+        Input.SetPointerInputFilter(() => !InputPolicy.CanUseFlightPointerActions(canvas.IsPointerOverInteractiveUi()));
         _actions = new(InputPolicy, activate, () => Input.IsGameplayInputAvailable);
         canvas.OnRequestHotbarAction += _actions.RequestHotbarActivation;
         canvas.BlockingChanged += InputPolicy.SetHasBlockingWindow;
@@ -112,10 +112,10 @@ public partial class PlayerController : Node
         if (_shutdown) return;
         Input.SampleInput();
         if (_ship == null || !_authorityReady || !IsMultiplayerAuthority()) return;
-        if (Input.IsGameplayInputAvailable)
+        if (Input.IsGameplayInputAvailable && InputPolicy.IsContextAvailable(InputContext.Flight))
         {
             var aim = _ship.GetGlobalMousePosition() - _ship.GlobalPosition;
-            _ship.SetInput(new(Input.Direction, aim.Angle(), Input.AlternateActionPressed && aim.LengthSquared() > 0,
+            _ship.SetInput(new(Input.Direction, aim.Angle(), Input.RotateShipButtonPressed && aim.LengthSquared() > 0,
                 Input.AfterBurnerPressed, Input.BreakPressed, Input.AutoBreakingEnabled));
         }
         else
@@ -135,8 +135,9 @@ public partial class PlayerController : Node
     }
     private void SetInventoryEditing(bool available)
     {
+        InputPolicy.SetInventoryInteractionAvailable(available && _active);
         _transfer.RevokeEditSession();
-        _canvas.SetInventoryEditSession(available && _active ? _transfer.OpenEditSession() : 0UL);
+        _canvas.SetInventoryEditSession(InputPolicy.IsContextAvailable(InputContext.InventoryInteraction) ? _transfer.OpenEditSession() : 0UL);
     }
     private void ApplyAvailability(bool enabled)
     {

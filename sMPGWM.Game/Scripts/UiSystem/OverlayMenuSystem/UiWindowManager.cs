@@ -1,10 +1,9 @@
-
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
-using sMPGWM.Scripts.UtilitySystem.UiComponents;
+using sMPGWM.Scripts.InputSystem;
+using sMPGWM.Scripts.PlayerControllerSystem;
 using GameOverlayMenu = sMPGWM.Scripts.UtilitySystem.UiComponents.GameOverlayMenu;
 
 namespace sMPGWM.Scripts.UiSystem.OverlayMenuSystem;
@@ -71,7 +70,7 @@ public partial class UiWindowManager : Control
 
     public override void _Ready()
     {
-        sMPGWM.Scripts.InputSystem.KeyBindingSettings.BindingsChanged += ClearPressedActions;
+        InputSystem.KeyBindingSettings.BindingsChanged += ClearPressedActions;
         MouseFilter = MouseFilterEnum.Ignore;
         _modalBlocker = GetNode<Control>("../../ModalBlocker");
         _scrollContainer = GetNode<ScrollContainer>("WindowScroll");
@@ -83,7 +82,7 @@ public partial class UiWindowManager : Control
 
     public override void _ExitTree()
     {
-        sMPGWM.Scripts.InputSystem.KeyBindingSettings.BindingsChanged -= ClearPressedActions;
+        InputSystem.KeyBindingSettings.BindingsChanged -= ClearPressedActions;
         _windowRow.SortChildren -= QueueEnsureFocusedWindowVisible;
         _windowRow.MinimumSizeChanged -= RefreshScrollExtent;
         _scrollContainer.Resized -= QueueEnsureFocusedWindowVisible;
@@ -200,9 +199,16 @@ public partial class UiWindowManager : Control
 
     internal Func<bool>? CancelGameplayAction { get; set; }
 
+    private InputRestriction InputRestrictions =>
+        (_requiredMessage ? InputRestriction.RequiredAcknowledgement : InputRestriction.None) |
+        (SettingsOpen && ((SettingsOverlayMenu)_windows[UiWindowId.MainMenu]).Bindings.IsCapturingInput
+            ? InputRestriction.BindingCapture : InputRestriction.None) |
+        (GetViewport().GuiGetFocusOwner() is LineEdit or TextEdit ? InputRestriction.TextEntry : InputRestriction.None);
+
     public override void _Input(InputEvent @event)
     {
-        if (SettingsOpen && ((SettingsOverlayMenu)_windows[UiWindowId.MainMenu]).Bindings.IsCapturingInput) return;
+        var restrictions = InputRestrictions;
+        if ((restrictions & InputRestriction.BindingCapture) != 0) return;
         foreach (var (action, actionName) in MenuActions)
             if (@event.IsActionReleased(actionName)) _pressedMenuActions.Remove(action);
 
@@ -243,10 +249,15 @@ public partial class UiWindowManager : Control
     {
         if (!_navigationEnabled) return;
 
+        var restrictions = InputRestrictions;
         foreach (var (action, actionName) in MenuActions)
         {
             if (!@event.IsActionPressed(actionName, true)) continue;
-            if (action != UiWindowId.MainMenu && GetViewport().GuiGetFocusOwner() is LineEdit or TextEdit) return;
+            if (!PlayerInputPolicy.AllowsMenuShortcut(restrictions, action == UiWindowId.MainMenu))
+            {
+                if ((restrictions & InputRestriction.RequiredAcknowledgement) != 0) GetViewport().SetInputAsHandled();
+                return;
+            }
             GetViewport().SetInputAsHandled();
             if (@event.IsEcho() || !_pressedMenuActions.Add(action)) return;
             Activate(action);

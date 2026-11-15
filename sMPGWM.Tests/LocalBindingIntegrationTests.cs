@@ -1,5 +1,8 @@
 using Godot;
 using System.Reflection;
+using System.Net;
+using System.Net.Sockets;
+using GameConfigSystem = sMPGWM.Scripts.GameConfigSystem;
 using sMPGWM.Scripts.AbilitySystem;
 using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GamePlaySystem;
@@ -8,7 +11,6 @@ using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar;
 using sMPGWM.Scripts.NetworkSystem;
 using sMPGWM.Scripts.UiSystem;
-using sMPGWM.Scripts.UtilitySystem.Mocks;
 namespace sMPGWM.Tests;
 [Category("Godot")]
 public sealed class LocalBindingIntegrationTests
@@ -24,13 +26,13 @@ public sealed class LocalBindingIntegrationTests
         parent.AddChild(canvas);
         var errors = new List<string>();
         var coordinator = new SessionCoordinator(() => { }, errors.Add, e => errors.Add(e.Message));
-        using var socket = new System.Net.Sockets.UdpClient(0);
-        var port = ((System.Net.IPEndPoint)socket.Client.LocalEndPoint!).Port;
+        using var socket = new UdpClient(0);
+        var port = ((IPEndPoint)socket.Client.LocalEndPoint!).Port;
         socket.Close();
         GameSession? session = null;
         try
         {
-            coordinator.Initialization.PrepareDefinitions(sMPGWM.Scripts.GameConfigSystem.GameConfig.EnsureCompatibilityData);
+            coordinator.Initialization.PrepareDefinitions(GameConfigSystem.GameConfig.EnsureCompatibilityData);
             coordinator.Start(scope => session = GameSessionFactory.Create(scope, parent, canvas, world,
                 new(NetworkRole.Host, NetworkType.Lan, 10, 1000, Port: port), coordinator));
             session!.Network.CreateNetwork();
@@ -50,11 +52,16 @@ public sealed class LocalBindingIntegrationTests
             var binding = (EquipmentAbilityHotbarBinding)hotbar.Entries[0]!;
             targeting.Begin(binding);
             Assert.That(targeting.IsTargeting, Is.True);
+            Assert.That(session.Player.InputPolicy.IsContextAvailable(InputContext.AbilityTargeting), Is.True);
+            Assert.That(session.Player.InputPolicy.IsContextAvailable(InputContext.Flight), Is.True);
+            Assert.That(session.Player.InputPolicy.CanUseFlightPointerActions(false), Is.False);
             var spawned = session.Network.World.ApproveSpawn(2, new("fighter"));
             var replacement = session.Network.World.Entities[spawned.EntityId];
             Assert.That(replacement.Equipment.Revision, Is.EqualTo(ship.Equipment.Revision));
             owner.AssignShip(replacement);
             Assert.That(targeting.IsTargeting, Is.False);
+            Assert.That(session.Player.InputPolicy.IsContextAvailable(InputContext.AbilityTargeting), Is.False);
+            Assert.That(session.Player.InputPolicy.CanUseFlightPointerActions(false), Is.True);
             Assert.That(hotbar.Entries[0], Is.EqualTo(binding));
             Assert.That(hotbar.Resolve(0).Available, Is.True);
             Assert.That(typeof(UiCanvas).GetField("_hotbar", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(canvas), Is.SameAs(hotbar));

@@ -70,15 +70,15 @@ public partial class KeyBindingMenuController : VBoxContainer
         for (var actionIndex = 0; actionIndex < KeyBindingCatalog.Actions.Length; actionIndex++)
         {
             var definition = KeyBindingCatalog.Actions[actionIndex];
-            if (!rowsBySection.TryGetValue(definition.Section, out var rows))
+            if (!rowsBySection.TryGetValue(definition.SectionId, out var rows))
             {
                 var section = sectionScene.Instantiate<VBoxContainer>();
                 section.Name = $"Section{rowsBySection.Count}";
-                section.GetNode<Label>("SectionHeader/SectionLabel").Text = definition.Section;
+                section.GetNode<Label>("SectionHeader/SectionLabel").Text = definition.SectionDisplayName;
                 rows = section.GetNode<VBoxContainer>("RowsContainer");
                 RemoveLayoutSamples(rows);
                 sections.AddChild(section);
-                rowsBySection.Add(definition.Section, rows);
+                rowsBySection.Add(definition.SectionId, rows);
             }
 
             var row = rowScene.Instantiate<HBoxContainer>();
@@ -231,18 +231,5 @@ public partial class KeyBindingMenuController : VBoxContainer
             : conflict ?? (dirty ? "Unsaved changes. Save to apply; Closing settings discards unsaved changes." : "Select a binding to change or clear it.");
     }
 
-    private string? FindConflict()
-    {
-        for (var action = 0; action < _draft.GetLength(0); action++)
-        for (var slot = 0; slot < 2; slot++)
-        {
-            var binding = _draft[action, slot];
-            if (binding == null) continue;
-            for (var other = action; other < _draft.GetLength(0); other++)
-            for (var otherSlot = other == action ? slot + 1 : 0; otherSlot < 2; otherSlot++)
-                if (KeyBindingSettings.SameBinding(binding, _draft[other, otherSlot]))
-                    return $"{KeyBindingSettings.Format(binding)} is assigned to both {KeyBindingCatalog.Actions[action].Label} and {KeyBindingCatalog.Actions[other].Label}. Change or clear one before saving.";
-        }
-        return null;
-    }
+    private string? FindConflict() => KeyBindingSettings.FindConflict(KeyBindingCatalog.Actions, _draft);
 }

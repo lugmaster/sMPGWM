@@ -5,13 +5,10 @@ using sMPGWM.Scripts.EquipmentSystem;
 using sMPGWM.Scripts.GameplayDataSystem;
 using sMPGWM.Scripts.InventorySystem;
 using sMPGWM.Scripts.ItemSystem.Hotbar;
-using sMPGWM.Scripts.UtilitySystem.Mocks;
 using sMPGWM.Scripts.MessageSystem;
 using sMPGWM.Scripts.NetworkSystem;
-using sMPGWM.Scripts.ParallaxSystem;
 using sMPGWM.Scripts.PlayerControllerSystem;
 using sMPGWM.Scripts.UiSystem;
-using sMPGWM.Scripts.WorldSystem;
 using GameWorld = sMPGWM.Scripts.WorldSystem.GameWorld;
 using Logger = sMPGWM.Scripts.LoggingSystem.Logger;
 using ParallaxMotion = sMPGWM.Scripts.ParallaxSystem.ParallaxMotion;
@@ -72,7 +69,7 @@ internal static class GameSessionFactory
                 else Logger.Info($"Item hotbar activation requested: {request}");
             }), world);
         parent.AddChild(player);
-        canvas.BindHotbar(hotbar, Array.Empty<sMPGWM.Scripts.UtilitySystem.UiComponents.IconDefinition>());
+        canvas.BindHotbar(hotbar, Array.Empty<UtilitySystem.UiComponents.IconDefinition>());
         player.SetSessionActive(false);
 
         participants.LocalPlayer = player;
@@ -100,7 +97,6 @@ internal static class GameSessionFactory
         scope.Defer(() => canvas.CancelGameplayAction = null);
         scope.Defer(() => ReleaseNode(targeting));
         scope.Defer(targeting.Cancel);
-        player.Input.SetPointerInputFilter(() => canvas.IsPointerOverInteractiveUi() || targeting.BlocksPointerActions);
         network.AbilityFeedback += result => canvas.ShowGameplayFeedback(AbilityActivationResultText.Format(result));
         network.ItemFeedback += canvas.ShowGameplayFeedback;
         canvas.BindGameplay(network);
