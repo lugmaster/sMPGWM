@@ -23,7 +23,7 @@ Story 1 is complete: every item uses the typed item contract, including the ligh
 
 Stories 1 and 2 are independent. Story 3 builds grouping on story 1; story 4 combines all three into local firing. Stories 5?7 progressively add host synchronization, synchronized supply mechanics, and synchronized damage/death. Each story owns lifecycle, validation, and recovery for the state it introduces; full-epic validation is completed in story 7.
 
-The equipment-group UI is a required design deliverable in story 3. Its proposed selector is a starting point, not a finalized visual design. Supply UI belongs to story 6. No gameplay implementation is requested by this extraction.
+Story 3 implements one `labeled_button_pair` per equipped weapon with its name and independent primary/secondary toggles, loadout group initialization, restoration, and host-authoritative group synchronization. Input mapping is outside story 3. Supply UI belongs to story 6.
 
 ## Contents
 
@@ -79,9 +79,9 @@ This document authorizes no implementation by itself. It records the agreed requ
 
 | Topic | Default and rationale |
 | --- | --- |
-| Groups | Two groups. Each equipped weapon slot belongs to group 1, group 2, or neither; never both. Both triggers may be held together. |
-| Group storage | Membership is part of ship loadout configuration, not immutable weapon data. Replacing a slot occupant preserves the slot's group but increments its binding revision. |
-| Initial membership | New weapon slots default to group 1. The demonstration loadout explicitly assigns the laser to group 2. Do not derive groups from archetype at runtime. |
+| Groups | Two independent groups: primary and secondary. Each equipped weapon can belong to either, both, or neither, independently of archetype. Group membership leaves slot capacity and equipment rules unchanged. Both triggers may be held together. |
+| Group storage | Ship loadout configuration stores both membership flags against equipped weapon identity and slot binding. Unequip clears membership; fixture removal clears all weapon memberships through the existing unequip behavior. Equipment and membership changes update the configuration revision transactionally. |
+| Initial membership | Fresh sessions apply the selected `DevelopmentLoadout` or `StartLoadout` group definition to the final equipped weapons. Restored sessions use captured membership. Weapons equipped, replaced, or re-equipped during play default to primary enabled and secondary disabled. |
 | Input defaults | Existing `Action` becomes the displayed "Fire Group 1" action (LMB); add `FireGroup2` (F) and `ReloadWeapons` (R). Preserve `AlternateAction`/RMB ship steering. All remain configurable through the established binding UI. |
 | Reload command | Reload all equipped ammunition weapons needing ammunition; ignore full magazines, energy weapons, and already reloading weapons. |
 | Automatic reload | Starts immediately after the final round is spent; an empty equipped weapon also starts reloading when its group is held. |
@@ -299,11 +299,15 @@ Definitions are immutable. Weapon state is mutable authoritative item state. Equ
 
 Store at least item identity, state revision, rounds, next-fire deadline including fractional phase, reload start/completion ticks, and monotonically increasing accepted-shot sequence. Barrel index can be derived from the sequence modulo two. Preserve sequence continuity for deterministic spread and effect deduplication; select a defined stable PRNG/hash algorithm, never process-dependent `GetHashCode()`.
 
-Group configuration stores each slot's group and a monotonically increasing weapon-configuration revision. Installing/removing/reassigning a weapon changes that revision. Tick input carries the revision it was sampled against; stale input must not shoot a new slot occupant. Reassignment requests include item identity and expected revision, and are reliable, bounded, and idempotent.
+Group configuration stores primary and secondary membership for each equipped weapon identity and slot binding, with a monotonically increasing weapon-configuration revision. Installing/removing/reassigning a weapon changes that revision. Tick input carries the revision it was sampled against; stale input must not shoot a new slot occupant. Reassignment requests include item identity and expected revision, and are reliable, bounded, and idempotent.
+
+Both `DevelopmentLoadout` and `StartLoadout` define membership for the weapons they equip. Apply the selected definition after equipment initialization, resolving each assignment to an equipped instance. Inventory-only weapons and empty slots cannot be group members. Capture and restore membership with equipment bindings and configuration revision; restored membership takes precedence over startup definitions and defaults.
+
+`StartLoadout` equips Vulcan Mk1 in `weapon_1` and assigns it to primary; secondary is empty. `DevelopmentLoadout` equips Vulcan Mk1 in `weapon_1`, Laser Mk1 in `weapon_2`, and the standard heavy weapon in `weapon_3`; Vulcan Mk1 and the heavy weapon belong to primary, and Laser Mk1 belongs to secondary. A weapon omitted from a group definition is outside that group. Every equipped weapon supports either, both, or neither group. Join/rejoin and restoration preserve empty groups even when all weapon slots are occupied.
 
 ### 6.1 Admission and cadence
 
-An accepted shot requires a ready owning peer, matching session/control/loadout binding, a live ship, attached/available weapon system, powered systems, held assigned group, elapsed cooldown, no reload, and sufficient supply. A miss is still an accepted shot and pays the same cost.
+An accepted shot requires a ready owning peer, matching session/control/loadout binding, a live ship, attached/available weapon system, powered systems, at least one held assigned group, elapsed cooldown, no reload, and sufficient supply. A miss is still an accepted shot and pays the same cost.
 
 The first eligible trigger fires immediately. At `15/s`, accepted ticks are `T, T+4, T+8, ...`; at `3/s`, `T, T+20, T+40, ...`. Keep fractional scheduling state for rates not dividing 60. Define continuous-fire cadence separately from a resumed trigger: preserve the accumulated phase while continuously eligible, but reset stale scheduling debt to the current tick after idle/starvation/reload. At most one shot per item per tick; no catch-up bursts.
 
@@ -316,7 +320,7 @@ Prepare and validate a shot before payment; commit its supply, cadence, sequence
 - Reload completes at `startTick + 90` for the supplied SMG; completion may permit a shot on the same tick if its group is held and power is available.
 - Precise boundary example: first shot at tick 0, 60th at tick 236, automatic reload completes at tick 326. Do not accidentally wait an additional firing interval before starting reload.
 - Manual reload of a partial magazine preserves its rounds until completion, then fills to capacity. Repeated requests do not extend/restart an active reload. No ammunition inventory transaction exists.
-- Unequip, death, weapon-system removal, or loss of powered-system availability cancels reload without filling. When power returns, an empty held weapon can start again; partial magazines require another manual request. UI focus loss or group release stops firing but does not cancel an otherwise valid reload.
+- Unequip, death, weapon-system removal, or loss of powered-system availability cancels reload without filling. When power returns, an empty held weapon can start again; partial magazines require another manual request. UI focus loss or release of all groups assigned to a weapon stops its firing but does not cancel an otherwise valid reload.
 - Item identity, rounds, and unexpired cooldown survive transfers. New slot occupants cannot inherit the outgoing item's reload. Never restart all item states on equipment refresh.
 
 ### 6.3 Energy
@@ -392,6 +396,7 @@ Reload and group-assignment requests are reliable and idempotent, with bounded r
 
 - Continue reliable authoritative health/shield/energy/conditions replication. First optimize full-world dirty publication to changed-entity rows for ready peers, retaining complete baselines and complete snapshots for non-ready joiners. Current joining clients reject partial gameplay rows; do not apply the ready-peer optimization to them unchanged.
 - Add a compact owner weapon-state stream with absolute revisioned values for item identity, slot/group binding, rounds, reload start/deadline, cadence phase/deadline, and accepted-shot sequence. Ammo changes must not increment inventory/container revisions or resend item definitions.
+- Synchronize host-approved primary/secondary weapon membership and unequip/fixture-removal cleanup to the owner and other players. Include complete group configuration in initial, join/rejoin, and recovery baselines.
 - Replicate remote presentation identity through immutable profile IDs and shot events; remote clients do not need private inventory or exact ammo for every player.
 - Validate all values before applying a state batch. Reject stale revisions and impossible item/binding relationships. Coalesce to the latest state per publication; clients do not reconstruct ammo/health by counting cosmetic events.
 - Join order must install item identities before dependent owner weapon state. Require topology, movement, gameplay, items, weapon configuration, and weapon baseline before enabling controls/readiness.
@@ -424,7 +429,9 @@ An accepted hit applies damage immediately. Tracers are presentation only: they 
 
 Use expiry/animation completion and an array-backed active list instead of creating timers/tweens or closures per shot. Pool exhaustion drops a cosmetic effect or replaces the oldest low-priority instance, never suppresses damage. Bound/attenuate simultaneous audio voices instead of starting unlimited sounds.
 
-Add group controls to the existing equipment UI and show per-weapon rounds/reload state, with clear energy-starvation feedback. Reload progress derives from authoritative start/deadline ticks and the synchronized clock; UI cannot complete a reload. Preserve pointer/UI filtering for both fire groups, including keyboard-triggered fire while editing equipment.
+During session initialization, remove the placeholder `Weapons/VBoxContainer/LabeledButtonPair` from `equipment_container.tscn`. Populate that container in slot order with one `labeled_button_pair.tscn` instance per equipped weapon: weapon name, `Primary` toggle, and `Secondary` toggle. Render initialized or restored authoritative membership, including separate entries for identical weapons. Keep the slot grid and capacity display intact; remove entries on unequip and prevent stale or duplicate entries across sessions. Disable an entry's toggles while its request is pending; refresh authoritative state and show a concise reason on rejection.
+
+Show per-weapon rounds/reload state with clear energy-starvation feedback. Reload progress derives from authoritative start/deadline ticks and the synchronized clock; UI cannot complete a reload. Preserve pointer/UI filtering for both fire groups, including keyboard-triggered fire while editing equipment.
 
 ## 11. Capacity and performance requirements
 
@@ -442,7 +449,7 @@ Reuse fixed arrays and prepared lookups. Some physics/RPC allocations remain acc
 
 ## 12. Implementation sequence and acceptance gates
 
-Use the seven stories in the [story map](#story-map-and-scope-precedence), replacing the former six cross-cutting implementation phases. A story is complete when its own acceptance criteria and relevant regressions pass, not when every end-state requirement in this epic exists.
+Implement the seven stories in the [story map](#story-map-and-scope-precedence). A story is complete when its acceptance criteria and relevant regressions pass.
 
 Keep session cleanup and readiness working after each increment. Story 4 is local-host firing; story 5 enables multiplayer firing only after its baselines and profiles are ready. Story 6 adds supply state and its synchronization together. Story 7 adds damage/death and completes integrated performance validation. Do not pull later supply/damage requirements into schema or visual stories.
 
@@ -460,7 +467,7 @@ Stories 1 and 2 are done. The complete shipped item catalogue, legacy weapon han
 | Geometry | Offsets rotated/translated correctly; alternate only on accepted shots; range starts at selected muzzle; fixed-forward despite cursor location; shooter/ally exclusions; nearest hostile/world blocker; origin inside obstacle; miss still pays. |
 | Damage | Shield-only, exact break, overflow; 20 damage/5 shield/100 armor gives 7.5 health loss; armor 0/50/100/200; inactive charged shield; downtime does not restart while empty; both damage sources obey hull rule. |
 | Death | One death result; health clamps; movement truly stops with prior velocity; no regeneration/firing/reload; wreck blocks; same-tick trades; later admitted hits do not retarget through newly dead victim. |
-| Groups | Both held independently; each weapon fires once; stale config/reassignment/replacement rejected; reload energy weapons ignored; UI/focus/recovery clear input. |
+| Groups | All four membership combinations; independent per-weapon toggles; placeholder cleanup; both loadout definitions initialize equipped weapons; saved membership survives restoration; unequip/fixture removal clears membership and entries; host changes converge on all players; stale requests rejected; each weapon fires once when both groups are held; UI/focus/recovery clear input. |
 | Networking | Malformed/oversize packets; wrong peer/session/generation/item; duplicate reload/group requests; delayed release and input expiry; reordered weapon state; complete baseline after items; recovery while reloading; no historical effects on join. |
 | Presentation | Events deduplicate without losing valid reordered shots; remote timeline alignment; specified muzzle/tracer/impact scenes for both weapons; shield-only and overflow each use one ordinary weapon impact; no shield-specific effect; misses have no impact; missing profile rejected at preparation; bounded exhaustion; pool reset/reuse and session disposal. |
 | Performance | Ten players × nine weapons, synchronized bursts, 60/s supported ceiling, sustained impaired network, allocations/timing/backlog/pool evidence. |

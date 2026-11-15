@@ -49,7 +49,7 @@ public static class DevelopmentLoadout
             if (inventory.Container.Entities[index] is not { } item) continue;
             var slot = item.DefinitionId switch
             {
-                "mock_standard_medium_weapon" => "weapon_2",
+                "laser_mk1" => "weapon_2",
                 "mock_standard_heavy_weapon" => "weapon_3",
                 _ => null
             };

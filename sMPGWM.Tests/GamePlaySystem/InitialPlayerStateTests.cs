@@ -30,10 +30,10 @@ public sealed class InitialPlayerStateTests
                 else Assert.That(snapshot.Occupied, Is.Empty);
                 var ship = owner.ControlledShip!;
                 var equipment = ship.Equipment.Snapshot;
-                Assert.That(equipment.UsedWeaponSlots, Is.EqualTo(development ? 6 : 1));
+                Assert.That(equipment.UsedWeaponSlots, Is.EqualTo(development ? 5 : 1));
                 Assert.That(equipment.Slots[ship.Equipment.FindSlot("weapon_1")]!.DefinitionId, Is.EqualTo("vulcan_mk1"));
                 Assert.That(equipment.Slots[ship.Equipment.FindSlot("weapon_2")]?.DefinitionId,
-                    Is.EqualTo(development ? "mock_standard_medium_weapon" : null));
+                    Is.EqualTo(development ? "laser_mk1" : null));
                 Assert.That(equipment.Slots[ship.Equipment.FindSlot("weapon_3")]?.DefinitionId,
                     Is.EqualTo(development ? "mock_standard_heavy_weapon" : null));
                 ship.Runtime.SetShieldCurrent(37);
@@ -92,8 +92,8 @@ public sealed class InitialPlayerStateTests
         AssertStacks(snapshot, "mock_advanced_reactor", 1, 1);
         AssertStacks(snapshot, "mock_standard_weapon_fixture", 1);
         AssertStacks(snapshot, "vulcan_mk1", 1);
-        AssertStacks(snapshot, "laser_mk1", 1, 1);
-        AssertStacks(snapshot, "mock_standard_medium_weapon", 1);
+        AssertStacks(snapshot, "laser_mk1", 1);
+        AssertStacks(snapshot, "mock_standard_medium_weapon", 1, 1);
         AssertStacks(snapshot, "mock_advanced_medium_weapon", 1, 1);
         AssertStacks(snapshot, "mock_standard_heavy_weapon", 1);
         AssertStacks(snapshot, "mock_advanced_heavy_weapon", 1, 1);
