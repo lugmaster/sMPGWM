@@ -15,7 +15,8 @@ Holding a group trigger fires all eligible weapons assigned to that group in a l
 - Both triggers can be held together; each weapon fires at most once per physics tick. Grouped weapons start together when eligible but retain their individual rates rather than sharing one cadence.
 - First shot is immediate; Vulcan fires every 4 ticks and laser every 20 at 60 Hz. Preserve fractional cadence, cooldown across equipment changes, and no idle catch-up bursts.
 - Require existing power availability but temporarily omit ammunition/reload and per-shot energy admission. This intentional intermediate behavior is replaced by story 6.
-- Use LMB for Fire Group 1, F for Fire Group 2; preserve RMB steering. Merge configurable bindings without overwriting user settings. UI/focus blocking releases both triggers.
+- Consume the existing `PrimaryFire` and `SecondaryFire` actions through `InputController.PrimaryFirePressed` / `SecondaryFirePressed`. Both belong to the `flight` context; shipped defaults are LMB and Q respectively, with RMB steering unchanged. Honor configured bindings; no new actions or settings migration are needed.
+- Reuse the existing `PlayerInputPolicy.CanUseFlightPointerActions` filter wired by `PlayerController`, including for keyboard-bound fire. `Action` belongs to `ability_targeting` and intentionally shares LMB: targeting and its release-wait suppress firing while movement remains available. UI/focus blocking clears both triggers; require release before a new firing press so consumed input cannot leak into flight.
 - Prepare the two exact profiles and existing audio from epic section 4.3. Use bounded reusable pools and lifecycle cleanup. Every hit requests one profile-selected weapon impact, regardless of shield state; an active-shield hit additionally requests one generic shield arc. Misses produce neither impact nor arc. Tracers never govern collision timing.
 - Integrate only into the authoritative simulation, never prediction replay. Keep multiplayer firing disabled until story 5 supplies its authority/replication path.
 
@@ -95,6 +96,7 @@ The old `Play` method only acquired a weapon impact for `Hull | World | Wreck`; 
 ## Acceptance
 
 - Demonstrate each group separately and both together, mixed weapons, None membership, replacement, trigger release/repress, and UI blocking.
+- Verify shared-LMB targeting confirmation/cancellation and release-wait never fire weapons, while targeting preserves movement. Cover remapped keyboard fire, interactive UI, blocking menus, binding capture, required acknowledgements, and focus loss; returning to flight must not fire from a still-held trigger.
 - Verify transformed muzzle origins, accepted-shot alternation, forward aim, spread/range, nearest blocker, and the contact matrix above in Godot for both profiles. Laser uses the existing `laser_standard` impact for every contact; SMG uses `smg_standard`.
 - An active-shield hit shows exactly one weapon impact plus one arc at the same endpoint/normal. Missing, empty, unpowered, or downtime-disabled shields add no arc. Weapon animation choice is unchanged in every case; a miss has neither effect.
 - Verify complete authored sprite playback and the original 150 ms arc geometry/fade in motion, including readability when both effects overlap. Test a moving target to confirm world-space impact placement and a moving shooter to confirm muzzle attachment.
