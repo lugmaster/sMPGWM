@@ -8,6 +8,7 @@ public class EquipmentMovementTests
     [Test]
     public void UnpoweredMovementPreservesVelocityDespiteEveryControl()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var velocity = new Vector2(300, -180);
         var result = MovementPhysics.MovementStep(velocity, Vector2.One, Vector2.Right, Vector2.Down,
             900, 50, .15f, 1f / 60, true, false);
@@ -19,34 +20,37 @@ public class EquipmentMovementTests
     [Test]
     public void TenConfiguredShipsFitAndRoundTrip()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var samples = new MovementSample[10];
         for (var i = 0; i < samples.Length; i++)
             samples[i] = new(i + 1, Guid.NewGuid().ToString("N"), 1, 0, new Vector2(i, i), .5f,
                 Vector2.One, default, 20, 0, 7, new(350, 600, 3, 2, 4, 9, i % 2 == 0));
-        var bytes = MovementWire.Snapshot(Guid.NewGuid(), 20, samples);
-        Assert.That(bytes.Length, Is.EqualTo(1225));
+        var bytes = codec.Snapshot(Guid.NewGuid(), 20, samples);
+        Assert.That(bytes.Length, Is.EqualTo(1105));
         Assert.That(bytes.Length, Is.LessThanOrEqualTo(MovementWire.MaxBytes));
-        Assert.That(MovementWire.ReadSnapshot(bytes, out _, out _, out var decoded), Is.True);
+        Assert.That(codec.ReadSnapshot(bytes, out _, out _, out var decoded), Is.True);
         Assert.That(decoded, Is.EqualTo(samples));
     }
     [Test]
     public void MalformedMovementConfigurationIsRejected()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var sample = new MovementSample(1, Guid.NewGuid().ToString("N"), 1, 0, Vector2.Zero, 0,
             Vector2.Zero, default, 20, 0, 7, new(350, 600, 3, 2, 4, 9, true));
-        var bytes = MovementWire.Snapshot(Guid.NewGuid(), 20, new[] { sample });
+        var bytes = codec.Snapshot(Guid.NewGuid(), 20, new[] { sample });
         bytes[^1] = 2;
-        Assert.That(MovementWire.ReadSnapshot(bytes, out _, out _, out _), Is.False);
+        Assert.That(codec.ReadSnapshot(bytes, out _, out _, out _), Is.False);
         var invalid = sample with { Configuration = sample.Configuration with { Speed = float.NaN } };
-        Assert.That(MovementWire.ReadSnapshot(MovementWire.Snapshot(Guid.NewGuid(), 20, new[] { invalid }),
+        Assert.That(codec.ReadSnapshot(codec.Snapshot(Guid.NewGuid(), 20, new[] { invalid }),
             out _, out _, out _), Is.False);
         invalid = sample with { ConfigurationRevision = -1 };
-        Assert.That(MovementWire.ReadSnapshot(MovementWire.Snapshot(Guid.NewGuid(), 20, new[] { invalid }),
+        Assert.That(codec.ReadSnapshot(codec.Snapshot(Guid.NewGuid(), 20, new[] { invalid }),
             out _, out _, out _), Is.False);
     }
     [Test, Category("Godot")]
     public void ConfigurationChangesDiscardIncompatiblePredictionHistory()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var world = new GameWorld();
         ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world);
         try
@@ -66,7 +70,7 @@ public class EquipmentMovementTests
             };
             Assert.That(prediction.Reconcile(1, owner, 4, authoritative), Is.True);
             Assert.That(prediction.Tick, Is.EqualTo(4));
-            Assert.That(prediction.RecentCommands(), Is.Empty);
+            Assert.That(prediction.CopyRecentCommands(new MovementCommand[MovementWire.MaxCommands]), Is.Zero);
             Assert.That(ship.GlobalPosition, Is.EqualTo(authoritative.Position));
             Assert.That(ship.MovementConfiguration.Enabled, Is.False);
             var energy = ship.Runtime.Energy.Current;

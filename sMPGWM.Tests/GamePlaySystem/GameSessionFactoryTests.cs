@@ -112,7 +112,8 @@ public class GameSessionFactoryTests
                 for (int step = 1; step <= 60; step++)
                 {
                     synchronization._PhysicsProcess(1.0 / 60);
-                    Assert.That(MovementWire.ReadSnapshot(synchronization.Baseline(), out _, out var captured, out var states), Is.True);
+                    var states = new System.Collections.Generic.List<MovementSample>();
+                    Assert.That(MovementWire.ReadSnapshot(synchronization.Baseline(), session.Network.ResolveNetworkEntity, states, out _, out var captured), Is.True);
                     Assert.That(captured, Is.EqualTo(step));
                     Assert.That(states, Has.Count.EqualTo(1));
                     Assert.That(states[0].Position, Is.EqualTo(session.Player.Participant!.ControlledShip!.GlobalPosition));

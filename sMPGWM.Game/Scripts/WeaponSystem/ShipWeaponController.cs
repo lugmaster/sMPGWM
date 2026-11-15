@@ -6,15 +6,7 @@ namespace sMPGWM.Scripts.WeaponSystem;
 
 public sealed class ShipWeaponController(ShipController ship)
 {
-    public static void ValidateDefinition(ItemDefinition definition)
-    {
-        if (definition.Id is not ("vulcan_mk1" or "laser_mk1")) return;
-        if (definition is not WeaponItemDefinition weapon || weapon.DeliveryType != WeaponDeliveryType.HitScan ||
-            weapon.PresentationId is not ("smg_standard" or "laser_standard") ||
-            !double.IsFinite(weapon.AttackSpeed) || weapon.AttackSpeed <= 0 || weapon.AttackSpeed > 60 ||
-            !double.IsFinite(weapon.Range) || weapon.Range <= 0 || weapon.Range > float.MaxValue)
-            throw new System.ArgumentException("Unsupported executable weapon definition: " + definition.Id);
-    }
+    public static void ValidateDefinition(ItemDefinition definition) => WeaponDefinitionCompiler.Prepare(definition);
 
     private EquipmentSnapshot? _snapshot;
     private readonly Binding[] _bindings = new Binding[9];
@@ -32,10 +24,9 @@ public sealed class ShipWeaponController(ShipController ship)
         {
             var item = snapshot.Slots[group.Slot];
             if (item?.Definition is not WeaponItemDefinition weapon || item.Id != group.Item ||
-                weapon.DeliveryType != WeaponDeliveryType.HitScan || item.WeaponState == null ||
-                weapon.Id is not ("vulcan_mk1" or "laser_mk1")) continue;
-            var profile = weapon.PresentationId switch { "smg_standard" => 0, "laser_standard" => 1, _ => -1 };
-            if (profile < 0 || Count == _bindings.Length) continue;
+                item.WeaponPlan is not { } plan || item.WeaponState == null) continue;
+            var profile = plan.Profile;
+            if (Count == _bindings.Length) throw new System.InvalidOperationException("Weapon binding capacity exceeded.");
             _bindings[Count++] = new(item, weapon, profile, (byte)((group.Primary ? 1 : 0) | (group.Secondary ? 2 : 0)));
         }
     }

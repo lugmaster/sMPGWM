@@ -43,7 +43,11 @@ public sealed class GameplayCatalogues
             return true;
         });
         StartLoadout.ValidateDefinitions(Items);
-        foreach (var item in Items.All) EquipmentStatCalculator.Precompile(item);
+        foreach (var item in Items.All)
+        {
+            EquipmentStatCalculator.Precompile(item);
+            WeaponSystem.WeaponDefinitionCompiler.Prepare(item);
+        }
         Abilities.Prepare(this);
         SupportDiagnostics = Abilities.GetSupportDiagnostics(Items.All);
     }

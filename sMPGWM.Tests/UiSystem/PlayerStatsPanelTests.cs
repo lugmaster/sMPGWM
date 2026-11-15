@@ -80,7 +80,11 @@ public sealed class PlayerStatsPanelTests
 
             var authoritative = new ShipRuntime(100, 40);
             authoritative.Confirm(20, 160, 125, Array.Empty<BehaviourInstance>(), 0, Array.Empty<string>(), authoritative.Stats with { ShieldCapacity = 160 }, 0, false, true, 0, 0, 1, false, 150, 100);
-            var snapshot = new Godot.Collections.Array { GameplaySnapshotCodec.Encode(ship.EntityId, authoritative) };
+            var entityNames = (Dictionary<int, string>)typeof(NetworkManager).GetField("_weaponEntityNames", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(network)!;
+            entityNames.Add(1, ship.EntityId);
+            var stateRow = GameplaySnapshotCodec.Encode(ship.EntityId, authoritative);
+            stateRow[0] = 1;
+            var snapshot = new Godot.Collections.Array { stateRow };
             var apply = typeof(NetworkManager).GetMethod("ApplyGameplay", BindingFlags.Instance | BindingFlags.NonPublic)!;
             using var missing = new Godot.Collections.Array();
             Assert.That(apply.Invoke(network, new object[] { missing, true }), Is.False);

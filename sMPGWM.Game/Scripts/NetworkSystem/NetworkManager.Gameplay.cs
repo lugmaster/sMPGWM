@@ -16,7 +16,6 @@ public partial class NetworkManager
         get => _simulation ??= new GameplaySimulation(World, Abilities);
         init => _simulation = value;
     }
-    private readonly Dictionary<string, long> _publishedGameplayRevisions = new(StringComparer.Ordinal);
     private string _pendingCaster = "";
     private long _pendingGeneration;
     private long _nextRequest;
@@ -73,30 +72,7 @@ public partial class NetworkManager
         PublishWorldTopology();
         PublishItemChanges();
         PublishWeaponStates(tick);
-        foreach (var ship in World.Entities.Values)
-            if (!_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var revision) || revision != ship.Runtime.Revision)
-                _gameplayDirty = true;
-        if (_gameplayDirty)
-        {
-            var changed = new Godot.Collections.Array();
-            foreach (var ship in World.Entities.Values)
-                if (!_publishedGameplayRevisions.TryGetValue(ship.EntityId, out var previous) || previous != ship.Runtime.Revision)
-                    changed.Add(GameplaySnapshotCodec.Encode(ship.EntityId, ship.Runtime));
-            Godot.Collections.Array? complete = null;
-            foreach (var (peer, join) in _joins.Snapshot())
-            {
-                if (!join.ReceivesWorld) continue;
-                var state = join.Phase == PeerJoinPhase.Ready ? changed : complete ??= GameplaySnapshot();
-                if (RpcId(peer, nameof(ReceiveGameplay), Synchronization!.Session.ToString("N"), state) != Error.Ok)
-                {
-                    FailSession("Gameplay snapshot send failed.");
-                    return;
-                }
-            }
-            _publishedGameplayRevisions.Clear();
-            foreach (var ship in World.Entities.Values) _publishedGameplayRevisions.Add(ship.EntityId, ship.Runtime.Revision);
-            _gameplayDirty = false;
-        }
+        PublishGameplayDeltas();
     }
 
     internal void CompleteAbility(int peer, long request, AbilityActivationResult result)
@@ -109,13 +85,28 @@ public partial class NetworkManager
     {
         var rows = new Godot.Collections.Array();
         foreach (var ship in World.Entities.Values)
-            rows.Add(GameplaySnapshotCodec.Encode(ship.EntityId, ship.Runtime));
+        {
+            var row = GameplaySnapshotCodec.Encode(ship.EntityId, ship.Runtime);
+            row[0] = GetWeaponEntityIndex(ship.EntityId);
+            rows.Add(row);
+        }
         return rows;
     }
 
     private bool ApplyGameplay(Array rows, bool requireComplete)
     {
-        if (!GameplaySnapshotCodec.TryDecode(rows, Abilities.Definitions, out var entries)) return false;
+        using var decodedRows = new Array();
+        foreach (var value in rows)
+        {
+            if (value.VariantType != Variant.Type.Array) return false;
+            var row = value.AsGodotArray();
+            if (row.Count != 19 || row[0].VariantType != Variant.Type.Int || row[0].AsInt64() is <= 0 or > int.MaxValue ||
+                ResolveNetworkEntity(row[0].AsInt32()) is not { } entity) return false;
+            var copy = row.Duplicate();
+            copy[0] = entity;
+            decodedRows.Add(copy);
+        }
+        if (!GameplaySnapshotCodec.TryDecode(decodedRows, Abilities.Definitions, out var entries)) return false;
         if (requireComplete)
         {
             if (entries.Length != World.Entities.Count) return false;
@@ -128,6 +119,7 @@ public partial class NetworkManager
                     entry.Stats, entry.EnergyCurrent, entry.EnergyDepleted, entry.ShieldProtectionAvailable,
                     entry.ShieldDowntimeDeadline, entry.AuthoritativeTick, entry.ConfigurationRevision, entry.AfterburnerActive,
                     entry.HealthCapacity, entry.HealthCurrent, entry.Components);
+        SeedGameplayDeltas(entries);
         return true;
     }
 
@@ -159,7 +151,7 @@ public partial class NetworkManager
     private void ClearGameplay()
     {
         _simulation?.Dispose(); _abilityResults.Clear(); AbilityFeedback = null;
-        _publishedGameplayRevisions.Clear();
+        ClearGameplayDeltas();
         Abilities?.Dispose();
     }
 }

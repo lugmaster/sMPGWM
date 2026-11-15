@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Godot;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.WorldSystem;
@@ -9,12 +8,14 @@ namespace sMPGWM.Scripts.MovementSystem;
 /// <summary>Bounded local command/state history and replay. Never samples input or sends RPCs.</summary>
 public sealed class LocalMovementPrediction
 {
-    private readonly SortedDictionary<long, (MovementCommand Command, MovementSample State)> _history = new();
-    private readonly List<long> _acknowledged = new(128);
+    private const int Capacity = 128;
+    private readonly (MovementCommand Command, MovementSample State)[] _history = new (MovementCommand, MovementSample)[Capacity];
+    private long _oldest;
+    private int _count;
     private MovementSample? _identity;
     public long Tick { get; private set; }
-    public bool AtCapacity => _history.Count >= 128;
-    public void Reset(long tick) { Tick = tick; _history.Clear(); _identity = null; }
+    public bool AtCapacity => _count == Capacity;
+    public void Reset(long tick) { Tick = tick; Array.Clear(_history); _oldest = tick + 1; _count = 0; _identity = null; }
     public void ApplyBaseline(long tick, MovementSample state, ShipController ship)
     {
         Reset(tick); _identity = state;
@@ -22,22 +23,20 @@ public sealed class LocalMovementPrediction
     }
     public void Step(int peer, PlayerSession owner)
     {
+        if (AtCapacity) throw new InvalidOperationException("Prediction history capacity exceeded.");
         var ship = owner.ControlledShip!;
         var command = new MovementCommand(++Tick, ship.InputState);
         ship.Simulate(1.0 / 60);
-        _history[Tick] = (command, MovementStateAdapter.Capture(peer, owner, Tick));
+        _history[(int)(Tick % Capacity)] = (command, MovementStateAdapter.Capture(peer, owner, Tick));
+        if (_count++ == 0) _oldest = Tick;
     }
-    public MovementCommand[] RecentCommands()
+    public int CopyRecentCommands(Span<MovementCommand> destination)
     {
-        var result = new MovementCommand[Math.Min(6, _history.Count)];
-        var skip = _history.Count - result.Length;
-        var index = 0;
-        foreach (var entry in _history.Values)
-        {
-            if (skip > 0) { skip--; continue; }
-            result[index++] = entry.Command;
-        }
-        return result;
+        var count = Math.Min(MovementWire.MaxCommands, _count);
+        if (destination.Length < count) throw new ArgumentException("Command buffer is too small.", nameof(destination));
+        for (var i = 0; i < count; i++)
+            destination[i] = _history[(int)((Tick - count + 1 + i) % Capacity)].Command;
+        return count;
     }
     public bool Reconcile(int peer, PlayerSession owner, long tick, MovementSample authoritative)
     {
@@ -50,9 +49,8 @@ public sealed class LocalMovementPrediction
         }
         if ((_identity is { } identity && (identity.Entity != authoritative.Entity ||
             identity.Generation != authoritative.Generation || identity.Revision != authoritative.Revision)) ||
-            !_history.TryGetValue(tick, out var predicted) || Tick - tick > 64) return false;
-        // Validate replay continuity before changing the collision body.
-        for (long t = tick + 1; t <= Tick; t++) if (!_history.ContainsKey(t)) return false;
+            _count == 0 || tick < _oldest || tick > Tick || Tick - tick > 64) return false;
+        var predicted = _history[(int)(tick % Capacity)];
         _identity = authoritative;
         var state = predicted.State;
         bool differs = state.Position.DistanceTo(authoritative.Position) > .1f ||
@@ -67,20 +65,16 @@ public sealed class LocalMovementPrediction
             MovementStateAdapter.Restore(ship, authoritative);
             for (long t = tick + 1; t <= Tick; t++)
             {
-                var saved = _history[t];
+                var saved = _history[(int)(t % Capacity)];
                 ship.SetInput(saved.Command.Input); ship.Simulate(1.0 / 60);
-                _history[t] = (saved.Command, MovementStateAdapter.Capture(peer, owner, t));
+                _history[(int)(t % Capacity)] = (saved.Command, MovementStateAdapter.Capture(peer, owner, t));
             }
             ship.Presentation.CorrectFrom(displayed, angle);
         }
-        _acknowledged.Clear();
-        foreach (var key in _history.Keys)
-        {
-            if (key > tick) break;
-            _acknowledged.Add(key);
-        }
-        foreach (var key in _acknowledged) _history.Remove(key);
-        _acknowledged.Clear();
+        for (var acknowledged = _oldest; acknowledged <= tick; acknowledged++)
+            _history[(int)(acknowledged % Capacity)] = default;
+        _count -= (int)(tick - _oldest + 1);
+        _oldest = tick + 1;
         return true;
     }
 }

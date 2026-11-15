@@ -6,6 +6,7 @@ public sealed record ItemEntity
     public ItemDefinition Definition { get; }
     public string DefinitionId => Definition.Id;
     public int Count { get; }
+    public WeaponSystem.WeaponExecutionPlan? WeaponPlan { get; }
     public WeaponSystem.WeaponRuntimeState? WeaponState { get; internal set; }
 
     // Mutable execution state is not part of item placement/value equality.
@@ -17,6 +18,7 @@ public sealed record ItemEntity
         Id = id;
         Definition = definition;
         Count = count;
+        WeaponPlan = WeaponSystem.WeaponDefinitionCompiler.Prepare(definition);
         if (definition is WeaponItemDefinition weapon) WeaponState = new(weapon.Supply);
     }
 }

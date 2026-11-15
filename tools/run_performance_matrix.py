@@ -1,6 +1,6 @@
 """Isolated normal-startup local performance matrix; opt-in test driver.""" # TEST-SUPPORT: PERF-RUN-001 | Tests: sMPGWM.Tests.PerformanceProcessTests
 from pathlib import Path # TEST-SUPPORT: PERF-RUN-002 | Tests: sMPGWM.Tests.PerformanceProcessTests
-import argparse, hashlib, json, os, shutil, socket, subprocess, tempfile, time # TEST-SUPPORT: PERF-RUN-003 | Tests: sMPGWM.Tests.PerformanceProcessTests
+import argparse, hashlib, json, os, shutil, socket, subprocess, tempfile, time, zipfile, platform # TEST-SUPPORT: PERF-RUN-003 | Tests: sMPGWM.Tests.PerformanceProcessTests
 ROOT = Path(__file__).resolve().parents[1] # TEST-SUPPORT: PERF-RUN-004 | Tests: sMPGWM.Tests.PerformanceProcessTests
 import heapq, random, selectors, threading # TEST-SUPPORT: PERF-PROXY-001 | Tests: sMPGWM.Tests.PerformanceProcessTests
 
@@ -102,7 +102,9 @@ parser.add_argument("--latejoin", action="store_true") # TEST-SUPPORT: PERF-RUN-
 parser.add_argument("--impairment", default="none", choices=["none","moderate","stress"]) # TEST-SUPPORT: PERF-PROXY-OPTION | Tests: sMPGWM.Tests.PerformanceProcessTests
 args = parser.parse_args() # TEST-SUPPORT: PERF-RUN-016 | Tests: sMPGWM.Tests.PerformanceProcessTests
 output = Path(args.output).resolve() # TEST-SUPPORT: PERF-RUN-017 | Tests: sMPGWM.Tests.PerformanceProcessTests
-output.mkdir(parents=True, exist_ok=True) # TEST-SUPPORT: PERF-RUN-018 | Tests: sMPGWM.Tests.PerformanceProcessTests
+output.mkdir(parents=True, exist_ok=True)
+if (output / "manifest.json").exists():
+    raise RuntimeError("Refusing to overwrite existing measurement evidence: " + str(output)) # TEST-SUPPORT: PERF-RUN-018 | Tests: sMPGWM.Tests.PerformanceProcessTests
 project = Path(tempfile.mkdtemp(prefix="smpgwm-performance-")) / "project" # TEST-SUPPORT: PERF-RUN-019 | Tests: sMPGWM.Tests.PerformanceProcessTests
 engine = os.environ.get("GODOT_BIN", str(Path.home() / "godot_engine/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64_console.exe")) # TEST-SUPPORT: PERF-RUN-020 | Tests: sMPGWM.Tests.PerformanceProcessTests
 shutil.copytree(ROOT / "sMPGWM.Game", project, ignore=shutil.ignore_patterns("shader_cache","editor","obj")) # TEST-SUPPORT: PERF-RUN-021 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -133,6 +135,9 @@ if args.weapons == 9: # TEST-SUPPORT: PERF-FIRE-LOAD-003 | Tests: sMPGWM.Tests.P
     replace(project / "Scripts/GamePlaySystem/DevelopmentLoadout.cs", '        equipment.ApplyWeaponGroupDefinition(["weapon_1", "weapon_3"], ["weapon_2"]);', cs('        equipment.ApplyWeaponGroupDefinition(' + groups + ', ' + groups + ');')) # TEST-SUPPORT: PERF-FIRE-LOAD-007 | Tests: sMPGWM.Tests.PerformanceProcessTests
     reactor = project / "assets/game_data/items/reactor.yml" # TEST-SUPPORT: PERF-FIRE-LOAD-010 | Tests: sMPGWM.Tests.PerformanceProcessTests
     reactor.write_text(reactor.read_text().replace('EnergyProduction: 24', 'EnergyProduction: 1000')) # TEST-SUPPORT: PERF-FIRE-LOAD-011 | Tests: sMPGWM.Tests.PerformanceProcessTests
+if args.scenario == "combat":
+    shield = project / "assets/game_data/items/shield_generator.yml"
+    shield.write_text(shield.read_text().replace("ShieldCapacity: 100", "ShieldCapacity: 1000000"))
 if args.weapon_rate != 15: # TEST-SUPPORT: PERF-FIRE-LOAD-008 | Tests: sMPGWM.Tests.PerformanceProcessTests
     replace(project / "assets/game_data/items/light_weapon.yml", '  AttackSpeed: 15', '  AttackSpeed: ' + str(args.weapon_rate)) # TEST-SUPPORT: PERF-FIRE-LOAD-009 | Tests: sMPGWM.Tests.PerformanceProcessTests
 if not args.uninstrumented: # TEST-SUPPORT: PERF-RUN-042 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -144,6 +149,13 @@ for relative, anchor, label in [("Scripts/GamePlaySystem/SessionInitialization.c
     replace(project / relative, anchor, cs('        sMPGWM.Scripts.Verification.PerformanceRecorder.Mark("phase_' + label + '_start");') + anchor + "\n" + cs('        sMPGWM.Scripts.Verification.PerformanceRecorder.Mark("phase_' + label + '_end");')) # TEST-SUPPORT: PERF-PHASE-2 | Tests: sMPGWM.Tests.PerformanceProcessTests
 manifest = dict(revision=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(), arguments=vars(args), project=str(project), engine=engine, startedUtc=time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()), placement="all headless peers on one machine", profiler="bounded in-process raw recorder" if not args.uninstrumented else "disabled recorder") # TEST-SUPPORT: PERF-RUN-047 | Tests: sMPGWM.Tests.PerformanceProcessTests
 manifest["hashes"] = {str(p.relative_to(project)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(project.rglob("*")) if p.is_file() and (p.suffix in (".cs",".yml",".json",".cfg") and ".godot" not in p.parts)} # TEST-SUPPORT: PERF-RUN-048 | Tests: sMPGWM.Tests.PerformanceProcessTests
+manifest["environment"] = dict(os=platform.platform(), logicalProcessors=os.cpu_count(), engineVersion=subprocess.check_output([engine, "--version"], text=True).strip(), dotnetVersion=subprocess.check_output(["dotnet", "--version"], text=True).strip())
+manifest["sourceState"] = subprocess.check_output(["git", "status", "--short"], cwd=ROOT, text=True)
+# Retain copied executable source, including untracked files and instrumentation.
+with zipfile.ZipFile(output / "source.zip", "w", zipfile.ZIP_DEFLATED) as archive:
+    for path in sorted(project.rglob("*")):
+        if path.is_file() and ".godot" not in path.parts and (path.suffix in (".cs", ".csproj", ".yml", ".json", ".cfg", ".tscn") or path.name == "project.godot"):
+            archive.write(path, str(path.relative_to(project)))
 (output / "manifest.json").write_text(json.dumps(manifest,indent=2)) # TEST-SUPPORT: PERF-RUN-049 | Tests: sMPGWM.Tests.PerformanceProcessTests
 (output / "initial.patch").write_bytes(subprocess.check_output(["git","diff","--binary"],cwd=ROOT)) # TEST-SUPPORT: PERF-RUN-050 | Tests: sMPGWM.Tests.PerformanceProcessTests
 shutil.copyfile(config,output / "config.cfg") # TEST-SUPPORT: PERF-RUN-051 | Tests: sMPGWM.Tests.PerformanceProcessTests

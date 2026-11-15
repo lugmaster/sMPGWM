@@ -14,6 +14,7 @@ public sealed class ShotReplicationTests
     [Test]
     public void ExactMaximumBatchPreservesIndependentShieldContactAndFitsBudget()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var session = Guid.NewGuid();
         var source = new AcceptedShot[ShotEventCodec.MaxEvents];
         for (var i = 0; i < source.Length; i++) source[i] = Shot(session, i + 1);
@@ -34,6 +35,7 @@ public sealed class ShotReplicationTests
     [Test]
     public void WholeBatchRejectsInvalidGeometryFlagsIdentityAndReferences()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var shot = Shot(Guid.NewGuid());
         Assert.That(ShotEventCodec.IsValid(shot with { Origin = new Vector2(float.NaN, 0) }), Is.False);
         Assert.That(ShotEventCodec.IsValid(shot with { Normal = Vector2.Zero }), Is.False);
@@ -50,6 +52,7 @@ public sealed class ShotReplicationTests
     [Test]
     public void SequenceWindowAllowsReorderingAndIndependentItemsButRejectsReplayAndOldSession()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var window = new ShotSequenceWindow(); var session = Guid.NewGuid();
         window.Clear(session, 10);
         Assert.That(window.Accept(session, 1, 1, 10, 20), Is.False);
@@ -68,6 +71,7 @@ public sealed class ShotReplicationTests
     [Test]
     public void ExpiryReclaimsIdentityCapacityWithoutReplayingExpiredEvents()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var window = new ShotSequenceWindow(); var session = Guid.NewGuid(); window.Clear(session, 0);
         for (ulong i = 1; i <= ShotSequenceWindow.Capacity; i++) Assert.That(window.Accept(session, i, 1, 10, 10), Is.True);
         Assert.That(window.Accept(session, 9000, 1, 10, 10), Is.False);
@@ -79,6 +83,7 @@ public sealed class ShotReplicationTests
     [Test]
     public void HeldFireRequiresFreshReleaseAndExpiresWithoutInput()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var queue = new CommandQueue();
         var fire = new ShipInputState(Vector2.Right, 0, false, false, false, true, 3, 7);
         Assert.That(queue.Accept(new(1, fire), 0), Is.True);
@@ -94,6 +99,7 @@ public sealed class ShotReplicationTests
     [Test]
     public void RecoveryCannotBeRearmedByReleasedCommandsAlreadyInFlight()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var queue = new CommandQueue(32);
         var fire = new ShipInputState(Vector2.Zero, 0, false, false, false, true, 1, 1);
         queue.Accept(new(1, default), 0); queue.Consume(1);
@@ -107,19 +113,20 @@ public sealed class ShotReplicationTests
     [Test]
     public void SixRedundantCommandsAndTenShipSnapshotHaveExactBounds()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var session = Guid.NewGuid(); var entity = Guid.NewGuid().ToString("N");
         var input = new ShipInputState(Vector2.Zero, 0, false, false, false, true, 3, 42);
         var commands = new MovementCommand[MovementWire.MaxCommands];
         for (var i = 0; i < commands.Length; i++) commands[i] = new(i + 1, input);
-        var bytes = MovementWire.Commands(session, entity, 1, commands);
-        Assert.That(bytes.Length, Is.EqualTo(221));
-        Assert.That(MovementWire.ReadCommands(bytes, out _, out _, out _, out var decoded), Is.True);
+        var bytes = codec.Commands(session, entity, 1, commands);
+        Assert.That(bytes.Length, Is.EqualTo(209));
+        Assert.That(codec.ReadCommands(bytes, out _, out _, out _, out var decoded), Is.True);
         Assert.That(decoded, Is.EqualTo(commands));
         Assert.That(MovementWire.Valid(input with { FireMask = 4 }), Is.False);
         Assert.That(MovementWire.Valid(input with { WeaponRevision = -1 }), Is.False);
         var samples = new MovementSample[10];
         for (var i = 0; i < samples.Length; i++) samples[i] = new(i + 1, Guid.NewGuid().ToString("N"), 1, 0,
             Vector2.Zero, 0, Vector2.Zero, input, 1);
-        Assert.That(MovementWire.Snapshot(session, 2, samples).Length, Is.EqualTo(1225));
+        Assert.That(codec.Snapshot(session, 2, samples).Length, Is.EqualTo(1105));
     }
 }

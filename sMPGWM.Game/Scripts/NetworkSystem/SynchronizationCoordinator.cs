@@ -1,7 +1,6 @@
 using sMPGWM.Scripts.AbilitySystem;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Godot;
 using sMPGWM.Scripts.MovementSystem;
 using sMPGWM.Scripts.WorldSystem;
@@ -19,8 +18,12 @@ public partial class SynchronizationCoordinator : Node
     public Guid Session { get; private set; }
     public long CompletedTick { get; private set; }
     public long PredictionTick => _prediction.Tick;
-    public double Rtt => _clock.Rtt; // TEST-SUPPORT: NETWORK-METRICS-001 | Tests: sMPGWM.Tests.PerformanceProcessTests
-    public double Jitter => _clock.Jitter; // TEST-SUPPORT: NETWORK-METRICS-002 | Tests: sMPGWM.Tests.PerformanceProcessTests
+    // TEST-SUPPORT: NETWORK-METRICS-001
+    // Tests: sMPGWM.Tests.PerformanceProcessTests
+    public double Rtt => _clock.Rtt;
+    // TEST-SUPPORT: NETWORK-METRICS-002
+    // Tests: sMPGWM.Tests.PerformanceProcessTests
+    public double Jitter => _clock.Jitter;
     public int Lead => _clock.Lead;
     public double HostEstimate => _clock.HostEstimate;
     public double PresentationTick => Network.IsHost() ? CompletedTick : _clock.PresentationTick;
@@ -37,6 +40,25 @@ public partial class SynchronizationCoordinator : Node
     private readonly Dictionary<int, ulong> _traffic = new();
     private readonly List<MovementSample> _snapshotSamples = new(MovementWire.MaxPlayers);
     private readonly List<int> _departedPeers = new(MovementWire.MaxPlayers);
+    private readonly List<MovementSample> _receivedSamples = new(MovementWire.MaxPlayers);
+    private readonly MovementCommand[] _receivedCommands = new MovementCommand[MovementWire.MaxCommands];
+    private readonly MovementCommand[] _recentCommands = new MovementCommand[MovementWire.MaxCommands];
+    private readonly byte[][] _snapshotBuffers = CreateBuffers(MovementWire.MaxPlayers + 1, MovementWire.SnapshotHeaderBytes, MovementWire.SampleBytes);
+    private readonly byte[][] _commandBuffers = CreateBuffers(MovementWire.MaxCommands + 1, MovementWire.CommandHeaderBytes, MovementWire.CommandBytes);
+    private Func<string, int>? _entityIndex;
+    private Func<int, string?>? _resolveEntity;
+    private Action<PlayerSession, MovementSample>? _applyRemote;
+    private Action<PlayerSession, MovementSample>? _applyLocal;
+    private long _receiveTick;
+    private bool _receiveBaseline, _receiveReconcile;
+
+    private static byte[][] CreateBuffers(int count, int header, int row)
+    {
+        var buffers = new byte[count][];
+        for (var i = 0; i < count; i++) buffers[i] = new byte[header + i * row];
+        return buffers;
+    }
+
 
     public void Activate()
     {
@@ -59,7 +81,9 @@ public partial class SynchronizationCoordinator : Node
             if (pair.Value.ControlledShip != null)
                 _snapshotSamples.Add(MovementStateAdapter.Capture(pair.Key, pair.Value,
                     _queues.TryGetValue(pair.Key, out var queue) ? queue.LatestArrival : CompletedTick));
-        return MovementWire.Snapshot(Session, CompletedTick, _snapshotSamples);
+        var bytes = _snapshotBuffers[_snapshotSamples.Count];
+        MovementWire.SnapshotInto(Session, CompletedTick, _snapshotSamples, _entityIndex ??= Network.GetWeaponEntityIndex, bytes);
+        return bytes;
     }
 
     public void AcceptCommands(int peer, byte[] bytes)
@@ -68,11 +92,11 @@ public partial class SynchronizationCoordinator : Node
         ulong now = Time.GetTicksMsec();
         if (_traffic.TryGetValue(peer, out var last) && now - last < 8) return;
         _traffic[peer] = now;
-        if (!MovementWire.ReadCommands(bytes, out var session, out var entity, out var generation, out var commands) ||
+        if (!MovementWire.ReadCommands(bytes, _receivedCommands, out var session, out var entity, out var generation, out var count) ||
             session != Session || !World.Players.TryGetValue(peer, out var owner) ||
-            owner.ControlledShip?.EntityId != entity || owner.ControlGeneration != generation) return;
+            owner.ControlledShip == null || Network.GetWeaponEntityIndex(owner.ControlledShip.EntityId) != entity || owner.ControlGeneration != generation) return;
         var queue = Queue(peer, owner);
-        foreach (var command in commands) queue.Accept(command, CompletedTick);
+        for (var i = 0; i < count; i++) queue.Accept(_receivedCommands[i], CompletedTick);
     }
 
     private CommandQueue Queue(int peer, PlayerSession owner)
@@ -139,8 +163,14 @@ public partial class SynchronizationCoordinator : Node
         {
             _prediction.Step(Multiplayer.GetUniqueId(), Player.Participant!);
             if (PredictionTick % 2 == 0)
-                Network.SendMovementCommands(MovementWire.Commands(Session, local.EntityId,
-                    Player.Participant!.ControlGeneration, _prediction.RecentCommands()));
+            {
+                var count = _prediction.CopyRecentCommands(_recentCommands);
+                var entity = Network.GetWeaponEntityIndex(local.EntityId);
+                if (count == 0 || entity == 0) continue;
+                var bytes = _commandBuffers[count];
+                MovementWire.CommandsInto(Session, entity, Player.Participant!.ControlGeneration, _recentCommands.AsSpan(0, count), bytes);
+                Network.SendMovementCommands(bytes);
+            }
         }
         if (PredictionTick >= Math.Floor(HostEstimate) + Lead) _client.FinishWarmup();
     }
@@ -152,7 +182,8 @@ public partial class SynchronizationCoordinator : Node
 
     public bool Receive(byte[] bytes, bool baseline = false, long request = 0)
     {
-        if (!MovementWire.ReadSnapshot(bytes, out var session, out var tick, out var samples)) return false;
+        var samples = _receivedSamples;
+        if (!MovementWire.ReadSnapshot(bytes, _resolveEntity ??= Network.ResolveNetworkEntity, samples, out var session, out var tick)) return false;
         foreach (var sample in samples)
             if (World.Players.TryGetValue(sample.Peer, out var owner) && owner.ControlledShip is { } ship &&
                 ship.EntityId == sample.Entity && owner.ControlGeneration == sample.Generation &&
@@ -162,9 +193,12 @@ public partial class SynchronizationCoordinator : Node
         if (baseline)
         {
             if (!_client.AcceptsBaseline(session, request)) return false;
-            if (samples.Count != World.Players.Count(p => p.Value.ControlledShip != null) || samples.Any(s =>
-                !World.Players.TryGetValue(s.Peer, out var p) || p.ControlledShip?.EntityId != s.Entity ||
-                p.ControlGeneration != s.Generation)) return false;
+            var expected = 0;
+            foreach (var owner in World.Players.Values) if (owner.ControlledShip != null) expected++;
+            if (samples.Count != expected) return false;
+            foreach (var sample in samples)
+                if (!World.Players.TryGetValue(sample.Peer, out var owner) || owner.ControlledShip?.EntityId != sample.Entity ||
+                    owner.ControlGeneration != sample.Generation) return false;
             Session = session;
             Network.ClearShotPresentation(session, tick);
             Player.ResetFireInput();
@@ -176,18 +210,23 @@ public partial class SynchronizationCoordinator : Node
         _clock.Observe(tick, baseline);
         // Warm-up snapshots refresh liveness and remote proxies but cannot reconcile an unfinished history.
         bool reconcile = baseline || _client.Phase == ClientSynchronizationPhase.Predicting;
+        _receiveTick = tick; _receiveBaseline = baseline; _receiveReconcile = reconcile;
         MovementSnapshotApplication.Apply(samples, World.Players,
-            (owner, sample) => _remote.Apply(sample.Peer, owner.ControlledShip!, tick, sample, baseline),
-            (owner, sample) =>
-            {
-                if (baseline || !_active || sample.ConfigurationRevision != owner.ControlledShip!.MovementConfigurationRevision)
-                {
-                    _prediction.ApplyBaseline(tick, sample, owner.ControlledShip!);
-                    _client.RestartWarmup();
-                }
-                else if (reconcile && !_prediction.Reconcile(sample.Peer, owner, tick, sample)) Recover();
-            });
+            _applyRemote ??= ApplyRemoteSample, _applyLocal ??= ApplyLocalSample);
         return true;
+    }
+
+    private void ApplyRemoteSample(PlayerSession owner, MovementSample sample) =>
+        _remote.Apply(sample.Peer, owner.ControlledShip!, _receiveTick, sample, _receiveBaseline);
+
+    private void ApplyLocalSample(PlayerSession owner, MovementSample sample)
+    {
+        if (_receiveBaseline || !_active || sample.ConfigurationRevision != owner.ControlledShip!.MovementConfigurationRevision)
+        {
+            _prediction.ApplyBaseline(_receiveTick, sample, owner.ControlledShip!);
+            _client.RestartWarmup();
+        }
+        else if (_receiveReconcile && !_prediction.Reconcile(sample.Peer, owner, _receiveTick, sample)) Recover();
     }
 
     public override void _Process(double delta)

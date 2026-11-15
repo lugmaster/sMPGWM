@@ -9,6 +9,7 @@ public class MovementSynchronizationTests
     [Test]
     public void InterpolationWrapsAnglesHoldsUnderrunsAndSnapsDiscontinuities()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var lower = new MovementSample(1, Guid.NewGuid().ToString("N"), 1, 0,
             Vector2.Zero, Mathf.DegToRad(179), Vector2.Zero, default, 0, 1);
         var upper = lower with { Position = new Vector2(10, 0), Rotation = Mathf.DegToRad(-179), AppliedFlags = 4 };
@@ -24,6 +25,7 @@ public class MovementSynchronizationTests
     [Test]
     public void QueueEnforcesDeadlinesDuplicatesBoundsAndRelease()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var q = new CommandQueue();
         Assert.That(q.Accept(new(10, Thrust), 10), Is.False);
         Assert.That(q.Accept(new(43, Thrust), 10), Is.False);
@@ -40,30 +42,32 @@ public class MovementSynchronizationTests
     [Test]
     public void CommandsPreserveTransitionsAndRejectMalformedData()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var id = Guid.NewGuid(); var entity = Guid.NewGuid().ToString("N");
         var commands = new[] { new MovementCommand(20, Thrust), new MovementCommand(21, default) };
-        var bytes = MovementWire.Commands(id, entity, 3, commands);
-        Assert.That(MovementWire.ReadCommands(bytes, out var session, out var parsedEntity, out var generation, out var parsed), Is.True);
+        var bytes = codec.Commands(id, entity, 3, commands);
+        Assert.That(codec.ReadCommands(bytes, out var session, out var parsedEntity, out var generation, out var parsed), Is.True);
         Assert.That((session, parsedEntity, generation), Is.EqualTo((id, entity, 3L)));
         Assert.That(parsed, Is.EqualTo(commands));
-        Assert.That(MovementWire.ReadCommands(bytes[..^1], out _, out _, out _, out _), Is.False);
+        Assert.That(codec.ReadCommands(bytes[..^1], out _, out _, out _, out _), Is.False);
         bytes[^1] = 255;
-        Assert.That(MovementWire.ReadCommands(bytes, out _, out _, out _, out _), Is.False);
+        Assert.That(codec.ReadCommands(bytes, out _, out _, out _, out _), Is.False);
         Assert.That(MovementWire.Valid(Thrust with { AimAngle = float.NaN }), Is.False);
         Assert.That(MovementWire.Valid(Thrust with { Direction = new Vector2(2, 0) }), Is.False);
     }
     [Test]
     public void FullCapacitySnapshotFitsOneDatagramAndRejectsDuplicateIdentity()
     {
+        var codec = new sMPGWM.Tests.MovementSystem.MovementCodecFixture();
         var session = Guid.NewGuid();
         var samples = Enumerable.Range(1, 10).Select(p => new MovementSample(p, Guid.NewGuid().ToString("N"), 1, 0,
             new Vector2(p, 2), 3, Vector2.One, Thrust, 10)).ToArray();
-        var bytes = MovementWire.Snapshot(session, 12, samples);
+        var bytes = codec.Snapshot(session, 12, samples);
         Assert.That(bytes.Length, Is.LessThanOrEqualTo(MovementWire.MaxBytes));
-        Assert.That(MovementWire.ReadSnapshot(bytes, out var id, out var tick, out var parsed), Is.True);
+        Assert.That(codec.ReadSnapshot(bytes, out var id, out var tick, out var parsed), Is.True);
         Assert.That(id, Is.EqualTo(session)); Assert.That(tick, Is.EqualTo(12)); Assert.That(parsed, Is.EqualTo(samples));
         samples[1] = samples[0];
-        Assert.That(MovementWire.ReadSnapshot(MovementWire.Snapshot(session, 12, samples), out _, out _, out _), Is.False);
-        Assert.That(MovementWire.ReadSnapshot(bytes.Concat(new byte[1]).ToArray(), out _, out _, out _), Is.False);
+        Assert.That(codec.ReadSnapshot(codec.Snapshot(session, 12, samples), out _, out _, out _), Is.False);
+        Assert.That(codec.ReadSnapshot(bytes.Concat(new byte[1]).ToArray(), out _, out _, out _), Is.False);
     }
 }

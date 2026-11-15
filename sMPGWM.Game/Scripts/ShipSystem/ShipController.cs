@@ -25,7 +25,11 @@ public partial class ShipController : CharacterBody2D
 
     public void ConfigureLoadout(ItemStore store, bool authoritative)
     {
-        if (_loadout == null) _loadout = new ShipLoadout(this, store, authoritative);
+        if (_loadout == null)
+        {
+            _loadout = new ShipLoadout(this, store, authoritative);
+            _weapons = new(this);
+        }
         else
         {
             if (!ReferenceEquals(_loadout.Store, store)) throw new InvalidOperationException("Ship equipment already belongs to another store.");

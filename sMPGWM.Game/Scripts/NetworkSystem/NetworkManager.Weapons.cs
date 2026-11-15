@@ -39,6 +39,8 @@ public partial class NetworkManager
         return index;
     }
 
+    public string? ResolveNetworkEntity(int index) => _weaponEntityNames.TryGetValue(index, out var entity) ? entity : null;
+
     private Godot.Collections.Array WeaponEntityMap()
     {
         var rows = new Godot.Collections.Array();
@@ -66,7 +68,8 @@ public partial class NetworkManager
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveWeaponEntityMap(string session, Godot.Collections.Array rows)
     {
-        if (!IsHostMessage() || Synchronization == null || session != Synchronization.Session.ToString("N") ||
+        if (!IsHostMessage() || Synchronization == null || !Guid.TryParseExact(session, "N", out var identity) || identity == Guid.Empty ||
+            (_clientJoin.Phase != ClientJoinPhase.AwaitingSnapshot && identity != Synchronization.Session) ||
             rows.Count > WorldTopology.MaxEntities) return;
         var indices = new HashSet<int>(); var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var value in rows)
@@ -83,6 +86,7 @@ public partial class NetworkManager
             var row = value.AsGodotArray(); var index = row[0].AsInt32(); var name = row[1].AsString();
             _weaponEntities.Add(name, index); _weaponEntityNames.Add(index, name);
         }
+        _shotSession = identity;
         _hasWeaponMap = true;
     }
 

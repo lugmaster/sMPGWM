@@ -13,6 +13,79 @@ namespace sMPGWM.Tests;
 public sealed class WeaponSimulationTests
 {
     [Test]
+    public void AuthoredHitscanWeaponExecutesWithoutANameWhitelist()
+    {
+        var world = CreateWorld();
+        using var weapons = new WeaponSimulation(world);
+        try
+        {
+            var ship = world.Players[1].ControlledShip!;
+            ship.GlobalPosition = new(10000, 10000);
+            ship.Equipment.ApplyWeaponGroupDefinition(["weapon_3"], []);
+            var item = ship.Equipment.Snapshot.Slots[ship.Equipment.FindSlot("weapon_3")]!;
+            var shots = new List<AcceptedShot>();
+            Configure(weapons, shots.Add);
+            ship.SetInput(new(Vector2.Zero, 0, false, false, false, false, 1, ship.Equipment.Revision));
+            weapons.Step(0, _ => true);
+            Assert.That(shots.Count, Is.EqualTo(1));
+            Assert.That(shots[0].Item, Is.EqualTo(item.Id.Value));
+            Assert.That(item.WeaponPlan, Is.SameAs(WeaponDefinitionCompiler.Prepare(item.Definition)));
+            var invalid = (WeaponItemDefinition)item.Definition with { PresentationId = "missing" };
+            Assert.Throws<ArgumentException>(() => WeaponDefinitionCompiler.Prepare(invalid));
+        }
+        finally { world.Clear(); world.Free(); }
+    }
+
+    [Test]
+    public void HitscanIgnoresPickupAndShieldAreasAndUsesLatestPhysicsHullSurface()
+    {
+        var world = CreateWorld();
+        using var query = new sMPGWM.Scripts.CollisionSystem.HitscanQuery();
+        var pickup = PhysicsServer2D.BodyCreate();
+        var area = PhysicsServer2D.AreaCreate();
+        var shape = PhysicsServer2D.CircleShapeCreate();
+        try
+        {
+            world.ApproveSpawn(2, PlayerStartupData.Create());
+            var ship = world.Players[1].ControlledShip!;
+            var target = world.Players[2].ControlledShip!;
+            ship.GlobalPosition = new(10000, 10000);
+            target.Runtime.SetFaction(2);
+            target.GlobalPosition = ship.GlobalPosition + Vector2.Right * 200;
+            target.ForceUpdateTransform();
+            PhysicsServer2D.ShapeSetData(shape, 10f);
+            // The authored polygon is baked on the next engine frame; install a synchronous test hull.
+            PhysicsServer2D.BodySetMode(target.GetRid(), PhysicsServer2D.BodyMode.Static);
+            PhysicsServer2D.BodyAddShape(target.GetRid(), shape);
+            PhysicsServer2D.BodySetState(target.GetRid(), PhysicsServer2D.BodyState.Transform, new Transform2D(0, target.GlobalPosition));
+            Assert.That(PhysicsServer2D.BodyGetState(target.GetRid(), PhysicsServer2D.BodyState.Transform).AsTransform2D().Origin,
+                Is.EqualTo(target.GlobalPosition), "The synchronous hull must use the node transform.");
+            Assert.That(PhysicsServer2D.BodyGetObjectInstanceId(target.GetRid()), Is.EqualTo(target.GetInstanceId()));
+            AddBlocker(pickup, shape, ship, ship.GlobalPosition + Vector2.Right * 50);
+            PhysicsServer2D.BodySetCollisionLayer(pickup, 1u << 5);
+            PhysicsServer2D.AreaAddShape(area, shape);
+            PhysicsServer2D.AreaSetCollisionLayer(area, 1u << 6);
+            PhysicsServer2D.AreaSetTransform(area, new Transform2D(0, ship.GlobalPosition + Vector2.Right * 100));
+            PhysicsServer2D.AreaSetSpace(area, ship.GetWorld2D().Space);
+            query.Prepare(world, ship);
+            var hit = query.Cast(ship, ship.GlobalPosition, ship.GlobalPosition + Vector2.Right * 500);
+            Assert.That(hit.Target, Is.SameAs(target));
+            var first = hit.Position;
+            target.GlobalPosition += Vector2.Right * 100;
+            target.ForceUpdateTransform();
+            PhysicsServer2D.BodySetState(target.GetRid(), PhysicsServer2D.BodyState.Transform, new Transform2D(0, target.GlobalPosition));
+            hit = query.Cast(ship, ship.GlobalPosition, ship.GlobalPosition + Vector2.Right * 500);
+            Assert.That(hit.Target, Is.SameAs(target));
+            Assert.That(hit.Position.X - first.X, Is.EqualTo(100).Within(.01));
+        }
+        finally
+        {
+            PhysicsServer2D.FreeRid(pickup); PhysicsServer2D.FreeRid(area); PhysicsServer2D.FreeRid(shape);
+            world.Clear(); world.Free();
+        }
+    }
+
+    [Test]
     public void PlayableDefinitionsRejectUnsupportedProfilesAndCadenceBeforeActivation()
     {
         var weapon = (WeaponItemDefinition)GameplayDefinitions.Current.Items.GetById("vulcan_mk1");
@@ -227,6 +300,8 @@ public sealed class WeaponSimulationTests
             PhysicsServer2D.ShapeSetData(shape, 50f);
             PhysicsServer2D.BodySetMode(ally.GetRid(), PhysicsServer2D.BodyMode.Static);
             PhysicsServer2D.BodyAddShape(ally.GetRid(), shape);
+            ally.GlobalPosition = origin + Vector2.Right * 100;
+            ally.ForceUpdateTransform();
             PhysicsServer2D.BodySetState(ally.GetRid(), PhysicsServer2D.BodyState.Transform, new Transform2D(0, origin + Vector2.Right * 100));
             var shots = new List<AcceptedShot>();
             Configure(weapons, shots.Add);
@@ -310,6 +385,7 @@ public sealed class WeaponSimulationTests
         var world = new GameWorld { AuthoritativeItems = true, InitializeLoadout = DevelopmentLoadout.Equip };
         ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests").AddChild(world);
         world.ApproveSpawn(1, PlayerStartupData.Create());
+        world.Players[1].ControlledShip!.Equipment.ApplyWeaponGroupDefinition(["weapon_1"], ["weapon_2"]);
         Charge(world.Players[1].ControlledShip!);
         return world;
     }

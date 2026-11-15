@@ -31,8 +31,7 @@ public sealed class ReloadCommandProcessor(GameWorld world)
         {
             if (at == command.Items.Length) break;
             if (item?.Id.Value != command.Items[at]) continue;
-            if (item.Definition is not WeaponItemDefinition ||
-                item.Definition.Id is not ("vulcan_mk1" or "laser_mk1") || item.WeaponState == null) return false;
+            if (item.WeaponPlan == null || item.WeaponState == null) return false;
             at++;
         }
         return at == command.Items.Length;

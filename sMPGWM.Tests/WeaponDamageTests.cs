@@ -5,6 +5,22 @@ namespace sMPGWM.Tests;
 
 public sealed class WeaponDamageTests
 {
+    [Test]
+    public void DetailedResultReportsAbsorptionArmorAndLethalTransition()
+    {
+        using var ship = Create(5, 100);
+        var result = ship.ResolveDamage(25);
+        Assert.That(result.ShieldDamage, Is.EqualTo(5));
+        Assert.That(result.HealthDamage, Is.EqualTo(10));
+        Assert.That(result.ShieldContact, Is.True);
+        Assert.That(result.Killed, Is.False);
+        result = ship.ResolveDamage(1000);
+        Assert.That(result.ShieldDamage, Is.Zero);
+        Assert.That(result.HealthDamage, Is.EqualTo(90));
+        Assert.That(result.Killed, Is.True);
+        Assert.That(ship.ResolveDamage(1000), Is.EqualTo(default(sMPGWM.Scripts.CombatSystem.DamageResult)));
+    }
+
     private static ShipRuntime Create(double shield, double armor = 0)
     {
         var ship = new ShipRuntime(100);

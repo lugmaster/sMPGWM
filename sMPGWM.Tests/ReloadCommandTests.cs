@@ -10,6 +10,37 @@ namespace sMPGWM.Tests;
 public sealed class ReloadCommandTests
 {
     [Test]
+    public void AmmunitionCapabilityAllowsReloadForOtherWeaponDefinitions()
+    {
+        var world = CreateWorld();
+        try
+        {
+            var owner = world.Players[1];
+            var ship = owner.ControlledShip!;
+            var equipment = ship.Equipment;
+            var target = equipment.FindSlot("weapon_3");
+            for (var i = 0; i < owner.Inventory.Snapshot.Slots.Count; i++)
+            {
+                var item = owner.Inventory.Snapshot.Slots[i];
+                if (item?.DefinitionId != "mock_standard_medium_weapon") continue;
+                Assert.That(world.Items.TransferItem(item.Id, new(owner.Inventory.Container.Id, i),
+                    new(equipment.Container.Id, target), owner.Inventory.Revision, equipment.Revision,
+                    equipment.Snapshot.Slots[target]!.Id), Is.EqualTo(sMPGWM.Scripts.ItemSystem.TransferResult.Success));
+                item.WeaponState!.TryAccept(0, 1, true);
+                item.WeaponState.CancelReload();
+                var commands = new ReloadCommandProcessor(world);
+                Assert.That(commands.TryEnqueue(new(1, 1, ship.EntityId, owner.ControlGeneration,
+                    equipment.Revision, [item.Id.Value])), Is.True);
+                commands.Step(1, _ => true);
+                Assert.That(item.WeaponState.IsReloading, Is.True);
+                return;
+            }
+            Assert.Fail("Missing ammunition weapon fixture.");
+        }
+        finally { world.Clear(); world.Free(); }
+    }
+
+    [Test]
     public void ManualReloadWithoutGroupsRevalidatesQueuedEquipment()
     {
         var world = CreateWorld();

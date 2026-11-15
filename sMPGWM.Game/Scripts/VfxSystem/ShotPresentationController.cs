@@ -51,7 +51,8 @@ public partial class ShotPresentationController : Node2D
     public void Initialize()
     {
         if (_initialized) throw new InvalidOperationException("Weapon presentation is already initialized.");
-        _profiles = [new("smg_standard"), new("laser_standard")];
+        _profiles = new WeaponPresentationProfile[WeaponPresentationProfiles.Count];
+        for (var i = 0; i < _profiles.Length; i++) _profiles[i] = new(WeaponPresentationProfiles.GetId(i));
         // ceil(90 weapons * profile rate * lifetime) + one synchronized 90-shot burst, rounded up.
         var capacities = new[] { 192, 224, 416, 128, 128, 224, 320 };
         for (var i = 0; i < _pools.Length; i++)

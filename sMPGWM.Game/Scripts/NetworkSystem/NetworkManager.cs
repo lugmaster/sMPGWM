@@ -40,6 +40,8 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _startup = Startup;
         _joins = new HostJoinProtocol(Startup.ConnectionTimeoutMs);
         _clientJoin = new ClientJoinProtocol(Startup.ConnectionTimeoutMs);
+        World.EntitySpawned += PrepareGameplayReplication;
+        foreach (var ship in World.Entities.Values) PrepareGameplayReplication(ship);
         // The composition root explicitly starts networking after gameplay initialization.
     }
 
@@ -187,13 +189,13 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         {
             World.ApproveSpawn(peer, data);
             var snapshot = World.CaptureTopology().ToVariant();
+            if (RpcId(peer, nameof(ReceiveWeaponEntityMap), Synchronization!.Session.ToString("N"), WeaponEntityMap()) != Error.Ok)
+            { RejectJoin(peer, "Entity topology send failed."); return; }
             if (RpcId(peer, nameof(ReceiveInitialSpawns), snapshot, Synchronization!.Baseline(), GameplaySnapshot()) != Error.Ok)
             {
                 RejectJoin(peer, "Initial spawn send failed.");
                 return;
             }
-            if (RpcId(peer, nameof(ReceiveWeaponEntityMap), Synchronization!.Session.ToString("N"), WeaponEntityMap()) != Error.Ok)
-            { RejectJoin(peer, "Weapon topology send failed."); return; }
             if (!SendItems(peer)) return;
             if (!_joins.Advance(peer, PeerJoinPhase.Verified, PeerJoinPhase.Spawning, Time.GetTicksMsec()))
             {
@@ -364,6 +366,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         var topology = World.CaptureTopology();
         if (topology.Identity == _publishedTopology) return;
         _publishedTopology = topology.Identity;
+        PruneGameplayDeltas();
         _gameplayDirty = true;
         var payload = topology.ToVariant();
         foreach (var (peer, join) in _joins.Snapshot())
@@ -387,6 +390,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
                 if (!unchanged) throw new InvalidOperationException("Local control changed during initialization. Please rejoin.");
             }
             foreach (int peer in World.ApplyTopology(topology)) Synchronization.BindingChanged(peer);
+            PruneGameplayDeltas();
         }
         catch (Exception error) { FailSession($"Applying world topology failed: {error.Message}"); }
     }
@@ -471,6 +475,7 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     {
         if (_stopped) return;
         _stopped = true;
+        if (World != null) World.EntitySpawned -= PrepareGameplayReplication;
         ClearReloads();
         ClearGameplay();
         ClearWeapons();

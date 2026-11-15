@@ -8,7 +8,7 @@ using sMPGWM.Scripts.StatSystem;
 
 namespace sMPGWM.Scripts.ShipSystem;
 
-public sealed class ShipRuntime : IDisposable
+public sealed partial class ShipRuntime : IDisposable
 {
     public const int MaxBehaviours = 64;
     public const int MaxConditions = 64;
@@ -356,13 +356,16 @@ public sealed class ShipRuntime : IDisposable
         return true;
     }
 
-    public bool ApplyDamage(double amount)
+    public bool ApplyDamage(double amount) => ResolveDamage(amount).ShieldContact;
+
+    public CombatSystem.DamageResult ResolveDamage(double amount)
     {
         if (!double.IsFinite(amount) || amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
         var protectedByShield = ShieldProtectionAvailable;
-        if (!IsAlive || _health.Capacity == 0 || amount == 0) return protectedByShield;
+        if (!IsAlive || _health.Capacity == 0 || amount == 0) return new(0, 0, protectedByShield, false);
         var absorbed = protectedByShield ? Math.Min(amount, _shield.Current) : 0;
         var health = Math.Max(0, _health.Current - (amount - absorbed) * (100d / (100d + Math.Max(0, Stats.Armor))));
+        var healthDamage = _health.Current - health;
         var dies = health == 0;
         var revision = checked(Revision + 1);
         var configurationRevision = dies ? checked(ConfigurationRevision + 1) : ConfigurationRevision;
@@ -371,7 +374,7 @@ public sealed class ShipRuntime : IDisposable
         if (dies) EnterDeath(configurationRevision);
         Revision = revision;
         PublishChanges();
-        return protectedByShield;
+        return new(absorbed, healthDamage, protectedByShield, dies);
     }
 
     private void EnterDeath(long configurationRevision)

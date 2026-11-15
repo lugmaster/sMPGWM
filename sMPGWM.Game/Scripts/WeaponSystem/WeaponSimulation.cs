@@ -3,6 +3,7 @@ using Godot;
 using sMPGWM.Scripts.ItemSystem;
 using sMPGWM.Scripts.ShipSystem;
 using sMPGWM.Scripts.WorldSystem;
+using sMPGWM.Scripts.CollisionSystem;
 
 namespace sMPGWM.Scripts.WeaponSystem;
 
@@ -10,8 +11,7 @@ namespace sMPGWM.Scripts.WeaponSystem;
 public sealed class WeaponSimulation : IDisposable
 {
     private readonly GameWorld _world;
-    private readonly PhysicsRayQueryParameters2D _query = new() { CollideWithBodies = true, CollideWithAreas = false, HitFromInside = true };
-    private readonly Godot.Collections.Array<Rid> _excluded = new();
+    private readonly HitscanQuery _query = new();
     private readonly ShipController?[] _shooters = new ShipController[10];
     private readonly PendingHit[] _hits = new PendingHit[90];
     private int _hitCount;
@@ -56,10 +56,12 @@ public sealed class WeaponSimulation : IDisposable
         var session = Session();
         if (session == Guid.Empty) return;
         var count = 0;
+        foreach (var entity in _world.Entities.Values) entity.ForceUpdateTransform();
         foreach (var player in _world.Players.Values)
         {
             var ship = player.ControlledShip;
             if (ship == null || !ready(player.ControllingPeerId)) continue;
+            if (count == _shooters.Length) throw new InvalidOperationException("Weapon shooter capacity exceeded.");
             var at = count++;
             while (at > 0 && string.CompareOrdinal(_shooters[at - 1]!.EntityId, ship.EntityId) > 0)
             { _shooters[at] = _shooters[at - 1]; at--; }
@@ -71,8 +73,8 @@ public sealed class WeaponSimulation : IDisposable
         for (var i = 0; i < _hitCount; i++)
         {
             var pending = _hits[i];
-            var shield = pending.Target?.Runtime.ApplyDamage(pending.Damage) == true;
-            _hits[i] = pending with { Shot = pending.Shot with { ShieldContact = shield } };
+            var damage = pending.Target?.Runtime.ResolveDamage(pending.Damage) ?? default;
+            _hits[i] = pending with { Shot = pending.Shot with { ShieldContact = damage.ShieldContact } };
         }
         for (var i = 0; i < _hitCount; i++) Accepted?.Invoke(_hits[i].Shot);
         Array.Clear(_hits, 0, _hitCount);
@@ -85,12 +87,7 @@ public sealed class WeaponSimulation : IDisposable
         weapons.Refresh();
         var input = ship.InputState;
         var enabled = input.WeaponRevision == ship.Equipment.Revision;
-        _excluded.Clear();
-        _excluded.Add(ship.GetRid());
-        foreach (var other in _world.Entities.Values)
-            if (other != ship && other.Runtime.IsAlive && ship.Runtime.IsAllyOf(other.Runtime))
-                _excluded.Add(other.GetRid());
-        _query.Exclude = _excluded;
+        _query.Prepare(_world, ship);
         var fixtures = ship.Runtime.WeaponFixturePoints;
         for (var i = 0; i < weapons.Count; i++)
         {
@@ -109,21 +106,15 @@ public sealed class WeaponSimulation : IDisposable
             var muzzle = (int)((sequence - 1) % fixtures.Count);
             var origin = ship.GlobalTransform * fixtures[muzzle];
             var direction = ship.GlobalTransform.X.Normalized().Rotated(Spread(binding.Item.Id.Value, sequence, binding.Definition.SpreadDegrees));
-            _query.From = origin;
-            _query.To = origin + direction * (float)binding.Definition.Range;
-            var collision = ship.GetWorld2D().DirectSpaceState.IntersectRay(_query);
-            var hit = collision.Count != 0;
-            var endpoint = hit ? collision["position"].AsVector2() : _query.To;
-            var normal = hit ? collision["normal"].AsVector2() : Vector2.Zero;
-            if (hit && normal.IsZeroApprox()) normal = -direction;
-            var target = hit ? collision["collider"].AsGodotObject() as ShipController : null;
+            var contact = _query.Cast(ship, origin, origin + direction * (float)binding.Definition.Range);
+            var target = contact.Target;
             if (binding.Definition.Supply is EnergySupplyDefinition payment && !ship.Runtime.TrySpendEnergy(payment.EnergyPerShot)) continue;
             if (!state.TryAccept(tick, binding.Definition.AttackSpeed, true)) continue;
             CancelUnavailableReloads(ship);
             ship.RefreshMovementConfiguration();
             AcceptedCount++;
             _hits[_hitCount++] = new(new(session, tick, binding.Item.Id.Value, EntityIndex!(ship.EntityId),
-                ship.ControllingPlayer!.ControlGeneration, sequence, binding.Profile, muzzle, origin, endpoint, normal, hit, false),
+                ship.ControllingPlayer!.ControlGeneration, sequence, binding.Profile, muzzle, origin, contact.Position, contact.Normal, contact.Hit, false),
                 target != null && !ship.Runtime.IsAllyOf(target.Runtime) ? target : null, binding.Definition.Damage);
         }
     }
@@ -144,7 +135,6 @@ public sealed class WeaponSimulation : IDisposable
         Array.Clear(_shooters);
         Array.Clear(_hits);
         ReloadCommands.Clear();
-        _excluded.Clear();
         _query.Dispose();
     }
 

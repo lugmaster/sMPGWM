@@ -17,7 +17,7 @@ public sealed class WeaponPresentationProfile
 
     public WeaponPresentationProfile(string id)
     {
-        if (id is not ("smg_standard" or "laser_standard")) throw new ArgumentException("Unknown weapon presentation profile: " + id);
+        if (WeaponPresentationProfiles.IndexOf(id) < 0) throw new ArgumentException("Unknown weapon presentation profile: " + id);
         Id = id;
         Muzzle = Load<PackedScene>($"res://scenes/vfx/muzzle_flashes/muzzle_{id}/muzzle_{id}.tscn");
         Tracer = Load<PackedScene>($"res://scenes/vfx/tracers/tracer_{id}/tracer_{id}.tscn");

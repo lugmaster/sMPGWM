@@ -22,7 +22,7 @@ public partial class NetworkManager
             (!IsHost() && (_clientJoin.Phase != ClientJoinPhase.Ready || !ItemBaselineReady))) return;
         var items = new Godot.Collections.Array();
         foreach (var item in ship.Equipment.Snapshot.Slots)
-            if (item?.Definition is WeaponItemDefinition { Supply: AmmunitionSupplyDefinition, Id: "vulcan_mk1" } && item.WeaponState != null)
+            if (item?.Definition is WeaponItemDefinition { Supply: AmmunitionSupplyDefinition } && item.WeaponPlan != null && item.WeaponState != null)
                 items.Add(checked((long)item.Id.Value));
         if (items.Count == 0 || items.Count > 9) return;
         var entity = GetWeaponEntityIndex(ship.EntityId);
