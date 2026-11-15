@@ -24,10 +24,17 @@ internal sealed class GameplayDeltaState : IDisposable
     private readonly Array _row = new(), _configuration = new(), _effects = new(), _resources = new(), _empty = new();
     private readonly Array _activeBehaviours = new(), _activeConditions = new();
     private readonly Array[] _behaviourRows = new Array[ShipRuntime.MaxBehaviours];
+    private readonly Variant _configurationVariant, _effectsVariant, _resourcesVariant, _emptyVariant;
     private readonly double[] _statValues = new double[14];
+    internal Variant RowVariant { get; }
 
     public GameplayDeltaState()
     {
+        RowVariant = _row;
+        _configurationVariant = _configuration;
+        _effectsVariant = _effects;
+        _resourcesVariant = _resources;
+        _emptyVariant = _empty;
         _row.Resize(6);
         _configuration.Resize(ConfigurationFields.Length);
         _effects.Resize(EffectFields.Length);
@@ -91,8 +98,8 @@ internal sealed class GameplayDeltaState : IDisposable
         _resources[5] = state.ShieldDowntimeDeadline; _resources[6] = state.EnergyDepleted;
         _resources[7] = state.ShieldProtectionAvailable; _resources[8] = state.AfterburnerActive; _resources[9] = state.Health.Current;
         _row[0] = entity; _row[1] = _configurationEpoch; _row[2] = _effectEpoch;
-        _row[3] = configurationChanged ? _configuration : _empty;
-        _row[4] = effectsChanged ? _effects : _empty; _row[5] = _resources;
+        _row[3] = configurationChanged ? _configurationVariant : _emptyVariant;
+        _row[4] = effectsChanged ? _effectsVariant : _emptyVariant; _row[5] = _resourcesVariant;
         return _row;
     }
 
@@ -112,6 +119,8 @@ internal sealed class GameplayDeltaState : IDisposable
 
     public void Dispose()
     {
+        RowVariant.Dispose();
+        _configurationVariant.Dispose(); _effectsVariant.Dispose(); _resourcesVariant.Dispose(); _emptyVariant.Dispose();
         _row.Dispose(); _configuration.Dispose(); _effects.Dispose(); _resources.Dispose(); _empty.Dispose();
         _activeBehaviours.Dispose(); _activeConditions.Dispose();
         foreach (var row in _behaviourRows) row.Dispose();

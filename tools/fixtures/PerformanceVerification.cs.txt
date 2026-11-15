@@ -31,6 +31,7 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
     private string _output = ""; // TEST-SUPPORT: PERF-WORKLOAD-0023 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private bool _host; // TEST-SUPPORT: PERF-WORKLOAD-0024 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private bool _started; // TEST-SUPPORT: PERF-WORKLOAD-0025 | Tests: sMPGWM.Tests.PerformanceProcessTests
+    private bool _renderHost, _capturedFrame;
     private bool _finished; // TEST-SUPPORT: PERF-WORKLOAD-0026 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private bool _activeSeen; // TEST-SUPPORT: PERF-WORKLOAD-0027 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private bool _restoreStarted; // TEST-SUPPORT: PERF-WORKLOAD-0028 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -66,6 +67,7 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
 
     public override void _Ready() // TEST-SUPPORT: PERF-WORKLOAD-0048 | Tests: sMPGWM.Tests.PerformanceProcessTests
     { // TEST-SUPPORT: PERF-WORKLOAD-0049 | Tests: sMPGWM.Tests.PerformanceProcessTests
+        _renderHost = System.Environment.GetEnvironmentVariable("PERF_RENDER_HOST") == "1";
         _host = System.Environment.GetEnvironmentVariable("PERF_ROLE") == "host"; // TEST-SUPPORT: PERF-WORKLOAD-0050 | Tests: sMPGWM.Tests.PerformanceProcessTests
         _scenario = System.Environment.GetEnvironmentVariable("PERF_SCENARIO") ?? "matrix"; // TEST-SUPPORT: PERF-WORKLOAD-0051 | Tests: sMPGWM.Tests.PerformanceProcessTests
         _output = System.Environment.GetEnvironmentVariable("PERF_OUTPUT") ?? throw new InvalidOperationException("PERF_OUTPUT is required."); // TEST-SUPPORT: PERF-WORKLOAD-0052 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -82,7 +84,14 @@ public partial class PerformanceVerification : Node // TEST-SUPPORT: PERF-WORKLO
     { // TEST-SUPPORT: PERF-WORKLOAD-0060 | Tests: sMPGWM.Tests.PerformanceProcessTests
         if (_finished) return; // TEST-SUPPORT: PERF-WORKLOAD-0061 | Tests: sMPGWM.Tests.PerformanceProcessTests
         PerformanceRecorder.Frame(delta); // TEST-SUPPORT: PERF-WORKLOAD-0062 | Tests: sMPGWM.Tests.PerformanceProcessTests
-        var elapsed = _clock.Elapsed.TotalSeconds; // TEST-SUPPORT: PERF-WORKLOAD-0063 | Tests: sMPGWM.Tests.PerformanceProcessTests
+        var elapsed = _clock.Elapsed.TotalSeconds;
+        if (_renderHost && !_capturedFrame && elapsed >= 20)
+        {
+            _capturedFrame = true;
+            using var frame = GetViewport().GetTexture().GetImage();
+            if (frame.SavePng(Path.Combine(_output, "rendered-frame.png")) != Error.Ok)
+                throw new InvalidOperationException("Could not save rendered verification frame.");
+        } // TEST-SUPPORT: PERF-WORKLOAD-0063 | Tests: sMPGWM.Tests.PerformanceProcessTests
         if (!_started && elapsed >= 1) // TEST-SUPPORT: PERF-WORKLOAD-0064 | Tests: sMPGWM.Tests.PerformanceProcessTests
         { // TEST-SUPPORT: PERF-WORKLOAD-0065 | Tests: sMPGWM.Tests.PerformanceProcessTests
             _started = true; // TEST-SUPPORT: PERF-WORKLOAD-0066 | Tests: sMPGWM.Tests.PerformanceProcessTests

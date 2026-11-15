@@ -100,6 +100,7 @@ parser.add_argument("--diagnostic", action="store_true") # TEST-SUPPORT: PERF-RU
 parser.add_argument("--uninstrumented", action="store_true") # TEST-SUPPORT: PERF-RUN-014 | Tests: sMPGWM.Tests.PerformanceProcessTests
 parser.add_argument("--latejoin", action="store_true") # TEST-SUPPORT: PERF-RUN-015 | Tests: sMPGWM.Tests.PerformanceProcessTests
 parser.add_argument("--impairment", default="none", choices=["none","moderate","stress"]) # TEST-SUPPORT: PERF-PROXY-OPTION | Tests: sMPGWM.Tests.PerformanceProcessTests
+parser.add_argument("--render-host", action="store_true", help="Render the host at 1280x720; other peers stay headless.") # TEST-SUPPORT: PERF-RENDER-HOST-OPTION | Tests: sMPGWM.Tests.PerformanceProcessTests
 args = parser.parse_args() # TEST-SUPPORT: PERF-RUN-016 | Tests: sMPGWM.Tests.PerformanceProcessTests
 output = Path(args.output).resolve() # TEST-SUPPORT: PERF-RUN-017 | Tests: sMPGWM.Tests.PerformanceProcessTests
 output.mkdir(parents=True, exist_ok=True)
@@ -110,7 +111,7 @@ engine = os.environ.get("GODOT_BIN", str(Path.home() / "godot_engine/Godot_v4.7.
 shutil.copytree(ROOT / "sMPGWM.Game", project, ignore=shutil.ignore_patterns("shader_cache","editor","obj")) # TEST-SUPPORT: PERF-RUN-021 | Tests: sMPGWM.Tests.PerformanceProcessTests
 verification = project / "Scripts/Verification" # TEST-SUPPORT: PERF-RUN-022 | Tests: sMPGWM.Tests.PerformanceProcessTests
 verification.mkdir(parents=True, exist_ok=True) # TEST-SUPPORT: PERF-RUN-023 | Tests: sMPGWM.Tests.PerformanceProcessTests
-for name in ("PerformanceVerification", "PerformanceRecorder"): # TEST-SUPPORT: PERF-RUN-024 | Tests: sMPGWM.Tests.PerformanceProcessTests
+for name in ("PerformanceVerification", "PerformanceRecorder", "AllocationRecorder"): # TEST-SUPPORT: PERF-RUN-024 | Tests: sMPGWM.Tests.PerformanceProcessTests
     shutil.copyfile(ROOT / "tools/fixtures" / (name + ".cs.txt"), verification / (name + ".cs")) # TEST-SUPPORT: PERF-RUN-025 | Tests: sMPGWM.Tests.PerformanceProcessTests
 settings = project / "project.godot" # TEST-SUPPORT: PERF-RUN-026 | Tests: sMPGWM.Tests.PerformanceProcessTests
 settings.write_text(settings.read_text(encoding="utf-8").replace("[autoload]", '[autoload]\nPerformanceVerification="*res://Scripts/Verification/PerformanceVerification.cs"'), encoding="utf-8") # TEST-SUPPORT: PERF-RUN-027 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -145,9 +146,58 @@ if not args.uninstrumented: # TEST-SUPPORT: PERF-RUN-042 | Tests: sMPGWM.Tests.P
     replace(coordinator, "    public void TimingReply(long token, long hostTick)", cs("        finally { sMPGWM.Scripts.Verification.PerformanceRecorder.EndStep(perfStart, CompletedTick, Network.IsHost()); }") + cs("    }") + "    public void TimingReply(long token, long hostTick)") # TEST-SUPPORT: PERF-RUN-044 | Tests: sMPGWM.Tests.PerformanceProcessTests
     replace(coordinator, "                Network.PublishMovement(Baseline());", cs("                var perfBytes = Baseline(); Network.PublishMovement(perfBytes); sMPGWM.Scripts.Verification.PerformanceRecorder.Publication(tick, perfBytes.Length);")) # TEST-SUPPORT: PERF-RUN-045 | Tests: sMPGWM.Tests.PerformanceProcessTests
     replace(coordinator, "        CompletedTick = tick;\n        _clock.Observe", cs("        sMPGWM.Scripts.Verification.PerformanceRecorder.Arrival(tick);") + "        CompletedTick = tick;\n        _clock.Observe") # TEST-SUPPORT: PERF-RUN-046 | Tests: sMPGWM.Tests.PerformanceProcessTests
+if not args.uninstrumented:
+    weapon = project / "Scripts/WeaponSystem/WeaponSimulation.cs"
+    replace(weapon, "            var contact = _query.Cast(ship, origin, origin + direction * (float)binding.Definition.Range);",
+        cs("            var castStart = sMPGWM.Scripts.Verification.AllocationRecorder.Begin();") +
+        "            var contact = _query.Cast(ship, origin, origin + direction * (float)binding.Definition.Range);\n" +
+        cs("            sMPGWM.Scripts.Verification.AllocationRecorder.End(0, castStart);"))
+    replace(weapon, "                _query.Prepare(_world, ship);",
+        cs("                var prepareStart = sMPGWM.Scripts.Verification.AllocationRecorder.Begin();") +
+        "                _query.Prepare(_world, ship);\n" +
+        cs("                sMPGWM.Scripts.Verification.AllocationRecorder.End(1, prepareStart);"))
+    hud = project / "Scripts/UiSystem/HudSystem/PlayerStatsPanel.cs"
+    replace(hud, "    public override void _Process(double delta) => Refresh();",
+        cs("    public override void _Process(double delta) {") +
+        cs("        var hudStart = sMPGWM.Scripts.Verification.AllocationRecorder.Begin();") +
+        cs("        try { Refresh(); } finally { sMPGWM.Scripts.Verification.AllocationRecorder.End(2, hudStart); }") + cs("    }"))
+    presentation = project / "Scripts/VfxSystem/ShotPresentationController.cs"
+    replace(presentation, "    public void Advance(double localTick, double remoteTick)\n    {",
+        "    public void Advance(double localTick, double remoteTick)\n    {\n" +
+        cs("        var presentationStart = sMPGWM.Scripts.Verification.AllocationRecorder.Begin();") + cs("        try {"))
+    replace(presentation, "    public void Advance(double presentationTick) => Advance(presentationTick, presentationTick);",
+        cs("        finally { sMPGWM.Scripts.Verification.AllocationRecorder.End(3, presentationStart); }") + cs("    }") +
+        "    public void Advance(double presentationTick) => Advance(presentationTick, presentationTick);")
+    replace(verification / "PerformanceRecorder.cs", "        Directory.CreateDirectory(output);",
+        "        Directory.CreateDirectory(output);\n" + cs("        AllocationRecorder.Flush(output);"))
+def instrument_scope(relative, signature, kind):
+    path = project / relative
+    source = path.read_text(encoding="utf-8")
+    if source.count(signature) != 1:
+        raise RuntimeError("Missing/ambiguous scope anchor: " + signature)
+    start = source.index("{", source.index(signature))
+    depth = 1
+    end = start + 1
+    while depth:
+        if source[end] == "{": depth += 1
+        if source[end] == "}": depth -= 1
+        end += 1
+    body = source[start + 1:end - 1]
+    replace(path, source[start:end], "{\n" + cs("        var scopeStart = sMPGWM.Scripts.Verification.AllocationRecorder.Begin();") +
+        cs("        try {") + body + cs("        } finally { sMPGWM.Scripts.Verification.AllocationRecorder.End(" + str(kind) + ", scopeStart); }") + "    }")
+
+if not args.uninstrumented:
+    for relative, signature, kind in [
+        ("NetworkManager.cs", "public void PublishWorldTopology()", 4),
+        ("NetworkManager.Items.cs", "private void PublishItemChanges()", 5),
+        ("NetworkManager.Items.cs", "private bool SendItems(int peer)", 6),
+        ("NetworkManager.cs", "public void PublishMovement(byte[] payload)", 7),
+        ("NetworkManager.cs", "private void ReceiveMovement(byte[] payload)", 8),
+        ("NetworkManager.GameplayDeltas.cs", "private void ReceiveGameplayDeltas(string session, Array rows)", 9)]:
+        instrument_scope("Scripts/NetworkSystem/" + relative, signature, kind)
 for relative, anchor, label in [("Scripts/GamePlaySystem/SessionInitialization.cs", "            prepare();", "definitions"), ("Scripts/GamePlaySystem/SessionInitialization.cs", "        construct();", "construction"), ("Scripts/GamePlaySystem/SessionInitialization.cs", "            bindAndActivate();", "binding"), ("Scripts/ShipSystem/ShipFactory.cs", "            ship = GamePlayProvider.CreateShip();", "ship_resource_instance"), ("Scripts/ShipSystem/ShipFactory.cs", "            ship.ConfigureLoadout(store, authoritative);", "loadout")]: # TEST-SUPPORT: PERF-PHASE-1 | Tests: sMPGWM.Tests.PerformanceProcessTests
     replace(project / relative, anchor, cs('        sMPGWM.Scripts.Verification.PerformanceRecorder.Mark("phase_' + label + '_start");') + anchor + "\n" + cs('        sMPGWM.Scripts.Verification.PerformanceRecorder.Mark("phase_' + label + '_end");')) # TEST-SUPPORT: PERF-PHASE-2 | Tests: sMPGWM.Tests.PerformanceProcessTests
-manifest = dict(revision=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(), arguments=vars(args), project=str(project), engine=engine, startedUtc=time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()), placement="all headless peers on one machine", profiler="bounded in-process raw recorder" if not args.uninstrumented else "disabled recorder") # TEST-SUPPORT: PERF-RUN-047 | Tests: sMPGWM.Tests.PerformanceProcessTests
+manifest = dict(revision=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(), arguments=vars(args), project=str(project), engine=engine, startedUtc=time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()), placement="one rendered 1280x720 host and headless clients on one machine" if args.render_host else "all headless peers on one machine", profiler="bounded in-process raw recorder" if not args.uninstrumented else "disabled recorder") # TEST-SUPPORT: PERF-RUN-047 | Tests: sMPGWM.Tests.PerformanceProcessTests
 manifest["hashes"] = {str(p.relative_to(project)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(project.rglob("*")) if p.is_file() and (p.suffix in (".cs",".yml",".json",".cfg") and ".godot" not in p.parts)} # TEST-SUPPORT: PERF-RUN-048 | Tests: sMPGWM.Tests.PerformanceProcessTests
 manifest["environment"] = dict(os=platform.platform(), logicalProcessors=os.cpu_count(), engineVersion=subprocess.check_output([engine, "--version"], text=True).strip(), dotnetVersion=subprocess.check_output(["dotnet", "--version"], text=True).strip())
 manifest["sourceState"] = subprocess.check_output(["git", "status", "--short"], cwd=ROOT, text=True)
@@ -188,10 +238,12 @@ for players in args.players: # TEST-SUPPORT: PERF-RUN-058 | Tests: sMPGWM.Tests.
                 stream = (peer / "engine.log").open("w",encoding="utf-8") # TEST-SUPPORT: PERF-RUN-077 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 seconds = args.seconds + (3 if index == 0 else 0) - delay # TEST-SUPPORT: PERF-RUN-078 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 env = dict(os.environ,APPDATA=str(peer / "userdata"),PERF_ROLE="host" if index == 0 else "client",PERF_PORT=str(port),PERF_SECONDS=str(seconds),PERF_SCENARIO=args.scenario,PERF_OUTPUT=str(peer),PERF_OFFSET=str(delay),PERF_PLAYERS=str(players)) # TEST-SUPPORT: PERF-RUN-079 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                env["PERF_RENDER_HOST"] = "1" if args.render_host and index == 0 else "0" # TEST-SUPPORT: PERF-RENDER-HOST-ENV | Tests: sMPGWM.Tests.PerformanceProcessTests
                 env["PERF_COLLECT"] = "0" if args.uninstrumented else "1" # TEST-SUPPORT: PERF-COLLECT-1 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 if proxy is not None and index != 0: # TEST-SUPPORT: PERF-PROXY-CLIENT-1 | Tests: sMPGWM.Tests.PerformanceProcessTests
                     env["PERF_PORT"] = str(proxy.port) # TEST-SUPPORT: PERF-PROXY-CLIENT-2 | Tests: sMPGWM.Tests.PerformanceProcessTests
-                process = subprocess.Popen([engine,"--headless","--max-fps","60","--path",str(project)],stdout=stream,stderr=subprocess.STDOUT,env=env) # TEST-SUPPORT: PERF-RUN-080 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                display = ["--windowed", "--resolution", "1280x720"] if args.render_host and index == 0 else ["--headless"] # TEST-SUPPORT: PERF-RENDER-HOST-DISPLAY | Tests: sMPGWM.Tests.PerformanceProcessTests
+                process = subprocess.Popen([engine,*display,"--max-fps","60","--path",str(project)],stdout=stream,stderr=subprocess.STDOUT,env=env) # TEST-SUPPORT: PERF-RUN-080 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 processes.append((name,process,stream)) # TEST-SUPPORT: PERF-RUN-081 | Tests: sMPGWM.Tests.PerformanceProcessTests
             while any(p.poll() is None for _,p,_ in processes): # TEST-SUPPORT: PERF-RUN-082 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 if proxy is not None and proxy.error is not None: # TEST-SUPPORT: PERF-PROXY-FAIL-1 | Tests: sMPGWM.Tests.PerformanceProcessTests

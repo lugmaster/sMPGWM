@@ -147,22 +147,41 @@ public partial class NetworkManager
 
     private void PublishItemChanges()
     {
-        foreach (var recipientPlayer in World.Participants)
+        foreach (var participant in World.Participants)
         {
-            var recipient = recipientPlayer.ControllingPeerId;
-            if (recipient == 1 || !(_joins.Is(recipient, PeerJoinPhase.Spawning) || _joins.Is(recipient, PeerJoinPhase.Ready))) continue;
-            foreach (var participant in World.Participants)
+            if (participant.ControlledShip is not { } ship) continue;
+            var owner = participant.ControllingPeerId;
+            var version = (participant.ControlGeneration, ship.Equipment.Revision);
+            Godot.Collections.Array? slots = null, groups = null;
+            Variant slotsValue = default, groupsValue = default;
+            try
             {
-                var owner = participant.ControllingPeerId;
-                if (owner == recipient || participant.ControlledShip is not { } ship) continue;
-                var key = (recipient, owner);
-                var version = (participant.ControlGeneration, ship.Equipment.Revision);
-                if (_groupPublished.TryGetValue(key, out var previous) && previous == version) continue;
-                if (RpcId(recipient, nameof(ReceiveRemoteEquipment), Synchronization!.SessionWireIdentity, owner,
-                        participant.ControlGeneration, ship.Equipment.Revision, ItemSnapshotCodec.EncodeSlots(ship.Equipment.Snapshot.Slots),
-                        WeaponGroupSnapshotCodec.Encode(ship.Equipment.Snapshot.WeaponGroups)) != Error.Ok)
-                { FailSession("Equipment snapshot send failed."); return; }
-                _groupPublished[key] = version;
+                foreach (var recipientPlayer in World.Participants)
+                {
+                    var recipient = recipientPlayer.ControllingPeerId;
+                    if (recipient == 1 || recipient == owner ||
+                        !(_joins.Is(recipient, PeerJoinPhase.Spawning) || _joins.Is(recipient, PeerJoinPhase.Ready))) continue;
+                    var key = (recipient, owner);
+                    if (_groupPublished.TryGetValue(key, out var previous) && previous == version) continue;
+                    if (slots == null)
+                    {
+                        var snapshot = ship.Equipment.Snapshot;
+                        slots = ItemSnapshotCodec.EncodeSlots(snapshot.Slots);
+                        groups = WeaponGroupSnapshotCodec.Encode(snapshot.WeaponGroups);
+                        slotsValue = slots;
+                        groupsValue = groups;
+                    }
+                    if (RpcId(recipient, nameof(ReceiveRemoteEquipment), (ReadOnlySpan<Variant>)[
+                            Synchronization!.SessionWireIdentity, owner, participant.ControlGeneration,
+                            ship.Equipment.Revision, slotsValue, groupsValue]) != Error.Ok)
+                    { FailSession("Equipment snapshot send failed."); return; }
+                    _groupPublished[key] = version;
+                }
+            }
+            finally
+            {
+                slotsValue.Dispose(); groupsValue.Dispose();
+                slots?.Dispose(); groups?.Dispose();
             }
         }
 
@@ -248,8 +267,9 @@ public partial class NetworkManager
     private void RemovePlayerItems(int peer)
     {
         _publishedWeaponStateTicks.Remove(peer);
-        _groupOutcomes.Clear();
-        _groupPublished.Clear();
+        _groupOutcomes.Remove(peer);
+        foreach (var key in _groupPublished.Keys)
+            if (key.Recipient == peer || key.Owner == peer) _groupPublished.Remove(key);
         _itemRequests.Remove(peer);
         _itemRequestTimes.Remove(peer);
         _publishedItemRevisions.Remove(peer);

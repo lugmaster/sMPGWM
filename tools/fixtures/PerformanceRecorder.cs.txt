@@ -14,7 +14,7 @@ internal static class PerformanceRecorder // TEST-SUPPORT: FPR-0008 | Tests: sMP
     private static readonly (long Time, long Tick, int Bytes)[] Publications = new (long, long, int)[Capacity]; // TEST-SUPPORT: FPR-0012 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private static readonly (long Time, long Tick)[] Arrivals = new (long, long)[Capacity]; // TEST-SUPPORT: FPR-0013 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private static readonly (long Time, double Delta, double Process, double Physics)[] Frames = new (long, double, double, double)[Capacity]; // TEST-SUPPORT: FPR-0014 | Tests: sMPGWM.Tests.PerformanceProcessTests
-    private static readonly (long Time, long Allocated, int Gen0, int Gen1, int Gen2, double Pause, long Heap, long Committed, long Working, double Cpu, double Rtt, double Jitter)[] Samples = new (long, long, int, int, int, double, long, long, long, double, double, double)[2048]; // TEST-SUPPORT: FPR-0015 | Tests: sMPGWM.Tests.PerformanceProcessTests
+    private static readonly (long Time, long Allocated, int Gen0, int Gen1, int Gen2, double Pause, long Heap, long Committed, long Working, double Cpu, double Rtt, double Jitter, double EngineStatic)[] Samples = new (long, long, int, int, int, double, long, long, long, double, double, double, double)[2048]; // TEST-SUPPORT: FPR-0015 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private static readonly (long Time, string Name)[] Markers = new (long, string)[2048]; // TEST-SUPPORT: FPR-0016 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private static readonly Process CurrentProcess = Process.GetCurrentProcess(); // TEST-SUPPORT: FPR-0017 | Tests: sMPGWM.Tests.PerformanceProcessTests
     private static readonly double InitialCpu = CurrentProcess.TotalProcessorTime.TotalMilliseconds; // TEST-SUPPORT: FPR-0201 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -91,7 +91,7 @@ internal static class PerformanceRecorder // TEST-SUPPORT: FPR-0008 | Tests: sMP
         CurrentProcess.Refresh(); // TEST-SUPPORT: FPR-0080 | Tests: sMPGWM.Tests.PerformanceProcessTests
         Samples[_samples++] = (now, GC.GetTotalAllocatedBytes(false), GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), // TEST-SUPPORT: FPR-0081 | Tests: sMPGWM.Tests.PerformanceProcessTests
             GC.GetTotalPauseDuration().TotalMilliseconds, memory.HeapSizeBytes, memory.TotalCommittedBytes, // TEST-SUPPORT: FPR-0082 | Tests: sMPGWM.Tests.PerformanceProcessTests
-            CurrentProcess.WorkingSet64, CurrentProcess.TotalProcessorTime.TotalMilliseconds, _rtt, _jitter); // TEST-SUPPORT: FPR-0083 | Tests: sMPGWM.Tests.PerformanceProcessTests
+            CurrentProcess.WorkingSet64, CurrentProcess.TotalProcessorTime.TotalMilliseconds, _rtt, _jitter, Performance.GetMonitor(Performance.Monitor.MemoryStatic)); // TEST-SUPPORT: FPR-0083 | Tests: sMPGWM.Tests.PerformanceProcessTests
     } // TEST-SUPPORT: FPR-0084 | Tests: sMPGWM.Tests.PerformanceProcessTests
 
     private static double Seconds(long time) => (time - Origin) / (double)Stopwatch.Frequency; // TEST-SUPPORT: FPR-0085 | Tests: sMPGWM.Tests.PerformanceProcessTests
@@ -147,11 +147,11 @@ internal static class PerformanceRecorder // TEST-SUPPORT: FPR-0008 | Tests: sMP
         } // TEST-SUPPORT: FPR-0133 | Tests: sMPGWM.Tests.PerformanceProcessTests
         using (var writer = new StreamWriter(Path.Combine(output, "process.csv"))) // TEST-SUPPORT: FPR-0134 | Tests: sMPGWM.Tests.PerformanceProcessTests
         { // TEST-SUPPORT: FPR-0135 | Tests: sMPGWM.Tests.PerformanceProcessTests
-            writer.WriteLine("time_s,allocated_bytes,gen0,gen1,gen2,gc_pause_ms,heap_bytes,committed_bytes,working_set_bytes,cpu_ms,rtt_ms,jitter_ms"); // TEST-SUPPORT: FPR-0136 | Tests: sMPGWM.Tests.PerformanceProcessTests
+            writer.WriteLine("time_s,allocated_bytes,gen0,gen1,gen2,gc_pause_ms,heap_bytes,committed_bytes,working_set_bytes,cpu_ms,rtt_ms,jitter_ms,engine_static_bytes"); // TEST-SUPPORT: FPR-0136 | Tests: sMPGWM.Tests.PerformanceProcessTests
             for (var i = 0; i < _samples; i++) // TEST-SUPPORT: FPR-0137 | Tests: sMPGWM.Tests.PerformanceProcessTests
             { // TEST-SUPPORT: FPR-0138 | Tests: sMPGWM.Tests.PerformanceProcessTests
                 var row = Samples[i]; // TEST-SUPPORT: FPR-0139 | Tests: sMPGWM.Tests.PerformanceProcessTests
-                Row(writer, $"{Seconds(row.Time):F9},{row.Allocated},{row.Gen0},{row.Gen1},{row.Gen2},{row.Pause:F6},{row.Heap},{row.Committed},{row.Working},{row.Cpu:F6},{row.Rtt:F6},{row.Jitter:F6}"); // TEST-SUPPORT: FPR-0140 | Tests: sMPGWM.Tests.PerformanceProcessTests
+                Row(writer, $"{Seconds(row.Time):F9},{row.Allocated},{row.Gen0},{row.Gen1},{row.Gen2},{row.Pause:F6},{row.Heap},{row.Committed},{row.Working},{row.Cpu:F6},{row.Rtt:F6},{row.Jitter:F6},{row.EngineStatic:F0}"); // TEST-SUPPORT: FPR-0140 | Tests: sMPGWM.Tests.PerformanceProcessTests
             } // TEST-SUPPORT: FPR-0141 | Tests: sMPGWM.Tests.PerformanceProcessTests
         } // TEST-SUPPORT: FPR-0142 | Tests: sMPGWM.Tests.PerformanceProcessTests
         using (var writer = new StreamWriter(Path.Combine(output, "markers.csv"))) // TEST-SUPPORT: FPR-0143 | Tests: sMPGWM.Tests.PerformanceProcessTests

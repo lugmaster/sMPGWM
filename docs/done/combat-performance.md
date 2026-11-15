@@ -1,6 +1,70 @@
 # Combat performance measurements
 
-## Deferred allocation findings (2026-11-15)
+## Remaining-findings follow-up (2026-11-15)
+
+The application changes below are implemented and covered by 633 passing outer tests, including 404/404 Godot tests. This is not a whole-game zero-allocation claim. The earlier findings table is retained below as historical context.
+
+| Finding | Resolution and measured limits |
+| --- | --- |
+| Hitscan result dictionaries | Ordinary shots use one disabled, hidden `RayCast2D`, forced synchronously for each cast. Masks, ally exclusions, latest physics state, inside-hit normals, and transformed ancestors are covered by tests. The warmed hit test requires zero managed allocation. Zero-length segments retain the direct-query fallback because Godot's ray node otherwise substitutes a short vertical ray. |
+| RPC/Variant boundary | Cached row/batch Variants eliminate repeated resource-row wrapping; warmed encode plus batch insertion/consumer assignment is zero managed allocation. Movement and shot packets now convert to a packed-array Variant once per fan-out. Engine serialization and incoming argument creation remain; callback measurements begin after incoming marshalling. |
+| Configuration/effect reception | Reusable staging rows and decoded buffers replace transient snapshots, entries, lists, and sets. Commit occurs after the entire batch validates; failed staging is disposed. Identical warmed workload: 8,082,536 -> 2,572,000 managed bytes per 1,000 updates (68.2% lower). Strings, packed-stat decoding, wrappers, and runtime confirmation still allocate. |
+| Topology/inventory publication | Equipment encodes once per owner and reuses the payload across recipients. Departures preserve unrelated revision caches. Temporary child arrays are disposed deterministically. A 100-update codec control measured 2,003,200 -> 500,800 bytes at five players and 4,507,200 -> 500,800 at ten (75%/88.9% lower); this excludes RPC/native costs. Actual join, ownership, recovery, and inventory baselines remain snapshots because positions and weapon resources can change independently of equipment revisions. |
+| Heartbeat logs | Minimum-level checks avoid formatting suppressed Info request/response messages. Enabled logging retains its existing cost. |
+| HUD text | Changed labels measured 40 bytes/change, exactly matching the formatting control; unchanged labels remain zero managed allocation. Accurate bars are retained. No numeric-string cache was added. |
+| VFX capacity | Warmed authored-rate and 60/s stress presentation both enforce zero managed allocation. A rendered ten-player authored-rate run had zero visual pool drops on every peer. The 24-voice audio limit still deliberately drops sounds, and modified 60/s workloads still overflow visual pools. No capacity increase was justified by these allocation measurements. |
+
+### Combat comparison
+
+One 75-second headless ENet shield-impact run per scale and snapshot, nine SMGs per player at the modified 60/s cadence. Every peer passed. Process statistics cover seconds 30-75; shot counters below use the scope recorder's warmup cutoff. These are shared-machine smoke measurements, with some build/test activity overlapping; after instrumentation also includes additional scopes. Timing is not an isolated causal benchmark or the full three-repeat acceptance matrix.
+
+| Players | Host allocation MB/s, before -> after | Client aggregate MB/s, before -> after | Host step p99 ms, before -> after | Publication max ms, before -> after |
+| ---: | --- | --- | --- | --- |
+| 5 | 1.026 -> 0.213 (79.2% lower) | 2.423 -> 1.595 | 1.285 -> 0.981 | 97.213 -> 34.819 |
+| 10 | 1.742 -> 0.516 (70.4% lower) | 8.178 -> 5.918 | 2.863 -> 2.102 | 77.872 -> 62.575 |
+
+After runs averaged 30.000 Hz movement publication. The maximum interval at ten players still exceeded 33.33 ms. Existing stress-rate VFX/audio drops remain bounded and are recorded separately from gameplay delivery.
+
+Hitscan scope: before, 46,593 / 92,808 casts allocated 32,700,424 / 50,487,552 managed bytes at five / ten players (approximately 702 / 544 bytes per actual cast). After, 47,106 / 94,203 casts allocated **zero managed bytes**. Mean cast duration changed from 11.37 / 8.17 microseconds to 2.08 / 2.48 microseconds; the timing qualifications above apply. Exclusion preparation also measured zero managed bytes. This does not establish zero native physics allocation.
+
+Evidence under `measurements/2026-11-15-remaining/` retains source, manifests, raw CSVs, and summaries:
+
+| Dataset | Source archive SHA-256 |
+| --- | --- |
+| `before-combat` | `8eb9a558e57a1c197afc08381045f840846adeb392eea3ad403498c0e640b801` |
+| `after-combat` | `c509e29e3ffabc0f9efde04879a246822cad3685e2fe0ac512a5d7a4b222c8a0` |
+
+### Equipment burst and impaired late join
+
+A 90-second ten-player `burst` run with the last peer joining at 60 seconds passed all peers under seeded 20-60 ms delay per direction, 1% loss, and delay-induced reordering. It recorded 3,746 transfer attempts, 690 item rejections, and 224 accepted abilities; passing does not mean every requested transfer was accepted. Host publication averaged 30.000 Hz, with a 75.565 ms maximum interval.
+
+After scope warmup, `items_publish` recorded 13,214,192 managed bytes across 1,849 calls (1.194 ms maximum); `items_send` recorded 79,929,304 bytes across 2,148 calls (38.266 ms maximum). These inclusive scopes overlap where publication calls the owner sender; they must not be added. `topology_publish` recorded 94,128 bytes across 7,702 calls (0.531 ms maximum). These measurements include real changes and recovery, not just unchanged ticks. Snapshot spikes remain real costs; this pass reduces duplicate construction and does not claim allocation-free joins/equipment changes.
+
+Evidence: `measurements/2026-11-15-remaining/burst-latejoin/`, source SHA-256 `dc88afb64868389b7b9481e83b059bc7d560d0eaa64892e1d2919ba73170d1fd`. A later cleanup added deterministic disposal of temporary gameplay-baseline child arrays; the archived performance snapshots precede that lifetime-only change.
+
+### Rendered authored-rate check
+
+`--render-host` runs a 1280x720 host with headless ENet clients. A viewport capture at 20 seconds confirms ships, combat effects, and HUD rendered; it occurs before the steady measurement window. Ten players with nine SMGs at the authored 15/s cadence completed 75 seconds on all peers. Ammunition/reload behavior is retained.
+
+The host accepted/presented 64,161 shield-hit shots, dropped no visuals, and discarded 57,477 audio requests at its voice limit. Across 2,789 steady updates, HUD refresh and presentation each allocated zero managed bytes. Presentation averaged 0.577 ms/update with a 2.664 ms maximum. Host frame interval p99/max was 18.061/65.412 ms, so this is not a guaranteed 60 FPS result. Stationary combat keeps the displayed resources mostly unchanged; changing labels are measured separately in tests. Audio quality was not evaluated.
+
+Evidence: `measurements/2026-11-15-residual-pass/rendered-authored/` (`source.zip` SHA-256 `997d68b3cd265c6d2ce6f67f0b129257c0b74de19d99f3bdfa6bada37802a1fb`). This snapshot precedes the final receiver and outgoing packet fan-out refinements.
+
+### Final correctness verification
+
+`dotnet test sMPGWM.Tests/sMPGWM.Tests.csproj` passed all 633 outer tests, including 404/404 Godot cases, after the final child-array disposal cleanup. The existing `UiIcon.Size` member-hiding compiler warning remains.
+
+`python tools/run_shield_slice.py --players 10 --impaired --variants` passed all ten processes with 6,647 observations across 2,514 entity revisions converged. This separately covers abilities, equipment/components, ownership, authoritative resources, seeded 20-60 ms delay per direction, 1% packet loss, reordering, and the last peer joining at 12 seconds. Output and raw logs are retained under `measurements/2026-11-15-remaining/impaired-variants.txt` and `impaired-variants-logs/`.
+
+### Attribution and reproducibility
+
+`allocation-scopes.csv` records calls, managed bytes, total elapsed time, and maximum elapsed time after the recorder's first 30 seconds. Scopes include hitscan cast/preparation, HUD, presentation, topology/item publication, movement send, and receive callback bodies. Nested scopes are inclusive and must not be summed. Process allocation includes other threads and engine-to-managed work; subtracting scopes does not isolate native or engine allocations.
+
+`process.csv` additionally records Godot's static-memory usage alongside managed heap/committed bytes and total process working set. These are memory-usage counters, not native allocation rates, and working set minus managed heap is not a reliable native allocation measurement. Native allocation churn and Steam transport remain unmeasured. The scope recorder itself uses fixed-size counters, while 1 Hz process sampling and output have their own costs.
+
+Receiver comparison source and XML are retained in `measurements/2026-11-15-remaining/receiver/`; final Godot test XML is `measurements/2026-11-15-remaining/godot-results.xml`. The receiver control exports the earlier committed implementation into an isolated project and overlays the same measurement test; it is not a whole-process before/after benchmark.
+
+## Historical deferred allocation findings (2026-11-15)
 
 The current allocation pass is limited to its implemented changes and verification. Further findings are recorded here for later work; these are not claims of measured bottlenecks. Keybinding menus, networking decomposition, rewind, separate shield colliders, and VFX capacity tuning remain out of scope.
 

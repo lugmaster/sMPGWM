@@ -11,7 +11,10 @@ internal static class WeaponGroupSnapshotCodec
     {
         var rows = new Array();
         foreach (var binding in configuration.Bindings)
-            rows.Add(new Array { binding.Slot, checked((long)binding.Item.Value), binding.Primary, binding.Secondary });
+        {
+            using var row = new Array { binding.Slot, checked((long)binding.Item.Value), binding.Primary, binding.Secondary };
+            rows.Add(row);
+        }
         return rows;
     }
 
@@ -24,7 +27,7 @@ internal static class WeaponGroupSnapshotCodec
         for (var i = 0; i < rows.Count; i++)
         {
             if (rows[i].VariantType != Variant.Type.Array) return false;
-            var row = rows[i].AsGodotArray();
+            using var row = rows[i].AsGodotArray();
             if (row.Count != 4 || row[0].VariantType != Variant.Type.Int || row[1].VariantType != Variant.Type.Int ||
                 row[2].VariantType != Variant.Type.Bool || row[3].VariantType != Variant.Type.Bool) return false;
             var slot = row[0].AsInt64();

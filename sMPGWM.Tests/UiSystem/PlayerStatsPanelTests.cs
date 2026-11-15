@@ -43,6 +43,30 @@ public sealed class PlayerStatsPanelTests
         finally { bar.Free(); }
     }
 
+    [Test]
+    public void ChangingBarLabelsAllocateOnlyTheirFormattedText()
+    {
+        var root = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests");
+        var bar = HudProvider.CreateStatBar();
+        root.AddChild(bar);
+        try
+        {
+            for (var i = 0; i < 100; i++) bar.Setup(100 + i % 100, 1000);
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 1000; i++) bar.Setup(100 + i % 100, 1000);
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            before = GC.GetAllocatedBytesForCurrentThread();
+            var formattedLength = 0;
+            for (var i = 0; i < 1000; i++) formattedLength += $"{100d + i % 100:0}/{1000d:0}".Length;
+            var textAllocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            TestContext.Out.WriteLine($"Changing HUD labels: {allocated} bytes/1000; string formatting control: {textAllocated} bytes/1000.");
+            Assert.That(formattedLength, Is.EqualTo(8000));
+            Assert.That(allocated, Is.EqualTo(textAllocated));
+            Assert.That(bar.GetNode<Label>("%ValueLabel").Text, Is.EqualTo("199/1000"));
+        }
+        finally { bar.Free(); }
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public void ShieldTracksBindingMutationReplicationReplacementAndDisposal(bool bindBeforeReady)

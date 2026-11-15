@@ -187,6 +187,36 @@ public sealed class CombatPresentationTests
         }
     }
 
+    [TestCase(4)]
+    [TestCase(1)]
+    public void WarmedPresentationAndOverflowDoNotAllocateManagedMemory(int interval)
+    {
+        var session = Guid.NewGuid();
+        var effects = Create(session);
+        try
+        {
+            var template = Shot(session);
+            for (var tick = 1; tick <= 120; tick++) AdvanceBurst(tick);
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var tick = 121; tick <= 240; tick++) AdvanceBurst(tick);
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.That(allocated, Is.Zero);
+            Assert.That(effects.QueueDrops, Is.Zero);
+            Assert.That(effects.IdentityDrops, Is.Zero);
+            Assert.That(effects.ImpactMetrics(0).Dropped, interval == 1 ? Is.GreaterThan(0) : Is.Zero);
+            TestContext.Out.WriteLine($"Warmed presentation 90 weapons at {60 / interval}/s: {allocated} managed bytes over 120 frames.");
+
+            void AdvanceBurst(int tick)
+            {
+                if ((tick - 1) % interval == 0)
+                    for (var item = 1; item <= 90; item++)
+                        effects.Enqueue(template with { Tick = tick, Item = (ulong)item, Sequence = (tick - 1) / interval + 1 });
+                effects.Advance(tick);
+            }
+        }
+        finally { effects.Free(); }
+    }
+
     [TestCase(5, 4, 0)]
     [TestCase(10, 4, 0)]
     [TestCase(10, 20, 1)]

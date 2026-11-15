@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c0hl3kglrv4nb"]
 
-[ext_resource type="Texture2D" uid="uid://druwktt2cvrna" path="res://assets/mocks/hammer.png" id="1_dpxf3"]
+[ext_resource type="Texture2D" uid="uid://ciyrdbypfdtxr" path="res://assets/mocks/mock_icon.png" id="1_dpxf3"]
 
 [node name="IconWithLabel" type="HBoxContainer" unique_id=1048780216]
 offset_right = 58.0

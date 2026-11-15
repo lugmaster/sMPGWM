@@ -139,7 +139,8 @@ public partial class GameFlowManager : AbstractSingleton<GameFlowManager>
 
         var generation = ++_navigationGeneration;
         ModalController.Instance.ShowAlert(
-            GD.Load<Texture2D>("res://assets/mocks/diamond.png"),
+            // TODO use a proper Provider class
+            GD.Load<Texture2D>("res://assets/mocks/mock_icon.png"),
             showAsError ? "Error" : "Success",
             combinedReason,
             () => CallDeferred(nameof(QuitToStartMenuInternal), generation));

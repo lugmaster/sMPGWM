@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ytaqdql2nb1e"
-path="res://.godot/imported/fishhook.png-bb4aa4be4ab6c7db7cfb5b540ee49caf.ctex"
+uid="uid://ciyrdbypfdtxr"
+path="res://.godot/imported/mock_icon.png-03531c8353c986862b55b83d12a6282a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/mocks/fishhook.png"
-dest_files=["res://.godot/imported/fishhook.png-bb4aa4be4ab6c7db7cfb5b540ee49caf.ctex"]
+source_file="res://assets/mocks/mock_icon.png"
+dest_files=["res://.godot/imported/mock_icon.png-03531c8353c986862b55b83d12a6282a.ctex"]
 
 [params]
 

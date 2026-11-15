@@ -10,8 +10,11 @@ public partial class NetworkManager
     private readonly Dictionary<string, GameplayDeltaState> _gameplayPublishers = new(WorldTopology.MaxEntities, StringComparer.Ordinal);
     private readonly GameplayDeltaReceiver _gameplayReceiver = new();
     private readonly Array _gameplayDeltaRows = new();
+    private readonly Variant _gameplayDeltaRowsValue;
     private Func<int, string?>? _resolveGameplayEntity;
     private readonly string?[] _removedGameplayEntities = new string?[WorldTopology.MaxEntities];
+
+    public NetworkManager() => _gameplayDeltaRowsValue = _gameplayDeltaRows;
 
     private void PrepareGameplayReplication(sMPGWM.Scripts.ShipSystem.ShipController ship)
     {
@@ -38,7 +41,7 @@ public partial class NetworkManager
         foreach (var ship in World.Ships)
         {
             var publisher = _gameplayPublishers[ship.EntityId];
-            if (publisher.Encode(GetWeaponEntityIndex(ship.EntityId), ship.Runtime) is { } row) _gameplayDeltaRows.Add(row);
+            if (publisher.Encode(GetWeaponEntityIndex(ship.EntityId), ship.Runtime) != null) _gameplayDeltaRows.Add(publisher.RowVariant);
         }
         if (_gameplayDeltaRows.Count == 0 && !_gameplayDirty) return;
         Array? baseline = null;
@@ -46,7 +49,7 @@ public partial class NetworkManager
         {
             if (!join.ReceivesWorld || !CanSendToPeer(peer)) continue;
             var result = join.Phase == PeerJoinPhase.Ready
-                ? RpcId(peer, MethodName.ReceiveGameplayDeltas, (ReadOnlySpan<Variant>)[Synchronization!.SessionWireIdentity, _gameplayDeltaRows])
+                ? RpcId(peer, MethodName.ReceiveGameplayDeltas, (ReadOnlySpan<Variant>)[Synchronization!.SessionWireIdentity, _gameplayDeltaRowsValue])
                 : RpcId(peer, MethodName.ReceiveGameplay, (ReadOnlySpan<Variant>)[Synchronization!.SessionWireIdentity, baseline ??= GameplaySnapshot()]);
             if (result != Error.Ok) { FailSession("Gameplay update send failed."); break; }
         }
@@ -71,6 +74,6 @@ public partial class NetworkManager
     private void ClearGameplayDeltas()
     {
         foreach (var publisher in _gameplayPublishers.Values) publisher.Dispose();
-        _gameplayPublishers.Clear(); _gameplayReceiver.Dispose(); _gameplayDeltaRows.Dispose();
+        _gameplayPublishers.Clear(); _gameplayReceiver.Dispose(); _gameplayDeltaRowsValue.Dispose(); _gameplayDeltaRows.Dispose();
     }
 }

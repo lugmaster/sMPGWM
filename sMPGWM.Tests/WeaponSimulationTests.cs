@@ -64,11 +64,21 @@ public sealed class WeaponSimulationTests
         finally { world.Clear(); world.Free(); }
     }
 
-    [Test]
-    public void HitscanIgnoresPickupAndShieldAreasAndUsesLatestPhysicsHullSurface()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void HitscanIgnoresPickupAndShieldAreasAndUsesLatestPhysicsHullSurface(bool transformedParent)
     {
-        var world = CreateWorld();
+        var world = new GameWorld { AuthoritativeItems = true, InitializeLoadout = DevelopmentLoadout.Equip };
+        var root = ((SceneTree)Engine.GetMainLoop()).Root.GetNode("Tests");
         using var query = new sMPGWM.Scripts.CollisionSystem.HitscanQuery();
+        Node2D? parent = null;
+        if (transformedParent)
+        {
+            parent = new Node2D { Position = new(600, 800), Rotation = .7f, Scale = new(2, 2) };
+            root.AddChild(parent);
+        }
+        (parent ?? root).AddChild(world);
+        world.ApproveSpawn(1, PlayerStartupData.Create());
         var pickup = PhysicsServer2D.BodyCreate();
         var area = PhysicsServer2D.AreaCreate();
         var shape = PhysicsServer2D.CircleShapeCreate();
@@ -105,11 +115,40 @@ public sealed class WeaponSimulationTests
             hit = query.Cast(ship, ship.GlobalPosition, ship.GlobalPosition + Vector2.Right * 500);
             Assert.That(hit.Target, Is.SameAs(target));
             Assert.That(hit.Position.X - first.X, Is.EqualTo(100).Within(.01));
+            var origin = ship.GlobalPosition;
+            var endpoint = origin + Vector2.Right * 500;
+            for (var i = 0; i < 100; i++) query.Cast(ship, origin, endpoint);
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 1000; i++) query.Cast(ship, origin, endpoint);
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.That(allocated, Is.Zero, "Warmed hits must not allocate result dictionaries.");
+            Assert.That(query.Cast(ship, origin, origin + Vector2.Left * 500).Hit, Is.False);
+            var inside = query.Cast(ship, target.GlobalPosition, endpoint);
+            Assert.That(inside.Target, Is.SameAs(target));
+            Assert.That(inside.Normal, Is.EqualTo(Vector2.Left));
+            Assert.That(inside.Position, Is.EqualTo(target.GlobalPosition));
+            using var pointQuery = new PhysicsRayQueryParameters2D
+            {
+                CollisionMask = sMPGWM.Scripts.CollisionSystem.CollisionLayers.Hitscan,
+                HitFromInside = true, CollideWithAreas = false, CollideWithBodies = true
+            };
+            foreach (var point in new[] { target.GlobalPosition, origin + Vector2.Up * 1000 })
+            {
+                pointQuery.From = pointQuery.To = point;
+                using var expected = ship.GetWorld2D().DirectSpaceState.IntersectRay(pointQuery);
+                var actual = query.Cast(ship, point, point);
+                Assert.That(actual.Hit, Is.EqualTo(expected.Count != 0));
+                if (actual.Hit) Assert.That(actual.Position, Is.EqualTo(expected["position"].AsVector2()));
+            }
+            target.Runtime.SetFaction(ship.Runtime.FactionId);
+            query.Prepare(world, ship);
+            Assert.That(query.Cast(ship, origin, endpoint).Hit, Is.False, "Updated alliances must refresh exclusions.");
         }
         finally
         {
             PhysicsServer2D.FreeRid(pickup); PhysicsServer2D.FreeRid(area); PhysicsServer2D.FreeRid(shape);
             world.Clear(); world.Free();
+            parent?.Free();
         }
     }
 

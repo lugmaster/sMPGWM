@@ -47,8 +47,8 @@ public sealed class GameplayDeltaTests
         }
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
         TestContext.Out.WriteLine($"Resource publication bytes/1000: {allocated}; runtime only: {runtimeAllocated}; three nested-array assignments: {nestedArrayAllocated}.");
-        // Measured Godot 4.7.2/.NET 8 x64 baseline; reusing buffers does not eliminate Variant interop allocations.
-        Assert.That(allocated, Is.LessThanOrEqualTo(336_000));
+        // Cached array Variants eliminate the warmed resource encoder wrapper allocations.
+        Assert.That(allocated, Is.Zero);
         Assert.That(last, Is.SameAs(first));
         Assert.That(last![5].AsGodotArray()[9].AsDouble(), Is.EqualTo(91));
     }
@@ -124,6 +124,103 @@ public sealed class GameplayDeltaTests
             Assert.That(death[4].AsGodotArray().Count, Is.EqualTo(2));
             Assert.That(receiver.Apply(new() { death }, world, definitions, Resolve), Is.True);
             Assert.That(ship.Runtime.IsAlive, Is.False);
+        }
+        finally { world.Clear(); world.Free(); }
+    }
+
+    [Test]
+    public void RejectedConfigurationAndEffectBatchCanRetryWithoutLeakingStagedState()
+    {
+        var definitions = GameplayTestData.Load();
+        var world = new GameWorld();
+        using var receiver = new GameplayDeltaReceiver();
+        using var firstPublisher = new GameplayDeltaState();
+        using var secondPublisher = new GameplayDeltaState();
+        using var firstHost = new ShipRuntime(100);
+        using var secondHost = new ShipRuntime(100);
+        firstHost.InitializeResources(); secondHost.InitializeResources();
+        try
+        {
+            world.ApproveSpawn(1, PlayerStartupData.Create());
+            world.ApproveSpawn(2, PlayerStartupData.Create());
+            var firstShip = world.Players[1].ControlledShip!;
+            var secondShip = world.Players[2].ControlledShip!;
+            string? Resolve(int index) => index == 1 ? firstShip.EntityId : index == 2 ? secondShip.EntityId : null;
+            using var initial = new Godot.Collections.Array { firstPublisher.Encode(1, firstHost)!, secondPublisher.Encode(2, secondHost)! };
+            Assert.That(receiver.Apply(initial, world, definitions, Resolve), Is.True);
+            var firstFaction = firstShip.Runtime.FactionId;
+            var secondFaction = secondShip.Runtime.FactionId;
+            firstHost.SetFaction(7);
+            firstHost.SetCondition(definitions.Conditions.GetById("jammed"), true);
+            secondHost.SetFaction(8);
+            secondHost.SetCondition(definitions.Conditions.GetById("silenced"), true);
+            using var first = firstPublisher.Encode(1, firstHost)!.Duplicate(true);
+            using var second = secondPublisher.Encode(2, secondHost)!.Duplicate(true);
+            using var invalid = second.Duplicate(true);
+            using (var effects = invalid[4].AsGodotArray())
+            using (var conditions = effects[1].AsGodotArray()) conditions.Add("missing");
+            using var rejected = new Godot.Collections.Array { first, invalid };
+            Assert.That(receiver.Apply(rejected, world, definitions, Resolve), Is.False);
+            Assert.That(firstShip.Runtime.FactionId, Is.EqualTo(firstFaction));
+            Assert.That(secondShip.Runtime.FactionId, Is.EqualTo(secondFaction));
+            Assert.That(firstShip.Runtime.Conditions, Is.Empty);
+            Assert.That(secondShip.Runtime.Conditions, Is.Empty);
+            using var valid = new Godot.Collections.Array { second, first };
+            Assert.That(receiver.Apply(valid, world, definitions, Resolve), Is.True);
+            Assert.That(firstShip.Runtime.FactionId, Is.EqualTo(7));
+            Assert.That(secondShip.Runtime.FactionId, Is.EqualTo(8));
+            Assert.That(firstShip.Runtime.Conditions, Is.EquivalentTo(new[] { "jammed" }));
+            Assert.That(secondShip.Runtime.Conditions, Is.EquivalentTo(new[] { "silenced" }));
+
+            firstHost.SetHealthCurrent(90); secondHost.SetHealthCurrent(80);
+            using var resources = new Godot.Collections.Array { firstPublisher.Encode(1, firstHost)!, secondPublisher.Encode(2, secondHost)! };
+            Assert.That(receiver.Apply(resources, world, definitions, Resolve), Is.True);
+            firstHost.SetFaction(9); secondHost.SetFaction(10);
+            using var configuration = new Godot.Collections.Array { firstPublisher.Encode(1, firstHost)!, secondPublisher.Encode(2, secondHost)! };
+            Assert.That(receiver.Apply(configuration, world, definitions, Resolve), Is.True);
+            Assert.That(firstShip.Runtime.Conditions, Is.EquivalentTo(new[] { "jammed" }));
+            Assert.That(secondShip.Runtime.Conditions, Is.EquivalentTo(new[] { "silenced" }));
+            Assert.That(firstShip.Runtime.Health.Current, Is.EqualTo(90));
+            Assert.That(secondShip.Runtime.Health.Current, Is.EqualTo(80));
+        }
+        finally { world.Clear(); world.Free(); }
+    }
+
+    [Test]
+    public void WarmedConfigurationAndEffectReceptionHasBoundedAllocation()
+    {
+        var definitions = GameplayTestData.Load();
+        var world = new GameWorld();
+        using var receiver = new GameplayDeltaReceiver();
+        using var publisher = new GameplayDeltaState();
+        using var host = new ShipRuntime(100);
+        host.InitializeResources();
+        try
+        {
+            world.ApproveSpawn(1, PlayerStartupData.Create());
+            var ship = world.Players[1].ControlledShip!;
+            string? Resolve(int index) => index == 1 ? ship.EntityId : null;
+            Func<int, string?> resolve = Resolve;
+            using var rows = new Godot.Collections.Array { publisher.Encode(1, host)! };
+            Assert.That(receiver.Apply(rows, world, definitions, resolve), Is.True);
+            var condition = definitions.Conditions.GetById("jammed");
+            long allocated = 0;
+            var valid = true;
+            for (var i = 0; i < 1100; i++)
+            {
+                host.SetFaction(1 + i % 2);
+                host.SetCondition(condition, i % 2 == 0);
+                publisher.Encode(1, host);
+                var before = GC.GetAllocatedBytesForCurrentThread();
+                valid &= receiver.Apply(rows, world, definitions, resolve);
+                var bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+                if (i >= 100) allocated += bytes;
+            }
+            TestContext.Out.WriteLine($"Configuration/effect reception bytes/1000: {allocated}.");
+            Assert.That(valid, Is.True);
+            Assert.That(allocated, Is.LessThanOrEqualTo(3_600_000));
+            Assert.That(ship.Runtime.FactionId, Is.EqualTo(host.FactionId));
+            Assert.That(ship.Runtime.Conditions, Is.EqualTo(host.Conditions));
         }
         finally { world.Clear(); world.Free(); }
     }

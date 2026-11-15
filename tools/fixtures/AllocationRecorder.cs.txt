@@ -1,0 +1,34 @@
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+
+namespace sMPGWM.Scripts.Verification;
+
+// TEST-SUPPORT-CLASS: ALLOCATION-RECORDER-001
+// Tests: tools/run_performance_matrix.py
+internal static class AllocationRecorder
+{
+    private static readonly string[] Names = ["hitscan_cast", "hitscan_prepare", "hud_refresh", "shot_presentation", "topology_publish", "items_publish", "items_send", "movement_send", "movement_receive_body", "gameplay_receive_body"];
+    private static readonly long[] Calls = new long[Names.Length], Bytes = new long[Names.Length], Ticks = new long[Names.Length], MaximumTicks = new long[Names.Length];
+    private static readonly long Origin = Stopwatch.GetTimestamp();
+
+    public static (long Time, long Bytes) Begin() => (Stopwatch.GetTimestamp(), GC.GetAllocatedBytesForCurrentThread());
+
+    public static void End(int kind, (long Time, long Bytes) start)
+    {
+        var elapsed = Stopwatch.GetTimestamp() - start.Time;
+        var bytes = GC.GetAllocatedBytesForCurrentThread() - start.Bytes;
+        if (start.Time - Origin < 30 * Stopwatch.Frequency) return;
+        Calls[kind]++; Bytes[kind] += bytes; Ticks[kind] += elapsed;
+        MaximumTicks[kind] = Math.Max(MaximumTicks[kind], elapsed);
+    }
+
+    public static void Flush(string output)
+    {
+        using var writer = new StreamWriter(Path.Combine(output, "allocation-scopes.csv"));
+        writer.WriteLine("scope,calls,managed_bytes,total_ms,max_ms");
+        for (var i = 0; i < Names.Length; i++)
+            writer.WriteLine(FormattableString.Invariant($"{Names[i]},{Calls[i]},{Bytes[i]},{Ticks[i] * 1000.0 / Stopwatch.Frequency:F6},{MaximumTicks[i] * 1000.0 / Stopwatch.Frequency:F6}"));
+    }
+}

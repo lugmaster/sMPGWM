@@ -11,14 +11,20 @@ internal static class WorldTopologyCodec
     // Rows: [peer, generation, entity index]; [entity index, ship definition, x, y, rotation, vx, vy].
     internal static Array Encode(WorldTopology topology, Func<string, int> indexOf)
     {
-        var participants = new Array();
+        using var participants = new Array();
         foreach (var participant in topology.Participants)
-            participants.Add(new Array { participant.Peer, participant.Generation,
-                participant.Entity.Length == 0 ? 0 : indexOf(participant.Entity) });
-        var entities = new Array();
+        {
+            using var row = new Array { participant.Peer, participant.Generation,
+                participant.Entity.Length == 0 ? 0 : indexOf(participant.Entity) };
+            participants.Add(row);
+        }
+        using var entities = new Array();
         foreach (var entity in topology.Entities)
-            entities.Add(new Array { indexOf(entity.EntityId), entity.ShipId, entity.Position.X, entity.Position.Y,
-                entity.Rotation, entity.Velocity.X, entity.Velocity.Y });
+        {
+            using var row = new Array { indexOf(entity.EntityId), entity.ShipId, entity.Position.X, entity.Position.Y,
+                entity.Rotation, entity.Velocity.X, entity.Velocity.Y };
+            entities.Add(row);
+        }
         return new Array { participants, entities };
     }
 

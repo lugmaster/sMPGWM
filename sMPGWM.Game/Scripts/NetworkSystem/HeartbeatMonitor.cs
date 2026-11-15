@@ -77,7 +77,8 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
             var sequence = ++_sequence;
             peer.Pending.Add(sequence, now + timeout);
             var result = RpcId(id, MethodName.HeartbeatRequest, (ReadOnlySpan<Variant>)[sequence]);
-            Logger.Info($"HB request peer={id} sequence={sequence} result={result}");
+            if (Logger.MinimumLevel <= sMPGWM.Scripts.LoggingSystem.LogLevel.Info)
+                Logger.Info($"HB request peer={id} sequence={sequence} result={result}");
         }
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -87,7 +88,8 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
         _received = sequence;
         _seen = Now;
         var result = RpcId(1, MethodName.HeartbeatResponse, (ReadOnlySpan<Variant>)[sequence]);
-        Logger.Info($"HB response host=1 sequence={sequence} result={result}");
+        if (Logger.MinimumLevel <= sMPGWM.Scripts.LoggingSystem.LogLevel.Info)
+            Logger.Info($"HB response host=1 sequence={sequence} result={result}");
     }
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void HeartbeatResponse(long sequence)
@@ -96,7 +98,8 @@ public partial class HeartbeatMonitor : AbstractSingleton<HeartbeatMonitor>
         if (!_running || !_host || !_peers.TryGetValue(id, out var peer) ||
             !peer.Pending.Remove(sequence, out var expires) || Now >= expires) return;
         peer.Seen = Now;
-        Logger.Info($"HB accepted peer={id} sequence={sequence}");
+        if (Logger.MinimumLevel <= sMPGWM.Scripts.LoggingSystem.LogLevel.Info)
+            Logger.Info($"HB accepted peer={id} sequence={sequence}");
     }
     protected override void OnExitTree() => Stop();
 }

@@ -121,10 +121,11 @@ public partial class NetworkManager
             var count = Math.Min(ShotEventCodec.MaxEvents, _stagedShotCount - offset);
             var bytes = _shotPacketBuffers[count - 1];
             ShotEventCodec.EncodeInto(_stagedShots.AsSpan(offset, count), bytes);
+            using Variant payloadValue = bytes;
             foreach (var (peer, join) in recipients)
                 if (join.Phase == PeerJoinPhase.Ready && CanSendToPeer(peer))
                 {
-                    RpcId(peer, MethodName.ReceiveShots, (ReadOnlySpan<Variant>)[bytes]);
+                    RpcId(peer, MethodName.ReceiveShots, (ReadOnlySpan<Variant>)[payloadValue]);
                     ShotBytesPublished += bytes.Length;
                 }
         }

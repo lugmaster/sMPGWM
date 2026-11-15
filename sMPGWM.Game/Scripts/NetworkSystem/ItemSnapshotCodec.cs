@@ -13,15 +13,19 @@ internal static class ItemSnapshotCodec
 {
     internal const int MaxInventorySlots = ItemContainer.MaxCapacity;
 
-    internal static Array Encode(PlayerSession player) => new()
+    internal static Array Encode(PlayerSession player)
     {
-        player.ControllingPeerId, player.ControlGeneration, player.ControlledShip?.EntityId ?? "",
-        checked((long)player.Inventory.Container.Id.Value), checked((long)(player.ControlledShip?.Equipment.Container.Id.Value ?? 0)),
-        player.Inventory.Revision, player.ControlledShip?.Equipment.Revision ?? 0,
-        EncodeSlots(player.Inventory.Snapshot.Slots),
-        player.ControlledShip is { } ship ? EncodeSlots(ship.Equipment.Snapshot.Slots) : new Array(),
-        WeaponGroupSnapshotCodec.Encode(player.ControlledShip?.Equipment.Snapshot.WeaponGroups ?? WeaponGroupConfiguration.Empty)
-    };
+        using var inventory = EncodeSlots(player.Inventory.Snapshot.Slots);
+        using var equipment = player.ControlledShip is { } ship ? EncodeSlots(ship.Equipment.Snapshot.Slots) : new Array();
+        using var groups = WeaponGroupSnapshotCodec.Encode(player.ControlledShip?.Equipment.Snapshot.WeaponGroups ?? WeaponGroupConfiguration.Empty);
+        return new Array
+        {
+            player.ControllingPeerId, player.ControlGeneration, player.ControlledShip?.EntityId ?? "",
+            checked((long)player.Inventory.Container.Id.Value), checked((long)(player.ControlledShip?.Equipment.Container.Id.Value ?? 0)),
+            player.Inventory.Revision, player.ControlledShip?.Equipment.Revision ?? 0,
+            inventory, equipment, groups
+        };
+    }
 
     internal static bool IsOldBinding(Array rows, PlayerSession player) => rows.Count == 10 &&
         rows[1].VariantType == Variant.Type.Int && rows[1].AsInt64() < player.ControlGeneration;
@@ -30,10 +34,13 @@ internal static class ItemSnapshotCodec
     {
         var rows = new Array();
         foreach (var item in slots)
-            rows.Add(item == null ? new Array() : new Array { checked((long)item.Id.Value), item.DefinitionId, item.Count,
+        {
+            using var row = item == null ? new Array() : new Array { checked((long)item.Id.Value), item.DefinitionId, item.Count,
                 item.WeaponState?.NextEligibleTick ?? 0, item.WeaponState?.Sequence ?? 0, item.WeaponState?.LastAcceptedTick ?? -1,
                 item.WeaponState?.Revision ?? 0, item.WeaponState?.Rounds ?? 0,
-                item.WeaponState?.ReloadStartTick ?? -1, item.WeaponState?.ReloadDeadlineTick ?? -1 });
+                item.WeaponState?.ReloadStartTick ?? -1, item.WeaponState?.ReloadDeadlineTick ?? -1 };
+            rows.Add(row);
+        }
         return rows;
     }
 
@@ -55,14 +62,15 @@ internal static class ItemSnapshotCodec
         var equipmentRevision = rows[6].AsInt64();
         if (inventoryRevision < 0 || equipmentRevision < 0 || inventoryRevision == long.MaxValue || equipmentRevision == long.MaxValue)
             return false;
-        var inventoryRows = rows[7].AsGodotArray();
-        var equipmentRows = rows[8].AsGodotArray();
+        using var inventoryRows = rows[7].AsGodotArray();
+        using var equipmentRows = rows[8].AsGodotArray();
+        using var groupRows = rows[9].AsGodotArray();
         if (inventoryRows.Count < InventoryController.InitialCapacity || inventoryRows.Count > MaxInventorySlots ||
             equipmentRows.Count != (equipment?.Definitions.Count ?? 0)) return false;
         var identities = new HashSet<long>();
         if (!DecodeSlots(inventoryRows, identities, out var inventorySlots) ||
             !DecodeSlots(equipmentRows, identities, out var equipmentSlots) ||
-            !WeaponGroupSnapshotCodec.TryDecode(rows[9].AsGodotArray(), out var groups)) return false;
+            !WeaponGroupSnapshotCodec.TryDecode(groupRows, out var groups)) return false;
         if (equipment == null && groups.Bindings.Count != 0) return false;
         if (equipment != null)
             for (var i = 0; i < equipmentSlots.Length; i++)
@@ -89,7 +97,7 @@ internal static class ItemSnapshotCodec
         for (var i = 0; i < rows.Count; i++)
         {
             if (rows[i].VariantType != Variant.Type.Array) return false;
-            var row = rows[i].AsGodotArray();
+            using var row = rows[i].AsGodotArray();
             if (row.Count == 0) continue;
             if (row.Count != 10 || row[0].VariantType != Variant.Type.Int || row[1].VariantType != Variant.Type.String ||
                 row[2].VariantType != Variant.Type.Int || row[3].VariantType != Variant.Type.Float ||

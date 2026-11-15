@@ -374,9 +374,10 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
         _gameplayDirty = true;
         using var payload = WorldTopologyCodec.Encode(topology, GetWeaponEntityIndex);
         PublishWeaponEntityMap();
+        using Variant payloadValue = payload;
         foreach (var (peer, join) in _joins.Snapshot())
             if (join.ReceivesWorld && CanSendToPeer(peer))
-                RpcId(peer, nameof(ReceiveWorldTopology), Synchronization!.SessionWireIdentity, payload);
+                RpcId(peer, MethodName.ReceiveWorldTopology, (ReadOnlySpan<Variant>)[Synchronization!.SessionWireIdentity, payloadValue]);
     }
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ReceiveWorldTopology(string session, Godot.Collections.Array payload)
@@ -407,8 +408,17 @@ public partial class NetworkManager : AbstractSingleton<NetworkManager>
     public void PublishMovement(byte[] payload)
     {
         if (!IsHost()) return;
-        foreach (var (peer, join) in _joins.Snapshot())
-            if (join.ReceivesWorld) RpcId(peer, MethodName.ReceiveMovement, (ReadOnlySpan<Variant>)[payload]);
+        Variant payloadValue = default;
+        try
+        {
+            foreach (var (peer, join) in _joins.Snapshot())
+            {
+                if (!join.ReceivesWorld) continue;
+                if (payloadValue.VariantType == Variant.Type.Nil) payloadValue = payload;
+                RpcId(peer, MethodName.ReceiveMovement, (ReadOnlySpan<Variant>)[payloadValue]);
+            }
+        }
+        finally { payloadValue.Dispose(); }
     }
     public void SendMovementCommands(byte[] payload)
     {
